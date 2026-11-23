@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 4 (rebased on core, green; waiting for the toolbar check)
+Wave: 4 (merged ad7c055; toolbar check open)
 Updated: 2026-11-23
 
 ## Done
@@ -37,7 +37,7 @@ Updated: 2026-11-23
 
 ## In progress
 - ## In progress
-- Wave 4 rebased on origin/main 5b9883b (core's phased discovery model), stub dropped. Full test green (130 passed, 0 failed).
+- Wave 4 merged to main (ad7c055), full test green (130). Only the toolbar check is left.
   - Open question card (`options` empty): multi-line `TextField(axis: .vertical)`, Continue ↩ → `.text(trimmed)` (disabled when empty), Skip → `.agentDecides`, field focused on appear, digit keys ignored.
   - Answered open questions: a row opens a popover to edit the text; Save with empty text → `.agentDecides`; unchanged answer sends nothing. Shown as the text, or "Skipped · the agent decides" (replaces core's one-line `.text` case in answerText).
   - Inspector: one Section per phase in file order (only phases with items), header "Phase · n of m", footer on the last.
@@ -45,7 +45,7 @@ Updated: 2026-11-23
   - Toolbar padding/truncation (8dddc94) NOT verified yet: waiting for the orchestrator to say /Applications/Mel.app is closed.
 
 ## Next
-- Verify the toolbar status in the Debug build once the orchestrator says /Applications/Mel.app is closed. If the text drops: `.fixedSize()` before the padding. Then tell the orchestrator "ready to merge".
+- Verify the toolbar status in the Debug build once the orchestrator says /Applications/Mel.app is closed. If the text drops: `.fixedSize()` before the padding. Any fix goes out as a small follow-up merge.
 
 ecks: System Events can't tell two "Mel" processes apart (`first process whose unix id is …` + `window 1` still hit /Applications/Mel.app on 2026-11-23). Rule (orchestrator): no System Events / GUI scripting at all while /Applications/Mel.app is running, debug pid or not. Screenshots come from the orchestrator/user. Earlier toolbar screenshots after 15:55 were of the user's app, not the debug build.
 - While the user runs an install test of /Applications/Mel.app: don't launch the debug app, don't touch com.kaanf.mel defaults, and don't run the full xcodebuild test (MelTests are hosted by Mel.app, same bundle id). Only `cd MelKit && swift test`. Wait for the orchestrator to say the test is over.
