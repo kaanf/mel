@@ -20,7 +20,7 @@ WindowGroup (main)
     │             └── EmptyLibraryView
     └── .inspector  StageInspector (per stage)
 Window "Welcome"   (first launch, single instance)
-Settings           (TabView: General · Agents · Specs · Advanced)
+Settings           (single pane: Agents; MVP)
 Sheets             NewSpecSheet · SpecReadySheet
 ```
 
@@ -149,11 +149,7 @@ Artboard `Native-Settings-Agents`. `Settings { TabView }` with tabs General, Age
 - Claude Code group: name, status (Ready / Not signed in / Not found), version; Location (path, Change…); Account ("Signed in through the CLI", Open Terminal…).
 - Detection group: "Look for the agent when the app opens" switch; Search paths list ("Your login shell's PATH" fixed first row, then editable paths) with +/−; footnote "Apps opened from the Dock don't see your Terminal PATH, so it is read from your login shell."; "Scan Now".
 
-Undesigned tabs (proposal, confirm before building):
-
-- General: notifications on/off, open Welcome again.
-- Specs: default parent folder, slug style, keep `.mel/` in Git (on/off), commit after handoff default.
-- Advanced: agent timeout, extra CLI arguments per agent, show raw logs, reset app.
+**MVP: Agents only** (decided 2026-11-23). Settings is a single pane with the Agents content above, no TabView. General, Specs and Advanced are out: notifications are controlled in System Settings, New Spec remembers recent folders, and extra CLI arguments would undermine the read-only invocation.
 
 ## Copy and tone
 
