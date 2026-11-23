@@ -202,6 +202,14 @@ struct ReviewDocument: View {
     .frame(width: 1000, height: 720)
 }
 
+#Preview("Changed in another app") {
+    NavigationStack {
+        ReviewView(session: PreviewData.session(PreviewData.review, conflict: .requirements), kind: .requirements, mode: .edit)
+    }
+    .environment(PreviewData.appState([PreviewData.review]))
+    .frame(width: 1000, height: 720)
+}
+
 #Preview("Edit Markdown") {
     NavigationStack {
         ReviewView(session: PreviewData.session(PreviewData.review), kind: .requirements, mode: .edit)
