@@ -151,6 +151,8 @@ Artboard `Native-Settings-Agents`. `Settings { TabView }` with tabs General, Age
 
 **MVP: Agents only** (decided 2026-11-23). Settings is a single pane with the Agents content above, no TabView. General, Specs and Advanced are out: notifications are controlled in System Settings, New Spec remembers recent folders, and extra CLI arguments would undermine the read-only invocation.
 
+**Updates group** (added 2026-11-23, below Detection): "Version 0.2 (build 123)"; "Automatically check for updates" switch; "Check for Updates…" button (disabled while Sparkle is already checking). The same "Check for Updates…" item sits in the app menu right after "About Mel". Sparkle's own windows show what's new, download progress and "Install and Relaunch".
+
 ## Copy and tone
 
 Short, plain sentences, no jargon, no exclamation marks. Title Case for buttons and menu items ("Scan Again", "Draft Now", "Review…"). Ellipsis on buttons that open more UI. No time estimates in the MVP.

@@ -18,6 +18,7 @@ Deferred to a later version (see REQUIREMENTS.md › Later): Pause/Resume, "Ask 
 | Persistence | One Codable JSON file per spec (`specs/.mel/state.json`) + `UserDefaults` for app settings and the library |
 | Markdown | Own small line-based parser for our fixed format; `AttributedString(markdown:)` for inline styling. **No dependencies.** |
 | Notifications | `UserNotifications` |
+| Updates | Sparkle 2 (the only third-party dependency; app target only, decided 2026-11-23) |
 | Logging | `os.Logger` |
 | Tests | Swift Testing |
 | Minimum OS | macOS 26 |
@@ -28,7 +29,9 @@ The app launches the user-installed `claude` CLI, which reads `~/.claude` and ne
 
 - **Not sandboxed**, Hardened Runtime, Developer ID signed, notarized and stapled, shipped as a **DMG**.
 - `scripts/release.sh`: `xcodebuild archive` → export (Developer ID) → `notarytool submit --wait` → `stapler staple` → `hdiutil create` DMG → notarize + staple the DMG.
-- No Mac App Store. Sparkle updates post-MVP.
+- No Mac App Store.
+- **Updates: Sparkle 2.** Feed `https://raw.githubusercontent.com/kaanf/mel/main/appcast.xml` (latest release only), DMG enclosure from the GitHub release. Updates are signed with an EdDSA key (private key in the release Mac's login Keychain, backed up by the user; public key `SUPublicEDKey` in Info.plist). Sparkle compares `CFBundleVersion`: `release.sh` sets it to `git rev-list --count HEAD`, so every release from `main` is higher. `release.sh` ends with `sign_update` on the notarized DMG and writes `appcast.xml`; the orchestrator commits it after `gh release create`. Automatic daily checks are on by default (`SUEnableAutomaticChecks`), no system profile is sent.
+- Sparkle is imported only in `App/` (`SPUStandardUpdaterController`); views get plain values and closures.
 
 ### Project layout
 
@@ -185,7 +188,7 @@ System integration:
 
 ## 6. Security and privacy
 
-- Mel itself makes no network calls and has no telemetry.
+- Mel's only network call is Sparkle's update check (the appcast, then the DMG when the user agrees). No telemetry, no system profile.
 - Claude Code runs with write and shell tools disabled, working directory = the project folder.
 - Prompts and history stay in the spec folder.
 - `.mel/` is never committed: the spec commit excludes it by pathspec; `.gitignore` is left alone.

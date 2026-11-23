@@ -90,6 +90,8 @@ Each screen gets `#Preview`s for every state shown on the canvas (minus the Late
   - Covers: 9.7
 - [ ] 5.4 Install test from the DMG on a clean macOS 26 user account (Gatekeeper, PATH detection from Dock launch, first-run flow).
   - Covers: 1.2, 9.7
+- [ ] 5.5 Updates with Sparkle 2: EdDSA key, feed + public key in Info.plist, build number from the commit count, `release.sh` signs the DMG and writes `appcast.xml`; "Check for Updates…" in the app menu and Settings.
+  - Covers: 9.8, 9.9
 
 ## Later (post-MVP)
 

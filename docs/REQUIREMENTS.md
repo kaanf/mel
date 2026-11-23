@@ -115,6 +115,8 @@ As a user, I want all my specs in one window, so that I can come back to any of 
 - 9.5 THE APP SHALL support Light and Dark appearance and respect Reduce Motion and Increase Contrast.
 - 9.6 THE APP SHALL run at most one agent at a time; WHILE one runs, starting another spec's run SHALL be disabled with the reason shown.
 - 9.7 THE APP SHALL be distributed as a Developer ID–signed, notarized DMG.
+- 9.8 THE APP SHALL offer "Check for Updates…" in the app menu and in Settings; WHEN a newer version exists and the user agrees, THE APP SHALL download it, verify its signature, replace itself and relaunch.
+- 9.9 WHILE "Automatically check for updates" is on (the default), THE APP SHALL check for a newer version once a day; the user MAY turn it off in Settings.
 
 ## Later (not in the first version)
 

@@ -32,7 +32,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 
 - Swift 6 with strict concurrency. SwiftUI first; AppKit only when SwiftUI can't do it.
 - `@Observable` for state, async/await for concurrency. No Combine, no architecture frameworks.
-- **No third-party dependencies.** Ask before adding one.
+- **No third-party dependencies.** Ask before adding one. Only exception: Sparkle 2 for updates, imported only in `App/` (approved 2026-11-23).
 - Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI, `MelSpec` and `UniformTypeIdentifiers`. Rules: `agents/CONTRACTS.md` › Layers and dependencies. `MelSpec` stays pure (no I/O, no SwiftUI).
 - Keep the main actor free: process I/O, file writes and parsing run off it; throttle stream-driven UI updates.
 - Use system components, semantic colors and SF Symbols. Do not copy hex colors or shadows from the HTML canvas.

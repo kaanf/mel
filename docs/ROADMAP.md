@@ -90,13 +90,27 @@ Decisions (already in the docs): REQUIREMENTS 4.1, 4.7, 4.12–4.14 · SPEC-FORM
 
 Gate G4: a real spec where Discovery goes Product → Requirements → Design → Tasks, each phase opens with an open question, and DESIGN.md starts with `## 1. User experience`.
 
+## Wave 5 · In-app updates with Sparkle (before v0.2)
+
+The user wants "Check for Updates…" with a full in-place update (decided 2026-11-23: Sparkle 2, the one approved dependency). It ships in v0.2 so that v0.2 is the last manual DMG install. Docs: REQUIREMENTS 9.8–9.9, TASKS 5.5, DESIGN › Distribution + Security, UI › Settings › Updates group, CONTRACTS (Sparkle only in `App/`).
+
+| Agent | Tasks (in this order) |
+|---|---|
+| platform | 1. Generate the EdDSA key pair with Sparkle's `generate_keys` (login Keychain), export a backup file for the user to store, send the public key to the orchestrator. 2. After core's merge: `release.sh` passes `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` to the archive, and after the DMG is notarized runs `sign_update` and writes `appcast.xml` at the repo root (one item: version, build, DMG URL `https://github.com/kaanf/mel/releases/download/v<version>/Mel-<version>.dmg`, length, `sparkle:edSignature`, `minimumSystemVersion` 26.0). 3. After ui's merge: an end-to-end update test on this Mac with two local Release builds (build N installed in a throwaway folder, never /Applications; build N+1 DMG + appcast served from `python3 -m http.server`, feed overridden through the `SUFeedURL` default of the debug/test bundle only), proving download → signature check → replace → relaunch. Note it in `docs/research/`. |
+| core | Add the Sparkle package to the `Mel` app target (exact version: the newest 2.x released at least two weeks ago). Info.plist: `SUFeedURL`, `SUPublicEDKey` (from platform), `SUEnableAutomaticChecks` = YES. `MARKETING_VERSION` 0.2. Update `MarkdownParserTests` counts for 9.8–9.9 and 5.5 (criteria 71, tasks 42). Only core edits project settings. |
+| ui | `App/Updater.swift`: wraps `SPUStandardUpdaterController`, exposes `canCheckForUpdates`, `automaticallyChecksForUpdates`, `checkForUpdates()`. App menu "Check for Updates…" after About (`CommandGroup(after: .appInfo)`). Settings › Updates group (UI.md) built from plain values/closures, `#Preview`s. Then the pending toolbar check once /Applications/Mel.app is closed. |
+| orchestrator | Merge core, then ui, then platform. Cut v0.2: `release.sh`, `gh release create v0.2 --prerelease` with the DMG, commit + push `appcast.xml`. User installs v0.2 by hand one last time; the next release proves the in-app update. |
+
+Gate G5: a local Release build updates itself from a localhost feed to a higher build, and v0.2's `appcast.xml` is live on `main`.
+
 ## Status (2026-11-23)
 
 - Waves 0–3 merged to `main`. G0–G2 passed (G2's fake-script part covered by core's 5.1 EndToEndTests).
 - v0.1 published as a GitHub **pre-release** (tag `v0.1`, notarized DMG). Install test on the user's own account (not a separate one): Gatekeeper ✓ (quarantine, offline), Claude Code found from Finder/Dock ✓, first spec end to end ✓ (`~/virtual-internet-cafe`, 4 approved files), notification ✓, handoff ✓. Steps 2–3 (no Claude Code / signed out) skipped; covered by previews.
 - On `main` since v0.1: toolbar status text + padding (ui), Debug bundle id `com.kaanf.mel.debug` (core).
 - Agents must never touch `/Applications/Mel.app` or the `com.kaanf.mel` defaults.
-- Next: Wave 4.
+- Wave 4 merged (core 5b9883b, ui ad7c055, platform 8f251a8); ui toolbar check waits for the user to quit /Applications/Mel.app.
+- Next: Wave 5 (Sparkle), then v0.2.
 
 ## Risks
 

@@ -7,7 +7,7 @@ Only the orchestrator changes this file. Need a change? Write a request in your 
 ## Project conventions
 
 - Xcode project `Mel.xcodeproj`, shared scheme `Mel`. The app target `Mel` holds only `App/`, `Views/`, `Session/`; its test target `MelTests` holds `Session/` tests.
-- Everything below the UI lives in one local Swift package, **`MelKit/`** (`swift-tools-version: 6.2`, `.macOS(.v26)`), referenced by the project. Its library targets are the modules; its test targets are Swift Testing. No third-party dependencies.
+- Everything below the UI lives in one local Swift package, **`MelKit/`** (`swift-tools-version: 6.2`, `.macOS(.v26)`), referenced by the project. Its library targets are the modules; its test targets are Swift Testing. No third-party dependencies (the only one in the project is Sparkle 2, app target only).
 - The `Mel` scheme runs **all** tests (app + every MelKit test target), so the one `xcodebuild … test` command in CLAUDE.md stays the only command.
 - App targets use synchronized folders (`PBXFileSystemSynchronizedRootGroup`): adding a file never changes `project.pbxproj`. Don't add `.gitkeep` files (each needs a pbxproj exception, otherwise "Multiple commands produce .gitkeep"); a folder shows up with its first real file.
 - Bundle identifier `com.kaanf.mel`. Hardened Runtime on. **No App Sandbox.**
@@ -32,7 +32,7 @@ MelKit/                        (local package)
     ├── MelSpecTests/ MelStorageTests/        core
     └── MelAgentTests/ (+ Fixtures/) MelSystemTests/   platform
 Mel/                           (app target)
-├── App/        ui     MelApp (composition root)  → may import everything
+├── App/        ui     MelApp (composition root), Updater  → may import everything, the only place that imports Sparkle
 ├── Session/    core   AppState, SpecSession       → MelSpec, MelStorage, MelAgent, MelSystem
 └── Views/      ui     screens, Components/, Preview/  → SwiftUI, MelSpec, UniformTypeIdentifiers
 MelTests/Session/      core
