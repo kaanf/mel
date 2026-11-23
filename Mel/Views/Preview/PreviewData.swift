@@ -36,6 +36,14 @@ enum PreviewData {
             answer: .option(1, note: "Two rooms for now")
         ),
         Question(
+            id: "q3a", title: "What do teachers need to see before class?", why: "Shapes the teacher view.", shapes: .design,
+            options: [], answer: .text("Who is booked, and who is new to the studio.")
+        ),
+        Question(
+            id: "q3b", title: "Anything the studio already uses that this must work with?", why: "Existing tools limit the design.", shapes: .design,
+            options: [], answer: .agentDecides
+        ),
+        Question(
             id: "q4", title: "Until when can members cancel?", why: "Late cancellations leave empty spots that others could have booked.", shapes: .requirements,
             options: [
                 Option(label: "Any time before class", note: "Friendly, but spots can go unused."),
@@ -45,19 +53,26 @@ enum PreviewData {
         ),
     ]
 
+    /// Unanswered open question: no options, so the card shows a text field and Skip.
+    static let openQuestion = Question(
+        id: "q5", title: "What should the reminder message say?",
+        why: "The wording sets the studio's tone; there is no right option to pick from.", shapes: .design, options: []
+    )
+
     static let coverage: [CoverageItem] = [
-        CoverageItem(label: "Who uses it", state: .covered),
-        CoverageItem(label: "Payments", state: .covered),
-        CoverageItem(label: "Schedule", state: .covered),
-        CoverageItem(label: "Cancellations", state: .asking),
-        CoverageItem(label: "Waiting list", state: .notYet),
-        CoverageItem(label: "Notifications", state: .notYet),
-        CoverageItem(label: "Teacher view", state: .notYet),
+        CoverageItem(label: "Who uses it", state: .covered, phase: .product),
+        CoverageItem(label: "Payments", state: .covered, phase: .product),
+        CoverageItem(label: "Schedule", state: .covered, phase: .requirements),
+        CoverageItem(label: "Cancellations", state: .asking, phase: .requirements),
+        CoverageItem(label: "Waiting list", state: .notYet, phase: .requirements),
+        CoverageItem(label: "Teacher view", state: .notYet, phase: .design),
+        CoverageItem(label: "Notifications", state: .notYet, phase: .design),
+        CoverageItem(label: "Build order", state: .notYet, phase: .tasks),
     ]
 
     static let allAnswered: [Question] = questions.map { question in
         var question = question
-        question.answer = question.answer ?? .option(1, note: nil)
+        question.answer = question.answer ?? (question.options.isEmpty ? .text("Friendly and short.") : .option(1, note: nil))
         return question
     }
 
@@ -68,7 +83,8 @@ enum PreviewData {
     static let locked: [DocKind: DocStatus] = [.product: .locked, .requirements: .locked, .design: .locked, .tasks: .locked]
 
     static let discovery = spec(.discovery, locked, questions: questions)
-    static let discoveryThinking = spec(.discovery, locked, questions: Array(questions.prefix(3)))
+    static let discoveryOpen = spec(.discovery, locked, questions: Array(questions.prefix(5)) + [openQuestion])
+    static let discoveryThinking = spec(.discovery, locked, questions: Array(questions.prefix(5)))
     static let drafting = spec(.drafting(.requirements), [.product: .approved, .requirements: .writing, .design: .locked, .tasks: .locked])
     static let stoppedByUser = spec(.stopped(.requirements, .user), [.product: .approved, .requirements: .stopped, .design: .locked, .tasks: .locked])
     static let usageLimit = spec(
