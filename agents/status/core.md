@@ -1,6 +1,6 @@
 # core status
 
-Wave: 5 (Debug automatic-check follow-up ready to merge)
+Wave: 5 done (merged 95146bf), standing by
 Updated: 2026-11-23
 
 ## Done
@@ -54,7 +54,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Merge agent/core (Wave 5 follow-up: no automatic checks in Debug).
+- (none; standing by for the next wave)
 
 ## Questions for the user
 - (none)
