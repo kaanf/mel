@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 4 done, ready to merge (discovery-open fixture + parse test, rebased on main 5b9883b)
+Wave: 4 merged (main 8f251a8); standing by for the next wave
 Updated: 2026-11-23
 
 ## Done (Wave 3)
