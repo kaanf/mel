@@ -10,7 +10,10 @@ struct V2DecodeTests {
     @Test func projectContextDecodes() throws {
         let context = try ProjectContext.decode(fixtures.result("project-context"))
         #expect(context.modules.map(\.path).prefix(2) == ["Sources/FocusTimer", "Sources/TimerCore"])
-        #expect(context.modules.map(\.name).prefix(2) == ["FocusTimer", "TimerCore"])  // see platform status › For core
+        #expect(context.modules.map(\.name).prefix(2) == ["FocusTimer", "TimerCore"])
+        #expect(context.read.first?.label == "README.md")
+        #expect(context.read.count == 6)
+        #expect(Set(context.sources.keys) == ["product.md", "tech.md", "structure.md", "principles.md"])
     }
 
     @Test func intakeDecodes() throws {

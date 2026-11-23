@@ -55,7 +55,7 @@ public struct ClaudeCode: AgentAdapter {
             "--input-format", "text",
             "--include-partial-messages",
             "--restricted", "--strict-mcp-config",
-            "--tools", "Read,Glob,Grep",
+            "--tools", request.allowsTools ? "Read,Glob,Grep" : "",
             "--permission-mode", "manual", "--permission-prompts", "none",
             "--disable-slash-commands", "--no-chrome",
         ]

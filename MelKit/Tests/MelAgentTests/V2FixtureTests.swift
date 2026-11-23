@@ -29,9 +29,9 @@ struct V2FixtureTests {
 
     @Test func projectContext() throws {
         let context = try object("project-context")
-        #expect(Set(context.keys) == ["product", "tech", "structure", "principles"])
+        #expect(Set(context.keys) == ["product", "tech", "structure", "principles", "read", "sources"])
         let structure = try #require(context["structure"] as? String)
-        #expect(structure.contains("## Modules\n\n- FocusTimer (executable CLI) — Sources/FocusTimer\n- TimerCore — Sources/TimerCore"))
+        #expect(structure.contains("## Modules\n\n- FocusTimer — Sources/FocusTimer\n- TimerCore — Sources/TimerCore"))
     }
 
     @Test func intake() throws {
