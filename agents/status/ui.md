@@ -10,7 +10,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wait for orchestrator to start Wave 1. Then rebase on origin/main and add `#Preview`s for every Wave 0 component once the Xcode project exists, then 0.2 MelApp and 3.1–3.10 screens.
+- Hold (orchestrator, 2026-11-23). When asked after core merges: `git fetch origin && git rebase origin/main`, confirm components build in the project (gate G0). Only then Wave 1: Then rebase on origin/main and add `#Preview`s for every Wave 0 component once the Xcode project exists, then 0.2 MelApp and 3.1–3.10 screens.
 
 ## Notes
 - Components take plain values (strings, Int index, Bool), no model types, so they stay reusable; screens map `Question`/`DocStatus` to them.
