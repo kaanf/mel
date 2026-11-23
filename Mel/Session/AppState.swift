@@ -128,7 +128,7 @@ import MelSystem
 
     /// B1. Creates `specs/<slug>/` in `project` (nil: Product from an idea, A4x), copies attachments
     /// and selects the spec; the caller then calls `start()` on the session.
-    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, buildsOn: [String] = [], files: [URL] = [], logs: [String] = []) throws -> SpecSession { fatalError("stub") }
+    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession { fatalError("stub") }
 
     // System actions for views (views never import MelSystem)
     func signIn() {
