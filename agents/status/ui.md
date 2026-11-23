@@ -21,7 +21,7 @@ Updated: 2026-11-23
   - Launch: MelApp calls `scanForAgent()` once in the main window's `.task`.
   - Kept core's `.sessionNotFound` in FailureSheet's `.user` case.
 
-- Conflict preview: ReviewView "Changed in another app" (edit mode, `conflict: .requirements`) via `PreviewData.session(conflict:)`. Rebased on d4bc101, full test green (119 passed). **ready to merge**
+- Conflict preview: ReviewView "Changed in another app" (edit mode, `conflict: .requirements`) via `PreviewData.session(conflict:)`. Rebased on d4bc101, full test green (119 passed). merged to main (81ea2b7). Wave 2 done.
 
 ## In progress
 - (nothing)
