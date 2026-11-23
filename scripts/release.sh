@@ -1,6 +1,9 @@
 #!/bin/sh
 # Builds .build/release/Mel-<version>.dmg (DESIGN.md › Distribution):
-#   archive → export (Developer ID) → notarize + staple app → DMG → sign, notarize + staple DMG.
+#   archive → export (Developer ID) → notarize + staple app → DMG → sign, notarize + staple DMG → appcast.xml.
+# The build number (CFBundleVersion, what Sparkle compares) is the commit count, so every release from main is higher.
+# After notarizing it signs the DMG with the Sparkle EdDSA key from the login Keychain and writes appcast.xml
+# at the repo root; commit it after `gh release create v<version>` with the DMG.
 #
 # Signed release: TEAM_ID=SGWP227GBQ scripts/release.sh
 #   Needs "Developer ID Application" for TEAM_ID in the keychain and the notary profile NOTARY_PROFILE
@@ -16,6 +19,7 @@ APP="$OUT/Mel.app"
 NOTARY_PROFILE=${NOTARY_PROFILE:-mel-notary}
 VERSION=$(xcodebuild -project Mel.xcodeproj -scheme Mel -configuration Release -showBuildSettings 2>/dev/null |
     awk '$1 == "MARKETING_VERSION" { print $3; exit }')
+BUILD=$(git rev-list --count HEAD)
 DMG="$OUT/Mel-$VERSION.dmg"
 
 if [ -n "${TEAM_ID:-}" ]; then
@@ -40,15 +44,17 @@ notarize() {  # stapler fails unless notarization was accepted, so `set -e` stop
     xcrun stapler staple "$2"
 }
 
-echo "→ archive $VERSION"
+echo "→ archive $VERSION ($BUILD)"
 if [ -z "${TEAM_ID:-}" ]; then
     xcodebuild archive -project Mel.xcodeproj -scheme Mel -configuration Release \
         -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath .build/DerivedData \
+        CURRENT_PROJECT_VERSION="$BUILD" \
         CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet
     ditto "$ARCHIVE/Products/Applications/Mel.app" "$APP"
 else
     xcodebuild archive -project Mel.xcodeproj -scheme Mel -configuration Release \
         -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath .build/DerivedData \
+        CURRENT_PROJECT_VERSION="$BUILD" \
         CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$IDENTITY" DEVELOPMENT_TEAM="$TEAM_ID" -quiet
 
     echo "→ export (Developer ID)"
@@ -93,6 +99,27 @@ if [ -n "${TEAM_ID:-}" ]; then
     echo "→ notarize dmg"
     notarize "$DMG" "$DMG"
     spctl --assess --type open --context context:primary-signature -vv "$DMG"
+
+    echo "→ appcast.xml"
+    # sign_update ships with the Sparkle package pinned in the project; prints sparkle:edSignature="…" length="…"
+    SIGNATURE=$(.build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update "$DMG")
+    cat > appcast.xml <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>Mel</title>
+        <item>
+            <title>$VERSION</title>
+            <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
+            <sparkle:version>$BUILD</sparkle:version>
+            <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/kaanf/mel/releases/download/v$VERSION/Mel-$VERSION.dmg" type="application/octet-stream" $SIGNATURE/>
+        </item>
+    </channel>
+</rss>
+EOF
+    echo "✓ appcast.xml (build $BUILD)"
 fi
 
 echo "✓ $DMG"
