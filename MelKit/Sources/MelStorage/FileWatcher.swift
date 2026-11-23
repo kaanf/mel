@@ -56,7 +56,11 @@ public final class FileWatcher: Sendable {
 
     /// Call before Mel writes `text` to the file, so the write isn't reported as external.
     public func noteWritten(_ text: String, for kind: DocKind) {
-        state.withLock { $0.ownWrites[kind, default: []].append(text) }
+        state.withLock { state in
+            // Text equal to the file causes no change to clear it; pending, it would swallow a later edit back to it.
+            guard state.known[kind] != text else { return }
+            state.ownWrites[kind, default: []].append(text)
+        }
     }
 
     /// Reload when the editor has nothing unsaved; otherwise the user picks a version.

@@ -54,7 +54,7 @@ final class FileWatcherTests {
         withExtendedLifetime(watcher) {}
     }
 
-    @Test func checkBeforeOwnWriteLandsReportsNothing() throws {
+    @Test func checkBeforeOwnWriteLandsReportsNothing() async throws {
         let watcher = watch()
         watcher.noteWritten("# Product\nMine\n", for: .product)
         watcher.check()                                   // file still has the old text
@@ -62,12 +62,13 @@ final class FileWatcherTests {
         watcher.check()
         #expect(changes.list.withLock { $0 }.isEmpty)
 
+        // The live stream may report this first; either way it's reported once.
         try "# Product\nTheirs\n".write(to: url(.product), atomically: true, encoding: .utf8)
         watcher.check()
-        #expect(changes.list.withLock { $0 } == ["product: # Product\nTheirs\n"])
+        #expect(await reported(1) == ["product: # Product\nTheirs\n"])
     }
 
-    @Test func rapidOwnWritesAreSkipped() throws {
+    @Test func rapidOwnWritesAreSkipped() async throws {
         let watcher = watch()
         watcher.noteWritten("one", for: .product)
         try "one".write(to: url(.product), atomically: true, encoding: .utf8)
@@ -81,7 +82,17 @@ final class FileWatcherTests {
         // An external edit back to a text Mel wrote earlier is still reported.
         try "two".write(to: url(.product), atomically: true, encoding: .utf8)
         watcher.check()
-        #expect(changes.list.withLock { $0 } == ["product: two"])
+        #expect(await reported(1) == ["product: two"])
+    }
+
+    @Test func ownWriteEqualToTheFileDoesNotHideALaterEdit() async throws {
+        let watcher = watch()
+        watcher.noteWritten("# Product\n", for: .product)   // same as the file: nothing to wait for
+        try "# Product\nTheirs\n".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.check()
+        try "# Product\n".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.check()
+        #expect(await reported(2) == ["product: # Product\nTheirs\n", "product: # Product\n"])
     }
 
     @Test func otherFilesAreIgnored() async throws {
