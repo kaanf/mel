@@ -12,6 +12,23 @@ struct MainView: View {
     @State private var setupStep: SetupFlow.Step?
 
     var body: some View {
+        #if DEBUG
+        // `-screen failure`: C2's dialog in the window, where the design draws it (sheets can't be captured).
+        if DebugScreen.current == .failure {
+            FailureSheet(session: PreviewData.stoppedSession, kind: .architecture, reason: .usageLimit(resetsAt: nil))
+                .padding(.top, 72)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .ignoresSafeArea()
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if let setupStep {
             SetupFlow(step: setupStep) { newSpec in
                 self.setupStep = nil

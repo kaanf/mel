@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6, B7, C1 done; next C2
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6, B7, C1, C2 done; next C3
 Updated: 2026-11-23
 
 ## Done
@@ -107,8 +107,11 @@ Updated: 2026-11-23
 - C1 Refine (`Views/Refine/RefineView.swift`, new; MainView routes `.edited` files to it): banner, diff of the approved snapshot vs the file (`DiffLine.hunks`: heading above, changed lines, one line after; the marker replaces a list dash as drawn), What this affects (`session.impact`, "Checking what changes here…" until it's back), Why did this change? (2-line editor; saved via `saveDecision(title: "Changed <File>", …)` before Keep/Refine), Keep Them as They Are → `keepAsIs`, Refine n Files → `refine`, Undo Change → `undoEdit`. Inspector: decisions newest first (newest accent box, replaced faded). Debug screen `edited`. One compare pass: matches.
   - Deviations: no Agent/Decisions tab row (Agent hidden, V2 §2); the decision title is "Changed <File>" (the mock's is a summary the agent would write).
 
+- C2 Agent stopped (`Views/Failure/FailureSheet.swift` restyled, still a sheet from Drafting): logo with alert badge, title 15/20, explanation per stop reason, file list (approved ✓, stopped ✕ with "Stopped at step n of m / Steps … saved" from `draftStep`, not started ring), choices as RadioRows (new `insets:`), Show Details link, Not Now, primary (Resume Later → `resumeLater`, Sign In…, Resume, Open File). Debug screen `failure` draws the dialog in the window (sheets can't be captured); `stopped` shows it as the real sheet. One compare pass: matches.
+  - Hidden (V2 §2): Continue now with Codex. System sheet instead of the drawn dialog shadow (Theme note).
+
 ## Next
-- C2 Agent stopped next, then C3, C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- C3 Home next, then C4; then the full test run and one ready-to-merge message, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 

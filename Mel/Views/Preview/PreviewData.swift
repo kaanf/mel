@@ -450,4 +450,9 @@ enum PreviewData {
             ]
         )
     }()
+
+    // C2 Agent stopped as drawn: ARCHITECTURE.md stopped at step 3.
+    static let stoppedSession = SpecSession.preview(
+        usageLimit, documents: [.product: "# Product", .requirements: reviewMarkdown, .architecture: "# Architecture"], activity: draftingActivity, draftStep: 3
+    )
 }

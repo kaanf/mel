@@ -418,6 +418,10 @@ enum Theme {
         static let impactRow: CGFloat = 46
         static let decisionsWidth: CGFloat = 288
         static let whyLines = 2
+        /// C2: dialog 520 wide; logo 52 with a 24 pt alert badge (white disc 22) at its lower right.
+        static let dialogWidth: CGFloat = 520
+        static let dialogLogo: CGFloat = 52
+        static let alertBadge: CGFloat = 24
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
