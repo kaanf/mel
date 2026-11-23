@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 7, done (ready to merge)
+Wave: 7, merged (main 90c28df); standing by
 Updated: 2026-11-23
 
 ## Done (Wave 7)
@@ -67,7 +67,7 @@ Updated: 2026-11-23
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- Wave 7 real-run check when the orchestrator asks. Otherwise waiting.
+- Stand by. Wave 7 real-run check starts when the orchestrator says ui has wired the screens: Feature on an existing repo + Product from an idea, Debug build only, never /Applications/Mel.app.
 - Scratchpad probe copies are gone after a session ends; recreate from `docs/research/v2-prompts/probe/` per its README.
 
 ## Notes
