@@ -56,6 +56,25 @@ struct StatusBadge: View {
     }
 }
 
+/// Status in a window toolbar: "Title · detail", or just "Title" when `compact`.
+/// AppKit moves a toolbar item that doesn't fit at its ideal width into the » overflow
+/// (ViewThatFits doesn't help there), so the screen measures its width and passes `compact`.
+struct ToolbarStatus: View {
+    let status: StatusBadge.Status
+    var title: String?
+    var detail: String?
+    var compact = false
+
+    /// Detail-area width (content plus inspector) below which the full text no longer fits
+    /// next to the title and the other toolbar buttons. Measured in the Debug app.
+    static let fullTextWidth: CGFloat = 660
+
+    var body: some View {
+        StatusBadge(status: status, title: compact || detail == nil ? title : "\(title ?? status.title) · \(detail!)")
+            .padding(.horizontal, 10)   // the glass capsule adds no inset of its own
+    }
+}
+
 #Preview {
     VStack(alignment: .leading, spacing: 8) {
         StatusBadge(status: .ready)
@@ -65,6 +84,14 @@ struct StatusBadge: View {
         StatusBadge(status: .locked)
         StatusBadge(status: .approved)
         StatusBadge(status: .needsYou, title: "Not signed in")
+    }
+    .padding()
+}
+
+#Preview("Toolbar status, full and compact") {
+    VStack(alignment: .leading, spacing: 8) {
+        ToolbarStatus(status: .needsYou, detail: "Claude Code is waiting for an answer")
+        ToolbarStatus(status: .needsYou, detail: "Claude Code is waiting for an answer", compact: true)
     }
     .padding()
 }

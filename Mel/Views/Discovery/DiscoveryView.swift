@@ -6,6 +6,16 @@ struct DiscoveryView: View {
     let session: SpecSession
     @Binding var showInspector: Bool
     @State private var editingIdea = false
+    @State private var width: CGFloat = .infinity
+    /// The question on screen when Discovery was opened. It doesn't take keyboard focus, so arrow keys
+    /// keep moving through the sidebar; questions that arrive later do (digits and ↩ work right away).
+    @State private var openedOn: String?
+
+    init(session: SpecSession, showInspector: Binding<Bool>) {
+        self.session = session
+        _showInspector = showInspector
+        _openedOn = State(initialValue: session.currentQuestion?.id)
+    }
 
     private var spec: Spec { session.spec }
 
@@ -38,7 +48,12 @@ struct DiscoveryView: View {
         .navigationTitle("Discovery")
         .navigationSubtitle(spec.name)
         .toolbar {
-            ToolbarItem(placement: .status) { status.padding(.horizontal, 10) }   // the glass capsule adds no inset of its own
+            // Two items, not one: NSToolbar doesn't widen an item whose content grows.
+            if compact {
+                ToolbarItem(placement: .status) { status }
+            } else {
+                ToolbarItem(placement: .status) { status }
+            }
             if spec.stage == .discovery {
                 ToolbarItem {
                     Button("Draft Now") { Task { await session.draftNow() } }
@@ -55,6 +70,7 @@ struct DiscoveryView: View {
             DiscoveryInspector(spec: spec)
                 .inspectorColumnWidth(min: 220, ideal: 260)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .focusedSceneValue(\.inspectorShown, $showInspector)
         .sheet(isPresented: $editingIdea) {
             IdeaEditor(idea: spec.idea) { session.updateIdea($0) }
@@ -64,7 +80,7 @@ struct DiscoveryView: View {
     @ViewBuilder
     private var current: some View {
         if let question = session.currentQuestion {
-            QuestionCard(session: session, question: question, number: session.answeredQuestions.count + 1)
+            QuestionCard(session: session, question: question, number: session.answeredQuestions.count + 1, takesFocus: question.id != openedOn)
                 .id(question.id)
         } else if let error = session.lastError {
             GroupBox {
@@ -89,14 +105,16 @@ struct DiscoveryView: View {
         }
     }
 
+    private var compact: Bool { width < ToolbarStatus.fullTextWidth }
+
     @ViewBuilder
     private var status: some View {
         if session.currentQuestion != nil {
-            StatusBadge(status: .needsYou, title: "Needs you · Claude Code is waiting for an answer")
+            ToolbarStatus(status: .needsYou, detail: "Claude Code is waiting for an answer", compact: compact)
         } else if session.lastError != nil {
-            StatusBadge(status: .stopped)
+            ToolbarStatus(status: .stopped)
         } else if session.isRunning {
-            StatusBadge(status: .checking, title: "Running · Claude Code is thinking")
+            ToolbarStatus(status: .checking, title: "Running", detail: "Claude Code is thinking", compact: compact)
         }
     }
 }
@@ -243,6 +261,7 @@ private struct QuestionCard: View {
     let session: SpecSession
     let question: Question
     let number: Int
+    let takesFocus: Bool
     @State private var choice: Int?
     @State private var note = ""
     @State private var text = ""
@@ -250,10 +269,11 @@ private struct QuestionCard: View {
     @FocusState private var noteFocused: Bool
 
     /// `question.options.count` stands for "You decide".
-    init(session: SpecSession, question: Question, number: Int) {
+    init(session: SpecSession, question: Question, number: Int, takesFocus: Bool) {
         self.session = session
         self.question = question
         self.number = number
+        self.takesFocus = takesFocus
         _choice = State(initialValue: question.options.firstIndex(where: \.suggested))
     }
 
@@ -285,6 +305,7 @@ private struct QuestionCard: View {
         .focusEffectDisabled()
         .focused($cardFocused)
         .onAppear {
+            guard takesFocus else { return }
             if question.options.isEmpty { noteFocused = true } else { cardFocused = true }
         }
         // Digits pick an option unless a text field is taking text; ↩ is Continue (default action).
