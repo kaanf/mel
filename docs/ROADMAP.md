@@ -139,7 +139,9 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - v0.2.1 merged to `main` (version 0.2.1; ui: sidebar ↑ from PRODUCT.md to Discovery, short "Needs you" status below ~860 pt). All agents standing by.
 - 2026-11-23: v2 design adopted ([V2.md](V2.md), OQ #20–22). Phased discovery (Wave 4) is replaced by the short intake, so G4 is dropped.
 - v0.2.1 published (build 264, notarized, honeycomb icon); appcast.xml on main. Waiting for the user to see the in-app update from v0.2.
-- Wave 6 step 0 merged (887ca9e, CONTRACTS v2 1f76788). Wave 6 running on all three agents.
+- Wave 6: core and platform merged (core 0e57a16, platform 7ab5ba5). ui screens in progress (done: sidebar, pill, A1, A1x, A2, A3; next B1). Contract additions since: FoundRepository, A3 read/sources/branch/fileCount, allowsTools, B1 specFolder + createSpec parent (all in CONTRACTS).
+- Wave 7 core (SpecSession/AppState v2) in progress. Open follow-ups for core: persist context.json, module-name note, analyze/impact without tools.
+- Waiting on the user: sidebar top row (project name + Ready, as built), v0.2.1 in-app update test.
 
 ## Risks
 
