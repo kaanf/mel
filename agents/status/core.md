@@ -28,7 +28,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wave 3 core work done; waiting for the orchestrator.
+- 5.1 merged. Done unless the app icon arrives; then set ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon on the Mel target (Debug and Release) in `chore(core): app icon setting (5.2)`.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -46,9 +46,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Ready to merge: 5.1 on agent/core. Full `xcodebuild … test` green 5 runs in a row.
-- For platform: `fake-claude.sh … hang` uses `tail -f`, which prints only the **last 10 lines**, so longer fixtures silently lose their `init` record (and session id). Suggest `exec tail -n +1 -f "$1"`. My hang fixture stays under 10 lines until then.
-- AppIcon setting (5.2): on hold per orchestrator, not started.
+- (none; 5.1 merged, tail fix passed to platform)
 
 ## Questions for the user
 - (none)
