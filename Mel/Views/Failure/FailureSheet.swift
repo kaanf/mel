@@ -74,7 +74,7 @@ struct FailureSheet: View {
         case .signedOut: return "Claude Code is no longer signed in. \(unchanged)"
         case .crashed: return "Claude Code quit unexpectedly. \(unchanged)"
         case .timeout: return "Claude Code stopped responding. \(unchanged)"
-        case .user: return unchanged
+        case .user, .sessionNotFound: return unchanged
         }
     }
 
