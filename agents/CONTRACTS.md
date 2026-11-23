@@ -206,6 +206,16 @@ public struct FoundRepository: Identifiable, Hashable, Sendable { var url: URL; 
 //   modified = mtime of .git/index (or .git/HEAD). No git process, no file walk.
 ```
 
+A3 data (requested by ui):
+
+```swift
+// MelSpec (core): the project-context JSON reply gains "read": [{"label","source"}] and "sources": {"product.md": "From README", …}
+public struct ReadItem: Codable, Hashable, Sendable { var label: String; var source: String }
+extension ProjectContext { var read: [ReadItem]; var sources: [String: String] }   // file name → card state word
+// AppState.ProjectSetup (core) gains: branch: String?, fileCount: Int?
+// MelSystem (platform): Git.branch(at:) -> String?  (reads .git/HEAD, no process);  Git.fileCount(at:) -> Int?  (`git ls-files -z`, one process, off main)
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
