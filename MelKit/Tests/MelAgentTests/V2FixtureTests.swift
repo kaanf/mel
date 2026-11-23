@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import MelAgent
 
-/// v2 runs recorded with the provisional prompts in docs/research/v2-prompts/. Checks the stream and the
+/// v2 runs of core's prompts, recorded with docs/research/v2-prompts/. Checks the stream and the
 /// JSON keys only; core's decoders (`ProjectContext.decode`, `AnalyzeResult.decode`, …) get their own tests.
 struct V2FixtureTests {
     let claude = ClaudeCode()
@@ -73,6 +73,14 @@ struct V2FixtureTests {
         let items = try #require(try object("impact")["items"] as? [[String: String]])
         #expect(items.map { $0["kind"] } == ["tasks"])  // unaffected files are left out
         #expect(items.allSatisfy { Set($0.keys) == ["kind", "what", "count"] })
+    }
+
+    /// Recorded with `allowsTools: false` (`--tools ""`): files are inline, so one turn and no steps.
+    @Test func analyzeAndImpactRunWithoutTools() throws {
+        for name in ["analyze", "impact"] {
+            #expect(try fixtureText("claude-2.1.311-\(name).jsonl").contains(#""tools":[]"#))
+            #expect(try events(name).allSatisfy { if case .step = $0 { false } else { true } })
+        }
     }
 
     /// Attachments under specs/<slug>/.mel/attachments/ open with Read under the read-only flags, images included.
