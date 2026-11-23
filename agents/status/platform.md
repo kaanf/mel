@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 6 follow-ups **ready to merge** (re-recorded fixtures, Git.Repository, branch, fileCount); project-context re-record waits for core's read/sources prompt
+Wave: 7 prep, **WIP** (saved for shutdown 2026-11-23): allowsTools mapping + project-context re-record not done
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -60,9 +60,13 @@ Updated: 2026-11-23
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- When core's project-context prompt with `read`/`sources` is on main: re-record project-context only (`docs/research/v2-prompts/`, README there), check `ProjectContext.decode`, push.
-- When SpecSession uses `Git.specPaths(slug:project:)`: drop the v1 `Git.specPaths` constant and its test.
-- Then Wave 7 real-run check.
+Where I stopped (allowsTools task from the orchestrator, plus re-recording project-context after core's 2d412a2):
+- Done: `docs/research/v2-prompts/record.py` takes `--no-tools`, which passes `--tools ""` (claude 2.1.311 `--help`: `Use "" to disable all tools`). Committed as WIP.
+- Not verified: the first `--no-tools` analyze recording (`record.py --no-tools prompts/analyze.md focus-timer out/analyze-no-tools.jsonl`, core's analyze.md still says "You may read files…") **ran over 400 s without finishing**, and I stopped it. Next step: rerun it with a timeout and look at the stream. Find out whether `--tools ""` hangs with `-p` and stdin (try `--tools=""`, or `--disallowed-tools`), or whether the model just runs long. Needed: a fixture `claude-2.1.311-analyze-no-tools.jsonl` with zero tool_use records and `"tools":[]` in init.
+- Then: add `allowsTools: Bool = true` to `AgentRequest` (MelAgent/AgentTypes.swift is platform's module; core asked for it, not on main yet). Make `ClaudeCode.arguments(for:)` pass `--tools ""` when false, else `Read,Glob,Grep`. Add a test in ClaudeCodeTests (args) and V2FixtureTests (no tool steps in the fixture). Update AGENT-INTEGRATION.md (invocation + analyze/impact rows).
+- Then: re-record project-context against main's project.md (adds `read` + `sources`). See the steps in docs/research/v2-prompts/README.md: build.py may need no change (placeholder still `mode`). Put the reply into probe/inputs/context.json, check `ProjectContext.decode`, and update the V2DecodeTests/V2FixtureTests expectations if the modules change.
+- Also pending: drop v1 `Git.specPaths` once SpecSession uses `specPaths(slug:project:)`. Wave 7 real-run check after.
+- Scratchpad probe copy (`…/scratchpad/v2`) is gone after shutdown. Recreate it from `docs/research/v2-prompts/probe/` per the README.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
