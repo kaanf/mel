@@ -1,22 +1,40 @@
 import SwiftUI
 import MelSpec
 
-/// Main window: library sidebar, the selected stage, its inspector, and the New Spec sheet.
+/// Main window: library sidebar, the selected stage and its inspector; B1 New Spec and Lane A take the whole window.
 struct MainView: View {
     @Environment(AppState.self) private var state
     @AppStorage("didShowWelcome") private var didShowWelcome = false
     @Binding var isShowingNewSpec: Bool
     @State private var item: SidebarItem?
     @State private var showInspector = true
+    /// B1's Add Project… (A2) or Read Repo (A3); back to B1 when done.
+    @State private var setupStep: SetupFlow.Step?
 
     var body: some View {
-        if !didShowWelcome || state.projects.isEmpty {
+        if let setupStep {
+            SetupFlow(step: setupStep) { newSpec in
+                self.setupStep = nil
+                isShowingNewSpec = newSpec
+            }
+        } else if !didShowWelcome || state.projects.isEmpty {
             SetupFlow(step: initialSetupStep) { newSpec in
                 isShowingNewSpec = newSpec
+            }
+        } else if isShowingNewSpec {
+            NewSpecView(draft: initialDraft, onAddProject: { setupStep = .pickProject }, onReadRepo: { setupStep = .projectSetup($0) }) {
+                isShowingNewSpec = false
             }
         } else {
             library
         }
+    }
+
+    private var initialDraft: NewSpecView.Draft {
+        #if DEBUG
+        if let draft = DebugScreen.current?.newSpecDraft { return draft }
+        #endif
+        return NewSpecView.Draft()
     }
 
     private var initialSetupStep: SetupFlow.Step {
@@ -37,9 +55,6 @@ struct MainView: View {
             } else {
                 ContentUnavailableView("No Spec Selected", systemImage: "doc.text", description: Text("Choose a spec in the sidebar."))
             }
-        }
-        .sheet(isPresented: $isShowingNewSpec) {
-            NewSpecSheet()
         }
         .onAppear {
             item = state.selection.flatMap { id in state.specs.first { $0.id == id } }.map(SidebarItem.current)

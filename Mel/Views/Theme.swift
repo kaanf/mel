@@ -126,9 +126,12 @@ enum Theme {
         /// How far to move the glyphs down so they sit in the line box like CSS (half the extra
         /// leading above, half below). `.lineHeight(.exact)` puts all of it below.
         var glyphShift: CGFloat {
-            guard let lineHeight, let height = Self.measuredHeight[Key(size: size, mono: design == .monospaced)] else { return 0 }
-            return (lineHeight - height) / 2
+            guard let lineHeight, let naturalHeight else { return 0 }
+            return (lineHeight - naturalHeight) / 2
         }
+
+        /// The font's own line height as SwiftUI lays it out (see `measuredHeight`).
+        var naturalHeight: CGFloat? { Self.measuredHeight[Key(size: size, mono: design == .monospaced)] }
 
         struct Key: Hashable { let size: CGFloat; let mono: Bool }
 
@@ -164,7 +167,7 @@ enum Theme {
         static let sectionTitle = TextStyle(size: 15, weight: .semibold, lineHeight: 20)
         /// 14/21 · A2, A3, B7, C3 intro paragraph.
         static let intro = TextStyle(size: 14, weight: .regular, lineHeight: 21)
-        /// 14/18 semibold · B1 size card title.
+        /// 14/18 semibold · B1 project pop-up.
         static let cardTitle = TextStyle(size: 14, weight: .semibold, lineHeight: 18)
         /// 13/20 · B4 story text and criteria.
         static let prose = TextStyle(size: 13, weight: .regular, lineHeight: 20)
@@ -341,6 +344,30 @@ enum Theme {
         static let folderIcon: CGFloat = 18
         static let contextCardMin: CGFloat = 330
         static let smallCheck: CGFloat = 12
+        /// B1: column max 620; logo 32; project row min 52 (18 pt folder); Quick fix field rows min 38 with a
+        /// 104 pt label; settings rows 44 (switch row min 52); settings button folder 15; Ready check 10;
+        /// pop-up arrows drawn 9 × 11; paperclip 13; evidence remove button 18 with an 8 pt cross; topic dot 6.
+        static let newSpecWidth: CGFloat = 620
+        static let logoSmall: CGFloat = 32
+        static let projectRow: CGFloat = 52
+        static let bugRow: CGFloat = 38
+        static let bugLabelWidth: CGFloat = 104
+        static let settingsRow: CGFloat = 44
+        static let buttonFolderIcon: CGFloat = 15
+        static let readyCheck: CGFloat = 10
+        static let popUpWidth: CGFloat = 9
+        static let popUpHeight: CGFloat = 11
+        /// 8 · arrows of the B1 project pop-up (the mock's native <select>).
+        static let selectArrowWidth: CGFloat = 8
+        static let paperclipIcon: CGFloat = 13
+        static let removeButton: CGFloat = 18
+        static let removeIcon: CGFloat = 8
+        static let topicDot: CGFloat = 6
+        /// 36 × 32 · B1 Settings button (toolbar glass group) with a 16 pt gear.
+        static let toolbarIconButton: CGFloat = 36
+        static let settingsIcon: CGFloat = 16
+        /// 6 rows · B1 idea text area.
+        static let ideaLines = 6
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

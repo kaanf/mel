@@ -1,0 +1,33 @@
+import SwiftUI
+
+/// The design's switch (B1 "Let Mel fill small gaps", B7, C4): 32 × 18 track, 14 pt white knob.
+struct DesignSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            Capsule()
+                .fill(configuration.isOn ? Theme.Colors.accent : Theme.Colors.switchOffFill)
+                .frame(width: Theme.Size.switchWidth, height: Theme.Size.switchHeight)
+                .overlay(alignment: configuration.isOn ? .trailing : .leading) {
+                    Circle()
+                        .surface(Theme.Colors.background, .switchKnob, in: Circle())
+                        .frame(width: Theme.Size.switchKnob, height: Theme.Size.switchKnob)
+                        .padding(Theme.Space.x2)
+                }
+                .animation(.timingCurve(0.25, 0.46, 0.45, 0.94, duration: 0.15), value: configuration.isOn)
+        }
+        .buttonStyle(.plain)
+        .accessibilityRepresentation { Toggle(isOn: configuration.$isOn) { configuration.label } }
+    }
+}
+
+#Preview("Switch") {
+    @Previewable @State var on = true
+    @Previewable @State var off = false
+    VStack(spacing: Theme.Space.x16) {
+        Toggle("On", isOn: $on)
+        Toggle("Off", isOn: $off)
+    }
+    .toggleStyle(DesignSwitchStyle())
+    .padding(Theme.Space.x32)
+    .background(Theme.Colors.background)
+}

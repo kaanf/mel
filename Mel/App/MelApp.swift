@@ -5,7 +5,11 @@ import MelAgent
 struct MelApp: App {
     @State private var state = Self.makeState()
     @State private var updater = Updater()
+    #if DEBUG
+    @State private var isShowingNewSpec = DebugScreen.current?.newSpecDraft != nil
+    #else
     @State private var isShowingNewSpec = false
+    #endif
 
     var body: some Scene {
         WindowGroup {

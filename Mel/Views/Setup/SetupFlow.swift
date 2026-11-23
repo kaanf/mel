@@ -24,7 +24,8 @@ struct SetupFlow: View {
                 }
             case .pickProject:
                 PickProjectView(
-                    onBack: { step = .welcome },
+                    // From B1's Add Project… (a library exists): Back returns to New Spec.
+                    onBack: { if didShowWelcome && !state.projects.isEmpty { onFinish(true) } else { step = .welcome } },
                     onRead: { step = .projectSetup($0) },
                     onIdea: { step = .firstSpec }
                 )
