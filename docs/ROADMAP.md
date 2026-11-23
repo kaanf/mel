@@ -141,6 +141,7 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - v0.2.1 published (build 264, notarized, honeycomb icon); appcast.xml on main. Waiting for the user to see the in-app update from v0.2.
 - Wave 6: core and platform merged (core 0e57a16, platform 7ab5ba5). ui screens in progress (done: sidebar, pill, A1, A1x, A2, A3; next B1). Contract additions since: FoundRepository, A3 read/sources/branch/fileCount, allowsTools, B1 specFolder + createSpec parent (all in CONTRACTS).
 - Wave 7 core (SpecSession/AppState v2) in progress. Open follow-ups for core: persist context.json, module-name note, analyze/impact without tools.
+- Saved before shutdown: core cd39ee9 (WIP, MelTests session tests not yet v2, do not merge), ui a9d89e6 (next B1, A4x), platform 379ac91 (WIP: `--tools ""` analyze ran >400 s without finishing; check before mapping allowsTools).
 - Waiting on the user: sidebar top row (project name + Ready, as built), v0.2.1 in-app update test.
 
 ## Risks
