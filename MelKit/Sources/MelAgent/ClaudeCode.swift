@@ -79,6 +79,7 @@ public struct ClaudeCode: AgentAdapter {
         ("usage limit", .usageLimit(resetsAt: nil)),
         ("limit reached", .usageLimit(resetsAt: nil)),
         ("rate limit", .usageLimit(resetsAt: nil)),
+        ("no conversation found", .sessionNotFound),
     ]
 
     static let apiKeyMessage = "Claude Code is set up to use an API key. Mel only runs on your Claude subscription."

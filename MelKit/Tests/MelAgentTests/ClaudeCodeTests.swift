@@ -129,9 +129,7 @@ struct ClaudeCodeTests {
     }
 
     @Test func unknownResumeSession() throws {
-        let events = try events("claude-2.1.311-unknown-resume.jsonl")
-        guard case .failed(.crashed(let message)) = events.last else { Issue.record("not crashed"); return }
-        #expect(message.contains("No conversation found"))
+        #expect(try events("claude-2.1.311-unknown-resume.jsonl").last == .failed(.sessionNotFound))
     }
 
     @Test func apiKeyFailsTheRun() {
@@ -147,6 +145,7 @@ struct ClaudeCodeTests {
     @Test func failureTable() {
         #expect(ClaudeCode.reason(for: "Not logged in · Please run /login") == .signedOut)
         #expect(ClaudeCode.reason(for: "Claude AI usage limit reached") == .usageLimit(resetsAt: nil))
+        #expect(ClaudeCode.reason(for: "No conversation found with session ID: abc") == .sessionNotFound)
         #expect(ClaudeCode.reason(for: "boom") == .crashed("boom"))
     }
 
