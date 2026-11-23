@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 3
+Wave: 4 (UI done on a stub; waiting for core's model change and a toolbar check)
 Updated: 2026-11-23
 
 ## Done
@@ -33,16 +33,23 @@ Updated: 2026-11-23
 
 - fix(ui) status text in toolbar (3.5): StatusBadge is an HStack (Image + Text, lineLimit 1, tail truncation, image hidden for VoiceOver, combined element) instead of a Label, because toolbars draw Labels icon-only. Checked in the running debug app with fixture specs (launch-argument `-library`): Discovery shows "Needs you · Claude Code is waiting for an answer", Drafting shows "Stopped". Not checked: "Running · …" (needs a live agent run) and truncation in a narrow window (the app quit during that check, no crash report; the user was testing at the same time). Rebased on 25a5d7c, full test green (122). **ready to merge**
 
-- fix(ui) toolbar padding (3.5, 8dddc94): 10 pt horizontal padding around the `.status` toolbar items in Discovery and Drafting (not in StatusBadge itself, which also sits inline). Compiles, test green (122). NOT checked in the running app: padding and narrow-window truncation are deferred to the user's next build (orchestrator).
+- fix(ui) toolbar padding (3.5, 8dddc94): 10 pt horizontal padding around the `.status` toolbar items in Discovery and Drafting (not in StatusBadge itself, which also sits inline). Compiles, test green (122). NOT verified: padding and truncation are unchecked. My debug screenshots turned out to be of the user's app. Open risk: with `.padding` the toolbar may give the status item too little width again (icon only); if so, try `.fixedSize()` before the padding.
 
 ## In progress
-- (nothing)
+- Wave 4 (b35260c), built on stub ce35410 (`Answer.text`, `CoverageItem.phase` default `.product`, tolerant decoding). Drop ce35410 when rebasing on core's merge.
+  - Open question card (`options` empty): multi-line `TextField(axis: .vertical)`, Continue ↩ → `.text(trimmed)` (disabled when empty), Skip → `.agentDecides`, field focused on appear, digit keys ignored.
+  - Answered open questions: a row opens a popover to edit the text; Save with empty text → `.agentDecides`; unchanged answer sends nothing. Shown as the text, or "Skipped · the agent decides".
+  - Inspector: one Section per phase in file order (only phases with items), header "Phase · n of m", footer on the last.
+  - Previews: "Open Question" (answered text + skipped open question in the list, phased inspector), "Inspector". Fixtures: `PreviewData.openQuestion`, `discoveryOpen`, coverage with phases.
+  - Full test: everything passes except `MarkdownParserTests.summaryOfRepoRequirements` / `repoTasksCoverEveryRepoCriterion`. Those come from main (94000fe added REQ 4.12–4.14 to docs/), not ui. Orchestrator owns them: f7f4d31 fixes TASKS coverage, core bumps the criteria count to 69.
+  - Toolbar padding/truncation (8dddc94) NOT verified: /Applications/Mel.app was running (pid 30032), so no GUI checks per the rule.
 
 ## Next
-- Wait for the orchestrator (install test running).
-- Wait. Later, by hand/when asked: Icon Composer `.icon` (step 2 of the kit), MelMark image sets and brand colors (skipped for the MVP).
+- Rebase on core's merge (drop the stub), rerun the full test.
+- Verify the toolbar status in the Debug build once the orchestrator says /Applications/Mel.app is closed. If the text drops: `.fixedSize()` before the padding.
 
 ## Notes
+- GUI checks: System Events can't tell two "Mel" processes apart (`first process whose unix id is …` + `window 1` still hit /Applications/Mel.app on 2026-11-23). Rule (orchestrator): no System Events / GUI scripting at all while /Applications/Mel.app is running, debug pid or not. Screenshots come from the orchestrator/user. Earlier toolbar screenshots after 15:55 were of the user's app, not the debug build.
 - While the user runs an install test of /Applications/Mel.app: don't launch the debug app, don't touch com.kaanf.mel defaults, and don't run the full xcodebuild test (MelTests are hosted by Mel.app, same bundle id). Only `cd MelKit && swift test`. Wait for the orchestrator to say the test is over.
 - Running the debug app touches the real `com.kaanf.mel` defaults (same bundle id). Pass fixtures as launch arguments (`--args -library '<hex>' -didShowWelcome YES`); `CFFIXED_USER_HOME` does NOT isolate `defaults write`.
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
