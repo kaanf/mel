@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 4 merged (main 8f251a8); standing by for the next wave
+Wave: 5 in progress. Step 1 (EdDSA keys) done; waiting for core's Sparkle merge before step 2 (release.sh + appcast)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -40,8 +40,12 @@ Updated: 2026-11-23
 - `claude-2.1.311-discovery-open.jsonl`: first Discovery turn with the real discovery.md prompt and SpecSession's exact arguments/environment, recorded in a `mktemp -d` folder under /tmp; no secrets (`apiKeySource: none`, cwd under /tmp). Noted in CLAUDE-CODE-CLI.md › Fixtures.
 - `discoveryFirstTurnIsOpenProductQuestion`: session first, deltas == result, decodes with `DiscoveryTurn.decode`, next question open (`options` empty) and `shapes == .product`, coverage covers all four phases.
 
+## Done (Wave 5)
+- 1: Sparkle EdDSA key pair made with `generate_keys` from Sparkle 2.10.1 (newest 2.x at least two weeks old; tarball sha256 1a856d2a…cf27, tools in /tmp/sparkle-2.10.1.OpwMKf/x/bin). Private key in the login Keychain; backup at ~/Desktop/mel-sparkle-private-key.txt for the user (never commit). Public key `N0XADslhn/EjchajsvI8XGFxZv1srmMIVnlrccel9o4=` sent to the orchestrator. sign/verify round trip passed.
+
 ## Next
-- Wait for the orchestrator's next wave.
+- 2 (after core's merge, rebase first): release.sh passes `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` to the archive; after the DMG is notarized it runs `sign_update` and writes `appcast.xml` at the repo root (one item: version, build, DMG URL https://github.com/kaanf/mel/releases/download/v<version>/Mel-<version>.dmg, length, sparkle:edSignature, minimumSystemVersion 26.0). If /tmp has been cleared, download the 2.10.1 tarball again.
+- 3 (after ui's merge): end-to-end update test with two local Release builds (N in a throwaway folder, never /Applications; N+1 DMG + appcast via `python3 -m http.server`; override SUFeedURL only for the test bundle). Write it up in docs/research/. Never touch /Applications/Mel.app or the com.kaanf.mel defaults.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
