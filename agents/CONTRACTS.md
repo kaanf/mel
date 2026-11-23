@@ -229,7 +229,14 @@ B1 (requested by ui):
 // AppState (core)
 func specFolder(name: String, size: SpecSize, project: Project?, parent: URL) -> URL   // B1 "Save to"; project nil → <parent>/<slug>/specs/<slug>/
 func createSpec(name:, idea:, size:, project: Project?, parent: URL? = nil /* used when project is nil; default ~/Developer */, buildsOn:, files:, logs:, fillGaps:) throws -> SpecSession
-// v1 specFolder(name:parent:) goes away once ui uses the new one
+// v1 specFolder(name:parent:) and createSpec(name:idea:parentFolder:) go away once ui uses the new ones
+```
+
+W7 (core, merged 2026-11-23):
+
+```swift
+// SpecSession: git runs off the main actor, so views call it in a Task
+func finish(commitToGit: Bool) async throws
 ```
 
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
@@ -585,7 +592,7 @@ import Observation
     var startCommand: String { get }                // claude "Read specs/ and implement TASKS.md, task 1"
     func showInFinder()
     func openStartCommandInTerminal()
-    func finish(commitToGit: Bool) throws
+    func finish(commitToGit: Bool) async throws     // W7: async
     var canCommit: Bool { get }                     // Git installed; checkbox hidden otherwise
     var isGitRepository: Bool { get }              // false → commit asks before `git init`
     func updateIdea(_ idea: String)                 // "Your Idea › Edit…"
