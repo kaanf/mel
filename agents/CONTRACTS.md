@@ -216,6 +216,13 @@ extension ProjectContext { var read: [ReadItem]; var sources: [String: String] }
 // MelSystem (platform): Git.branch(at:) -> String?  (reads .git/HEAD, no process);  Git.fileCount(at:) -> Int?  (`git ls-files -z`, one process, off main)
 ```
 
+Run without tools:
+
+```swift
+struct AgentRequest { var allowsTools: Bool = true }   // core sets false for analyze and impact (files are inline); platform maps it to the CLI's no-tools flag
+// ProjectContext.read / .sources are persisted in .mel/project/context.json (core)
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
