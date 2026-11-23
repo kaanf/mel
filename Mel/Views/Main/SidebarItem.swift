@@ -2,12 +2,15 @@ import SwiftUI
 import MelSpec
 
 enum SidebarItem: Hashable {
+    case project(Project.ID)
     case discovery(Spec.ID)
     case doc(Spec.ID, DocKind)
+    case analyze(Spec.ID)
 
-    var specID: Spec.ID {
+    var specID: Spec.ID? {
         switch self {
-        case .discovery(let id), .doc(let id, _): id
+        case .project: nil
+        case .discovery(let id), .doc(let id, _), .analyze(let id): id
         }
     }
 
@@ -16,7 +19,8 @@ enum SidebarItem: Hashable {
         switch spec.stage {
         case .discovery: .discovery(spec.id)
         case .drafting(let kind), .review(let kind), .stopped(let kind, _): .doc(spec.id, kind)
-        case .analyze, .done: .doc(spec.id, spec.size.files.last!)
+        case .analyze: .analyze(spec.id)
+        case .done: spec.size.hasAnalyze ? .analyze(spec.id) : .doc(spec.id, spec.size.files.last!)
         }
     }
 }

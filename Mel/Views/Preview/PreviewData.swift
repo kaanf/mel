@@ -3,7 +3,8 @@ import MelSpec
 
 /// Fixtures for `#Preview`s: one yoga studio spec in every stage.
 enum PreviewData {
-    static let folder = URL(filePath: "/Users/me/Developer/yoga-studio-booking/specs")
+    static let project = Project(folder: URL(filePath: "/Users/me/Developer/yoga-studio-booking"), hasContext: true)
+    static let folder = project.folder.appending(path: "specs/yoga-studio-booking")
     static let executable = URL(filePath: "/Users/me/.local/bin/claude")
     static let ready = AgentStatus.ready(executable: executable, version: "2.1.4")
     static let notSignedIn = AgentStatus.notSignedIn(executable: executable)
@@ -76,24 +77,33 @@ enum PreviewData {
         return question
     }
 
-    static func spec(_ stage: Stage, _ docs: [DocKind: DocStatus], questions: [Question] = allAnswered) -> Spec {
-        Spec(name: "Yoga Studio Booking", idea: idea, folder: folder, stage: stage, docs: docs, questions: questions, coverage: coverage)
+    static func spec(_ stage: Stage, _ docs: [DocKind: DocStatus], questions: [Question] = allAnswered, analyze: AnalyzeStatus = .locked) -> Spec {
+        Spec(name: "Yoga Studio Booking", idea: idea, folder: folder, stage: stage, docs: docs, questions: questions, coverage: coverage, analyze: analyze)
     }
 
-    static let locked: [DocKind: DocStatus] = [.product: .locked, .requirements: .locked, .architecture: .locked, .tasks: .locked]
+    /// Product-size statuses in file order, missing kinds locked.
+    static func docs(_ statuses: DocStatus...) -> [DocKind: DocStatus] {
+        var docs = SpecSize.product.allLocked
+        for (kind, status) in zip(SpecSize.product.files, statuses) { docs[kind] = status }
+        return docs
+    }
+
+    static let locked = SpecSize.product.allLocked
 
     static let discovery = spec(.discovery, locked, questions: questions)
     static let discoveryOpen = spec(.discovery, locked, questions: Array(questions.prefix(5)) + [openQuestion])
     static let discoveryThinking = spec(.discovery, locked, questions: Array(questions.prefix(5)))
-    static let drafting = spec(.drafting(.requirements), [.product: .approved, .requirements: .writing, .architecture: .locked, .tasks: .locked])
-    static let stoppedByUser = spec(.stopped(.requirements, .user), [.product: .approved, .requirements: .stopped, .architecture: .locked, .tasks: .locked])
+    static let drafting = spec(.drafting(.requirements), docs(.approved, .writing))
+    static let stoppedByUser = spec(.stopped(.requirements, .user), docs(.approved, .stopped))
     static let usageLimit = spec(
         .stopped(.architecture, .usageLimit(resetsAt: Date(timeIntervalSince1970: 1_795_000_000))),
-        [.product: .approved, .requirements: .approved, .architecture: .stopped, .tasks: .locked]
+        docs(.approved, .approved, .approved, .stopped)
     )
     static let crashed = spec(.stopped(.architecture, .crashed("claude exited with status 1")), usageLimit.docs)
-    static let review = spec(.review(.requirements), [.product: .approved, .requirements: .review, .architecture: .locked, .tasks: .locked])
-    static let done = spec(.done, [.product: .approved, .requirements: .approved, .architecture: .approved, .tasks: .approved])
+    static let review = spec(.review(.requirements), docs(.approved, .review))
+    static let analyzeIssues = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .issues(4))
+    static let edited = spec(.review(.requirements), docs(.approved, .edited, .stale, .stale, .stale), analyze: .stale)
+    static let done = spec(.done, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
 
     static let requirementsMarkdown = """
         # Requirements
@@ -153,8 +163,8 @@ enum PreviewData {
         UpdateSettings(version: "0.2 (build 123)", canCheck: canCheck, automaticallyChecks: .constant(automaticallyChecks), check: {})
     }
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects)
         state.missingFolders = missing
         return state
     }

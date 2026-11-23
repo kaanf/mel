@@ -14,7 +14,7 @@ struct MainView: View {
         NavigationSplitView {
             SidebarView(selection: $item) { isShowingNewSpec = true }
         } detail: {
-            if let item, state.specs.contains(where: { $0.id == item.specID }) {
+            if let item, item.specID.map({ id in state.specs.contains { $0.id == id } }) ?? true {
                 detail(item).id(item)
             } else if state.specs.isEmpty {
                 EmptyLibraryView { isShowingNewSpec = true }
@@ -40,19 +40,25 @@ struct MainView: View {
 
     @ViewBuilder
     private func detail(_ item: SidebarItem) -> some View {
-        let session = state.session(for: item.specID)
         switch item {
-        case .discovery:
-            DiscoveryView(session: session, showInspector: $showInspector)
-        case .doc(_, let kind):
+        case .project:
+            // A3 Project context: Wave 6 screen, not built yet.
+            ContentUnavailableView("Project Context", systemImage: "house")
+        case .discovery(let id):
+            DiscoveryView(session: state.session(for: id), showInspector: $showInspector)
+        case .doc(let id, let kind):
+            let session = state.session(for: id)
             switch session.spec.docs[kind] ?? .locked {
             case .writing, .stopped:
                 DraftingView(session: session, kind: kind, showInspector: $showInspector)
             case .review, .approved, .edited, .stale:
                 ReviewView(session: session, kind: kind)
             case .locked:
-                LockedDocView(kind: kind)
+                LockedDocView(kind: kind, size: session.spec.size)
             }
+        case .analyze:
+            // B6 Analyze: Wave 6 screen, not built yet.
+            ContentUnavailableView("Analyze", systemImage: "checklist")
         }
     }
 }
@@ -75,6 +81,7 @@ struct EmptyLibraryView: View {
 
 struct LockedDocView: View {
     let kind: DocKind
+    let size: SpecSize
 
     var body: some View {
         ContentUnavailableView {
@@ -86,9 +93,9 @@ struct LockedDocView: View {
     }
 
     private var previous: DocKind? {
-        let all = DocKind.allCases
-        let index = all.firstIndex(of: kind)!
-        return index > 0 ? all[index - 1] : nil
+        let files = size.files
+        guard let index = files.firstIndex(of: kind), index > 0 else { return nil }
+        return files[index - 1]
     }
 }
 
@@ -107,6 +114,6 @@ struct LockedDocView: View {
 }
 
 #Preview("Locked file") {
-    LockedDocView(kind: .architecture)
+    LockedDocView(kind: .architecture, size: .product)
         .frame(width: 600, height: 400)
 }
