@@ -49,7 +49,7 @@ Each screen gets `#Preview`s for every state shown on the canvas (minus the Late
 - [ ] 3.4 New Spec sheet with validation and folder picker; New Spec disabled while Claude Code isn't Ready.
   - Covers: 1.9, 3.1, 3.2, 3.3, 3.4
 - [ ] 3.5 Discovery view: stepper, idea card, answered list, question card with radio rows, keys 1–4, "You decide", note, Draft Now; coverage inspector.
-  - Covers: 4.1, 4.2, 4.3, 4.5, 4.6, 4.7, 4.10
+  - Covers: 4.1, 4.2, 4.3, 4.5, 4.6, 4.7, 4.10, 4.13
 - [ ] 3.6 SwiftUI renderer for the parsed blocks (`LazyVStack`; EARS keyword styling, callouts).
   - Covers: 6.1
 - [ ] 3.7 Drafting view: status line + progress bar, step list, activity log, Up Next, Stop, stopped banner, live preview inspector.
@@ -64,7 +64,7 @@ Each screen gets `#Preview`s for every state shown on the canvas (minus the Late
 ## M4 · Wire the pipeline
 
 - [ ] 4.1 Prompt files and string-replacement builder (discovery, four documents, continue) with the completeness rule.
-  - Covers: 4.9, 5.1
+  - Covers: 4.9, 4.12, 4.14, 5.1
 - [ ] 4.2 `SpecSession`: discovery loop with JSON output and a manual Retry on bad output.
   - Covers: 3.6, 4.4, 4.8, 4.9
 - [ ] 4.3 Drafting: stream into a buffer, debounced file writes, throttled preview, progress from `##` count vs. plan line.
