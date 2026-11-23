@@ -1,6 +1,6 @@
 # core status
 
-Wave: 5 (Sparkle settings ready to merge)
+Wave: 5 (Debug automatic-check follow-up ready to merge)
 Updated: 2026-11-23
 
 ## Done
@@ -30,6 +30,8 @@ Updated: 2026-11-23
 
 - Wave 5 (5.5): Sparkle 2.10.1 (exactVersion, newest 2.x ≥ 2 weeks old) on the `Mel` target only; `Package.resolved` committed. `Mel/Info.plist` (excluded from the synchronized folder via an exception set, merged into the generated plist through `INFOPLIST_FILE`) holds `SUFeedURL`, `SUEnableAutomaticChecks`, `SUPublicEDKey` (from platform). `MARKETING_VERSION` 0.2. MarkdownParserTests: criteria 71, tasks 42. Checked a Developer ID archive + export (no notarization): app, Sparkle.framework, Autoupdate, Updater.app, Downloader/Installer.xpc all Developer ID + runtime; `codesign --verify --deep --strict` ok. Full suite green 2 runs.
 
+- Wave 5 follow-up: `SUEnableAutomaticChecks` = `$(SPARKLE_AUTOMATIC_CHECKS)` (Debug NO, Release YES), so a Debug build (build 1) never offers to replace itself with the Release DMG. Sparkle 2.10.1 reads a string bool (`convertObjectToBoolNumber` in SUHost.m). Built plists checked; full suite green 2 runs.
+
 ## In progress
 - (nothing)
 
@@ -52,7 +54,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Merge agent/core (Wave 5 Sparkle settings).
+- Merge agent/core (Wave 5 follow-up: no automatic checks in Debug).
 
 ## Questions for the user
 - (none)
