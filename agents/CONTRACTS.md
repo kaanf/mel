@@ -114,6 +114,7 @@ enum StopReason: Codable, Hashable {
     case signedOut
     case crashed(String)              // stderr tail / error text for "Show Details"
     case timeout
+    case sessionNotFound              // --resume id unknown: SpecSession reruns fresh, never shown to the user
 }
 
 struct ActivityLine: Hashable, Identifiable {
@@ -232,6 +233,7 @@ struct AgentRequest: Sendable {
     var workingDirectory: URL         // project folder (parent of specs/)
     var resumeSessionID: String?
     var persistSession: Bool          // false → --no-session-persistence
+    var systemPrompt: String?         // stage contract → --append-system-prompt
 }
 
 enum AgentEvent: Sendable, Hashable {
@@ -302,6 +304,7 @@ import Observation
     func session(for id: Spec.ID) -> SpecSession
     func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession
     func removeFromLibrary(_ id: Spec.ID)
+    func specFolder(name: String, parent: URL) -> URL   // shown in New Spec; SpecStore.specsFolder
 
     // System actions for views (views never import MelSystem)
     func signIn()                             // Terminal with the adapter's login command
@@ -345,8 +348,11 @@ import Observation
     func showInFinder()
     func openStartCommandInTerminal()
     func finish(commitToGit: Bool) throws
+    var canCommit: Bool { get }                     // Git installed; checkbox hidden otherwise
+    var isGitRepository: Bool { get }              // false → commit asks before `git init`
+    func updateIdea(_ idea: String)                 // "Your Idea › Edit…"
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false) -> SpecSession
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil) -> SpecSession
 }
 ```
 

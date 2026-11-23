@@ -98,7 +98,7 @@ As a user, I want to start building from the finished spec, so that the spec tur
 
 - 8.1 WHEN all four files are approved, THE APP SHALL show the Spec ready sheet with each file and its summary (for example "5 stories, 14 criteria").
 - 8.2 THE APP SHALL show a Claude Code build command with Copy and "Open in Terminal" (in the project folder).
-- 8.3 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (excluding `.mel/` per settings), initializing a repository only after asking.
+- 8.3 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (always excluding `.mel/` (Mel's internal state; no setting in the MVP)), initializing a repository only after asking.
 - 8.4 THE APP SHALL offer "Show in Finder".
 
 ## 9. Library and app shell
