@@ -41,14 +41,18 @@ struct StatusBadge: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Label {
-            Text(title ?? status.title)
-        } icon: {
+        // Not a Label: toolbars render Labels icon-only, and the text is the point.
+        HStack(spacing: 5) {
             Image(systemName: status.symbol)
                 .foregroundStyle(status.color)
                 .imageScale(status == .checking ? .small : .medium)
                 .symbolEffect(.pulse, isActive: status == .checking && !reduceMotion)
+                .accessibilityHidden(true)
+            Text(title ?? status.title)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
+        .accessibilityElement(children: .combine)
     }
 }
 
