@@ -66,8 +66,16 @@ final class EndToEndTests {
         return (app, script)
     }
 
-    private func newSpec(_ app: AppState, _ name: String = "Yoga Studio") throws -> SpecSession {
-        try app.createSpec(name: name, idea: "Members book yoga classes and buy class packs.", parentFolder: parent)
+    /// A project folder with a README, added to the library.
+    private func project(_ app: AppState, _ name: String) throws -> Project {
+        let folder = parent.appending(path: name, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "# \(name)\n".write(to: folder.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        return try app.addProject(folder)
+    }
+
+    private func newSpec(_ app: AppState, _ name: String = "Yoga Studio", size: SpecSize = .product) throws -> SpecSession {
+        try app.createSpec(name: name, idea: "Members book yoga classes and buy class packs.", size: size, project: nil, parent: parent)
     }
 
     private func wait(_ what: String, until done: () -> Bool) async throws {
@@ -75,96 +83,210 @@ final class EndToEndTests {
         #expect(done(), "timed out waiting for \(what)")
     }
 
-    private func text(_ session: SpecSession, _ kind: DocKind) throws -> String {
-        try String(contentsOf: session.spec.folder.appending(path: kind.fileName), encoding: .utf8)
+    private func text(_ session: SpecSession, _ path: String) throws -> String {
+        try String(contentsOf: session.spec.folder.appending(path: path), encoding: .utf8)
     }
 
-    @Test func ideaToFourApprovedFilesWithStopAndResume() async throws {
+    /// Writes every file of the spec and checks the disk matches the session.
+    private func expectOnDisk(_ session: SpecSession) async throws {
+        await session.flush()
+        for kind in session.spec.size.files {
+            #expect(try text(session, kind.fileName) == session.documents[kind])
+            #expect(!(try text(session, kind.fileName)).contains("<!-- mel:"))
+        }
+        #expect(try SpecStore.loadState(in: session.spec.folder) == session.spec)
+    }
+
+    @Test func quickFix() async throws {
+        let (app, script) = makeApp([("e2e/v2/qf-intake.jsonl", []), ("e2e/v2/qf-spec.jsonl", [])])
+        let project = try project(app, "yoga")
+        let session = try app.createSpec(name: "Double booking", idea: "Two taps book twice.", size: .quickFix, project: project)
+
+        await session.start()
+        #expect(session.currentQuestion?.title == "How should the fix be verified?")
+        #expect(script.claudeArguments[0].contains("--no-session-persistence"))
+        await session.answer(.option(0, note: nil))
+
+        #expect(session.spec.stage == .review(.spec))
+        #expect(session.documents[.spec]?.hasPrefix("# Spec\n\n## What breaks\n\nTwo quick taps") == true)
+        #expect(session.documents[.spec]?.hasSuffix("## Out of scope\n\n- Waitlist\n") == true)
+        #expect(session.activity.count == 1)
+        #expect(script.requests[1].prompt.contains("How should the fix be verified? A unit test"))
+        await session.approve(.spec)
+        #expect(session.spec.stage == .done)
+        #expect(session.startCommand == #"claude "Read specs/double-booking/SPEC.md and fix it""#)
+        try await expectOnDisk(session)
+        #expect(script.requests.allSatisfy { $0.workingDirectory == project.folder })
+    }
+
+    @Test func featureWithProjectContextAndAttachments() async throws {
         let (app, script) = makeApp([
-            ("e2e/discovery-question.jsonl", []),
-            ("e2e/discovery-done.jsonl", []),
-            ("e2e/draft-product.jsonl", []),
-            ("e2e/draft-requirements-partial.jsonl", ["hang"]),
-            ("e2e/draft-requirements-rest.jsonl", []),
-            ("e2e/draft-design.jsonl", []),   // EXPERIENCE.md
-            ("e2e/draft-design.jsonl", []),   // ARCHITECTURE.md
-            ("e2e/draft-tasks.jsonl", []),
+            ("claude-2.1.311-project-context.jsonl", []),
+            ("e2e/v2/ft-intake.jsonl", []),
+            ("e2e/v2/ft-requirements.jsonl", []),
+            ("e2e/v2/ft-architecture.jsonl", []),
+            ("e2e/v2/ft-tasks.jsonl", []),
+            ("e2e/v2/ft-analyze.jsonl", []),
+        ])
+        let project = try project(app, "focus-timer")
+
+        // A3: the project-context run; Mel writes `.mel/project/`.
+        await app.setUpProject(project)
+        #expect(app.projectSetup?.lastError == nil)
+        #expect(app.projectSetup?.isNewProject == false)
+        #expect(app.projectSetup?.activity.isEmpty == false)
+        #expect(app.projectSetup?.context?.modules.isEmpty == false)
+        #expect(app.projects.first?.hasContext == true)
+        #expect(ProjectStore.readContext(project: project.folder) == app.projectSetup?.context)
+
+        // B1 with an attached log file.
+        let log = parent.appending(path: "crash.log")
+        try "Fatal error at launch".write(to: log, atomically: true, encoding: .utf8)
+        let session = try app.createSpec(name: "Waitlist", idea: "Members join a waitlist for full classes.", size: .feature, project: project)
+        try await session.attach([log])
+
+        await session.start()
+        #expect(session.spec.questions.count == 2)
+        for prompt in [script.requests[1].prompt] {
+            #expect(prompt.contains("FocusTimer is a command-line Pomodoro timer"))
+            #expect(prompt.contains("specs/waitlist/.mel/attachments/crash.log"))
+        }
+
+        // Draft Now after one answer: the other becomes Claude's call.
+        await session.answer(.option(0, note: nil))
+        await session.draftNow()
+        #expect(session.spec.stage == .review(.requirements))
+        #expect(script.requests[2].prompt.contains("FocusTimer is a command-line Pomodoro timer"))
+        #expect(script.requests[2].prompt.contains("- Is there a booking limit per member?\n- Edge cases"))
+        #expect(session.documents[.requirements]?.hasPrefix("# Requirements\n\n## 1. Waitlist\n\nP1 · MVP") == true)
+        #expect(session.summary(.requirements).criteria == 1)
+
+        await session.approve(.requirements)
+        await session.approve(.architecture)
+        #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
+        await session.approve(.tasks)
+
+        // Analyze: no tools, a reply in a JSON fence, passed → hand off.
+        #expect(script.requests[5].allowsTools == false)
+        #expect(session.spec.analyze == .passed)
+        #expect(session.spec.analysis?.coverage.first?.id == "1.1")
+        session.handOffAnyway()
+        #expect(session.spec.stage == .done)
+
+        try await session.finish(commitToGit: false)
+        #expect(try text(session, "prompts/task-01.md").contains("Waitlist store"))
+        try session.writeAgentsMD()
+        #expect(try String(contentsOf: project.folder.appending(path: "AGENTS.md"), encoding: .utf8).contains("## Spec: Waitlist"))
+        #expect(session.decisions.map(\.title) == ["Should the schedule work offline?"])
+        try await expectOnDisk(session)
+        #expect(script.requests.count == 6)
+    }
+
+    @Test func productWithStopRoundTwoAnalyzeFixAndRefine() async throws {
+        let (app, script) = makeApp([
+            ("e2e/v2/pr-intake.jsonl", []),
+            ("e2e/v2/pr-product.jsonl", []),
+            ("e2e/v2/pr-requirements-partial.jsonl", ["hang"]),
+            ("e2e/v2/pr-requirements-rest.jsonl", []),
+            ("e2e/v2/pr-requirements-revised.jsonl", []),
+            ("e2e/v2/pr-experience.jsonl", []),
+            ("e2e/v2/pr-architecture.jsonl", []),
+            ("e2e/v2/pr-tasks.jsonl", []),
+            ("e2e/v2/pr-analyze-issues.jsonl", []),
+            ("e2e/v2/pr-tasks-fixed.jsonl", []),
+            ("e2e/v2/pr-analyze-passed.jsonl", []),
+            ("e2e/v2/pr-impact.jsonl", []),
+            ("e2e/v2/pr-experience-refined.jsonl", []),
+            ("e2e/v2/pr-architecture-refined.jsonl", []),
+            ("e2e/v2/pr-tasks-refined.jsonl", []),
+            ("e2e/v2/pr-analyze-passed.jsonl", []),
         ])
         let session = try newSpec(app)
 
-        // Discovery: one question, then every topic is covered and PRODUCT.md is drafted.
+        // Intake, both answers, PRODUCT.md.
         await session.start()
-        #expect(session.lastError == nil)
-        #expect(session.currentQuestion?.title == "How do members pay?")
-        #expect(session.currentQuestion?.options.first?.suggested == true)
-        #expect(script.claudeArguments[0].contains("--no-session-persistence"))
-
+        await session.answer(.option(0, note: nil))
         await session.answer(.option(0, note: nil))
         #expect(session.spec.stage == .review(.product))
-        await session.flush()
-        #expect(try text(session, .product) == "# Product\n\n## Problem\n\nMembers can't book yoga classes online.\n\n## Users and roles\n\nMembers and studio staff.\n")
-        #expect(session.spec.sessionID == "e2e00000-0000-4000-8000-0000000000a1")
-        #expect(!script.claudeArguments[2].contains("--no-session-persistence"))
-        #expect(notifications == ["PRODUCT.md is ready for review"])
+        #expect(session.documents[.product] == "# Product\n\n## Problem\n\nMembers can't book yoga classes online.\n\n## Users and roles\n\nMembers and studio staff.\n")
+        #expect(session.spec.sessionID == "e2e00000-0000-4000-8000-000000000009")
+        #expect(!script.claudeArguments[1].contains("--no-session-persistence"))
 
         // REQUIREMENTS.md hangs mid-section; Stop interrupts the real process.
         let approving = Task { await session.approve(.product) }
-        try await wait("the partial draft") { session.activity.contains { $0.text == "read specs/PRODUCT.md" } }
+        try await wait("the partial draft") { !session.activity.isEmpty }
         #expect(app.runningSpecID == session.spec.id)
         await session.stop()
         await approving.value
         #expect(session.spec.stage == .stopped(.requirements, .user))
-        #expect(session.spec.sessionID == "e2e00000-0000-4000-8000-0000000000b1")
         #expect(app.runningSpecID == nil)
         await session.flush()
-        #expect(try text(session, .requirements).hasSuffix("## 2. Cancel a booking\n\nAs a mem"))   // plan line stripped, partial kept
+        #expect(try text(session, "REQUIREMENTS.md").hasSuffix("## 2. Buy a pack\n\nP1 · MVP\nAs a mem"))
 
-        // Resume: truncated to the last complete section, continued in the same Claude Code session.
+        // Resume in the same Claude Code session; the draft ends with a round-2 question.
         await session.resume()
-        #expect(script.claudeArguments[4].contains("--resume"))
-        #expect(script.requests[4].resumeSessionID == "e2e00000-0000-4000-8000-0000000000b1")
-        #expect(script.requests[4].prompt.contains("- 1.1 WHEN a member taps Book"))
-        #expect(!script.requests[4].prompt.contains("As a mem\n"))
+        #expect(script.claudeArguments[3].contains("--resume"))
+        #expect(script.requests[3].resumeSessionID == "e2e00000-0000-4000-8000-000000000010")
+        #expect(!script.requests[3].prompt.contains("MVP\nAs a mem"))
         #expect(session.spec.stage == .review(.requirements))
-        await session.flush()
-        let requirements = try text(session, .requirements)
-        #expect(requirements.hasPrefix("# Requirements\n\n## 1. Book a class"))
-        #expect(requirements.components(separatedBy: "## 2. Cancel a booking").count == 2)
-        #expect(session.summary(.requirements).stories == 2)
-        #expect(session.summary(.requirements).criteria == 2)
+        #expect(session.documents[.requirements]?.components(separatedBy: "## 2. Buy a pack").count == 2)
+        #expect(session.summary(.requirements).assumptions == 1)
+        let waitlist = try #require(session.followUpQuestions(for: .requirements).first)
+        #expect(waitlist.title == "Should full classes have a waitlist?")
 
-        session.confirmAssumption(index: 0, in: .requirements)
-        await session.approve(.requirements)
-        #expect(session.spec.stage == .review(.experience))
+        // Round 2: the answer revises REQUIREMENTS.md.
+        await session.answerFollowUp(questionID: waitlist.id, .option(0, note: nil))
+        #expect(script.requests[4].prompt.contains("Answer to “Should full classes have a waitlist?”: Yes"))
+        #expect(session.followUpQuestions(for: .requirements).isEmpty)
+        #expect(session.summary(.requirements).stories == 3)
+
+        for kind in [DocKind.requirements, .experience, .architecture, .tasks] { await session.approve(kind) }
         #expect(script.requests[5].prompt.contains("### REQUIREMENTS.md"))
 
-        await session.approve(.experience)
-        #expect(session.spec.stage == .review(.architecture))
-
-        await session.approve(.architecture)
-        #expect(session.spec.stage == .review(.tasks))
-        #expect(session.summary(.tasks).tasks == 2)
-        #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
-
+        // Analyze finds an issue; Fix revises TASKS.md, then Analyze passes.
+        #expect(session.spec.analyze == .issues(1))
+        await session.fixIssues()
+        #expect(script.requests[9].prompt.contains("Add a task that builds class packs for 2.1."))
         await session.approve(.tasks)
-        #expect(session.spec.stage == .analyze)   // the analyze run is wired in Wave 7
-        await session.flush()
-        for kind in session.spec.size.files {
-            #expect(try text(session, kind) == session.documents[kind])
-            #expect(!(try text(session, kind)).contains("[!ASSUMPTION]"))
-        }
-        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .analyze)
-        #expect(script.requests.count == 8)
-        #expect(script.requests.allSatisfy { $0.workingDirectory == session.spec.folder.deletingLastPathComponent() })
+        #expect(session.spec.analyze == .passed)
+
+        // C1: an edit to REQUIREMENTS.md → impact → reason → refine the three later files.
+        let edited = try #require(session.documents[.requirements]).replacingOccurrences(of: "reserve a spot", with: "reserve up to two spots")
+        session.save(edited, for: .requirements)
+        #expect(session.spec.docs[.experience] == .stale)
+        try await wait("the impact run") { session.impact != nil }
+        #expect(script.requests[11].allowsTools == false)
+        #expect(session.impact?.items.map(\.kind) == [.experience, .tasks])
+        try await session.saveDecision(title: "Two spots per booking", reason: "Members bring a friend.", for: .requirements)
+        #expect(session.decisions.first?.affects == ["1.1"])
+
+        await session.refine()
+        #expect(script.requests[12].prompt.contains("Reason: Members bring a friend. Update what this affects here: Confirm booking copy."))
+        await session.approve(.experience)
+        #expect(script.requests[13].prompt.contains("every part that depends on the change"))
+        await session.approve(.architecture)
+        #expect(script.requests[14].prompt.contains("Task 1 verify"))
+        await session.approve(.tasks)
+        #expect(session.spec.analyze == .passed)
+        #expect(session.spec.size.files.allSatisfy { session.spec.docs[$0] == .approved })
+        #expect(session.documents[.tasks]?.contains("Booking store, two spots") == true)
+
+        session.handOffAnyway()
+        try await expectOnDisk(session)
+        let decisions = try text(session, "DECISIONS.md")
+        for title in ["Two spots per booking", "Should full classes have a waitlist?", "How do members pay?"] { #expect(decisions.contains(title)) }
+        #expect(try text(session, ".mel/approved/REQUIREMENTS.md") == session.documents[.requirements])
+        #expect(script.requests.count == 16)
+        #expect(script.requests.allSatisfy { $0.workingDirectory == session.spec.project })
     }
 
     @Test func oneRunAtATime() async throws {
-        let (app, script) = makeApp([("e2e/draft-requirements-partial.jsonl", ["hang"])])
+        let (app, script) = makeApp([("e2e/v2/pr-requirements-partial.jsonl", ["hang"])])
         let first = try newSpec(app, "First")
         let second = try newSpec(app, "Second")
 
         let running = Task { await first.start() }
-        try await wait("the first run") { first.isRunning && first.spec.sessionID == nil && script.requests.count == 1 }
+        try await wait("the first run") { first.isRunning && script.requests.count == 1 }
         await second.start()
         #expect(second.lastError != nil)
         #expect(!second.isRunning)
@@ -178,25 +300,26 @@ final class EndToEndTests {
 
     @Test func unknownSessionOnResumeRedraftsTheFile() async throws {
         let (app, script) = makeApp([
-            ("e2e/discovery-done.jsonl", []),
-            ("e2e/draft-product.jsonl", []),
-            ("e2e/draft-requirements-partial.jsonl", ["hang"]),
+            ("e2e/v2/pr-intake.jsonl", []),
+            ("e2e/v2/pr-product.jsonl", []),
+            ("e2e/v2/pr-requirements-partial.jsonl", ["hang"]),
             ("claude-2.1.311-unknown-resume.jsonl", []),
-            ("e2e/draft-requirements.jsonl", []),
+            ("e2e/v2/pr-requirements-revised.jsonl", []),
         ])
         let session = try newSpec(app)
         await session.start()
+        await session.draftNow()
         let approving = Task { await session.approve(.product) }
-        try await wait("the partial draft") { session.activity.contains { $0.text == "read specs/PRODUCT.md" } }
+        try await wait("the partial draft") { !session.activity.isEmpty }
         await session.stop()
         await approving.value
 
         await session.resume()
         #expect(script.requests[3].resumeSessionID != nil)
         #expect(script.requests[4].resumeSessionID == nil)
-        #expect(script.requests[4].prompt.contains("You are writing REQUIREMENTS.md"))
+        #expect(script.requests[4].prompt == script.requests[2].prompt)
         #expect(session.spec.stage == .review(.requirements))
-        #expect(session.summary(.requirements).stories == 2)
+        #expect(session.summary(.requirements).stories == 3)
         #expect(!notifications.contains { $0.contains("stopped") })   // never shown to the user
     }
 }

@@ -236,4 +236,10 @@ struct MarkdownParserTests {
         let blocks = MarkdownParser.blocks("- [ ] 1. Build the\n  booking store\n  - Covers: 1.1")
         #expect(blocks == [.task(id: "1", text: "Build the booking store", done: false, covers: ["1.1"])])
     }
+
+    @Test func coversAfterOtherSubItems() {
+        let tasks = "- [ ] 1. Booking store\n  - Priority: P1\n  - Covers: 1.1, Q1\n  - Verify: `swift test`\n- [ ] 2. Packs\n\nNotes\n  - Covers: 2.1"
+        #expect(MarkdownParser.blocks(tasks).first == .task(id: "1", text: "Booking store", done: false, covers: ["1.1", "Q1"]))
+        #expect(MarkdownParser.uncoveredCriteria(requirements: "- 1.1 THE APP SHALL book.\n- 2.1 THE APP SHALL sell.\n- Q1 THE APP SHALL be fast.", tasks: tasks) == ["2.1"])
+    }
 }

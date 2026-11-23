@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 in progress (SpecSession/AppState v2 wiring)
+Wave: 7 done, ready to merge
 Updated: 2026-11-23
 
 ## Done
@@ -40,17 +40,15 @@ Updated: 2026-11-23
 
 - v0.2.1: `MARKETING_VERSION` 0.2.1 on all targets. Full suite green 2 runs.
 
+- W7 (v2 session wiring): `SpecSession` rewritten for v2 (one-shot intake; draft/revise through `advance()`; step markers and round-2 trailer; approve saves a snapshot; analyze/fix/handOff; C1 impact after a debounced save of an approved file, `saveDecision`, undo, keepAsIs, refine; attachments; task prompts; AGENTS.md; async `finish` with git off the main actor; decisions recorded automatically). `AppState` rewritten (project library, scan, `setUpProject`, `findRepositories`, `createSpec(…, parent:)`, `specFolder(name:size:project:parent:)`, `isAgentBusy`). `AgentRequest.allowsTools` (false for analyze/impact). `.mel/project/context.json` stores `read`/`sources`.
+- W7 tests: `SpecSessionTests` (16, FakeRunner), `EndToEndTests` (Quick fix, Feature with the real project-context recording + attachment + Draft Now + fenced analyze + hand off + task prompts + AGENTS.md, Product with Stop/resume, round 2, analyze fix, impact and refine; one run at a time; unknown resume), `AppStateTests` (findRepositories, createSpec without project). v1 e2e fixtures removed; `e2e/README.md` describes `v2/`. Full suite green 3 runs (184 tests).
+- Found by the W7 tests: (1) DECISIONS.md was loaded in an init Task that could overwrite decisions recorded right after `start()`; now read synchronously in init, snapshots merged. (2) `MarkdownParser` dropped `Covers:` when it followed `Priority:` (the v2 task format) and dropped `Q1` IDs, so B5 showed covered criteria as uncovered.
+
 ## In progress
-- W7: v2 bodies of SpecSession/AppState against `AgentRunning`; e2e tests (fake script) for Quick fix, Feature, Product.
-- Planned contract changes (preview factories unchanged):
-  - `Spec.instructions: [DocKind: String]`: the pending revise instruction per file (answer, analyze fix, refine), persisted so a queued revise survives a relaunch; cleared when that file's revise finishes.
-  - `SpecSession.finish(commitToGit:)` becomes `async throws` (git runs off the main actor). `isGitRepository` becomes a stored property, refreshed off the main actor; views read it the same way.
-  - `SpecSession.startCommand`: `claude "Read specs/<slug>/prompts/task-01.md and do it"` (Quick fix: `… specs/<slug>/SPEC.md and fix it`).
-  - `AppState.createSpec(project: nil)` (A4x, Product only) creates the project folder under `~/Developer` when it exists, else the home folder (no parent picker on A4x; see Questions).
-  - Decisions recorded automatically: intake and round-2 answers ("Intake Q2", "Review"), confirmed/changed assumptions ("Confirmed in review" / "Changed in review"), C1 "Why did this change?" (affects = criteria whose text changed vs the snapshot; replaces the latest decision about one of them).
+- (nothing)
 
 ## Next
-- Wave 7: wire SpecSession/AppState v2 end to end against AgentRunning (all `fatalError("stub")` bodies in Mel/Session), with e2e tests for Quick fix, Feature and Product (round 2, analyze fix, refine, stop + resume). Drop then: `Prompt.discovery`/discovery.md, `DiscoveryTurn`, the plan-line strip in `DraftText.file(fromReply:)`, `SpecStore.specsFolder(name:parent:)`, v1 `createSpec(name:idea:parentFolder:)`. Use `Git.specPaths(slug:project:)` and `Git.repositories(in:)` (platform). Never touch com.kaanf.mel defaults or /Applications/Mel.app.
+- Wait for the orchestrator. Remove v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)` once ui's NewSpecSheet stops using them.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -69,34 +67,11 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge** (agent/core, rebased on main 2026-11-23, full suite green, no warnings).
+**Ready to merge** (agent/core W7, full suite green, no warnings). Rebase on main needed at merge (main has two docs commits).
 
-For **ui**: fixture project URLs can be written with or without a trailing slash now (`Project.init` and `Spec.project` normalize). New `Block` cases to render: `orderedItem`, `openQuestion`, `priority`, `source`, `covers`, `mvpLine`, `table` (MarkdownBlocksView has plain placeholders). `DocKind.draftSteps` is real (B3 checklist); `BugReport.ideaText` and `AgentsFile.merge` are real.
-
-For **platform**: the real prompts are in `MelKit/Sources/MelSpec/Prompts/`; please re-record project-context, intake, draft-steps, analyze and impact against them. Placeholders per prompt are pinned in `PromptTests.placeholdersPerPrompt`. Differences from your provisional ones: intake takes `topics`/`count`/`kinds`; drafting prompts share one set (`project name idea files buildsOn attachments answers decide approved steps`); analyze takes `kinds` and `screen` (a sentence saying screen is null without EXPERIENCE.md); `<!-- MVP line -->` adopted from your draft-steps run.
-
-Contract additions since step 0 (for CONTRACTS.md):
-
-```swift
-// MelSpec
-public struct Intake { var coverage: [CoverageItem]; var questions: [Question]
-    static func decode(_ reply: String, size: SpecSize) throws -> Intake }       // questions default `shapes` = size.files[0]
-extension DraftText {
-    static func step(in reply: String) -> Int                                    // highest complete <!-- mel:step N -->
-    static func strippingMarkers(_ text: String) -> String                       // also hides a half-streamed <!--
-    static func questions(in reply: String, kind: DocKind) -> [Question]         // trailer, max 3, round .draft
-    // file(fromReply:kind:) now strips markers too
-}
-extension Prompt { cases: project, intake, discovery (v1), product, requirements, experience, architecture, tasks, spec, revise, analyze, impact, continue  // - design
-    func build(_ values: [String: String], fillGaps: Bool = true) -> String }
-extension DocKind { var stepsText: String }                                      // "1. …\n2. …"
-extension SpecSize { var filesText: String; var kindsText: String }
-extension ProjectContext { var promptText: String }                              // {{project}}
-extension Decision { func replacedBy(in: [Decision]) -> String? }
-// MelStorage
-extension SpecStore { nonisolated var decisionsURL: URL }
-// Format: the MVP line is `<!-- MVP line -->` (Block.mvpLine); SPEC-FORMAT.md has every format.
-```
+- I touched one ui file: `Mel/Views/SpecReady/SpecReadySheet.swift` calls `finish` in a `Task` because `finish(commitToGit:)` is now async. Nothing else under Views.
+- For **ui**: `NewSpecSheet` still uses v1 `specFolder(name:parent:)` / `createSpec(name:idea:parentFolder:)`; switch to `specFolder(name:size:project:parent:)` and `createSpec(name:idea:size:project:parent:…)`, then I remove the v1 pair.
+- CONTRACTS change: `SpecSession.finish(commitToGit:) async throws` (was sync; git runs off the main actor).
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.

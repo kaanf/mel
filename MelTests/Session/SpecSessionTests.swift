@@ -20,6 +20,8 @@ private final class FakeRunner: AgentRunning {
     var requests: [AgentRequest] { state.withLock { $0.requests } }
     var hasOpenRun: Bool { state.withLock { $0.open != nil } }
 
+    func add(_ replies: [[AgentEvent]]) { state.withLock { $0.replies += replies } }
+
     func run(_ request: AgentRequest) -> AsyncThrowingStream<AgentEvent, Error> {
         AsyncThrowingStream { continuation in
             let events = state.withLock { s in
@@ -57,113 +59,134 @@ final class SpecSessionTests {
     private var notifications: [(title: String, at: Date?)] = []
     private var authorizations = 0
 
-    private func makeSession(_ replies: [[AgentEvent]]) throws -> (SpecSession, FakeRunner, AppState) {
+    init() throws { try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true) }
+
+    private func makeSession(_ replies: [[AgentEvent]], size: SpecSize = .feature) throws -> (SpecSession, FakeRunner, AppState) {
         let runner = FakeRunner(replies)
         let app = AppState(adapter: FakeAdapter(), makeRunner: { _ in runner }, defaults: UserDefaults(suiteName: "mel-tests-\(UUID().uuidString)")!)
         app.agent = .ready(executable: URL(filePath: "/usr/bin/true"), version: "test")
         app.notify = { [unowned self] title, _, at in notifications.append((title, at)) }
         app.authorizeNotifications = { [unowned self] in authorizations += 1 }
-        let session = try app.createSpec(name: "Yoga Studio", idea: "Members book yoga classes.", parentFolder: parent)
+        let session = try app.createSpec(name: "Yoga Studio", idea: "Members book yoga classes.", size: size, project: nil, parent: parent)
         self.app = app
         return (session, runner, app)
     }
 
-    private let question = #"{"coverage":[{"label":"Problem","state":"covered"},{"label":"Payments","state":"asking"}],"next":{"id":"payments","title":"How do members pay?","why":"Decides checkout.","shapes":"requirements","options":[{"label":"Class packs","note":"From your idea","suggested":true},{"label":"At the desk","note":"No checkout"}]},"done":false}"#
-    private let allCovered = #"{"coverage":[{"label":"Problem","state":"covered"},{"label":"Payments","state":"covered"}],"done":true}"#
-    private let product: [AgentEvent] = [.session("s1"), .text("# Product\n\n## Problem\n\nPeople "), .text("can't book.\n"), .done(result: "")]
+    // Replies
+    private let intake = #"{"coverage":[{"label":"Goal","state":"covered"},{"label":"Edge cases","state":"notYet"}],"questions":[{"id":"payments","title":"How do members pay?","why":"Shapes checkout.","shapes":"requirements","options":[{"label":"Class packs","suggested":true},{"label":"At the desk"}]},{"id":"offline","title":"Should the schedule work offline?","shapes":"architecture","options":[{"label":"Yes"},{"label":"No"}]}]}"#
+    private let noQuestions = #"{"coverage":[{"label":"Goal","state":"covered"}],"questions":[]}"#
+    private let trailer = #"<!-- mel:questions [{"id":"waitlist","title":"Is there a waitlist?","why":"Full classes.","options":[{"label":"Yes"},{"label":"No"}]}] -->"#
+    private let requirements = "# Requirements\n\n## 1. Book a class\n\nAs a member, I want to book.\n\n- 1.1 THE APP SHALL book.\n"
+    private let architecture = "# Architecture\n\n## Modules\n\n- Booking\n"
+    private let tasks = "# Tasks\n\n- [ ] 1. Build booking\n  - Covers: 1.1\n"
+    private let passed = #"{"stats":[],"issues":[],"coverage":[]}"#
+    private let issues = #"{"stats":[],"issues":[{"id":"i1","kind":"noTask","location":"REQUIREMENTS 1.1","text":"No test.","actions":[{"label":"Add Task","fix":"Add a test task for 1.1.","files":["tasks"]}]}],"coverage":[]}"#
+    private let impact = #"{"items":[{"kind":"architecture","what":"the Booking module","count":"1 section"},{"kind":"tasks","what":"Task 1","count":"1 task"}]}"#
 
-    private func waitForOpenRun(_ runner: FakeRunner) async throws {
-        for _ in 0..<400 where !runner.hasOpenRun { try await Task.sleep(for: .milliseconds(5)) }
-        #expect(runner.hasOpenRun)
+    private func file(_ text: String, session id: String? = nil) -> [AgentEvent] {
+        (id.map { [.session($0)] } ?? []) + [.text(text), .done(result: "")]
     }
 
-    @Test func ideaToFourApprovedFilesWithStopAndResume() async throws {
-        let requirementsStart = "2 stories\n\n# Requirements\n\n## 1. Book a class\n\nAs a member, I want to book.\n\n- 1.1 THE APP SHALL book.\n\n## 2. Cancel\n\nAs a mem"
-        let requirementsRest = "## 2. Cancel\n\nAs a member, I want to cancel.\n\n- 2.1 THE APP SHALL cancel.\n\n> [!ASSUMPTION]\n> Free until 2 h before.\n"
+    /// Intake with no questions → three files → Analyze passed. Ends in `.analyze`.
+    private func approvedFeature(analyze: String? = nil) throws -> (SpecSession, FakeRunner, AppState) {
+        try makeSession([[.done(result: noQuestions)], file(requirements, session: "s1"), file(architecture), file(tasks), [.done(result: analyze ?? passed)]])
+    }
+
+    private func approveAll(_ session: SpecSession) async {
+        for kind in session.spec.size.files { await session.approve(kind) }
+    }
+
+    private func wait(_ condition: () -> Bool) async throws {
+        for _ in 0..<400 where !condition() { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(condition())
+    }
+
+    // MARK: - Intake and drafting
+
+    @Test func intakeAnswersDraftRoundTwoAndHandOff() async throws {
         let (session, runner, app) = try makeSession([
-            [.done(result: question)],
-            [.done(result: allCovered)],
-            product,
-            [.session("s2"), .step("read specs/PRODUCT.md"), .text(requirementsStart)],
-            [.text(requirementsRest), .done(result: "")],
-            [.session("s3"), .text("# Experience\n\n## Flow 1 · Book\n\nPick a class.\n"), .done(result: "")],
-            [.session("s3b"), .text("# Architecture\n\n## Stack\n\nSwift.\n"), .done(result: "")],
-            [.session("s4"), .text("1 tasks\n\n# Tasks\n\n- [ ] 1. Build it\n  - Covers: 1.1, 2.1\n"), .done(result: "")],
+            [.done(result: intake)],
+            [.session("s1"), .step("read README.md"), .text("<!-- mel:step 1 -->\n" + requirements), .text("\n" + trailer), .done(result: "")],
+            file(requirements + "- 1.2 THE APP SHALL keep a waitlist.\n"),
+            file(architecture), file(tasks), [.done(result: passed)],
         ])
 
-        // Discovery
+        // Intake: one run returns every question.
         await session.start()
         #expect(session.currentQuestion?.id == "payments")
-        #expect(session.spec.coverage.count == 2)
+        #expect(session.spec.questions.count == 2)
+        #expect(session.spec.coverage.map(\.label) == ["Goal", "Edge cases"])
         #expect(runner.requests[0].persistSession == false)
         #expect(runner.requests[0].prompt.contains("Members book yoga classes."))
 
         await session.answer(.option(0, note: "packs of 10"))
-        #expect(runner.requests[1].prompt.contains("How do members pay? Class packs (packs of 10)"))
+        #expect(session.currentQuestion?.id == "offline")
+        #expect(runner.requests.count == 1)
+        await session.answer(.option(1, note: nil))
 
-        // Discovery done → PRODUCT.md drafted
-        #expect(session.spec.stage == .review(.product))
-        #expect(session.documents[.product] == "# Product\n\n## Problem\n\nPeople can't book.\n")
-        #expect(session.spec.sessionID == "s1")
-        #expect(notifications.map(\.title) == ["PRODUCT.md is ready for review"])
-        #expect(runner.requests[2].persistSession)
-
-        // Approve → REQUIREMENTS.md starts; stop it mid-section.
-        let approving = Task { await session.approve(.product) }
-        try await waitForOpenRun(runner)
-        #expect(session.isRunning)
-        #expect(app.runningSpecID == session.spec.id)
-        await session.stop()
-        await approving.value
-        #expect(session.spec.stage == .stopped(.requirements, .user))
-        #expect(notifications.count == 1)   // the user's own Stop isn't announced
-        #expect(session.documents[.requirements]?.hasPrefix("# Requirements\n") == true)
-        #expect(session.activity.map(\.text) == ["read specs/PRODUCT.md"])
-        #expect(app.runningSpecID == nil)
-
-        // Resume: truncated to the last complete section, continued in the same session.
-        await session.resume()
-        let resumed = runner.requests[4]
-        #expect(resumed.resumeSessionID == "s2")
-        #expect(resumed.prompt.contains("## 1. Book a class"))
-        #expect(!resumed.prompt.contains("As a mem\n"))
+        // All answered → REQUIREMENTS.md, without markers and trailer, with a round-2 question.
         #expect(session.spec.stage == .review(.requirements))
-        let requirements = try #require(session.documents[.requirements])
-        #expect(requirements.components(separatedBy: "## 2. Cancel").count == 2)
+        #expect(runner.requests[1].persistSession)
+        #expect(runner.requests[1].prompt.contains("- How do members pay? Class packs (packs of 10)"))
+        #expect(session.documents[.requirements] == requirements)
+        #expect(session.activity.map(\.text) == ["read README.md"])
+        #expect(session.spec.sessionID == "s1")
+        #expect(session.followUpQuestions(for: .requirements).map(\.id) == ["requirements-waitlist"])
+        #expect(session.decisions.map(\.title) == ["Should the schedule work offline?", "How do members pay?"])
+        #expect(notifications.map(\.title) == ["REQUIREMENTS.md is ready for review"])
+
+        // Round 2 → revise with the answer.
+        await session.answerFollowUp(questionID: "requirements-waitlist", .option(0, note: nil))
+        #expect(runner.requests[2].prompt.contains("Answer to “Is there a waitlist?”: Yes"))
+        #expect(runner.requests[2].prompt.contains("## 1. Book a class"))
+        #expect(session.spec.stage == .review(.requirements))
+        #expect(session.followUpQuestions(for: .requirements).isEmpty)
         #expect(session.summary(.requirements).criteria == 2)
 
-        session.confirmAssumption(index: 0, in: .requirements)
-        #expect(session.summary(.requirements).assumptions == 0)
+        // Approve each file; the next one is drafted with the approved text.
         await session.approve(.requirements)
-        #expect(session.spec.stage == .review(.experience))
-        #expect(runner.requests[5].prompt.contains("### REQUIREMENTS.md"))
-
-        await session.approve(.experience)
+        #expect(session.snapshots[.requirements] == session.documents[.requirements])
         #expect(session.spec.stage == .review(.architecture))
-        #expect(runner.requests[6].prompt.contains("### EXPERIENCE.md"))
-
+        #expect(runner.requests[3].prompt.contains("### REQUIREMENTS.md"))
         await session.approve(.architecture)
-        #expect(session.spec.stage == .review(.tasks))
-        #expect(session.documents[.tasks] == "# Tasks\n\n- [ ] 1. Build it\n  - Covers: 1.1, 2.1\n")
-        #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
-        #expect(runner.requests[7].prompt.contains("### ARCHITECTURE.md"))
-
+        #expect(runner.requests[4].prompt.contains("### ARCHITECTURE.md"))
         await session.approve(.tasks)
-        #expect(session.spec.stage == .analyze)   // the analyze run is wired in Wave 7
-        #expect(session.spec.size.files.allSatisfy { session.spec.docs[$0] == .approved })
 
-        // Everything is on disk, and the sidebar copy is current.
+        // Analyze runs without tools.
+        #expect(runner.requests[5].allowsTools == false)
+        #expect(session.spec.stage == .analyze)
+        #expect(session.spec.analyze == .passed)
+        session.handOffAnyway()
+        #expect(session.spec.stage == .done)
+
+        // Task prompts, then everything is on disk and the sidebar copy is current.
+        let prompts = try await session.writeTaskPrompts()
+        #expect(prompts.map(\.lastPathComponent) == ["task-01.md"])
+        #expect(session.startCommand.contains("specs/yoga-studio/prompts/task-01.md"))
         await session.flush()
         for kind in session.spec.size.files {
             #expect(try String(contentsOf: session.spec.folder.appending(path: kind.fileName), encoding: .utf8) == session.documents[kind])
+            #expect(try String(contentsOf: session.spec.folder.appending(path: ".mel/approved/\(kind.fileName)"), encoding: .utf8) == session.documents[kind])
         }
-        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .analyze)
-        #expect(app.specs.first?.stage == .analyze)
+        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .done)
+        #expect(try String(contentsOf: session.spec.folder.appending(path: "DECISIONS.md"), encoding: .utf8).contains("How do members pay?"))
+        #expect(app.specs.first?.stage == .done)
         #expect(authorizations == 1)
     }
 
-    @Test func unreadableDiscoveryReplyCanBeRetried() async throws {
-        let (session, _, _) = try makeSession([[.done(result: "Sure! Let me ask.")], [.done(result: question)]])
+    @Test func draftNowLeavesTheRestToClaude() async throws {
+        let (session, runner, _) = try makeSession([[.done(result: intake)], file(requirements)])
+        await session.start()
+        await session.answer(.option(0, note: nil))
+        await session.draftNow()
+        #expect(session.answeredQuestions.last?.answer == .agentDecides)
+        #expect(session.spec.stage == .review(.requirements))
+        #expect(runner.requests[1].prompt.contains("- Should the schedule work offline?\n- Edge cases"))
+        #expect(session.decisions.map(\.title) == ["How do members pay?"])
+    }
+
+    @Test func unreadableIntakeCanBeRetried() async throws {
+        let (session, _, _) = try makeSession([[.done(result: "Sure! Let me ask.")], [.done(result: intake)]])
         await session.start()
         #expect(session.lastError != nil)
         #expect(session.currentQuestion == nil)
@@ -172,79 +195,199 @@ final class SpecSessionTests {
         #expect(session.currentQuestion?.id == "payments")
     }
 
-    @Test func openQuestionTakesFreeText() async throws {
-        let open = #"{"coverage":[{"label":"Problem","phase":"product","state":"asking"}],"next":{"id":"idea","title":"What do you have in mind?","why":"","shapes":"product","options":[]},"done":false}"#
-        let (session, runner, _) = try makeSession([[.done(result: open)], [.done(result: question)]])
+    @Test func quickFixIsDoneAfterApproval() async throws {
+        let (session, runner, _) = try makeSession([[.done(result: noQuestions)], file("# Fix\n\n## What breaks\n\nIt crashes.\n")], size: .quickFix)
         await session.start()
-        #expect(session.currentQuestion?.options == [])
-        #expect(session.spec.coverage.first?.phase == .product)
-        await session.answer(.text("Calm, for small studios."))
-        #expect(runner.requests[1].prompt.contains("- What do you have in mind? Calm, for small studios."))
-        #expect(runner.requests[1].prompt.contains("- Problem (product): asking"))
+        #expect(session.spec.stage == .review(.spec))
+        await session.approve(.spec)
+        #expect(session.spec.stage == .done)
+        #expect(runner.requests.count == 2)
+        #expect(session.startCommand.contains("SPEC.md"))
     }
 
-    @Test func draftNowDecidesTheRest() async throws {
-        let (session, runner, _) = try makeSession([[.done(result: question)], product])
-        await session.start()
-        await session.draftNow()
-        #expect(session.answeredQuestions.first?.answer == .agentDecides)
-        #expect(session.spec.stage == .review(.product))
-        #expect(runner.requests[1].prompt.contains("- How do members pay?\n- Payments"))
+    // MARK: - Recovery
+
+    @Test func stopThenResumeContinuesTheSession() async throws {
+        let (session, runner, app) = try makeSession([
+            [.done(result: noQuestions)],
+            [.session("s1"), .text("# Requirements\n\n## 1. Book a class\n\nAs a member, I want to book.\n\n## 2. Cancel\n\nAs a mem")],
+            [.text("## 2. Cancel\n\nAs a member, I want to cancel.\n"), .done(result: "")],
+        ])
+        let starting = Task { await session.start() }
+        try await wait { runner.hasOpenRun }
+        #expect(session.isRunning)
+        #expect(app.runningSpecID == session.spec.id)
+        await session.stop()
+        await starting.value
+        #expect(session.spec.stage == .stopped(.requirements, .user))
+        #expect(notifications.isEmpty)   // the user's own Stop isn't announced
+        #expect(app.runningSpecID == nil)
+
+        await session.resume()
+        #expect(runner.requests[2].resumeSessionID == "s1")
+        #expect(runner.requests[2].prompt.contains("## 1. Book a class"))
+        #expect(!runner.requests[2].prompt.contains("As a mem\n"))
+        #expect(session.spec.stage == .review(.requirements))
+        #expect(session.documents[.requirements]?.components(separatedBy: "## 2. Cancel").count == 2)
     }
 
     @Test func usageLimitWaitsForTheResetAndNotifies() async throws {
         let resetsAt = Date.now.addingTimeInterval(0.3)
         let (session, runner, _) = try makeSession([
-            [.done(result: allCovered)],
-            [.session("s1"), .text("# Product\n\n## Problem\n\nPeople can't book.\n\n## Users"), .failed(.usageLimit(resetsAt: resetsAt))],
-            [.text("## Users and roles\n\nMembers.\n"), .done(result: "")],
+            [.done(result: noQuestions)],
+            [.session("s1"), .text("# Requirements\n\n## 1. Book\n\nBook.\n\n## 2. Can"), .failed(.usageLimit(resetsAt: resetsAt))],
+            [.text("## 2. Cancel\n\nCancel.\n"), .done(result: "")],
         ])
         await session.start()
-        #expect(session.spec.stage == .stopped(.product, .usageLimit(resetsAt: resetsAt)))
+        #expect(session.spec.stage == .stopped(.requirements, .usageLimit(resetsAt: resetsAt)))
         #expect(notifications.map(\.title) == ["Yoga Studio stopped"])
 
         await session.resume()
-        #expect(notifications.map(\.title) == ["Yoga Studio stopped", "Yoga Studio can continue", "PRODUCT.md is ready for review"])
+        #expect(notifications.map(\.title) == ["Yoga Studio stopped", "Yoga Studio can continue", "REQUIREMENTS.md is ready for review"])
         #expect(notifications[1].at == resetsAt)
         #expect(Date.now >= resetsAt)
         #expect(runner.requests[2].resumeSessionID == "s1")
-        #expect(session.documents[.product] == "# Product\n\n## Problem\n\nPeople can't book.\n\n## Users and roles\n\nMembers.\n")
+        #expect(session.documents[.requirements] == "# Requirements\n\n## 1. Book\n\nBook.\n\n## 2. Cancel\n\nCancel.\n")
     }
 
     @Test func lostSessionRedraftsFromTheStart() async throws {
         let (session, runner, _) = try makeSession([
-            [.done(result: allCovered)],
-            [.session("s1"), .text("# Product\n\n## Problem\n\nPeople"), .failed(.timeout)],
+            [.done(result: noQuestions)],
+            [.session("s1"), .text("# Requirements\n\n## 1. Book"), .failed(.timeout)],
             [.failed(.sessionNotFound)],
-            product,
+            file(requirements),
         ])
         await session.start()
         await session.resume()
         #expect(runner.requests[2].resumeSessionID == "s1")
         #expect(runner.requests[3].resumeSessionID == nil)
-        #expect(runner.requests[3].prompt.contains("You are writing PRODUCT.md"))
-        #expect(session.spec.stage == .review(.product))
+        #expect(runner.requests[3].prompt == runner.requests[1].prompt)
+        #expect(session.spec.stage == .review(.requirements))
+        #expect(notifications.map(\.title) == ["Yoga Studio stopped", "REQUIREMENTS.md is ready for review"])
     }
 
     @Test func oneRunAtATime() async throws {
-        let (session, runner, app) = try makeSession([[.done(result: question)]])
+        let (session, runner, app) = try makeSession([[.done(result: intake)]])
         app.runningSpecID = UUID()
         await session.start()
         #expect(runner.requests.isEmpty)
         #expect(session.lastError != nil)
     }
 
+    // MARK: - Analyze
+
+    @Test func fixIssuesRevisesThenAnalyzesAgain() async throws {
+        let (session, runner, _) = try approvedFeature(analyze: issues)
+        runner.add([file(tasks + "- [ ] 2. Test booking\n  - Covers: 1.1\n"), [.done(result: passed)]])
+        await session.start()
+        await approveAll(session)
+        #expect(session.spec.analyze == .issues(1))
+
+        await session.fixIssues()
+        #expect(runner.requests[5].prompt.contains("Add a test task for 1.1."))
+        #expect(session.spec.stage == .review(.tasks))
+        await session.approve(.tasks)
+        #expect(session.spec.stage == .analyze)
+        #expect(session.spec.analyze == .passed)
+        #expect(session.tasks.count == 2)
+    }
+
+    @Test func unreadableAnalyzeShowsRerun() async throws {
+        let (session, runner, _) = try approvedFeature(analyze: "No JSON here.")
+        runner.add([[.done(result: passed)]])
+        await session.start()
+        await approveAll(session)
+        #expect(session.spec.analyze == .stale)
+        #expect(session.lastError != nil)
+        await session.analyze()
+        #expect(session.spec.analyze == .passed)
+    }
+
+    // MARK: - Refine (C1)
+
+    private func editRequirements(_ session: SpecSession) async throws {
+        session.save(requirements + "- 1.2 THE APP SHALL refund.\n", for: .requirements)
+        #expect(session.spec.docs[.requirements] == .edited)
+        #expect(session.spec.docs[.architecture] == .stale)
+        #expect(session.spec.docs[.tasks] == .stale)
+        #expect(session.spec.analyze == .stale)
+        try await wait { session.impact != nil }
+    }
+
+    @Test func editRunsImpactAndUndoRestoresTheSnapshot() async throws {
+        let (session, runner, _) = try approvedFeature()
+        runner.add([[.done(result: impact)]])
+        await session.start()
+        await approveAll(session)
+        try await editRequirements(session)
+        #expect(runner.requests[5].allowsTools == false)
+        #expect(runner.requests[5].prompt.contains("1.2 THE APP SHALL refund."))
+        #expect(session.impact?.items.map(\.kind) == [.architecture, .tasks])
+
+        await session.undoEdit(.requirements)
+        #expect(session.documents[.requirements] == requirements)
+        #expect(session.spec.size.files.allSatisfy { session.spec.docs[$0] == .approved })
+        #expect(session.spec.analyze == .passed)
+        #expect(session.impact == nil)
+    }
+
+    @Test func keepAsIsMakesTheEditApproved() async throws {
+        let (session, runner, _) = try approvedFeature()
+        runner.add([[.done(result: impact)]])
+        await session.start()
+        await approveAll(session)
+        try await editRequirements(session)
+        try await session.saveDecision(title: "Refunds", reason: "Studios asked for it.", for: .requirements)
+        #expect(session.decisions.first?.affects == ["1.2"])
+
+        session.keepAsIs()
+        #expect(session.spec.size.files.allSatisfy { session.spec.docs[$0] == .approved })
+        #expect(session.snapshots[.requirements] == session.documents[.requirements])
+        #expect(session.impact == nil)
+    }
+
+    @Test func refineRevisesEachStaleFile() async throws {
+        let (session, runner, _) = try approvedFeature()
+        runner.add([[.done(result: impact)], file(architecture + "- Refunds\n"), file(tasks + "- [ ] 2. Refunds\n  - Covers: 1.2\n"), [.done(result: passed)]])
+        await session.start()
+        await approveAll(session)
+        try await editRequirements(session)
+        try await session.saveDecision(title: "Refunds", reason: "Studios asked for it.", for: .requirements)
+
+        await session.refine()
+        #expect(runner.requests[6].prompt.contains("Reason: Studios asked for it. Update what this affects here: the Booking module."))
+        #expect(session.spec.stage == .review(.architecture))
+        #expect(session.spec.docs[.requirements] == .approved)
+        await session.approve(.architecture)
+        #expect(runner.requests[7].prompt.contains("Update what this affects here: Task 1."))
+        await session.approve(.tasks)
+        #expect(session.spec.analyze == .passed)
+        #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
+    }
+
+    // MARK: - Files
+
     @Test func externalEditWithUnsavedTextIsAConflict() async throws {
-        let (session, _, _) = try makeSession([[.done(result: allCovered)], product])
+        let (session, _, _) = try makeSession([[.done(result: noQuestions)], file(requirements)])
         await session.start()
         await session.flush()
-        session.save("# Product\n\nMine\n", for: .product)
-        try "# Product\n\nTheirs\n".write(to: session.spec.folder.appending(path: "PRODUCT.md"), atomically: true, encoding: .utf8)
-        for _ in 0..<400 where session.conflict == nil { try await Task.sleep(for: .milliseconds(10)) }
-        #expect(session.conflict == .product)
+        session.save("# Requirements\n\nMine\n", for: .requirements)
+        try "# Requirements\n\nTheirs\n".write(to: session.spec.folder.appending(path: "REQUIREMENTS.md"), atomically: true, encoding: .utf8)
+        try await wait { session.conflict != nil }
+        #expect(session.conflict == .requirements)
 
         session.resolveConflict(keepMine: false)
         #expect(session.conflict == nil)
-        #expect(session.documents[.product] == "# Product\n\nTheirs\n")
+        #expect(session.documents[.requirements] == "# Requirements\n\nTheirs\n")
+    }
+
+    @Test func attachmentsAreListedInTheDraftPrompt() async throws {
+        let (session, runner, _) = try makeSession([[.done(result: noQuestions)], file(requirements)])
+        try await session.attachLog("crash at launch")
+        #expect(session.spec.attachments.count == 1)
+        await session.start()
+        let name = try #require(session.spec.attachments.first?.fileName)
+        #expect(runner.requests[0].prompt.contains("specs/yoga-studio/.mel/attachments/\(name)"))
+        #expect(runner.requests[1].prompt.contains("specs/yoga-studio/.mel/attachments/\(name)"))
     }
 }
