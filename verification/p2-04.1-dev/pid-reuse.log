@@ -1,5 +1,0 @@
-leader 73707 member 73708 ps ['73707', '73707', '73708', '73707']
-leader reaped; group still has the member
-while group alive: pid reused=False wraps=2 forks=93276 1540s
-member exit -9
-The control half (showing the number handed out again once the group is gone) was stopped unfinished; exit 143 is that stop. It is not needed for the result above.

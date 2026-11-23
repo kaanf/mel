@@ -1,9 +1,0 @@
-$ Real helper end to end (outside the OS sandbox: system ps required; offline; fixture executables only)
-
-running 1 test
-test p2_03_real_helper_runs_start_to_settlement_validation_and_acceptance_over_pipes ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.67s
-
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
-     Running tests/p2_03_real_helper.rs (/var/folders/4l/plkd1n_50b129lt9g_q121n40000gn/T/jojo-t04-iniw8qai/target/debug/deps/p2_03_real_helper-fab3be5c9227131a)
