@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 done, ready to merge
+Wave: 7 merged (d62dad7), standing by
 Updated: 2026-11-23
 
 ## Done
@@ -48,7 +48,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wait for the orchestrator. Remove v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)` once ui's NewSpecSheet stops using them.
+- Standing by. When the orchestrator says ui's B1 is on main: remove v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)` once ui's NewSpecSheet stops using them.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -67,11 +67,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge** (agent/core W7, full suite green, no warnings). Rebase on main needed at merge (main has two docs commits).
-
-- I touched one ui file: `Mel/Views/SpecReady/SpecReadySheet.swift` calls `finish` in a `Task` because `finish(commitToGit:)` is now async. Nothing else under Views.
-- For **ui**: `NewSpecSheet` still uses v1 `specFolder(name:parent:)` / `createSpec(name:idea:parentFolder:)`; switch to `specFolder(name:size:project:parent:)` and `createSpec(name:idea:size:project:parent:…)`, then I remove the v1 pair.
-- CONTRACTS change: `SpecSession.finish(commitToGit:) async throws` (was sync; git runs off the main actor).
+- (none) W7 merged; CONTRACTS updated for async finish (d8a31b4).
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
