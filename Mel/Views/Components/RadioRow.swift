@@ -50,3 +50,13 @@ struct RadioRow: View {
         .accessibilityHint(suggested ? "Suggested" : "")
     }
 }
+
+#Preview {
+    VStack(spacing: 4) {
+        RadioRow(label: "Members book themselves", note: "Simplest for the studio.", suggested: true, keyHint: "1", isSelected: true) {}
+        RadioRow(label: "Front desk books for them", note: "More control, more work.", keyHint: "2", isSelected: false) {}
+        RadioRow(label: "You decide", note: "The agent picks the best option and marks it as an assumption", keyHint: "3", isSelected: false) {}
+    }
+    .frame(width: 480)
+    .padding()
+}

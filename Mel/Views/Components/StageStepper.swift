@@ -43,3 +43,13 @@ struct StageStepper: View {
         }
     }
 }
+
+#Preview {
+    VStack(alignment: .leading, spacing: 12) {
+        StageStepper(current: 0)
+        StageStepper(current: 1)
+        StageStepper(steps: ["Idea", "Questions", "Draft Requirements", "Review"], current: 2)
+        StageStepper(current: 3)
+    }
+    .padding()
+}

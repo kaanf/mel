@@ -51,3 +51,16 @@ struct StatusBadge: View {
         }
     }
 }
+
+#Preview {
+    VStack(alignment: .leading, spacing: 8) {
+        StatusBadge(status: .ready)
+        StatusBadge(status: .checking)
+        StatusBadge(status: .needsYou)
+        StatusBadge(status: .stopped)
+        StatusBadge(status: .locked)
+        StatusBadge(status: .approved)
+        StatusBadge(status: .needsYou, title: "Not signed in")
+    }
+    .padding()
+}

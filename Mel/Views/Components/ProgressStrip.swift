@@ -26,3 +26,13 @@ struct ProgressStrip: View {
         .accessibilityValue(value.map { "\(Int($0 * 100)) percent" } ?? "")
     }
 }
+
+#Preview {
+    VStack(spacing: 20) {
+        ProgressStrip(value: 0.6)
+        ProgressStrip()
+        ProgressStrip(value: 0.4, isRunning: false)
+    }
+    .frame(width: 400)
+    .padding()
+}
