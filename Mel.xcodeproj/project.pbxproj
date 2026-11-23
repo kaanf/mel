@@ -11,6 +11,7 @@
 		AA00000000000000000000B1 /* MelStorage in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C1 /* MelStorage */; };
 		AA00000000000000000000B2 /* MelAgent in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C2 /* MelAgent */; };
 		AA00000000000000000000B3 /* MelSystem in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C3 /* MelSystem */; };
+		AA00000000000000000000B4 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C4 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,9 +30,22 @@
 		AA00000000000000000000A1 /* MelKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MelKit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA0000000000000000000040 /* Exceptions for "Mel" folder in "Mel" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA0000000000000000000010 /* Mel */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA0000000000000000000012 /* Mel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA0000000000000000000040 /* Exceptions for "Mel" folder in "Mel" target */,
+			);
 			path = Mel;
 			sourceTree = "<group>";
 		};
@@ -51,6 +65,7 @@
 				AA00000000000000000000B1 /* MelStorage in Frameworks */,
 				AA00000000000000000000B2 /* MelAgent in Frameworks */,
 				AA00000000000000000000B3 /* MelSystem in Frameworks */,
+				AA00000000000000000000B4 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +122,7 @@
 				AA00000000000000000000C1 /* MelStorage */,
 				AA00000000000000000000C2 /* MelAgent */,
 				AA00000000000000000000C3 /* MelSystem */,
+				AA00000000000000000000C4 /* Sparkle */,
 			);
 			productName = Mel;
 			productReference = AA0000000000000000000011 /* Mel.app */;
@@ -165,6 +181,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AA00000000000000000000A0 /* XCLocalSwiftPackageReference "MelKit" */,
+				AA00000000000000000000A2 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA0000000000000000000003 /* Products */;
@@ -285,6 +302,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mel/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mel;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -292,7 +310,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kaanf.mel.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -313,6 +331,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mel/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mel;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -320,7 +339,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kaanf.mel;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -337,7 +356,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kaanf.MelTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -355,7 +374,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kaanf.MelTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -405,6 +424,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		AA00000000000000000000A2 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		AA00000000000000000000C0 /* MelSpec */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -421,6 +451,11 @@
 		AA00000000000000000000C3 /* MelSystem */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MelSystem;
+		};
+		AA00000000000000000000C4 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA00000000000000000000A2 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

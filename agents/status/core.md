@@ -1,6 +1,6 @@
 # core status
 
-Wave: 4 (model + prompts ready to merge)
+Wave: 5 (Sparkle settings ready to merge)
 Updated: 2026-11-23
 
 ## Done
@@ -28,12 +28,13 @@ Updated: 2026-11-23
 
 - Wave 4 model + prompts (4.9): `Answer.text`, `CoverageItem.phase` (decoder defaults a missing phase to `.product`; init defaults to `.product` so previews compile), `DiscoveryTurn` takes empty or missing `options` (open question), `coverageText` = `- Label (phase): state`, `answersText` renders free text (extra lines indented). discovery.md: phases in file order, open question first per phase, new topics only current/later phase, UX in Design; sample reply decodes (tested). design.md: 7 sections, `1. User experience` first. DiscoveryView `answerText` got a minimal `.text` case so main compiles; ui owns the real card. Repo-doc counts: criteria 69. Full suite green 2 runs.
 
+- Wave 5 (5.5): Sparkle 2.10.1 (exactVersion, newest 2.x ≥ 2 weeks old) on the `Mel` target only; `Package.resolved` committed. `Mel/Info.plist` (excluded from the synchronized folder via an exception set, merged into the generated plist through `INFOPLIST_FILE`) holds `SUFeedURL`, `SUEnableAutomaticChecks`, `SUPublicEDKey` (from platform). `MARKETING_VERSION` 0.2. MarkdownParserTests: criteria 71, tasks 42. Checked a Developer ID archive + export (no notarization): app, Sparkle.framework, Autoupdate, Updater.app, Downloader/Installer.xpc all Developer ID + runtime; `codesign --verify --deep --strict` ok. Full suite green 2 runs.
+
 ## In progress
 - (nothing)
 
 ## Next
-- After merge: optional follow-up (e2e fixture for a 7-section DESIGN.md; the current fixture's DESIGN.md has informal sections and no test counts them, so it isn't required).
-- Never touch com.kaanf.mel defaults or /Applications/Mel.app.
+- Wait for the next wave. Never touch com.kaanf.mel defaults or /Applications/Mel.app.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -51,7 +52,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Merge agent/core (Wave 4 model + prompts).
+- Merge agent/core (Wave 5 Sparkle settings).
 
 ## Questions for the user
 - (none)
