@@ -38,7 +38,7 @@ struct DiscoveryView: View {
         .navigationTitle("Discovery")
         .navigationSubtitle(spec.name)
         .toolbar {
-            ToolbarItem(placement: .status) { status }
+            ToolbarItem(placement: .status) { status.padding(.horizontal, 10) }   // the glass capsule adds no inset of its own
             if spec.stage == .discovery {
                 ToolbarItem {
                     Button("Draft Now") { Task { await session.draftNow() } }
