@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 1 (done)
+Wave: 1 (done, merged to main a427bca)
 Updated: 2026-11-23
 
 ## Done
@@ -17,7 +17,10 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wave 2 (wait for orchestrator): 4.7 Notifier (still a stub), detection in `AppState.scanForAgent()`, 4.6 handoff pieces, `scripts/release.sh` draft.
+- Wave 2 (wait for orchestrator's Wave 2 message), first `git fetch origin && git rebase origin/main`, then:
+  - G1 item first: `claude-2.1.311-edit-run-short/long.jsonl` aren't used by any test. Add a parse test (tool_use and thinking records produce no text, steps are extracted) or delete them if obsolete.
+  - Wire the accepted contracts (02c13b7): `AgentRequest.systemPrompt` → `--append-system-prompt` in `ClaudeCode.arguments`; map "No conversation found" → `StopReason.sessionNotFound` in `ClaudeCode.failures` once core adds the case in MelSpec; update the unknown-resume tests.
+  - 4.7 Notifier (still a stub), detection in `AppState.scanForAgent()`, 4.6 handoff pieces, `scripts/release.sh` draft.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -31,8 +34,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- CONTRACTS, `AgentRequest`: no field for the stage contract, so `--append-system-prompt` isn't used yet; prompts must put the contract at the top of stdin. Proposal: `public var systemPrompt: String?` → `--append-system-prompt`. One line in `ClaudeCode.arguments` once it exists.
-- CONTRACTS, `StopReason` (MelSpec, core): an unknown `--resume` session currently arrives as `failed(.crashed("No conversation found with session ID: …"))`. SpecSession has to run fresh in that case. Proposal: `case sessionNotFound`, mapped in `ClaudeCode.failures` (one line). Otherwise SpecSession has to match the text.
+- (none; `systemPrompt` and `sessionNotFound` accepted in CONTRACTS 02c13b7)
 
 ## Questions for the user
 - (none)
