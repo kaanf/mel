@@ -124,7 +124,7 @@ review(d) ──Approve──▶ drafting(next d) | done
 1. Build prompt: stage instructions + idea + answers + approved earlier files.
 2. Run `claude -p` with stream output and write tools disabled.
 3. Append text chunks to an in-memory buffer; write the file at most every 500 ms (atomic). The live preview observes the buffer, throttled to ~10 updates/s.
-4. Progress = count of `##` sections in the buffer vs. the expected count (DESIGN.md has 6; for REQUIREMENTS/TASKS the prompt asks the agent to start with a one-line plan, e.g. `5 stories`, stripped from the file). The step list and "section 3 of 6" come from this.
+4. Progress = count of `##` sections in the buffer vs. the expected count (DESIGN.md has 7; for REQUIREMENTS/TASKS the prompt asks the agent to start with a one-line plan, e.g. `5 stories`, stripped from the file). The step list and "section 3 of 7" come from this.
 5. On finish: trim, ensure final newline, write, → review.
 
 ### Stop and resume

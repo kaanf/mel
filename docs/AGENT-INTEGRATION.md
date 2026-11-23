@@ -68,7 +68,7 @@ Two kinds of stage output.
 
 Used for Discovery (and later "Ask for changes"). The agent must return one JSON object. Use the CLI's schema flag if M1 1.1 confirms it exists; otherwise ask for JSON only and decode the final result text. If decoding fails, show the error with a Retry button. No automatic retry loop.
 
-Discovery turn request: idea, answers so far, coverage list. There is no question limit: the agent keeps asking until every coverage topic is covered, and may add topics when an answer reveals a new one. To keep it short, the prompt tells it to ask only questions whose answer changes the spec, to combine related points into one question, and to always mark a suggested option. Response:
+Discovery turn request: idea, answers so far, coverage list (each topic tagged with its phase: product, requirements, design, tasks). There is no question limit: the agent keeps asking until every coverage topic is covered. It works phase by phase in file order, opens each phase with an open question (free-text answer, `options` empty), and may add topics only to the current or a later phase (REQUIREMENTS 4.12–4.14). To keep it short, the prompt tells it to ask only questions whose answer changes the spec, to combine related points into one question, and to always mark a suggested option. Response:
 
 ```json
 {

@@ -86,7 +86,7 @@ struct Question: Codable, Identifiable, Hashable {
     var title: String
     var why: String
     var shapes: DocKind
-    var options: [Option]             // 2–4; "You decide" is not stored here, the UI adds it
+    var options: [Option]             // 2–4; "You decide" is not stored here, the UI adds it. Empty = open question (text field + Skip)
     var answer: Answer?
 }
 
@@ -99,10 +99,12 @@ struct Option: Codable, Hashable {
 enum Answer: Codable, Hashable {
     case option(Int, note: String?)
     case agentDecides                 // "You decide"
+    case text(String)                 // open question; Skip = .agentDecides
 }
 
 struct CoverageItem: Codable, Hashable {
     var label: String
+    var phase: DocKind                // Discovery phase the topic belongs to (REQ 4.12)
     var state: CoverageState
 }
 

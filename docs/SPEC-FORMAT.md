@@ -81,18 +81,21 @@ While drafting, the agent's first line is a plan (`5 stories`, `11 tasks`) that 
 
 ## DESIGN.md
 
-Six sections, in order (the failure screen refers to "section 3 of 6"):
+Seven sections, in order (the failure screen refers to "section 3 of 7"):
 
 ```markdown
 # Design
 
-## 1. Architecture
-## 2. Data model
-## 3. Key flows
-## 4. Interfaces
-## 5. Security and privacy
-## 6. Testing strategy
+## 1. User experience
+## 2. Architecture
+## 3. Data model
+## 4. Key flows
+## 5. Interfaces
+## 6. Security and privacy
+## 7. Testing strategy
 ```
+
+`1. User experience`: main screens and navigation, visual style and tone, reference apps, from the Design phase of Discovery. For a product without a user interface it says so in one line.
 
 ## TASKS.md
 

@@ -128,7 +128,7 @@ Artboard `Native-Error-Partial`.
 - Sidebar: DESIGN.md "Stopped", TASKS.md "Locked".
 - Background: DESIGN.md partial draft (sections 1 and 2).
 - Alert-style sheet: "Claude Code stopped while writing DESIGN.md"; plain explanation ("…your plan's usage limit was reached. This is a limit on your Claude account, not a problem with the spec. Nothing you approved was changed.").
-- File state list: PRODUCT.md Approved, unchanged · REQUIREMENTS.md Approved, unchanged · DESIGN.md Stopped at section 3 of 6, Sections 1 and 2 saved · TASKS.md Not started.
+- File state list: PRODUCT.md Approved, unchanged · REQUIREMENTS.md Approved, unchanged · DESIGN.md Stopped at section 3 of 7, Sections 1 and 2 saved · TASKS.md Not started.
 - "What should happen next?" radio: Resume with Claude Code when the limit resets / Finish DESIGN.md myself. The primary button label follows the choice: Resume Later / Open File. When the cause is not a usage limit (crash, timeout), the first option is "Resume now" with button "Resume".
 - Show Details · Not Now · primary.
 

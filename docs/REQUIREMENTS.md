@@ -41,17 +41,20 @@ As a user, I want to describe my idea in plain words, so that the agent can turn
 
 As a user, I want to answer a few focused questions, so that the spec reflects what I actually want.
 
-- 4.1 THE APP SHALL show one question at a time with its number ("Question 4"), which file it shapes, why it matters, and 2–4 options plus "You decide".
+- 4.1 THE APP SHALL show one question at a time with its number ("Question 4"), which file it shapes, why it matters, and either 2–4 options plus "You decide" or, for an open question, a text field plus "Skip".
 - 4.2 WHEN the agent marks an option as suggested, THE APP SHALL label it "Suggested" with the reason.
 - 4.3 THE APP SHALL let the user pick an option with the mouse or the keys 1–4, and add an optional note for the agent.
 - 4.4 WHEN the user presses Continue (↩), THE APP SHALL record the answer and request the next question.
 - 4.5 WHEN the user picks "You decide", THE APP SHALL let the agent choose the best option for that topic and record it as an assumption.
 - 4.6 THE APP SHALL show answered questions above the current one, and WHEN the user clicks one, THE APP SHALL let them change the answer.
-- 4.7 THE APP SHALL show the coverage checklist in the inspector, each topic "Covered", "Asking" or "Not yet", with a count ("3 of 7"); the agent MAY add topics as answers reveal new ones.
+- 4.7 THE APP SHALL show the coverage checklist in the inspector, grouped by phase (Product, Requirements, Design, Tasks), each topic "Covered", "Asking" or "Not yet", with a count ("3 of 7").
 - 4.8 THE APP SHALL not limit the number of questions; Discovery SHALL end only WHEN every coverage topic is covered, and then start drafting PRODUCT.md.
 - 4.9 WHEN the user clicks "Draft Now", THE APP SHALL end Discovery early and the agent SHALL decide the remaining topics as assumptions.
 - 4.10 THE APP SHALL show the progress stepper (Idea › Questions › Draft › Review).
 - 4.11 WHILE the app waits for the user's answer, THE APP SHALL show "Needs you" status in the toolbar and sidebar.
+- 4.12 Discovery SHALL run in phases in file order: Product, Requirements, Design, Tasks. The agent SHALL finish a phase's topics before asking about the next phase, and MAY add a topic only to the current or a later phase.
+- 4.13 WHEN a phase starts, the agent SHALL first ask an open question ("What do you have in mind for the design? Screens, style, apps you like…"); the user MAY answer in free text or skip. The agent SHALL then sharpen that answer with option questions.
+- 4.14 WHERE the product has a user interface, the Design phase SHALL ask about the user experience: main screens and navigation, visual style and tone, and reference apps.
 
 ## 5. Draft a file
 
