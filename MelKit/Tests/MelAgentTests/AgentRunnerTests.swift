@@ -27,11 +27,13 @@ struct AgentRunnerTests {
                     executable: URL(fileURLWithPath: "/bin/sh"), timeout: timeout)
     }
 
-    /// A one-record stream that never ends: the `init` line of a real run.
+    /// A stream that never ends: the `init` line of a real run, then 10 unmapped records,
+    /// so hang mode must replay the whole file (plain `tail -f` would start after `init`).
     func hangingRun(_ line: String? = nil) throws -> URL {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("mel-hang-\(UUID()).jsonl")
         let first = try line ?? String(fixtureText("claude-2.1.311-partial-messages.jsonl").prefix { $0 != "\n" })
-        try (first + "\n").write(to: file, atomically: true, encoding: .utf8)
+        let noise = String(repeating: #"{"type":"system","subtype":"status","status":"requesting"}"# + "\n", count: 10)
+        try (first + "\n" + noise).write(to: file, atomically: true, encoding: .utf8)
         return file
     }
 
