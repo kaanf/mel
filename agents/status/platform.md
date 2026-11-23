@@ -1,7 +1,11 @@
 # platform status
 
-Wave: 2 ready to merge
+Wave: 3 ready to merge — needs mel-notary (notarize is the only step left)
 Updated: 2026-11-23
+
+## Done (Wave 3)
+- 5.3 `scripts/release.sh`: `TEAM_ID=SGWP227GBQ scripts/release.sh` archives with manual Developer ID signing (certificate picked by SHA-1 from the keychain), exports developer-id, `codesign --verify --deep --strict` on app and DMG, signs the DMG with a timestamp. Checks the notary profile (`NOTARY_PROFILE`, default `mel-notary`) up front; without it, it signs everything, then exits 1 with "Signed but not notarized … xcrun notarytool store-credentials mel-notary". Verified 2026-11-23: Authority Developer ID Application: Kaan Firat (SGWP227GBQ), secure timestamp, hardened runtime, no entitlements; `spctl -a -vv Mel.app` → rejected, `source=Unnotarized Developer ID` (expected until notarized). Unsigned path still works.
+- 5.4 `docs/research/CLEAN-INSTALL.md`: checklist with steps and a results table (Gatekeeper incl. quarantine + offline launch, Dock PATH incl. custom `~/.zshrc` PATH and extra search path, first-run flow, first spec end to end, subscription-only check).
 
 ## Done (Wave 2)
 - G1: edit-run fixtures now tested (`editRunsGiveOnlyStepsAndResult`: thinking, permission_denied and tool results stay silent; Edit/Write give bare "edit"/"write" steps). Commit 81dfa7c.
@@ -26,7 +30,8 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wave 3 when the orchestrator starts it: 5.3 signing (needs the Apple Developer account), 5.4 clean-install test.
+- After the user runs `xcrun notarytool store-credentials mel-notary`: `TEAM_ID=SGWP227GBQ scripts/release.sh` end to end (notarize + staple app and DMG, `spctl` accepted). Notarization itself is untested until then.
+- The user runs `docs/research/CLEAN-INSTALL.md` on a clean account with that DMG.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -40,7 +45,8 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- For core: nothing calls `Notifier.requestAuthorization()`, and `UNUserNotificationCenter` silently drops posts from an app without authorization, so the usage-limit reset notification never shows. Call it once before the first run (e.g. `SpecSession.start()`). Also REQ 5.8 (notify when a file finishes) has no `notify` call yet.
+- (none; Notifier gaps handed to core)
 
 ## Questions for the user
-- (for Wave 3) Apple Developer Team ID and a `notarytool store-credentials` profile name (OPEN-QUESTIONS 16).
+- needs mel-notary: run `xcrun notarytool store-credentials mel-notary` (Apple ID, team SGWP227GBQ, app-specific password).
+- Run the clean-install checklist (docs/research/CLEAN-INSTALL.md) once the notarized DMG exists.

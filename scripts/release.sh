@@ -2,23 +2,42 @@
 # Builds .build/release/Mel-<version>.dmg (DESIGN.md › Distribution):
 #   archive → export (Developer ID) → notarize + staple app → DMG → sign, notarize + staple DMG.
 #
-# Signed release: TEAM_ID=<team> NOTARY_PROFILE=<profile> scripts/release.sh
-#   NOTARY_PROFILE is a keychain profile from `xcrun notarytool store-credentials`.
+# Signed release: TEAM_ID=SGWP227GBQ scripts/release.sh
+#   Needs "Developer ID Application" for TEAM_ID in the keychain and the notary profile NOTARY_PROFILE
+#   (default mel-notary), created once with `xcrun notarytool store-credentials mel-notary`.
+#   Without the profile it still signs and verifies the app and DMG, then stops before notarizing.
 # Without TEAM_ID it stops after an ad-hoc signed DMG: fine for a local check, Gatekeeper blocks it elsewhere.
 set -eu
 cd "$(dirname "$0")/.."
 
 OUT=.build/release
 ARCHIVE="$OUT/Mel.xcarchive"
+APP="$OUT/Mel.app"
+NOTARY_PROFILE=${NOTARY_PROFILE:-mel-notary}
 VERSION=$(xcodebuild -project Mel.xcodeproj -scheme Mel -configuration Release -showBuildSettings 2>/dev/null |
     awk '$1 == "MARKETING_VERSION" { print $3; exit }')
 DMG="$OUT/Mel-$VERSION.dmg"
+
+if [ -n "${TEAM_ID:-}" ]; then
+    IDENTITY="Developer ID Application"
+    CERT=$(security find-identity -v -p codesigning | awk -v id="\"$IDENTITY: " -v team="($TEAM_ID)\"" \
+        'index($0, id) && index($0, team) { print $2; exit }')
+    [ -n "$CERT" ] || { echo "✗ No \"$IDENTITY: … ($TEAM_ID)\" certificate in the keychain." >&2; exit 1; }
+    # Errors out without the profile; with it, a quick authenticated call.
+    if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+        NOTARIZE=1
+    else
+        NOTARIZE=0
+        echo "! Notary profile \"$NOTARY_PROFILE\" not found: signing only, no notarization." >&2
+    fi
+fi
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
 notarize() {  # stapler fails unless notarization was accepted, so `set -e` stops a rejected build
     xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait
+    xcrun stapler staple "$2"
 }
 
 echo "→ archive $VERSION"
@@ -26,12 +45,11 @@ if [ -z "${TEAM_ID:-}" ]; then
     xcodebuild archive -project Mel.xcodeproj -scheme Mel -configuration Release \
         -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath .build/DerivedData \
         CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet
-    ditto "$ARCHIVE/Products/Applications/Mel.app" "$OUT/Mel.app"
+    ditto "$ARCHIVE/Products/Applications/Mel.app" "$APP"
 else
-    : "${NOTARY_PROFILE:?set NOTARY_PROFILE (xcrun notarytool store-credentials)}"
     xcodebuild archive -project Mel.xcodeproj -scheme Mel -configuration Release \
         -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath .build/DerivedData \
-        DEVELOPMENT_TEAM="$TEAM_ID" -quiet
+        CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$IDENTITY" DEVELOPMENT_TEAM="$TEAM_ID" -quiet
 
     echo "→ export (Developer ID)"
     cat > "$OUT/ExportOptions.plist" <<EOF
@@ -41,31 +59,40 @@ else
 <dict>
     <key>method</key><string>developer-id</string>
     <key>teamID</key><string>$TEAM_ID</string>
-    <key>signingStyle</key><string>automatic</string>
+    <key>signingStyle</key><string>manual</string>
+    <key>signingCertificate</key><string>$IDENTITY</string>
 </dict>
 </plist>
 EOF
     xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$OUT" \
         -exportOptionsPlist "$OUT/ExportOptions.plist" -quiet
+    codesign --verify --deep --strict --verbose=2 "$APP"
 
-    echo "→ notarize app"
-    ditto -c -k --keepParent "$OUT/Mel.app" "$OUT/Mel.zip"
-    notarize "$OUT/Mel.zip"
-    xcrun stapler staple "$OUT/Mel.app"
+    if [ "$NOTARIZE" = 1 ]; then
+        echo "→ notarize app"
+        ditto -c -k --keepParent "$APP" "$OUT/Mel.zip"
+        notarize "$OUT/Mel.zip" "$APP"
+        spctl --assess --type execute -vv "$APP"
+    fi
 fi
 
 echo "→ dmg"
 mkdir "$OUT/dmg"
-ditto "$OUT/Mel.app" "$OUT/dmg/Mel.app"
+ditto "$APP" "$OUT/dmg/Mel.app"
 ln -s /Applications "$OUT/dmg/Applications"
 hdiutil create -volname Mel -srcfolder "$OUT/dmg" -fs APFS -format ULFO -ov "$DMG" -quiet
 
 if [ -n "${TEAM_ID:-}" ]; then
+    codesign --sign "$CERT" --timestamp "$DMG"
+    codesign --verify --strict --verbose=2 "$DMG"
+    if [ "$NOTARIZE" = 0 ]; then
+        echo "✗ Signed but not notarized: $DMG" >&2
+        echo "  Create the profile once: xcrun notarytool store-credentials $NOTARY_PROFILE" >&2
+        exit 1
+    fi
     echo "→ notarize dmg"
-    codesign --sign "Developer ID Application" --timestamp "$DMG"
-    notarize "$DMG"
-    xcrun stapler staple "$DMG"
-    spctl --assess --type open --context context:primary-signature -v "$DMG"
+    notarize "$DMG" "$DMG"
+    spctl --assess --type open --context context:primary-signature -vv "$DMG"
 fi
 
 echo "✓ $DMG"
