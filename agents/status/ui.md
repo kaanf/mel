@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3 done; next B4
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4 done; next B5
 Updated: 2026-11-23
 
 ## Done
@@ -90,8 +90,13 @@ Updated: 2026-11-23
   - Core file touched: `AppState.preview(…, sessions:)` (preview only) so debug screens can show sessions with live text. Tell core in the final message.
   - Deviations: "Live Preview" header sits at the top of the inspector content, not in the toolbar row (our toolbar items sit over the inspector, see B2); Stop and the toggle at the trailing edge as in B2.
 
+- B4 Review (`Views/Review/ReviewView.swift`, `Views/Markdown/MarkdownBlocksView.swift` rewritten), debug screen `review` uses `PreviewData.reviewSession` (the mock's REQUIREMENTS.md, 2 round-2 gaps). One compare pass: article matches the mock.
+  - Article: H1 title, summary line, "Before you approve" (round-2 gaps → "Answer n Questions" sheet with B2's QuestionCard → `answerFollowUp`; assumptions and open questions jump to the box), stories with P1 · MVP badges, EARS criteria ("THE <system> SHALL" bold as one span), assumption box (Change… / Confirm), open-question box (Answer Now… → alert → `answerOpenQuestion`), dashed MVP line ("MVP LINE"), bullets. Approve no longer waits for assumptions ("You can approve anyway", V2). Toolbar: Preview / Edit Markdown icon segment, Show in Finder + Share group, Approve ⌘↩ without system glass. Edit mode: mono 12/18 editor in the article column.
+  - `QuestionCard` is now internal and takes `onAnswer`. CalloutView removed (unused). New glyphs star, question, docLines, code, share; SVG parser handles C/c.
+  - Hidden (V2 §2): review inspector, suggested changes (Accept/Reject) and their checklist row. MVP line text has no "· stories 4 and 5 are P2" (not in the parsed data).
+
 ## Next
-- B4 Review next, then B5–B7, C1–C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- B5 Review EXPERIENCE next, then B6, B7, C1–C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 

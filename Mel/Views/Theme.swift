@@ -389,6 +389,10 @@ enum Theme {
         static let upNextRow: CGFloat = 40
         /// 2 × 13 · B3 live preview caret.
         static let caretWidth: CGFloat = 2
+        /// B4: criterion id column 24; "Before you approve" rows min 30 with 13 pt icons.
+        static let criterionID: CGFloat = 24
+        static let checklistRow: CGFloat = 30
+        static let checklistIcon: CGFloat = 13
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

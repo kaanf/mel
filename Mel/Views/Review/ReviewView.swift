@@ -1,7 +1,8 @@
 import SwiftUI
 import MelSpec
 
-/// One finished file: rendered preview or editable Markdown, assumptions to confirm, Approve.
+/// B4 Review (design/v2 Native-3-Review): one drafted file as an article or editable Markdown,
+/// "Before you approve", Approve. The review inspector and agent suggestions are hidden in v0.3 (V2 §2).
 struct ReviewView: View {
     let session: SpecSession
     let kind: DocKind
@@ -11,7 +12,11 @@ struct ReviewView: View {
     @State private var summary = DocSummary()
     @State private var editing: (index: Int, text: String)?
     @State private var editText = ""
+    @State private var answering: OpenQuestion?
+    @State private var openAnswer = ""
+    @State private var showsRoundTwo = false
     @State private var showReady = false
+    @State private var width: CGFloat = .infinity
 
     enum Mode { case preview, edit }
 
@@ -23,23 +28,23 @@ struct ReviewView: View {
     }
 
     private var spec: Spec { session.spec }
+    private var files: [DocKind] { spec.size.files }
     private var isApproved: Bool { spec.docs[kind] == .approved }
-    private var canApprove: Bool { spec.docs[kind] == .review && assumptions == 0 }
-    private var assumptions: Int {
-        blocks.count { if case .assumption = $0 { true } else { false } }
-    }
-
-    private var next: DocKind? {
-        let all = DocKind.allCases
-        let index = all.firstIndex(of: kind)! + 1
-        return index < all.count ? all[index] : nil
-    }
+    /// Open items don't block: they stay marked in the file for the next agent.
+    private var canApprove: Bool { spec.docs[kind] == .review }
+    private var next: DocKind? { spec.size.file(after: kind) }
+    private var assumptions: [Int] { blocks.compactMap { if case .assumption(let i, _) = $0 { i } else { nil } } }
+    private var openQuestions: [Int] { blocks.compactMap { if case .openQuestion(let i, _) = $0 { i } else { nil } } }
+    private var roundTwo: [Question] { spec.questions.filter { $0.round == .draft && $0.shapes == kind && $0.answer == nil } }
+    private var compact: Bool { width < ToolbarStatus.fullTextWidth }
 
     var body: some View {
         content
+            .background(Theme.Colors.background)
             .navigationTitle(kind.fileName)
-            .navigationSubtitle(spec.name)
+            .navigationSubtitle("Saved · your edits are never overwritten")
             .toolbar { toolbar }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .focusedSceneValue(\.approve, approveAction)
             .task(id: text) {
                 let parsed = await parseDocument(text, kind: kind)
@@ -62,87 +67,252 @@ struct ReviewView: View {
             } message: {
                 Text("Say what should be true instead. The file is updated and the assumption counts as confirmed.")
             }
+            .alert("Answer Open Question", isPresented: Binding(get: { answering != nil }, set: { if !$0 { answering = nil } })) {
+                TextField("Answer", text: $openAnswer)
+                Button("Cancel", role: .cancel) { openAnswer = "" }
+                Button("Answer") {
+                    let answer = openAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
+                    openAnswer = ""
+                    if let answering, !answer.isEmpty { Task { await session.answerOpenQuestion(answering, answer) } }
+                }
+            } message: {
+                Text(answering.map { "\($0.text) The agent revises \(kind.fileName) with your answer." } ?? "")
+            }
             .alert("\(kind.fileName) changed in another app", isPresented: Binding(get: { session.conflict == kind }, set: { _ in })) {
                 Button("Keep Mine") { session.resolveConflict(keepMine: true) }
                 Button("Use File") { session.resolveConflict(keepMine: false) }
             } message: {
                 Text("You also have unsaved edits here. Keep Mine replaces the file with your edits. Use File loads the file and drops your edits.")
             }
+            .sheet(isPresented: $showsRoundTwo) { roundTwoSheet }
             .sheet(isPresented: $showReady) {
                 SpecReadySheet(session: session)
             }
     }
 
+    // MARK: Content
+
     private var content: some View {
-        Group {
-            switch mode {
-            case .preview:
-                ScrollView {
-                    ReviewDocument(
-                        kind: kind,
-                        blocks: blocks,
-                        summary: summary,
-                        onConfirm: { session.confirmAssumption(index: $0, in: kind) },
-                        onChange: { index, text in
-                            editText = text
-                            editing = (index, text)
-                        }
-                    )
-                    .frame(maxWidth: 680)
-                    .padding(24)
-                    .frame(maxWidth: .infinity)
+        ScrollViewReader { proxy in
+            ScrollView {
+                Group {
+                    switch mode {
+                    case .preview: article(proxy)
+                    case .edit: editor
+                    }
                 }
-            case .edit:
-                TextEditor(text: $text)
-                    .font(.body.monospaced())
-                    .scrollContentBackground(.hidden)
-                    .padding(8)
+                .frame(maxWidth: Theme.Size.articleMaxWidth, alignment: .leading)
+                .padding(EdgeInsets(top: Theme.Space.x20, leading: Theme.Space.x32, bottom: Theme.Space.x40, trailing: Theme.Space.x32))
+                .frame(maxWidth: .infinity)
             }
         }
     }
 
+    private func article(_ proxy: ScrollViewProxy) -> some View {
+        // The file's H1 is the article title; the summary and the checklist come right after it.
+        let hasTitle = if case .heading(1, _)? = blocks.first { true } else { false }
+        return VStack(alignment: .leading, spacing: Theme.Space.x14) {
+            if hasTitle { MarkdownBlocksView(blocks: Array(blocks.prefix(1))) }
+            Text("\(summary.line(for: kind)) Written from \(source), project context and your answers.")
+                .textStyle(Theme.Text.body)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+            if !roundTwo.isEmpty || !assumptions.isEmpty || !openQuestions.isEmpty {
+                checklist(proxy)
+            }
+            MarkdownBlocksView(
+                blocks: Array(blocks.dropFirst(hasTitle ? 1 : 0)),
+                onConfirm: { session.confirmAssumption(index: $0, in: kind) },
+                onChange: { index, text in
+                    editText = text
+                    editing = (index, text)
+                },
+                onAnswer: { index, text in answering = OpenQuestion(kind: kind, index: index, text: text) }
+            )
+        }
+    }
+
+    private var editor: some View {
+        TextEditor(text: $text)
+            .font(Theme.Text.codeBlock.font)
+            .lineHeight(.exact(points: Theme.Text.codeBlock.lineHeight!))
+            .foregroundStyle(Theme.Colors.label)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .accessibilityLabel("\(kind.fileName) source, editable")
+    }
+
+    private var source: String {
+        files.firstIndex(of: kind).flatMap { $0 > 0 ? files[$0 - 1].fileName : nil } ?? "your idea"
+    }
+
+    /// "Before you approve": round-2 gaps, assumptions, open questions. Suggestions are hidden in v0.3.
+    private func checklist(_ proxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Before you approve")
+                .textStyle(Theme.Text.bodyBold)
+                .padding(EdgeInsets(top: Theme.Space.x10, leading: Theme.Space.x12, bottom: Theme.Space.x6, trailing: Theme.Space.x12))
+            let rows = checklistRows
+            ForEach(rows.indices, id: \.self) { index in
+                if index > 0 {
+                    Rectangle().fill(Theme.Colors.separator).frame(height: Theme.Size.hairline).padding(.leading, Theme.Size.checklistSeparatorInset)
+                }
+                checklistRow(rows[index], proxy: proxy)
+            }
+            Text("You can approve anyway. Open items stay marked in the file so the next agent sees them.")
+                .textStyle(Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+                .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x12, bottom: Theme.Space.x10, trailing: Theme.Space.x12))
+        }
+        .foregroundStyle(Theme.Colors.label)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+    }
+
+    private enum ChecklistRow { case roundTwo(Int), assumptions(Int), openQuestions(Int) }
+
+    private var checklistRows: [ChecklistRow] {
+        var rows: [ChecklistRow] = []
+        if !roundTwo.isEmpty { rows.append(.roundTwo(roundTwo.count)) }
+        if !assumptions.isEmpty { rows.append(.assumptions(assumptions.count)) }
+        if !openQuestions.isEmpty { rows.append(.openQuestions(openQuestions.count)) }
+        return rows
+    }
+
+    @ViewBuilder
+    private func checklistRow(_ row: ChecklistRow, proxy: ScrollViewProxy) -> some View {
+        switch row {
+        case .roundTwo(let n):
+            Button { showsRoundTwo = true } label: {
+                HStack(spacing: Theme.Space.x8) {
+                    Circle().fill(Theme.Colors.accent).frame(width: Theme.Size.statusDot, height: Theme.Size.statusDot)
+                        .frame(width: Theme.Size.checklistIcon)
+                    Text("Round 2: \(n == 1 ? "1 gap" : "\(n) gaps") found in this draft")
+                        .textStyle(Theme.Text.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(n == 1 ? "Answer 1 Question" : "Answer \(n) Questions")
+                        .textStyle(Theme.Text.callout)
+                        .foregroundStyle(Theme.Colors.link)
+                }
+                .padding(.horizontal, Theme.Space.x12)
+                .frame(minHeight: Theme.Size.checklistRow)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        case .assumptions(let n):
+            jumpRow(glyph: .star, text: n == 1 ? "1 assumption to confirm" : "\(n) assumptions to confirm") {
+                if let first = assumptions.first { withAnimation { proxy.scrollTo("assumption-\(first)", anchor: .top) } }
+            }
+        case .openQuestions(let n):
+            jumpRow(glyph: .question, text: n == 1 ? "1 open question" : "\(n) open questions") {
+                if let first = openQuestions.first { withAnimation { proxy.scrollTo("open-question-\(first)", anchor: .top) } }
+            }
+        }
+    }
+
+    private func jumpRow(glyph: DesignIcon.Glyph, text: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: Theme.Space.x8) {
+                DesignIcon(glyph: glyph, size: Theme.Size.checklistIcon, weight: 1.5)
+                Text(text)
+                    .textStyle(Theme.Text.body)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                DesignIcon(glyph: .chevronRight, size: Theme.Size.rowChevron).foregroundStyle(Theme.Colors.secondaryLabel)
+            }
+            .padding(.horizontal, Theme.Space.x12)
+            .frame(height: Theme.Size.checklistRow)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Round 2 from "Answer n Questions": the first open gap; answering starts a revise run of the file.
+    @ViewBuilder
+    private var roundTwoSheet: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x16) {
+            if let question = roundTwo.first {
+                QuestionCard(session: session, question: question, number: 1, total: roundTwo.count, takesFocus: true) { answer in
+                    showsRoundTwo = false
+                    await session.answerFollowUp(questionID: question.id, answer)
+                }
+                .id(question.id)
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { showsRoundTwo = false }.keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(Theme.Space.x20)
+        .frame(width: Theme.Size.intakeWidth + Theme.Space.x40)
+        .background(Theme.Colors.background)
+    }
+
+    // MARK: Toolbar
+
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .status) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Saved · your edits are never overwritten")
-                if let next, !isApproved {
-                    Text("Idle · \(next.fileName) starts when you approve")
-                        .foregroundStyle(.secondary)
-                }
+        if compact {
+            ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
+        }
+        ToolbarItem {
+            HStack(spacing: Theme.Space.x2) {
+                modeButton(.preview, glyph: .docLines, label: "Preview")
+                modeButton(.edit, glyph: .code, label: "Edit Markdown")
             }
-            .font(.caption)
         }
         ToolbarItem {
-            Text("\(DocKind.allCases.firstIndex(of: kind)! + 1) of \(DocKind.allCases.count)")
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-        }
-        ToolbarItem {
-            Picker("Mode", selection: $mode) {
-                Text("Preview").tag(Mode.preview)
-                Text("Edit Markdown").tag(Mode.edit)
+            HStack(spacing: Theme.Space.x2) {
+                Button { session.showInFinder() } label: { toolbarIcon(.folder) }
+                    .accessibilityLabel("Show in Finder")
+                    .help("Show in Finder")
+                ShareLink(item: spec.folder.appending(path: kind.fileName)) { toolbarIcon(.share) }
+                    .accessibilityLabel("Share")
             }
-            .pickerStyle(.segmented)
         }
-        ToolbarItem {
-            ShareLink(item: spec.folder.appending(path: kind.fileName))
-        }
-        ToolbarItem {
-            Button("Show in Finder", systemImage: "folder") { session.showInFinder() }
-                .help("Show in Finder")
-        }
-        ToolbarItem {
-            if spec.stage == .done {
+        if spec.stage == .done {
+            ToolbarItem {
                 Button("Start Building…") { showReady = true }
-                    .buttonStyle(.borderedProminent)
-            } else if !isApproved {
-                Button("Approve", action: approve)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!canApprove)
-                    .help(assumptions > 0 ? "Confirm or change each assumption first" : "Approve (⌘↩)")
+                    .buttonStyle(DesignButtonStyle(height: Theme.Size.buttonToolbar, leading: Theme.Space.x16, trailing: Theme.Space.x16))
             }
+            .sharedBackgroundVisibility(.hidden)
+        } else if !isApproved {
+            ToolbarItem {
+                Button("Approve", action: approve)
+                    .buttonStyle(DesignButtonStyle(height: Theme.Size.buttonToolbar, leading: Theme.Space.x16, trailing: Theme.Space.x16, keyHint: "⌘↩"))
+                    .disabled(!canApprove)
+                    .help("Approve (⌘↩)")
+            }
+            .sharedBackgroundVisibility(.hidden)
         }
+    }
+
+    @ViewBuilder
+    private var status: some View {
+        let count = files.firstIndex(of: kind).map { "\($0 + 1) of \(files.count)" } ?? ""
+        let maxWidth = compact ? Theme.Size.statusPillCompact : Theme.Size.statusPillReview
+        if let next, !isApproved {
+            StatusPill(indicator: .idle, text: compact ? "Idle" : "Idle · \(next.fileName) starts when you approve", count: count, maxWidth: maxWidth)
+        } else {
+            StatusPill(indicator: .idle, text: isApproved ? "Approved" : "Idle", count: count, maxWidth: maxWidth)
+        }
+    }
+
+    private func modeButton(_ value: Mode, glyph: DesignIcon.Glyph, label: String) -> some View {
+        Button { mode = value } label: {
+            toolbarIcon(glyph)
+                .background(mode == value ? Theme.Colors.selectionFill : .clear, in: Capsule())
+        }
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(mode == value ? .isSelected : [])
+        .help(label)
+    }
+
+    private func toolbarIcon(_ glyph: DesignIcon.Glyph) -> some View {
+        DesignIcon(glyph: glyph, size: Theme.Size.settingsIcon)
+            .foregroundStyle(Theme.Colors.label)
+            .frame(width: Theme.Size.toolbarSegmentWidth, height: Theme.Size.button)
+            .contentShape(Capsule())
     }
 
     private var approveAction: (() -> Void)? {
@@ -155,51 +325,12 @@ struct ReviewView: View {
     }
 }
 
-/// The rendered document with the "Before you approve" box.
-struct ReviewDocument: View {
-    let kind: DocKind
-    let blocks: [Block]
-    let summary: DocSummary
-    var onConfirm: (Int) -> Void = { _ in }
-    var onChange: (Int, String) -> Void = { _, _ in }
-
-    private var assumptions: Int {
-        blocks.count { if case .assumption = $0 { true } else { false } }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("\(summary.line(for: kind)) Written from \(source) and your answers.")
-                .foregroundStyle(.secondary)
-            if assumptions > 0 {
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Label("Before you approve", systemImage: "checklist")
-                            .font(.headline)
-                        Text(assumptions == 1 ? "1 assumption to confirm" : "\(assumptions) assumptions to confirm")
-                        Text("Confirm or change each assumption to approve.")
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            MarkdownBlocksView(blocks: blocks, onConfirm: onConfirm, onChange: onChange)
-        }
-    }
-
-    private var source: String {
-        let all = DocKind.allCases
-        let index = all.firstIndex(of: kind)!
-        return index > 0 ? all[index - 1].fileName : "your idea"
-    }
-}
-
 #Preview("Review") {
     NavigationStack {
-        ReviewView(session: PreviewData.session(PreviewData.review), kind: .requirements)
+        ReviewView(session: PreviewData.reviewSession, kind: .requirements)
     }
-    .environment(PreviewData.appState([PreviewData.review]))
-    .frame(width: 1000, height: 720)
+    .environment(PreviewData.appState([PreviewData.reviewRoundTwo]))
+    .frame(width: 1048, height: 800)
 }
 
 #Preview("Changed in another app") {
@@ -212,10 +343,10 @@ struct ReviewDocument: View {
 
 #Preview("Edit Markdown") {
     NavigationStack {
-        ReviewView(session: PreviewData.session(PreviewData.review), kind: .requirements, mode: .edit)
+        ReviewView(session: PreviewData.reviewSession, kind: .requirements, mode: .edit)
     }
-    .environment(PreviewData.appState([PreviewData.review]))
-    .frame(width: 1000, height: 720)
+    .environment(PreviewData.appState([PreviewData.reviewRoundTwo]))
+    .frame(width: 1048, height: 800)
 }
 
 #Preview("Done") {
@@ -224,20 +355,4 @@ struct ReviewDocument: View {
     }
     .environment(PreviewData.appState([PreviewData.done]))
     .frame(width: 1000, height: 720)
-}
-
-#Preview("Assumptions to confirm") {
-    ScrollView {
-        ReviewDocument(kind: .requirements, blocks: PreviewData.requirementsBlocks, summary: DocSummary(stories: 5, criteria: 14, assumptions: 1))
-            .padding(24)
-    }
-    .frame(width: 720, height: 720)
-}
-
-#Preview("Ready to approve") {
-    ScrollView {
-        ReviewDocument(kind: .requirements, blocks: PreviewData.confirmedBlocks, summary: DocSummary(stories: 5, criteria: 14))
-            .padding(24)
-    }
-    .frame(width: 720, height: 720)
 }

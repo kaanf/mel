@@ -110,7 +110,7 @@ struct DiscoveryView: View {
     @ViewBuilder
     private var current: some View {
         if let question = session.currentQuestion {
-            QuestionCard(session: session, question: question, number: number, total: intakeCount, takesFocus: question.id != openedOn)
+            QuestionCard(session: session, question: question, number: number, total: intakeCount, takesFocus: question.id != openedOn) { await session.answer($0) }
                 .id(question.id)
         } else if let error = session.lastError {
             VStack(alignment: .leading, spacing: Theme.Space.x8) {
@@ -312,24 +312,28 @@ private struct TextAnswerRow: View {
     }
 }
 
-private struct QuestionCard: View {
+/// One question with its options or answer field, footer hint, Decide Later and Continue (B2; B4's round 2).
+struct QuestionCard: View {
     let session: SpecSession
     let question: Question
     let number: Int
     let total: Int
     let takesFocus: Bool
+    /// Where the answer goes: `session.answer` in the intake, `answerFollowUp` for round 2.
+    let onAnswer: (Answer) async -> Void
     @State private var choice: Int?
     @State private var note = ""
     @State private var text = ""
     @FocusState private var cardFocused: Bool
     @FocusState private var noteFocused: Bool
 
-    init(session: SpecSession, question: Question, number: Int, total: Int, takesFocus: Bool) {
+    init(session: SpecSession, question: Question, number: Int, total: Int, takesFocus: Bool, onAnswer: @escaping (Answer) async -> Void) {
         self.session = session
         self.question = question
         self.number = number
         self.total = total
         self.takesFocus = takesFocus
+        self.onAnswer = onAnswer
         _choice = State(initialValue: question.options.firstIndex(where: \.suggested))
     }
 
@@ -421,7 +425,7 @@ private struct QuestionCard: View {
                 .foregroundStyle(Theme.Colors.secondaryLabel)
                 .padding(.leading, Theme.Space.x12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Button("Decide Later") { Task { await session.answer(.agentDecides) } }
+            Button("Decide Later") { Task { await onAnswer(.agentDecides) } }
                 .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.button, leading: Theme.Space.x16, trailing: Theme.Space.x16, text: Theme.Text.body))
                 .disabled(session.isRunning)
             Button("Continue", action: submit)
@@ -433,11 +437,11 @@ private struct QuestionCard: View {
 
     private func submit() {
         if isOpen {
-            Task { await session.answer(.text(trimmedText)) }
+            Task { await onAnswer(.text(trimmedText)) }
             return
         }
         guard let choice else { return }
-        Task { await session.answer(.option(choice, note: note.isEmpty ? nil : note)) }
+        Task { await onAnswer(.option(choice, note: note.isEmpty ? nil : note)) }
     }
 }
 

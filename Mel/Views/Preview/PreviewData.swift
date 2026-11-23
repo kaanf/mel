@@ -267,4 +267,60 @@ enum PreviewData {
     static let draftingSession = SpecSession.preview(
         drafting, documents: [.product: "# Product"], liveText: liveRequirements, activity: draftingActivity, isRunning: true, draftStep: 3
     )
+
+    // B4 Review as drawn: REQUIREMENTS.md with round-2 gaps, an assumption and an open question.
+    static let reviewMarkdown = """
+        # Requirements
+
+        ## 1. Book a class
+
+        P1 · MVP
+
+        As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
+
+        Source: your idea, Question 4 (cancellations)
+
+        - 1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot, deduct one credit and show it under Upcoming.
+        - 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.
+
+        > [!ASSUMPTION]
+        > The waitlist is first come, first served. When a spot frees up, the first member on it is booked automatically and notified.
+
+        ## 2. Buy a class pack
+
+        P1 · MVP
+
+        As a member, I want to buy a pack of classes in the app, so that I can book without paying each time.
+
+        Source: Question 2 (payments)
+
+        - 2.1 WHEN a member completes payment, THE APP SHALL add the pack’s credits and email a receipt.
+
+        > [!OPEN QUESTION]
+        > What happens to unused credits when a pack expires?
+
+        <!-- MVP line -->
+
+        ## Quality requirements
+
+        Source: Intake (privacy, speed, offline) and project principles
+
+        - Q1 THE APP SHALL open the weekly schedule in under 1 second on a mid-range phone.
+        - Q2 THE APP SHALL never store card data on the device.
+        - Q3 WHILE offline, THE APP SHALL show the last loaded schedule and say when it was updated.
+
+        ## Edge cases
+
+        - Two members book the last spot at the same moment: one gets it, the other is offered the waitlist.
+        - Payment succeeds but the app closes before credits show: credits appear on next open.
+        """
+    static let reviewRoundTwo: Spec = {
+        var spec = review
+        spec.questions += ["Can members book for a friend?", "Do teachers see payment status?"].enumerated().map { i, title in
+            Question(id: "r\(i + 1)", title: title, why: "Found while drafting REQUIREMENTS.md.", shapes: .requirements, round: .draft,
+                     options: [Option(label: "Yes", note: ""), Option(label: "No", note: "")])
+        }
+        return spec
+    }()
+    static let reviewSession = SpecSession.preview(reviewRoundTwo, documents: [.product: "# Product", .requirements: reviewMarkdown])
 }
