@@ -16,10 +16,12 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var attachments: [Attachment]
     public var analyze: AnalyzeStatus
     public var analysis: AnalyzeResult?
+    /// B1 "Let Mel fill small gaps". Off: no assumptions; gaps become open questions.
+    public var fillGaps: Bool
     public var sessionID: String?
 
     /// A new spec starts in Discovery with every file of its size locked.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, sessionID: String? = nil) {
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -33,6 +35,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.attachments = attachments
         self.analyze = analyze
         self.analysis = analysis
+        self.fillGaps = fillGaps
         self.sessionID = sessionID
     }
 
@@ -58,6 +61,15 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
         case .quickFix: 2
         case .feature: 3
         case .product: 5
+        }
+    }
+
+    /// B1 "Mel will ask about" chips; also the intake's starting coverage list.
+    public var topics: [String] {
+        switch self {
+        case .quickFix: ["What breaks today", "Expected behavior", "How to verify"]
+        case .feature: ["Goal", "Existing code it touches", "Edge cases", "Out of scope"]
+        case .product: ["Goal and success metric", "Users and roles", "Platforms", "Privacy and offline", "Out of scope"]
         }
     }
 
