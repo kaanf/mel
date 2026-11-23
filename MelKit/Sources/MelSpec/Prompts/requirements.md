@@ -49,7 +49,7 @@ As a member, I want to book a class from the weekly schedule, so that my spot is
 - 1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot and deduct one credit.
 - 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.
 
-MVP line
+<!-- MVP line -->
 
 ## 2. Gift cards
 
@@ -76,7 +76,7 @@ Source: Intake (privacy, speed, offline) and project principles
 - Under each heading: a tag line `P1 · MVP`, `P1`, `P2` or `P3`, then `Source:` naming where the story comes from (the idea, an intake question, the project context).
 - Then one paragraph: "As a <role>, I want <goal>, so that <benefit>."
 - Then its criteria as a list. IDs are `<story>.<criterion>`. Each uses EARS: WHEN, WHILE, IF … THEN, WHERE, or none, followed by THE APP SHALL. A criterion may wrap onto indented lines.
-- Write the line `MVP line` once, after the last story tagged MVP.
+- Write `<!-- MVP line -->` on its own line once, after the last story tagged MVP.
 - `## Quality requirements` lists `Q<n>` criteria for privacy, speed, offline and other qualities, with a `Source:` line.
 - `## Edge cases` lists what happens in unusual situations, at least one for every P1 story.
 

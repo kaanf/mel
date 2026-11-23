@@ -159,7 +159,7 @@ struct MarkdownParserTests {
     > [!OPEN QUESTION]
     > What happens to unused credits?
 
-    MVP line
+    <!-- MVP line -->
 
     ## 2. Gift cards
 

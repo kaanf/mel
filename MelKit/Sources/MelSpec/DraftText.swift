@@ -12,14 +12,14 @@ public enum DraftText {
         return String(text[newline...].drop(while: \.isNewline))
     }
 
-    /// The last `<!-- mel:step N -->` the agent reached, or 0 before the first.
+    /// The highest complete `<!-- mel:step N -->` so far, or 0 before the first.
     public static func step(in reply: String) -> Int {
         var step = 0
         var rest = reply[...]
         while let marker = rest.range(of: "<!-- mel:step ") {
             let digits = rest[marker.upperBound...].prefix(while: \.isNumber)
             // Only a complete marker counts: "1" may still become "12".
-            if let n = Int(digits), rest[digits.endIndex...].hasPrefix(" -->") { step = n }
+            if let n = Int(digits), rest[digits.endIndex...].hasPrefix(" -->") { step = max(step, n) }
             rest = rest[marker.upperBound...]
         }
         return step
@@ -33,9 +33,13 @@ public enum DraftText {
         if let open = body.range(of: "<!--", options: .backwards), body[open.upperBound...].range(of: "-->") == nil {
             body = body[..<open.lowerBound]
         }
-        let lines = body.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).filter { line in
+        // Drop marker lines and the blank lines they leave: none at the start, never two in a row.
+        var lines: [Substring] = []
+        for line in body.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline) {
             let t = line.trimming(while: \.isWhitespace)
-            return !(t.hasPrefix("<!-- mel:step ") && t.hasSuffix("-->"))
+            if t.hasPrefix("<!-- mel:step "), t.hasSuffix("-->") { continue }
+            if t.isEmpty, lines.last?.trimming(while: \.isWhitespace).isEmpty ?? true { continue }
+            lines.append(line)
         }
         var result = lines.joined(separator: "\n")
         if text.range(of: "<!-- mel:questions") != nil {
