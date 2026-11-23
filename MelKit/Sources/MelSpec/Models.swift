@@ -4,41 +4,86 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public let id: UUID
     public var name: String
     public var idea: String
+    public var size: SpecSize
+    /// `<project>/specs/<slug>/`, the folder that holds the size's files.
     public var folder: URL
     public var stage: Stage
     public var docs: [DocKind: DocStatus]
     public var questions: [Question]
     public var coverage: [CoverageItem]
+    /// B1 "Builds on" chips (Feature): module names from `structure.md`, or "Something new".
+    public var buildsOn: [String]
+    public var attachments: [Attachment]
+    public var analyze: AnalyzeStatus
+    public var analysis: AnalyzeResult?
     public var sessionID: String?
 
-    /// A new spec starts in Discovery with every file locked.
-    public init(id: UUID = UUID(), name: String, idea: String, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus] = DocKind.allLocked, questions: [Question] = [], coverage: [CoverageItem] = [], sessionID: String? = nil) {
+    /// A new spec starts in Discovery with every file of its size locked.
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
+        self.size = size
         self.folder = folder
         self.stage = stage
-        self.docs = docs
+        self.docs = docs ?? size.allLocked
         self.questions = questions
         self.coverage = coverage
+        self.buildsOn = buildsOn
+        self.attachments = attachments
+        self.analyze = analyze
+        self.analysis = analysis
         self.sessionID = sessionID
     }
+
+    /// The project folder: `folder` is `<project>/specs/<slug>/`.
+    public var project: URL { folder.deletingLastPathComponent().deletingLastPathComponent() }
+}
+
+/// V2.md §4. The size fixes the files and their order.
+public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
+    case quickFix, feature, product
+
+    public var files: [DocKind] {
+        switch self {
+        case .quickFix: [.spec]
+        case .feature: [.requirements, .architecture, .tasks]
+        case .product: [.product, .requirements, .experience, .architecture, .tasks]
+        }
+    }
+
+    /// Round-1 questions the intake asks for (1–2, about 3, about 5).
+    public var intakeQuestions: Int {
+        switch self {
+        case .quickFix: 2
+        case .feature: 3
+        case .product: 5
+        }
+    }
+
+    /// Quick fix goes straight to Spec ready.
+    public var hasAnalyze: Bool { self != .quickFix }
+
+    /// Only Product works without a project (A4x).
+    public var needsProject: Bool { self != .product }
+
+    /// The file drafted after `kind`, or nil after the last one.
+    public func file(after kind: DocKind) -> DocKind? {
+        guard let i = files.firstIndex(of: kind), i + 1 < files.count else { return nil }
+        return files[i + 1]
+    }
+
+    public var allLocked: [DocKind: DocStatus] { Dictionary(uniqueKeysWithValues: files.map { ($0, .locked) }) }
 }
 
 public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hashable, Sendable {
-    case product, requirements, design, tasks
+    case product, requirements, experience, architecture, tasks, spec
 
     public var fileName: String { rawValue.uppercased() + ".md" }
     public var title: String { rawValue.capitalized }
 
-    /// The file drafted after this one, or nil for TASKS.md.
-    public var next: DocKind? {
-        let all = Self.allCases
-        let i = all.firstIndex(of: self)! + 1
-        return i < all.count ? all[i] : nil
-    }
-
-    public static let allLocked = Dictionary(uniqueKeysWithValues: allCases.map { ($0, DocStatus.locked) })
+    /// B3's checklist, fixed in the prompt; the agent emits `<!-- mel:step N -->` as it reaches step N.
+    public var draftSteps: [String] { [] }
 }
 
 public enum Stage: Codable, Hashable, Sendable {
@@ -46,24 +91,50 @@ public enum Stage: Codable, Hashable, Sendable {
     case drafting(DocKind)
     case review(DocKind)
     case stopped(DocKind, StopReason)
+    /// B6: the analyze run, or its result waiting for Fix / Hand Off Anyway.
+    case analyze
     case done
 }
 
-public enum DocStatus: String, Codable, Hashable, Sendable { case locked, writing, stopped, review, approved }
+/// V2.md §7. `edited`: the user changed an approved file; `stale`: a file after an edited one ("Out of date").
+public enum DocStatus: String, Codable, Hashable, Sendable { case locked, writing, stopped, review, approved, edited, stale }
+
+/// The sidebar's Analyze row: Queued / Locked, running, n issues, Passed, Rerun (stale).
+public enum AnalyzeStatus: Codable, Hashable, Sendable {
+    case locked
+    case running
+    case issues(Int)
+    case passed
+    case stale
+}
+
+/// Round 1 comes from the intake; round 2 from a draft's `<!-- mel:questions -->` trailer (B4 "Before you approve").
+public enum QuestionRound: Int, Codable, Hashable, Sendable { case intake = 1, draft = 2 }
+
+/// A file copied into `specs/<slug>/.mel/attachments/` (B1 Add Files, drop, Paste Log).
+public struct Attachment: Codable, Identifiable, Hashable, Sendable {
+    public var fileName: String
+    public var id: String { fileName }
+
+    public init(fileName: String) { self.fileName = fileName }
+}
 
 public struct Question: Codable, Identifiable, Hashable, Sendable {
     public let id: String
     public var title: String
     public var why: String
+    /// Round 1: the file it shapes. Round 2: the file whose draft asked it, revised on answer.
     public var shapes: DocKind
+    public var round: QuestionRound
     public var options: [Option]
     public var answer: Answer?
 
-    public init(id: String, title: String, why: String, shapes: DocKind, options: [Option], answer: Answer? = nil) {
+    public init(id: String, title: String, why: String, shapes: DocKind, round: QuestionRound = .intake, options: [Option], answer: Answer? = nil) {
         self.id = id
         self.title = title
         self.why = why
         self.shapes = shapes
+        self.round = round
         self.options = options
         self.answer = answer
     }

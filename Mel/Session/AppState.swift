@@ -12,6 +12,12 @@ import MelSystem
     }
     var specs: [Spec] = []
     var missingFolders: [URL] = []
+    var projects: [Project] = []
+    private(set) var contexts: [Project.ID: ProjectContext] = [:]
+    /// A2: git repos one level under `~/Developer`.
+    private(set) var foundRepositories: [URL] = []
+    /// A3: the project-context run, while it's on screen.
+    private(set) var projectSetup: ProjectSetup?
     var selection: Spec.ID?
     var runningSpecID: Spec.ID?
 
@@ -95,6 +101,35 @@ import MelSystem
 
     func specFolder(name: String, parent: URL) -> URL { SpecStore.specsFolder(name: name, parent: parent) }
 
+    // MARK: - Projects (v2)
+
+    func specs(in project: Project) -> [Spec] { specs.filter { $0.project == project.folder } }
+
+    func findRepositories() async { fatalError("stub") }
+
+    /// A2 "Choose Folder" or a found repo. Adds it to the library and scans its specs.
+    @discardableResult
+    func addProject(_ folder: URL) throws -> Project { fatalError("stub") }
+
+    /// Start from an Idea: creates `<parent>/<slug>/` as a new project.
+    @discardableResult
+    func createProject(name: String, parent: URL) throws -> Project { fatalError("stub") }
+
+    func removeProject(_ project: Project) { fatalError("stub") }
+
+    /// A3: one read-only run over the repo; Mel writes the four files.
+    func setUpProject(_ project: Project) async { fatalError("stub") }
+
+    /// A3 "Add Rule".
+    func addRule(_ rule: String, to project: Project) throws { fatalError("stub") }
+
+    /// A3 "Edit Files": opens `.mel/project/` in Finder.
+    func showContext(of project: Project) { fatalError("stub") }
+
+    /// B1. Creates `specs/<slug>/` in `project` (nil: Product from an idea, A4x), copies attachments
+    /// and selects the spec; the caller then calls `start()` on the session.
+    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, buildsOn: [String] = [], files: [URL] = [], logs: [String] = []) throws -> SpecSession { fatalError("stub") }
+
     // System actions for views (views never import MelSystem)
     func signIn() {
         let executable: URL
@@ -148,14 +183,28 @@ import MelSystem
         return spec
     }
 
-    static func preview(_ specs: [Spec], agent: AgentStatus) -> AppState {
+    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [URL] = [], projectSetup: ProjectSetup? = nil) -> AppState {
         let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() }, defaults: UserDefaults(suiteName: "preview")!)
         state.isPreview = true
         state.specs = specs
         state.agent = agent
+        state.projects = projects
+        state.contexts = contexts
+        state.foundRepositories = foundRepositories
+        state.projectSetup = projectSetup
         state.selection = specs.first?.id
         return state
     }
+}
+
+/// A3's run. `isNewProject`: the folder was empty ("New project, no code yet").
+struct ProjectSetup: Hashable {
+    var project: Project
+    var isNewProject: Bool
+    var isRunning: Bool
+    var activity: [ActivityLine]
+    var context: ProjectContext?
+    var lastError: String?
 }
 
 /// Does nothing; backs `AppState.preview`.

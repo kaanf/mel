@@ -200,7 +200,7 @@ struct LivePreview: View {
 #Preview("Usage limit") {
     @Previewable @State var showInspector = false
     NavigationStack {
-        DraftingView(session: PreviewData.session(PreviewData.usageLimit), kind: .design, showInspector: $showInspector)
+        DraftingView(session: PreviewData.session(PreviewData.usageLimit), kind: .architecture, showInspector: $showInspector)
     }
     .environment(PreviewData.appState([PreviewData.usageLimit]))
     .frame(width: 800, height: 760)

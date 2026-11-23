@@ -36,11 +36,11 @@ enum PreviewData {
             answer: .option(1, note: "Two rooms for now")
         ),
         Question(
-            id: "q3a", title: "What do teachers need to see before class?", why: "Shapes the teacher view.", shapes: .design,
+            id: "q3a", title: "What do teachers need to see before class?", why: "Shapes the teacher view.", shapes: .architecture,
             options: [], answer: .text("Who is booked, and who is new to the studio.")
         ),
         Question(
-            id: "q3b", title: "Anything the studio already uses that this must work with?", why: "Existing tools limit the design.", shapes: .design,
+            id: "q3b", title: "Anything the studio already uses that this must work with?", why: "Existing tools limit the design.", shapes: .architecture,
             options: [], answer: .agentDecides
         ),
         Question(
@@ -56,7 +56,7 @@ enum PreviewData {
     /// Unanswered open question: no options, so the card shows a text field and Skip.
     static let openQuestion = Question(
         id: "q5", title: "What should the reminder message say?",
-        why: "The wording sets the studio's tone; there is no right option to pick from.", shapes: .design, options: []
+        why: "The wording sets the studio's tone; there is no right option to pick from.", shapes: .architecture, options: []
     )
 
     static let coverage: [CoverageItem] = [
@@ -65,8 +65,8 @@ enum PreviewData {
         CoverageItem(label: "Schedule", phase: .requirements, state: .covered),
         CoverageItem(label: "Cancellations", phase: .requirements, state: .asking),
         CoverageItem(label: "Waiting list", phase: .requirements, state: .notYet),
-        CoverageItem(label: "Teacher view", phase: .design, state: .notYet),
-        CoverageItem(label: "Notifications", phase: .design, state: .notYet),
+        CoverageItem(label: "Teacher view", phase: .architecture, state: .notYet),
+        CoverageItem(label: "Notifications", phase: .architecture, state: .notYet),
         CoverageItem(label: "Build order", phase: .tasks, state: .notYet),
     ]
 
@@ -80,20 +80,20 @@ enum PreviewData {
         Spec(name: "Yoga Studio Booking", idea: idea, folder: folder, stage: stage, docs: docs, questions: questions, coverage: coverage)
     }
 
-    static let locked: [DocKind: DocStatus] = [.product: .locked, .requirements: .locked, .design: .locked, .tasks: .locked]
+    static let locked: [DocKind: DocStatus] = [.product: .locked, .requirements: .locked, .architecture: .locked, .tasks: .locked]
 
     static let discovery = spec(.discovery, locked, questions: questions)
     static let discoveryOpen = spec(.discovery, locked, questions: Array(questions.prefix(5)) + [openQuestion])
     static let discoveryThinking = spec(.discovery, locked, questions: Array(questions.prefix(5)))
-    static let drafting = spec(.drafting(.requirements), [.product: .approved, .requirements: .writing, .design: .locked, .tasks: .locked])
-    static let stoppedByUser = spec(.stopped(.requirements, .user), [.product: .approved, .requirements: .stopped, .design: .locked, .tasks: .locked])
+    static let drafting = spec(.drafting(.requirements), [.product: .approved, .requirements: .writing, .architecture: .locked, .tasks: .locked])
+    static let stoppedByUser = spec(.stopped(.requirements, .user), [.product: .approved, .requirements: .stopped, .architecture: .locked, .tasks: .locked])
     static let usageLimit = spec(
-        .stopped(.design, .usageLimit(resetsAt: Date(timeIntervalSince1970: 1_795_000_000))),
-        [.product: .approved, .requirements: .approved, .design: .stopped, .tasks: .locked]
+        .stopped(.architecture, .usageLimit(resetsAt: Date(timeIntervalSince1970: 1_795_000_000))),
+        [.product: .approved, .requirements: .approved, .architecture: .stopped, .tasks: .locked]
     )
-    static let crashed = spec(.stopped(.design, .crashed("claude exited with status 1")), usageLimit.docs)
-    static let review = spec(.review(.requirements), [.product: .approved, .requirements: .review, .design: .locked, .tasks: .locked])
-    static let done = spec(.done, [.product: .approved, .requirements: .approved, .design: .approved, .tasks: .approved])
+    static let crashed = spec(.stopped(.architecture, .crashed("claude exited with status 1")), usageLimit.docs)
+    static let review = spec(.review(.requirements), [.product: .approved, .requirements: .review, .architecture: .locked, .tasks: .locked])
+    static let done = spec(.done, [.product: .approved, .requirements: .approved, .architecture: .approved, .tasks: .approved])
 
     static let requirementsMarkdown = """
         # Requirements

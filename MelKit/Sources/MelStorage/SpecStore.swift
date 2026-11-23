@@ -1,7 +1,7 @@
 import Foundation
 import MelSpec
 
-/// Disk access for one spec folder (`<parent>/<slug>/specs`). Every write is atomic.
+/// Disk access for one spec folder (`<project>/specs/<slug>/`, V2.md §3). Every write is atomic.
 /// `state.json` is written at most once per `debounce`, with the latest `Spec`.
 public actor SpecStore {
     public let folder: URL
@@ -23,7 +23,15 @@ public actor SpecStore {
         return words.isEmpty ? "spec" : words.joined(separator: "-")
     }
 
-    /// `<parent>/<slug>/specs`.
+    /// `<project>/specs/<slug>/`.
+    public static func specFolder(slug: String, project: URL) -> URL {
+        project.appending(path: "specs", directoryHint: .isDirectory).appending(path: slug, directoryHint: .isDirectory)
+    }
+
+    /// Every spec in `project`: `specs/*/.mel/state.json`, with `folder` where each is now.
+    public static func scan(project: URL) -> [Spec] { fatalError("stub") }
+
+    /// v1 layout, `<parent>/<slug>/specs`; goes with the v2 wiring.
     public static func specsFolder(name: String, parent: URL) -> URL {
         parent.appending(path: slug(name), directoryHint: .isDirectory).appending(path: "specs", directoryHint: .isDirectory)
     }
@@ -58,6 +66,37 @@ public actor SpecStore {
     public nonisolated func url(_ kind: DocKind) -> URL {
         folder.appending(path: kind.fileName)
     }
+
+    // MARK: Approved snapshots (`.mel/approved/<FILE>.md`, for C1's diff and Undo)
+
+    public func snapshot(_ kind: DocKind) -> String? { fatalError("stub") }
+
+    public func saveSnapshot(_ text: String, for kind: DocKind) throws { fatalError("stub") }
+
+    // MARK: DECISIONS.md
+
+    public func readDecisions() -> [Decision] { fatalError("stub") }
+
+    public func writeDecisions(_ decisions: [Decision]) throws { fatalError("stub") }
+
+    // MARK: Attachments (`.mel/attachments/`)
+
+    /// Copies `file` in; a name that's taken gets a number.
+    public func attach(copying file: URL) throws -> Attachment { fatalError("stub") }
+
+    /// Paste Log: writes `text` as `log-N.txt`.
+    public func attachLog(_ text: String) throws -> Attachment { fatalError("stub") }
+
+    public func remove(_ attachment: Attachment) throws { fatalError("stub") }
+
+    public nonisolated func url(_ attachment: Attachment) -> URL {
+        folder.appending(path: ".mel/attachments", directoryHint: .isDirectory).appending(path: attachment.fileName)
+    }
+
+    // MARK: Handoff (`prompts/task-NN.md`)
+
+    /// Replaces `prompts/` with one file per task; returns their URLs in task order.
+    public func writeTaskPrompts(_ tasks: [SpecTask], requirements: String) throws -> [URL] { fatalError("stub") }
 
     // MARK: State
 

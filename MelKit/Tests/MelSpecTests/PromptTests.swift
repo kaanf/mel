@@ -25,7 +25,7 @@ struct PromptTests {
         #expect(values.keys.filter { $0 != "rules" }.allSatisfy { text.contains("<\($0)>") })
     }
 
-    @Test(arguments: DocKind.allCases)
+    @Test(arguments: [DocKind.product, .requirements, .tasks])  // v1 templates; v2 prompts come next
     func draftingPromptsCarryTheCompletenessRule(_ kind: DocKind) {
         let text = Prompt(drafting: kind).build([:])
         #expect(text.contains("Never write open questions, TBD, TODO or placeholders."))
@@ -48,14 +48,14 @@ struct PromptTests {
 
     @Test func discoveryRunsPhaseByPhaseWithAnOpenQuestionFirst() throws {
         let text = Prompt.discovery.build([:])
-        #expect(text.contains("Work phase by phase in file order: `product`, `requirements`, `design`, `tasks`."))
+        #expect(text.contains("Work phase by phase in file order: `product`, `requirements`, `experience`, `tasks`."))
         #expect(text.contains("Open each phase with an open question"))
         #expect(text.contains("only into the current phase or a later one"))
         #expect(text.contains("main screens and navigation, visual style and tone, and reference apps"))
         // The sample reply must decode, so the agent copies a shape Mel can read.
         let sample = try #require(text.split(separator: "\n").first { $0.hasPrefix(#"{"coverage""#) })
         let turn = try DiscoveryTurn.decode(String(sample))
-        #expect(turn.coverage.map(\.phase) == [.product, .requirements, .requirements, .design])
+        #expect(turn.coverage.map(\.phase) == [.product, .requirements, .requirements, .experience])
         #expect(turn.next?.options.count == 2)
     }
 

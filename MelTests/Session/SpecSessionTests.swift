@@ -86,7 +86,8 @@ final class SpecSessionTests {
             product,
             [.session("s2"), .step("read specs/PRODUCT.md"), .text(requirementsStart)],
             [.text(requirementsRest), .done(result: "")],
-            [.session("s3"), .text("# Design\n\n## Stack\n\nSwift.\n"), .done(result: "")],
+            [.session("s3"), .text("# Experience\n\n## Flow 1 · Book\n\nPick a class.\n"), .done(result: "")],
+            [.session("s3b"), .text("# Architecture\n\n## Stack\n\nSwift.\n"), .done(result: "")],
             [.session("s4"), .text("1 tasks\n\n# Tasks\n\n- [ ] 1. Build it\n  - Covers: 1.1, 2.1\n"), .done(result: "")],
         ])
 
@@ -137,22 +138,26 @@ final class SpecSessionTests {
         session.confirmAssumption(index: 0, in: .requirements)
         #expect(session.summary(.requirements).assumptions == 0)
         await session.approve(.requirements)
-        #expect(session.spec.stage == .review(.design))
+        #expect(session.spec.stage == .review(.experience))
         #expect(runner.requests[5].prompt.contains("### REQUIREMENTS.md"))
 
-        await session.approve(.design)
+        await session.approve(.experience)
+        #expect(session.spec.stage == .review(.architecture))
+        #expect(runner.requests[6].prompt.contains("### EXPERIENCE.md"))
+
+        await session.approve(.architecture)
         #expect(session.spec.stage == .review(.tasks))
         #expect(session.documents[.tasks] == "# Tasks\n\n- [ ] 1. Build it\n  - Covers: 1.1, 2.1\n")
         #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
-        #expect(runner.requests[6].prompt.contains("### DESIGN.md"))
+        #expect(runner.requests[7].prompt.contains("### ARCHITECTURE.md"))
 
         await session.approve(.tasks)
         #expect(session.spec.stage == .done)
-        #expect(DocKind.allCases.allSatisfy { session.spec.docs[$0] == .approved })
+        #expect(session.spec.size.files.allSatisfy { session.spec.docs[$0] == .approved })
 
         // Everything is on disk, and the sidebar copy is current.
         await session.flush()
-        for kind in DocKind.allCases {
+        for kind in session.spec.size.files {
             #expect(try String(contentsOf: session.spec.folder.appending(path: kind.fileName), encoding: .utf8) == session.documents[kind])
         }
         #expect(try SpecStore.loadState(in: session.spec.folder).stage == .done)

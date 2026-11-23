@@ -6,8 +6,13 @@ public enum Prompt: String, CaseIterable, Sendable {
     case discovery, product, requirements, design, tasks
     case `continue`
 
+    // v1 templates until the v2 prompts land: EXPERIENCE and ARCHITECTURE use design.md, SPEC uses requirements.md.
     public init(drafting kind: DocKind) {
-        self = Prompt(rawValue: kind.rawValue)!
+        switch kind {
+        case .experience, .architecture: self = .design
+        case .spec: self = .requirements
+        default: self = Prompt(rawValue: kind.rawValue)!
+        }
     }
 
     /// The template with each `{{key}}` replaced by `values[key]` in one pass, so values that

@@ -22,7 +22,7 @@ struct PipelineTests {
     @Test func newSpecStartsInDiscoveryWithFilesLocked() {
         let s = spec()
         #expect(s.stage == .discovery)
-        #expect(DocKind.allCases.allSatisfy { s.docs[$0] == .locked })
+        #expect(s.size.files.allSatisfy { s.docs[$0] == .locked })
     }
 
     @Test func discoveryFinishedStartsProduct() {
@@ -66,7 +66,7 @@ struct PipelineTests {
         #expect(s.docs[.product] == .approved)
         #expect(s.stage == .drafting(.requirements))
         #expect(s.docs[.requirements] == .writing)
-        #expect(s.docs[.design] == .locked)
+        #expect(s.docs[.architecture] == .locked)
     }
 
     @Test func approveBlockedWhileAssumptionsRemain() {
@@ -80,20 +80,20 @@ struct PipelineTests {
         var s = inReview(.tasks)
         do { let applied = s.apply(.approve(.tasks, assumptionsLeft: 0)); #expect(applied) }
         #expect(s.stage == .done)
-        #expect(DocKind.allCases.allSatisfy { s.docs[$0] == .approved })
+        #expect(s.size.files.allSatisfy { s.docs[$0] == .approved })
     }
 
     @Test func editingApprovedFileReturnsItToReviewOnly() {
-        var s = inReview(.design)
+        var s = inReview(.architecture)
         do { let applied = s.apply(.edited(.product)); #expect(applied) }
         #expect(s.docs[.product] == .review)
-        #expect(s.stage == .review(.design))
+        #expect(s.stage == .review(.architecture))
         #expect(s.docs[.requirements] == .approved)
 
         // Re-approving it doesn't move the pipeline.
         do { let applied = s.apply(.approve(.product, assumptionsLeft: 0)); #expect(applied) }
         #expect(s.docs[.product] == .approved)
-        #expect(s.stage == .review(.design))
+        #expect(s.stage == .review(.architecture))
     }
 
     @Test func editingAFileInReviewChangesNothing() {

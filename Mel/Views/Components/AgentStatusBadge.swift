@@ -36,6 +36,8 @@ extension DocStatus {
         case .stopped: StatusBadge(status: .stopped)
         case .review: StatusBadge(status: .needsYou, title: "Review")
         case .approved: StatusBadge(status: .approved)
+        case .edited: StatusBadge(status: .needsYou, title: "Edited")
+        case .stale: StatusBadge(status: .needsYou, title: "Out of date")
         }
     }
 }

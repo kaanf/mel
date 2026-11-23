@@ -118,21 +118,23 @@ struct FailureSheet: View {
         case .writing: "Writing"
         case .review: "Ready for review"
         case .locked: "Not started"
+        case .edited: "Edited"
+        case .stale: "Out of date"
         }
     }
 }
 
 #Preview("Usage limit") {
-    FailureSheet(session: PreviewData.session(PreviewData.usageLimit), kind: .design, reason: .usageLimit(resetsAt: Date(timeIntervalSince1970: 1_795_000_000)))
+    FailureSheet(session: PreviewData.session(PreviewData.usageLimit), kind: .architecture, reason: .usageLimit(resetsAt: Date(timeIntervalSince1970: 1_795_000_000)))
         .environment(PreviewData.appState([PreviewData.usageLimit]))
 }
 
 #Preview("Crashed") {
-    FailureSheet(session: PreviewData.session(PreviewData.crashed), kind: .design, reason: .crashed("claude exited with status 1"))
+    FailureSheet(session: PreviewData.session(PreviewData.crashed), kind: .architecture, reason: .crashed("claude exited with status 1"))
         .environment(PreviewData.appState([PreviewData.crashed]))
 }
 
 #Preview("Signed out") {
-    FailureSheet(session: PreviewData.session(PreviewData.usageLimit), kind: .design, reason: .signedOut)
+    FailureSheet(session: PreviewData.session(PreviewData.usageLimit), kind: .architecture, reason: .signedOut)
         .environment(PreviewData.appState([PreviewData.usageLimit]))
 }

@@ -99,7 +99,7 @@ extension DocSummary {
         switch kind {
         case .product: "Problem, users and scope."
         case .requirements: "\(count(stories, "story", "stories")), \(count(criteria, "acceptance criterion", "acceptance criteria"))."
-        case .design: "\(count(sections, "section", "sections"))."
+        case .experience, .architecture, .spec: "\(count(sections, "section", "sections"))."
         case .tasks: "\(count(tasks, "task", "tasks")), each linked to criteria."
         }
     }

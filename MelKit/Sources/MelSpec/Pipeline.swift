@@ -21,7 +21,7 @@ extension Spec {
     public mutating func apply(_ event: PipelineEvent) -> Bool {
         switch (stage, event) {
         case (.discovery, .discoveryFinished):
-            startDrafting(.product)
+            startDrafting(size.files[0])
 
         case (.drafting(let kind), .draftFinished),
              (.stopped(let kind, _), .finishByHand):
@@ -40,7 +40,7 @@ extension Spec {
             docs[kind] = .approved
             // Re-approving an earlier file after an edit doesn't move the pipeline.
             guard stage == .review(kind) else { return true }
-            if let next = kind.next { startDrafting(next) } else { stage = .done }
+            if let next = size.file(after: kind) { startDrafting(next) } else { stage = .done }
 
         case (_, .edited(let kind)):
             // Editing an approved file sends it back to review; nothing else cascades.
