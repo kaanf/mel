@@ -9,6 +9,12 @@ Updated: —
 ## In progress
 - (not started)
 
+## Next
+- Start Wave 0 (see agents/platform.md)
+
+## Notes
+- (none)
+
 ## Blocked
 - (nothing)
 

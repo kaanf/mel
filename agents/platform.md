@@ -53,4 +53,5 @@ Rebase on `main` first (the project exists now).
 
 - Don't edit `Mel/Spec/`, `Mel/Storage/`, `Mel/Session/`, `Mel/App/`, `Mel/Views/`, or project settings.
 - Don't give Claude Code write or shell tools. Don't pass the app's whole environment to it.
+- Claude Code runs on the user's **Claude subscription, never the API**: environment allowlist only (no `ANTHROPIC_*`, Bedrock or Vertex variables), and a run whose `init` record has `apiKeySource` other than `"none"` is stopped with an error. Test both. Your own probes in Wave 0 also run on the subscription: don't set API keys.
 - Don't decode more of the stream than AGENT-INTEGRATION.md maps.

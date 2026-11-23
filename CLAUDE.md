@@ -2,6 +2,15 @@
 
 Guidance for coding agents working in this repo.
 
+## Session start (every session, also after /clear)
+
+Find out who you are from the working directory, then rebuild your context before doing anything else:
+
+- **`/Users/kaan/Projects/mel-worktrees/<name>`** → you are agent `<name>` (core, platform or ui). Read `agents/README.md`, `agents/<name>.md`, `agents/CONTRACTS.md`, then `agents/status/<name>.md` (where you left off) and `git log --oneline -15`. Continue from "Next" in your status file.
+- **`/Users/kaan/Projects/mel`** (branch `main`) → you are the orchestrator. Read `agents/ORCHESTRATOR.md`, `docs/ROADMAP.md`, and every agent's status on its branch: `git fetch origin && git show origin/agent/<name>:agents/status/<name>.md`.
+
+Your status file is your memory. Keep it current.
+
 ## Project
 
 Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea into a four-file Markdown spec using the user's installed Claude Code. Codex is post-MVP; keep the `AgentAdapter` protocol but don't build Codex UI. Read `README.md`, then the doc for your task:

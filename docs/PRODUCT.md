@@ -24,7 +24,7 @@ A native Mac app that runs a guided **idea → spec** pipeline:
 | Solo developer | Speed, plain Markdown in their repo, Git history, handoff to their agent of choice |
 | Designer | A structured place to turn a brief into requirements they can review |
 
-Every user already has Claude Code installed and signed in, or is willing to install it. The app never asks for an API key.
+Every user already has Claude Code installed and signed in, or is willing to install it. The app never asks for an API key and never uses the API: Claude Code always runs on the user's Claude subscription.
 
 ## Principles
 

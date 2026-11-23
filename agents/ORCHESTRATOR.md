@@ -1,11 +1,11 @@
 # Orchestrator
 
-The main Claude Code session in the repo root (`/Users/kaan/Projects/keel`, branch `main`). Doesn't write app code. Owns `docs/`, `agents/` (except status files), `CLAUDE.md`, `README.md`.
+The main Claude Code session in the repo root (`/Users/kaan/Projects/mel`, branch `main`). Doesn't write app code. Owns `docs/`, `agents/` (except status files), `CLAUDE.md`, `README.md`.
 
 ## Job
 
 1. Keep [CONTRACTS.md](CONTRACTS.md) and [docs/ROADMAP.md](../docs/ROADMAP.md) true.
-2. Read `agents/status/*.md` on each agent branch; answer requests; take product questions to the user.
+2. Read each agent's status on its branch (`git fetch origin && git show origin/agent/<name>:agents/status/<name>.md`); answer requests; take product questions to the user.
 3. Review and merge finished branches into `main`, then tell agents to rebase.
 4. Check each gate before starting the next wave.
 

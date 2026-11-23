@@ -47,7 +47,7 @@ xcrun swiftc -typecheck -swift-version 6 -target arm64-apple-macos26.0 <files…
 
 ## Status file
 
-Keep `agents/status/<name>.md` current. It's the only file in `agents/` you edit. Format:
+`agents/status/<name>.md` is your memory: sessions get cleared, and the next session (and the orchestrator) only knows what this file and git log say. Update it **after every task and before you stop**, commit and push it with your work. It's the only file in `agents/` you edit. Format:
 
 ```markdown
 # <name> status
@@ -61,6 +61,12 @@ Updated: 2026-11-24 14:10
 ## In progress
 - 2.2 parser: stories and criteria done, callouts next
 
+## Next
+- finish callouts in MarkdownParser, then 2.3 SpecStore
+
+## Notes
+- decisions or gotchas the next session must know (e.g. "fake-claude.sh needs chmod +x")
+
 ## Blocked
 - (nothing)
 
@@ -73,7 +79,7 @@ Updated: 2026-11-24 14:10
 
 ## Starting a session
 
-The user opens a terminal in your worktree and runs `claude`. Your first prompt will be: "Read agents/README.md and agents/<name>.md, then start your current wave." At the start of every wave:
+The user opens a terminal in your worktree and runs `claude`, possibly after `/clear`. CLAUDE.md tells you to rebuild context first (README, brief, contracts, your status file, git log). Then continue from "Next". At the start of every wave:
 
 ```sh
 git fetch origin && git rebase origin/main

@@ -22,7 +22,8 @@ Run detection off the main actor; show "Checking" until it finishes. Re-run when
 Common invocation rules:
 
 - Working directory: the project folder (parent of `specs/`), so the agent can read existing code if any.
-- Environment: `HOME`, `USER` (verified: without `USER` the CLI reports "Not logged in"), login-shell `PATH`, `TERM=dumb`, `NO_COLOR=1`. Do not pass the app's own environment wholesale.
+- Environment: `HOME`, `USER` (verified: without `USER` the CLI reports "Not logged in"), login-shell `PATH`, `TERM=dumb`, `NO_COLOR=1`. Nothing else: an allowlist, never the app's own environment.
+- **Subscription only, never the API.** Claude Code must run on the user's Claude subscription (their `claude` sign-in). The allowlist above keeps out `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK`, `CLAUDE_CODE_USE_VERTEX` and similar, which would switch the CLI to API billing. Check the `init` record: `apiKeySource` must be `"none"`; otherwise stop the run and show an error.
 - Prompt goes through **stdin**, not argv (length limits, escaping).
 - New process group (`setpgid`) so stop signals reach child processes.
 - Tools: no file writes, no shell. Reads of the project folder are allowed.
