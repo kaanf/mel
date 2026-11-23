@@ -1,6 +1,6 @@
 # core status
 
-Wave: 5 (Debug automatic-check follow-up ready to merge)
+Wave: v0.2.1 version bump ready to merge
 Updated: 2026-11-23
 
 ## Done
@@ -32,6 +32,8 @@ Updated: 2026-11-23
 
 - Wave 5 follow-up: `SUEnableAutomaticChecks` = `$(SPARKLE_AUTOMATIC_CHECKS)` (Debug NO, Release YES), so a Debug build (build 1) never offers to replace itself with the Release DMG. Sparkle 2.10.1 reads a string bool (`convertObjectToBoolNumber` in SUHost.m). Built plists checked; full suite green 2 runs.
 
+- v0.2.1: `MARKETING_VERSION` 0.2.1 on all targets. Full suite green 2 runs.
+
 ## In progress
 - (nothing)
 
@@ -54,7 +56,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Merge agent/core (Wave 5 follow-up: no automatic checks in Debug).
+- Merge agent/core (MARKETING_VERSION 0.2.1).
 
 ## Questions for the user
 - (none)
