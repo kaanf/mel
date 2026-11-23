@@ -115,8 +115,9 @@ Updated: 2026-11-23
 - C4 Settings › Agents (`Views/Settings/SettingsView.swift` rewritten): Claude Code card (tile, status, Location + Change…, Account + Open Terminal…), Detection (search path list with selectable rows, +/−, footnote), Updates group (not drawn; same look), Scan Now. Hidden: General/Specs/Advanced tabs, Codex card, per-agent switch (V2 §2), scan-on-launch switch (earlier decision: always scans). Debug screen `settings` draws the pane in the window. One compare pass: matches.
 
 ## Next
-- C4 Settings next; then the full test run and one ready-to-merge message, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
-- Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
+- Waiting for the orchestrator to merge Wave 6 screens (B3–C4 + B2 bits), full test green on the rebased branch.
+- Open deviations to decide (listed per screen above): toolbar items sit over the inspector (B2/B3), inspector headers can't sit in the toolbar row (B3), SwiftUI's one-word-last-line wrapping, the AGENTS.md switch starting off (B7), decision title "Changed <File>" (C1).
+- Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
