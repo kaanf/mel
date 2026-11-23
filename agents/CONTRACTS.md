@@ -162,6 +162,17 @@ public enum AgentsFile {                                // pure; replaces platfo
 // AppState.createSpec(… , fillGaps: Bool = true, …)
 ```
 
+Merged later in Wave 6 (core b8a22c0, c2ae92f, 01db33a):
+
+```swift
+public struct Spec { public var queue: [DocKind] }      // revise queue (Analyze fixes, Refine)
+enum PipelineEvent { … approve (no assumptions gate), revise([DocKind]), refine, keepAsIs, undo,
+                     analyzeFinished, analyzeFailed, rerunAnalyze, handOff }
+enum Block { … + orderedItem, openQuestion, priority, source, covers, mvpLine, table }
+struct DocSummary { … + mvpStories, quality, openQuestions, flows, screens, missingStates }
+extension URL { var normalizedFolder: URL }            // MelSpec; Project.init and Spec.project use it
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
