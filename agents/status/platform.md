@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 5 in progress. Steps 1–2 done (keys, release.sh + appcast); step 3 waits for ui's merge
+Wave: 5 done, ready to merge (step 3 local update test passed, docs/research/SPARKLE-UPDATE-TEST.md)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -45,9 +45,10 @@ Updated: 2026-11-23
 
 - 2: release.sh passes `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` to both archive paths; after the notarized DMG it runs `sign_update` from the pinned package (`.build/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/`, so no /tmp tools needed) and writes `appcast.xml` at the repo root. The unsigned run gave CFBundleVersion 227 and no appcast; the appcast block run alone on that DMG gave valid XML, correct length, and the signature verified.
 
+- 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
+
 ## Next
-- (done) 2 (after core's merge, rebase first): release.sh passes `CURRENT_PROJECT_VERSION=$(git rev-list --count HEAD)` to the archive; after the DMG is notarized it runs `sign_update` and writes `appcast.xml` at the repo root (one item: version, build, DMG URL https://github.com/kaanf/mel/releases/download/v<version>/Mel-<version>.dmg, length, sparkle:edSignature, minimumSystemVersion 26.0). If /tmp has been cleared, download the 2.10.1 tarball again.
-- 3 (after ui's merge): Release builds auto-check (SPARKLE_AUTOMATIC_CHECKS Release YES), so set SUFeedURL for the test copy BEFORE its first launch. End-to-end update test with two local Release builds (N in a throwaway folder, never /Applications; N+1 DMG + appcast via `python3 -m http.server`; override SUFeedURL only for the test bundle). Write it up in docs/research/. Never touch /Applications/Mel.app or the com.kaanf.mel defaults.
+- Wait for the orchestrator's next wave.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
