@@ -40,7 +40,7 @@ claude -p \
   --output-format stream-json --verbose \
   --input-format text \
   --restricted --strict-mcp-config \
-  --tools Read,Glob,Grep \
+  --tools Read,Glob,Grep \         # --tools "" when AgentRequest.allowsTools is false (init then lists tools: [])
   --permission-mode manual --permission-prompts none \
   --disable-slash-commands --no-chrome \
   [--resume <session_id>]           # verified; drop --no-session-persistence to allow it
