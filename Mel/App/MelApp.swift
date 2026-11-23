@@ -7,6 +7,7 @@ struct MelApp: App {
         adapter: ClaudeCode(),
         makeRunner: { AgentRunner(adapter: ClaudeCode(), executable: $0) }
     )
+    @State private var updater = Updater()
     @State private var isShowingNewSpec = false
 
     var body: some Scene {
@@ -16,7 +17,7 @@ struct MelApp: App {
                 .task { await state.scanForAgent() }
         }
         .commands {
-            MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady)
+            MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady, updater: updater)
         }
 
         Window("Welcome", id: "welcome") {
@@ -27,8 +28,12 @@ struct MelApp: App {
         .windowStyle(.hiddenTitleBar)
 
         Settings {
-            // Placeholder until Sparkle is in the project; App/Updater.swift replaces it.
-            SettingsView(updates: UpdateSettings(version: Self.version, canCheck: false, automaticallyChecks: .constant(true), check: {}))
+            SettingsView(updates: UpdateSettings(
+                version: Self.version,
+                canCheck: updater.canCheckForUpdates,
+                automaticallyChecks: $updater.automaticallyChecksForUpdates,
+                check: updater.checkForUpdates
+            ))
                 .environment(state)
         }
     }
