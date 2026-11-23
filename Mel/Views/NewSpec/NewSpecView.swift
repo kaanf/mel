@@ -283,10 +283,10 @@ struct NewSpecView: View {
         .accessibilityLabel("Project")
     }
 
-    /// "~/Developer/yoga-studio-booking · main"; the branch is known once A3 has read the repo this launch.
+    /// "~/Developer/yoga-studio-booking · main".
     private func projectMeta(_ project: Project) -> String {
         let path = project.folder.path(percentEncoded: false).abbreviatingHome
-        let branch = state.projectSetup?.project == project ? state.projectSetup?.branch : nil
+        let branch = state.branches[project.id]
         return [String(path.hasSuffix("/") ? path.dropLast() : path[...]), branch].compactMap(\.self).joined(separator: " · ")
     }
 

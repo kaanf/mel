@@ -191,15 +191,15 @@ enum PreviewData {
     static let projectSetup = ProjectSetup(project: project, isNewProject: false, isRunning: false, activity: readLines, context: context, lastError: nil, branch: "main", fileCount: 214)
     static let projectSetupRunning = ProjectSetup(project: project, isNewProject: false, isRunning: true, activity: Array(readLines.prefix(2)), context: nil, lastError: nil, branch: "main", fileCount: 214)
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup, branches: branches)
         state.missingFolders = missing
         return state
     }
 
     // B1 New Spec
     static let habitTracker = Project(folder: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer/habit-tracker"))
-    static let newSpecState = appState([], projects: [project, habitTracker], contexts: [project.id: context], projectSetup: projectSetup)
+    static let newSpecState = appState([], projects: [project, habitTracker], contexts: [project.id: context], projectSetup: projectSetup, branches: [project.id: "main", habitTracker.id: "develop"])
     static let featureDraft = NewSpecView.Draft(
         size: .feature, project: project, name: "Filter schedule by teacher",
         idea: "Members can filter the weekly schedule by teacher and see a short teacher profile on each class.",
