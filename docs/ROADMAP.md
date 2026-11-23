@@ -105,7 +105,7 @@ Gate G5: a local Release build updates itself from a localhost feed to a higher 
 
 ## Wave 6 · v2 parts (target: [V2.md](V2.md))
 
-Starts after v0.2.1 ships. Step 0 first, then the three agents in parallel.
+core step 0 runs now, alongside the v0.2.1 icon. The rest starts after v0.2.1 ships, in parallel.
 
 | Agent | Tasks |
 |---|---|
