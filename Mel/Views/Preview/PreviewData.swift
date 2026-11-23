@@ -91,6 +91,29 @@ enum PreviewData {
     static let locked = SpecSize.product.allLocked
 
     static let discovery = spec(.discovery, locked, questions: questions)
+    /// B2 as drawn: question 2 of 5, platforms answered, the mock's coverage list.
+    static let intake: Spec = {
+        let pending = ["Who books for whom?", "What must work offline?", "What is out of scope?"].enumerated().map { i, title in
+            Question(id: "i\(i + 3)", title: title, why: "", shapes: .requirements, options: [Option(label: "Yes", note: ""), Option(label: "No", note: "")])
+        }
+        let questions = [
+            Question(id: "i1", title: "Which platforms first?", why: "", shapes: .product,
+                     options: [Option(label: "iOS and Android", note: ""), Option(label: "iOS only", note: "")], answer: .option(0, note: nil)),
+            Question(id: "i2", title: "How do members pay?", why: "Decides whether the spec covers checkout, refunds and receipts.", shapes: .requirements, options: [
+                Option(label: "Class packs bought in the app", note: "You mentioned buying class packs in your idea", suggested: true),
+                Option(label: "Paid at the desk, app only books", note: "No checkout in the app; staff adds credits"),
+                Option(label: "Monthly membership with auto-renew", note: "Subscription, unlimited booking"),
+                Option(label: "Not sure yet", note: "Kept as an open question in the spec"),
+            ]),
+        ] + pending
+        let coverage = [
+            ("Goal and success metric", CoverageState.covered), ("Users and roles", .covered), ("Platforms", .covered), ("Payments", .asking),
+            ("Scope and out of scope", .notYet), ("Constraints and existing code", .notYet), ("Privacy, speed, offline", .notYet),
+            ("Integrations", .notYet), ("Data the app keeps", .notYet), ("Edge cases", .notYet),
+        ].map { CoverageItem(label: $0, state: $1) }
+        return Spec(name: "Yoga Studio Booking", idea: "An app for my yoga studio where members book classes, buy class packs and get reminders. Teachers should see who is coming to each class.",
+                    folder: folder, stage: .discovery, docs: locked, questions: questions, coverage: coverage)
+    }()
     static let discoveryOpen = spec(.discovery, locked, questions: Array(questions.prefix(5)) + [openQuestion])
     static let discoveryThinking = spec(.discovery, locked, questions: Array(questions.prefix(5)))
     static let drafting = spec(.drafting(.requirements), docs(.approved, .writing))

@@ -3,13 +3,17 @@ import SwiftUI
 /// Line icons drawn in design/v2 that have no matching SF Symbol, stroked from the design's own SVG path data.
 struct DesignIcon: View {
     nonisolated enum Glyph {
-        case house, chevronDown, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp
+        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector
 
         /// SVG `d` attribute, as written in the `.dc.html` (circles written as two arcs).
         var path: String {
             switch self {
             case .house: "M2.5 6.5L8 2.5l5.5 4v6.25a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z"
             case .chevronDown: "M4 6l4 4 4-4"
+            case .chevronRight: "M6 3l5 5-5 5"
+            case .arrowRight: "M3 8h10M9 4l4 4-4 4"
+            case .draftNow: "M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"
+            case .inspector: "M3.75 2.75H12.25A2 2 0 0 1 14.25 4.75V11.25A2 2 0 0 1 12.25 13.25H3.75A2 2 0 0 1 1.75 11.25V4.75A2 2 0 0 1 3.75 2.75ZM10 2.75V13.25"
             case .plus: "M8 3v10M3 8h10"
             case .alert: "M8 1.75A6.25 6.25 0 1 1 8 14.25A6.25 6.25 0 1 1 8 1.75zM8 4.75v3.75M8 11.1v.15"
             case .terminal: "M4 5l3 3-3 3M8.5 11.5H12"
@@ -29,13 +33,14 @@ struct DesignIcon: View {
         /// SVG stroke-width as drawn.
         var lineWidth: CGFloat {
             switch self {
-            case .house, .folder, .doc, .gear: 1.4
+            case .house, .folder, .doc, .gear, .inspector: 1.4
             case .chevronDown, .check: 2
+            case .chevronRight, .arrowRight: 2.2
             case .plus, .terminal, .popUp: 1.6
             case .alert: 1.7
             case .folderPlus: 1
             case .close: 2.6
-            case .paperclip: 1.5
+            case .paperclip, .draftNow: 1.5
             }
         }
 

@@ -368,6 +368,17 @@ enum Theme {
         static let settingsIcon: CGFloat = 16
         /// 6 rows · B1 idea text area.
         static let ideaLines = 6
+        /// B2: column max 560; answered row 36; inspector 272 wide; Understanding bar 5 high; inspector rows 28 / 32;
+        /// answered chevron 10; inspector icon 12.
+        static let intakeWidth: CGFloat = 560
+        static let answeredRow: CGFloat = 36
+        static let inspectorWidth: CGFloat = 272
+        static let understandingBar: CGFloat = 5
+        static let coverageRow: CGFloat = 28
+        static let inspectorRow: CGFloat = 32
+        static let rowChevron: CGFloat = 10
+        /// 3 lines · B2 answer field of an open question (not drawn; the note field's look, taller).
+        static let openAnswerLines = 3
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
