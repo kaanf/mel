@@ -18,10 +18,12 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var analysis: AnalyzeResult?
     /// B1 "Let Mel fill small gaps". Off: no assumptions; gaps become open questions.
     public var fillGaps: Bool
+    /// Files waiting for a revise run, in order (analyze fixes, refine).
+    public var queue: [DocKind]
     public var sessionID: String?
 
     /// A new spec starts in Discovery with every file of its size locked.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, sessionID: String? = nil) {
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, queue: [DocKind] = [], sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -36,6 +38,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.analyze = analyze
         self.analysis = analysis
         self.fillGaps = fillGaps
+        self.queue = queue
         self.sessionID = sessionID
     }
 
