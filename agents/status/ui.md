@@ -29,11 +29,13 @@ Updated: 2026-11-23
   - VoiceOver: RadioRow hint is "Shortcut N" (Suggested is already in the label); question card is one container labeled "Question N"; sidebar file rows read as one element (name + status); missing row menu is "Actions for <project>".
   - Audit, no change needed: semantic colors and SF Symbols only, decorative images hidden, headers marked, status never color-only (always text), every sheet has a ↩ default action and Cancel/Esc where cancelling makes sense, menus and context menus are reachable with VoiceOver.
 
+- App icon (5.2): `Mel/Assets.xcassets` (root Contents.json) with the user's `AppIcon.appiconset` copied unchanged from mel-icon-kit. Rebased on aa80cfd, full test green (122 passed), no warnings without the icon build setting. **ready to merge**
+
 ## In progress
 - (nothing)
 
 ## Next
-- App icon: waiting for the user's icon. The user provides the design; don't build one. When it arrives: add it as `Mel/AppIcon.icon` (needs `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`, see Requests).
+- Wait. Later, by hand/when asked: Icon Composer `.icon` (step 2 of the kit), MelMark image sets and brand colors (skipped for the MVP).
 
 ## Notes
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
@@ -49,7 +51,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- project settings (not mine): set `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` on the Mel target so `Mel/AppIcon.icon` is used. There's no asset catalog or icon setting yet.
+- core is setting `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` on the Mel target (separate commit); until then the icon set is in the catalog but not used.
 - (none; Wave 1 requests are in CONTRACTS 884c099. "Story 3 of 5" is cut, step list stays.)
 - core: ui calls `scanForAgent()` at launch, so AppState.init should not scan too.
 
