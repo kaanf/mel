@@ -1,9 +1,17 @@
 # platform status
 
-Wave: 1 (done, merged to main a427bca)
+Wave: 2 (all done except sessionNotFound, waiting on core's MelSpec case)
 Updated: 2026-11-23
 
-## Done
+## Done (Wave 2)
+- G1: edit-run fixtures now tested (`editRunsGiveOnlyStepsAndResult`: thinking, permission_denied and tool results stay silent; Edit/Write give bare "edit"/"write" steps). Commit 81dfa7c.
+- `AgentRequest.systemPrompt` (init param, default nil) → `--append-system-prompt <text>`. 81dfa7c.
+- 4.7 `Notifier`: `UNUserNotificationCenter`, future `at` → `UNCalendarNotificationTrigger` (wall clock, fires after sleep), else immediate. No delegate, so banners only show while Mel isn't frontmost (REQ 5.8 for free). No-op outside a `.app` bundle (swift test). 0d40ff1.
+- 4.6: `Git.specPaths = ["specs", ":(exclude)specs/.mel"]` for the handoff commit (REQ 8.3); `Git.commit` is a no-op when the paths have nothing to commit (finishing twice doesn't throw). Test in a temp repo. 0d40ff1.
+- `scripts/release.sh`: without `TEAM_ID` → ad-hoc signed (hardened runtime) `.build/release/Mel-<version>.dmg`, verified locally. With `TEAM_ID` + `NOTARY_PROFILE` → archive, export developer-id, notarize + staple app, DMG, codesign + notarize + staple DMG, `spctl` check (untested, needs the account). 0535bea.
+- `xcodebuild … test` green.
+
+## Done (Wave 0–1)
 - Wave 0: 1.1 CLI verified, 1.2 ShellPath (merged to main).
 - Fixtures moved to `MelKit/Tests/MelAgentTests/Fixtures/`, links in `docs/research/CLAUDE-CODE-CLI.md` updated. New: `claude-2.1.311-unknown-resume.jsonl` (no `init`, `result` with `errors[]` and no `result` field).
 - 1.2 ShellPath tests (core's two + login PATH, dedupe/dirs, hanging shell times out in 5 s). `ShellPath` is now `public` (AppState needs `loginPATH()`).
@@ -17,10 +25,8 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wave 2 (wait for orchestrator's Wave 2 message), first `git fetch origin && git rebase origin/main`, then:
-  - G1 item first: `claude-2.1.311-edit-run-short/long.jsonl` aren't used by any test. Add a parse test (tool_use and thinking records produce no text, steps are extracted) or delete them if obsolete.
-  - Wire the accepted contracts (02c13b7): `AgentRequest.systemPrompt` → `--append-system-prompt` in `ClaudeCode.arguments`; map "No conversation found" → `StopReason.sessionNotFound` in `ClaudeCode.failures` once core adds the case in MelSpec; update the unknown-resume tests.
-  - 4.7 Notifier (still a stub), detection in `AppState.scanForAgent()`, 4.6 handoff pieces, `scripts/release.sh` draft.
+- When the orchestrator announces core's `StopReason.sessionNotFound` on main: rebase, add `("no conversation found", .sessionNotFound)` to `ClaudeCode.failures`, change `unknownResumeSession` test to expect `.failed(.sessionNotFound)`.
+- Then Wave 3 (5.3 signing needs the Apple Developer account, 5.4 clean-install test).
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -34,7 +40,13 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none; `systemPrompt` and `sessionNotFound` accepted in CONTRACTS 02c13b7)
+- For core (`Mel/Session/`, I don't edit it):
+  - `scanForAgent()`: `agent = .checking; agent = await adapter.detect(extraPaths: extraSearchPaths)`. Detection already runs its processes off the main actor (`Subprocess` is detached); allow ~10 s worst case (login shell + `--version` + `auth status`, 5 s timeouts each).
+  - `signIn()`: when `agent` is `.ready`/`.notSignedIn(executable:)`, `try SystemActions.openInTerminal(command: adapter.loginCommand(executable:), in: FileManager.default.homeDirectoryForCurrentUser)`; user then taps Scan Again.
+  - Notifications: `await Notifier.requestAuthorization()` once before the first run (e.g. in `start()`); `Notifier.post(title:body:)` when a file finishes or a run stops; `Notifier.post(…, at: resetsAt)` on `.usageLimit(resetsAt:)` with a date.
+  - Handoff: `Git.commit(paths: Git.specPaths, message:, in: projectFolder)` off the main actor; `SystemActions.openInTerminal(command: startCommand, in: projectFolder)`; `startCommand` as in UI.md (`claude "Read specs/ and implement TASKS.md, task 1"`).
+- CONTRACTS: add `static let specPaths: [String]` to `Git` (additive).
+- Docs: DESIGN.md › Security says "`.mel/` is added to `.gitignore` when committing (setting)", but REQ 8.3 says always excluded, no setting. I implemented REQ 8.3 by pathspec and don't touch `.gitignore`; please align DESIGN.md.
 
 ## Questions for the user
-- (none)
+- (for Wave 3) Apple Developer Team ID and a `notarytool store-credentials` profile name (OPEN-QUESTIONS 16).
