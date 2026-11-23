@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN A3 · Project context
+Lane: A First run · step 3 (runs once per repo)
+Purpose: Mel reads the chosen repo and writes .mel/project/product.md, tech.md, structure.md, principles.md. Every spec and agent reads these first. Toggle: existing code vs new project.
+Comes from: A2 Pick a project (Read This Repo) · B1 New Spec (Read Repo, for a project without context) · sidebar "Project context" row on any spec screen.
+Goes to: B1 New Spec (Save and Start a Spec, or Skip for now).
+Map of all screens: FLOW.md
+-->
+<title>Project setup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 20px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<span style="flex: 1; text-align: center; font-size: 13px; line-height: 18px; font-weight: 600; color: #6e6e73">Set Up Project</span>
+<span style="width: 52px"></span>
+</div>
+
+<main style="flex: 1; display: flex; justify-content: center; padding: 16px 32px 32px">
+<div style="width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Once per project</span>
+<h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em">Let Mel learn your project</h1>
+<p style="margin: 0; font-size: 14px; line-height: 21px; color: #3a3a3c; max-width: 600px">Mel reads the repo once and writes four short context files. Every spec and every agent reads them first, so new work extends your code instead of rebuilding it.</p>
+</div>
+
+<div style="background: #f5f5f7; border-radius: 14px">
+<div style="height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 16px">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path></svg>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">yoga-studio-booking</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">~/Developer/yoga-studio-booking · main · 214 files</span>
+</span>
+<button style="height: 26px; padding: 0 12px; border: 0; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Change…</button>
+</div>
+<div style="margin-left: 16px; height: 0.5px; background: rgba(0,0,0,0.08)"></div>
+<div style="padding: 10px 16px 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<span style="font-size: 13px; line-height: 18px; flex: 1">What is in this folder?</span>
+<div role="radiogroup" aria-label="Project type" style="height: 28px; display: flex; padding: 2px; gap: 2px; box-sizing: border-box; border-radius: 14px; background: rgba(0,0,0,0.06)">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+<button role="radio" aria-checked="{{m.checked}}" onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+
+<sc-if value="{{existing}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 4px; font-size: 13px; line-height: 18px; font-weight: 600">What Mel read</h2>
+<ul style="list-style: none; margin: 0; padding: 4px 0; background: #f5f5f7; border-radius: 12px">
+<sc-for list="{{scan}}" as="s" hint-placeholder-count="4">
+<li style="min-height: 30px; display: flex; align-items: center; gap: 10px; padding: 0 14px">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">{{s.label}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">{{s.src}}</span>
+</li>
+</sc-for>
+</ul>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px; margin: 0 4px">
+<h2 style="margin: 0; font-size: 13px; line-height: 18px; font-weight: 600; flex: 1">Project context</h2>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">.mel/project/</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 10px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16)">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600; flex: 1">{{f.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{f.state}}</span>
+</div>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{f.about}}</span>
+<span style="font-size: 12px; line-height: 17px; color: #1d1d1f; padding: 6px 8px; border-radius: 6px; background: #f5f5f7">{{f.sample}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; background: #f5f5f7">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600; flex: 1">principles.md</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Rules every spec and agent must follow</span>
+</div>
+<ol style="margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; line-height: 19px">
+<li>Reuse existing modules before adding new ones. Name the module you extend.</li>
+<li>No new dependency without a short reason in ARCHITECTURE.md.</li>
+<li>Every acceptance criterion gets a test before the task counts as done.</li>
+</ol>
+<div><button style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Add Rule</button></div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 2px">
+<span style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{footHint}}</span><a href="Native-1-NewSpec.dc.html" style="font-size: 12px; line-height: 16px; color: #0066d6; text-decoration: none">Skip for now. Specs won’t know your code until you set this up.</a></span>
+<button style="height: 34px; padding: 0 16px; border: 0; border-radius: 17px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Edit Files</button>
+<a href="Native-1-NewSpec.dc.html" style="height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px 0 18px; border-radius: 17px; background: #007aff; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12)">Save and Start a Spec<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">⌘↩</span></a>
+</div>
+
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { mode: 'existing' };
+}
+renderVals() {
+const mode = this.state.mode;
+const ex = mode === 'existing';
+const segBase = 'height: 24px; padding: 0 12px; border: 0; border-radius: 12px; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f; ';
+const modes = [
+{ id: 'existing', label: 'Existing code' },
+{ id: 'new', label: 'New project, no code yet' }
+].map((m) => ({
+label: m.label,
+checked: m.id === mode ? 'true' : 'false',
+pick: () => this.setState({ mode: m.id }),
+style: segBase + (m.id === mode ? 'background: #ffffff; font-weight: 500; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'background: transparent')
+}));
+const scan = [
+{ label: 'README and docs folder', src: 'README.md, docs/' },
+{ label: 'Build files and dependencies', src: 'build.gradle.kts' },
+{ label: '3 modules: shared, androidApp, iosApp', src: 'settings.gradle.kts' },
+{ label: '2 features already built: sign-in, schedule', src: 'shared/feature/' }
+];
+const files = ex ? [
+{ name: 'product.md', state: 'From README', about: 'What the app is for, who uses it, what must not break.', sample: 'Members book yoga classes. Sign-in and schedule are live; do not change their behavior.' },
+{ name: 'tech.md', state: 'Detected', about: 'Stack, libraries and tools the agents must prefer.', sample: 'Kotlin Multiplatform, Compose Multiplatform, Ktor, SQLDelight, Koin.' },
+{ name: 'structure.md', state: 'Detected', about: 'Where code goes and how it is named.', sample: 'Feature-first packages under shared/feature/<name>. One ViewModel per screen.' }
+] : [
+{ name: 'product.md', state: 'Empty', about: 'What the app is for, who uses it, what must not break.', sample: 'Filled from your first spec’s PRODUCT.md.' },
+{ name: 'tech.md', state: 'Choose', about: 'Stack, libraries and tools the agents must prefer.', sample: 'Pick a starting stack or let ARCHITECTURE.md decide it.' },
+{ name: 'structure.md', state: 'Empty', about: 'Where code goes and how it is named.', sample: 'Written after the first tasks create the folders.' }
+];
+return {
+modes, scan, files,
+existing: ex,
+footHint: ex ? 'Specs will link to existing code by path, so agents extend sign-in and schedule instead of rebuilding them.' : 'Nothing to scan yet. Mel fills these files as your first spec is approved.'
+};
+}
+}
+</script>
+</body>
+</html>

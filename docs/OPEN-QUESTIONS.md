@@ -10,8 +10,9 @@
 | 7 | Codex in the MVP? | **No.** Claude Code only; adapter protocol kept for later | 2026-11-23 |
 | 4 | Who writes the spec files? | **Mel.** Claude Code runs read-only and streams Markdown; Mel appends it to the file | 2026-11-23 |
 | 17 | Costly canvas features | **Deferred:** Pause, Ask-for-changes + suggestions, Review inspector/History, time estimates, parallel runs | 2026-11-23 |
-| 6 | Discovery question limit / open questions | **No limit; no open questions.** Discovery runs until every topic is covered; files are complete, agent decisions are marked as assumptions | 2026-11-23 |
-| 18 | Approve with unconfirmed assumptions? | **No.** Approve is disabled until every assumption is confirmed or changed | 2026-11-23 |
+| 6 | Discovery question limit / open questions | **Replaced (v2 design).** Short intake (about 1–2 / 3 / 5 questions by size), then a round 2 for gaps found in the draft. Open questions may stay in a file, marked `[!OPEN QUESTION]` | 2026-11-23 |
+| 18 | Approve with unconfirmed assumptions? | **Yes (v2 design).** "You can approve anyway": open items stay marked in the file for the next agent | 2026-11-23 |
+| 20 | Target design | **v2 canvas** https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd (copy in `docs/design/v2/`), including the honeycomb logo. Built **pixel-exact**: colors, spacing, padding, radii, type as drawn. Items deferred in #7, #15, #17 stay deferred (Codex, Link Issue, Pause, inspector/suggestions/History, time estimates) | 2026-11-23 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open

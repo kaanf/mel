@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN B3 · Drafting
+Lane: B Write a spec · step 3 (repeats for every spec file)
+Purpose: live progress while the agent writes one file (shown: REQUIREMENTS.md). Step checklist, activity log, read-only live preview, Up Next list. Pause or Stop keeps what is written.
+Comes from: B2 Intake (Continue / Draft Now) · B4 or B5 (Approve starts the next file) · C1 Refine.
+Goes to: B4 Review (Review What's Written, or when the file is done; B5 for EXPERIENCE.md) · C2 Agent stopped (if the agent process stops).
+Map of all screens: FLOW.md
+-->
+<title>Drafting: live progress</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+.srow:hover{background:rgba(0,0,0,0.04)}
+@keyframes pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(0.7);opacity:0.55}100%{transform:scale(1);opacity:1}}
+.pulse{animation:pulse 1.4s cubic-bezier(0.4,0,0.2,1) infinite}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.caret{animation:blink 1s steps(1) infinite}
+@media (prefers-reduced-motion: reduce){.pulse,.caret{animation:none}}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Specs" style="flex: 0 0 232px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 8px 18px 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Specs</div>
+<div style="flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 1px">
+<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">Yoga Studio Booking</span>
+</a>
+<a class="srow" href="Native-2-Discovery.dc.html" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4a1.5 1.5 0 0 1 1.5-1.5h8A1.5 1.5 0 0 1 13.5 4v5.5A1.5 1.5 0 0 1 12 11H6.5l-3 2.5V11A1.5 1.5 0 0 1 2.5 9.5z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">Discovery</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">5 of 5</span>
+</a>
+<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">PRODUCT.md</span>
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Approved</span>
+</a>
+<a href="#" aria-current="page" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
+<span style="font-size: 13px; line-height: 18px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">REQUIREMENTS.md</span>
+<sc-if value="{{running}}" hint-placeholder-val="{{true}}"><span class="pulse" style="width: 8px; height: 8px; border-radius: 50%; background: #8944ab"></span></sc-if>
+<sc-if value="{{notRunning}}" hint-placeholder-val="{{false}}"><span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span></sc-if>
+<span style="font-size: 11px; line-height: 14px; color: #1d1d1f">{{sideWord}}</span>
+</a>
+<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">EXPERIENCE.md</span>
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Locked</span>
+</a>
+<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">ARCHITECTURE.md</span>
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Locked</span>
+</a>
+<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">TASKS.md</span>
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Locked</span>
+</a>
+<a class="srow" href="Native-3c-Analyze.dc.html" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14M5.25 7l1.25 1.25L9 5.75"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">Analyze</span>
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Locked</span>
+</a>
+</div>
+<div style="padding: 10px 12px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="Native-1-NewSpec.dc.html" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 13px; line-height: 18px; color: #6e6e73; text-decoration: none">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+<span>New Spec</span>
+</a>
+</div>
+</nav>
+
+<section style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+<div style="height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 20px">
+<div style="display: flex; flex-direction: column; min-width: 110px">
+<div style="font-size: 15px; line-height: 19px; font-weight: 600">Drafting</div>
+<div style="font-size: 11px; line-height: 14px; color: #6e6e73">Yoga Studio Booking</div>
+</div>
+<div style="flex: 1; display: flex; justify-content: center; min-width: 0">
+<div role="status" aria-live="polite" style="position: relative; overflow: hidden; height: 30px; width: 100%; max-width: 340px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 15px; background: rgba(0,0,0,0.04); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06)">
+<sc-if value="{{running}}" hint-placeholder-val="{{true}}"><span class="pulse" style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #8944ab"></span></sc-if>
+<sc-if value="{{notRunning}}" hint-placeholder-val="{{false}}"><span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span></sc-if>
+<span style="font-size: 12px; line-height: 16px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{statusText}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{statusCount}}</span>
+<span style="{{barStyle}}"></span>
+</div>
+</div>
+<sc-if value="{{notStopped}}" hint-placeholder-val="{{true}}">
+<div style="height: 32px; display: flex; align-items: center; gap: 2px; padding: 0 2px; border-radius: 16px; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.08)">
+<button onClick="{{togglePause}}" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<sc-if value="{{running}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"></path></svg></sc-if>
+<sc-if value="{{paused}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5l7 4.5-7 4.5z"></path></svg></sc-if>
+<span>{{pauseLabel}}</span>
+</button>
+<span aria-hidden="true" style="width: 0.5px; height: 16px; background: rgba(0,0,0,0.15)"></span>
+<button onClick="{{stop}}" title="Stops the agent. Everything written so far is kept." style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"></rect></svg>
+<span>Stop</span>
+</button>
+</div>
+</sc-if>
+</div>
+
+<div style="flex: 1; padding: 12px 24px 32px; display: flex; justify-content: center">
+<div style="width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 0 12px; flex-wrap: wrap">
+<ol aria-label="Spec progress" style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap">
+<li style="display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: #6e6e73"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg><span>Idea</span></li>
+<li aria-hidden="true" style="width: 16px; height: 0.5px; background: rgba(0,0,0,0.2)"></li>
+<li style="display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: #6e6e73"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg><span>Questions</span></li>
+<li aria-hidden="true" style="width: 16px; height: 0.5px; background: rgba(0,0,0,0.2)"></li>
+<li aria-current="step" style="display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 600; color: #1d1d1f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1d1d1f"></span><span>Draft Requirements</span></li>
+<li aria-hidden="true" style="width: 16px; height: 0.5px; background: rgba(0,0,0,0.2)"></li>
+<li style="display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: #6e6e73"><span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span><span>Review</span></li>
+</ol>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{eta}}</span>
+</div>
+
+<sc-if value="{{stopped}}" hint-placeholder-val="{{false}}">
+<div style="background: #f5f5f7; border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 13px; line-height: 18px; font-weight: 600">Stopped. Nothing was lost.</div>
+<div style="font-size: 12px; line-height: 16px; color: #6e6e73">Stories 1 and 2 are saved in REQUIREMENTS.md. You can review them now or let the agent continue.</div>
+</div>
+<button onClick="{{resume}}" style="height: 28px; padding: 0 16px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Continue Drafting</button>
+<a href="Native-3-Review.dc.html" style="height: 28px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 14px; background: #007aff; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none">Review What’s Written</a>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="margin: 0 12px; display: flex; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 13px; line-height: 18px; font-weight: 600; flex: 1">REQUIREMENTS.md</h2>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Claude Code</span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 4px 0; background: #f5f5f7; border-radius: 10px">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="8">
+<li style="min-height: 36px; display: flex; align-items: center; gap: 10px; padding: 6px 12px">
+<span style="flex: 0 0 14px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{s.done}}" hint-placeholder-val="{{true}}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg></sc-if>
+<sc-if value="{{s.active}}" hint-placeholder-val="{{false}}"><span class="pulse" style="width: 8px; height: 8px; border-radius: 50%; background: #8944ab"></span></sc-if>
+<sc-if value="{{s.held}}" hint-placeholder-val="{{false}}"><span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span></sc-if>
+<sc-if value="{{s.next}}" hint-placeholder-val="{{false}}"><span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span></sc-if>
+</span>
+<span style="flex: 1; font-size: 13px; line-height: 18px">{{s.label}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{s.word}}</span>
+</li>
+</sc-for>
+</ol>
+<div style="margin: 0 12px">
+<button onClick="{{toggleLog}}" aria-expanded="{{logOpenAttr}}" style="height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">
+<span style="{{chevStyle}}"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg></span>
+<span>Activity Log</span>
+</button>
+<sc-if value="{{logOpen}}" hint-placeholder-val="{{false}}">
+<div style="margin-top: 6px; padding: 10px 12px; border-radius: 8px; background: #f5f5f7; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 18px; color: #1d1d1f">
+<div><span style="color: #6e6e73">12:04:10</span> read specs/PRODUCT.md (approved)</div>
+<div><span style="color: #6e6e73">12:04:11</span> read 5 answers, 1 left open</div>
+<div><span style="color: #6e6e73">12:04:39</span> wrote story 1 “Book a class” (3 criteria)</div>
+<div><span style="color: #6e6e73">12:05:02</span> wrote story 2 “Buy a class pack” (2 criteria)</div>
+<div><span style="color: #6e6e73">12:05:20</span> writing story 3 “Cancel a booking”</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0 12px; font-size: 13px; line-height: 18px; font-weight: 600">Up Next</h2>
+<div style="background: #f5f5f7; border-radius: 10px">
+<div style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; flex: 1">EXPERIENCE.md</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Starts after you approve Requirements</span>
+</div>
+<div style="margin-left: 35px; height: 0.5px; background: rgba(0,0,0,0.1)"></div>
+<div style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; flex: 1">ARCHITECTURE.md</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Starts after you approve Experience</span>
+</div>
+<div style="margin-left: 35px; height: 0.5px; background: rgba(0,0,0,0.1)"></div>
+<div style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="7" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; flex: 1">TASKS.md, then Analyze</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Starts after you approve Architecture</span>
+</div>
+</div>
+<div style="margin: 2px 12px 0; display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 14px; color: #6e6e73">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.25 1.5H2.75z"></path><path d="M6.5 14h3"></path></svg>
+<span>You can switch apps. You’ll get a notification when Requirements is ready to review.</span>
+</div>
+</div>
+
+</div>
+</div>
+</section>
+
+<aside aria-label="Live preview" style="flex: 1 1 300px; max-width: 100%; box-sizing: border-box; border-left: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-direction: column">
+<div style="height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 16px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; flex: 1">Live Preview</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">REQUIREMENTS.md</span>
+</div>
+<div style="flex: 1; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 17px; line-height: 22px; font-weight: 700">Requirements</div>
+<div style="font-size: 13px; line-height: 18px; font-weight: 600">1. Book a class</div>
+<div style="font-size: 12px; line-height: 17px; color: #1d1d1f">As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.</div>
+<div style="font-size: 12px; line-height: 17px; color: #6e6e73">3 acceptance criteria</div>
+<div style="font-size: 13px; line-height: 18px; font-weight: 600; margin-top: 4px">2. Buy a class pack</div>
+<div style="font-size: 12px; line-height: 17px; color: #1d1d1f">As a member, I want to buy a pack of classes in the app, so that I can book without paying each time.</div>
+<div style="font-size: 12px; line-height: 17px; color: #6e6e73">2 acceptance criteria</div>
+<div style="font-size: 13px; line-height: 18px; font-weight: 600; margin-top: 4px">3. Cancel a booking</div>
+<div style="font-size: 12px; line-height: 17px; color: #1d1d1f">As a member, I want to cancel a booking I can’t make, so that<sc-if value="{{running}}" hint-placeholder-val="{{true}}"><span class="caret" aria-hidden="true" style="display: inline-block; width: 2px; height: 13px; margin-left: 2px; vertical-align: -2px; background: #8944ab"></span></sc-if></div>
+<div style="margin-top: auto; font-size: 11px; line-height: 14px; color: #6e6e73">Read only while the agent writes. You can edit once it’s ready for review.</div>
+</div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { mode: 'running', log: false };
+}
+renderVals() {
+const m = this.state.mode;
+const running = m === 'running';
+const paused = m === 'paused';
+const stopped = m === 'stopped';
+const raw = [
+{ label: 'Read PRODUCT.md and your 5 answers', st: 'done' },
+{ label: 'Wrote stories 1 and 2 with acceptance criteria', st: 'done' },
+{ label: 'Writing story 3 of 5: “Cancel a booking”', st: 'active' },
+{ label: 'Set priority P1 to P3 and mark the MVP line', st: 'next' },
+{ label: 'Add quality needs: privacy, speed, offline', st: 'next' },
+{ label: 'List edge cases for every P1 story', st: 'next' },
+{ label: 'Mark anything you didn’t confirm as an assumption', st: 'next' },
+{ label: 'Check that every criterion can be tested', st: 'next' }
+];
+const steps = raw.map((s) => {
+const isActive = s.st === 'active';
+return {
+label: s.label,
+done: s.st === 'done',
+active: isActive && running,
+held: isActive && !running,
+next: s.st === 'next',
+word: s.st === 'done' ? 'Done' : isActive ? (running ? 'Running' : (paused ? 'Paused' : 'Stopped')) : 'Next'
+};
+});
+const set = (mode) => () => this.setState({ mode: mode });
+return {
+running: running,
+notRunning: !running,
+paused: paused,
+stopped: stopped,
+notStopped: !stopped,
+sideWord: running ? 'Writing' : (paused ? 'Paused' : 'Stopped'),
+statusText: running ? 'Running · Writing criteria for story 3 of 5' : (paused ? 'Paused · Story 3 of 5' : 'Stopped · 2 stories saved'),
+statusCount: running ? 'about 1 min' : '',
+barStyle: 'position: absolute; left: 0; bottom: 0; height: 2px; width: 46%; background: ' + (running ? '#8944ab' : '#aeaeb2'),
+eta: running ? 'About 1 min left' : (paused ? 'Paused' : ''),
+pauseLabel: running ? 'Pause' : 'Resume',
+togglePause: () => this.setState({ mode: running ? 'paused' : 'running' }),
+stop: set('stopped'),
+resume: set('running'),
+steps: steps,
+logOpen: this.state.log,
+logOpenAttr: this.state.log ? 'true' : 'false',
+toggleLog: () => this.setState({ log: !this.state.log }),
+chevStyle: 'display: inline-flex; transition: transform 150ms cubic-bezier(0.25,0.46,0.45,0.94); transform: rotate(' + (this.state.log ? '90deg' : '0deg') + ')'
+};
+}
+}
+</script>
+</body>
+</html>

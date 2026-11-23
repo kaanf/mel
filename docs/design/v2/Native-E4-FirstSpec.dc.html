@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN A4x · First spec, no project
+Lane: A First run · branch from A2
+Purpose: the empty New Spec a brand-new user sees with no project. Only Product size works; Feature and Quick fix need a project. Examples fill the idea box.
+Comes from: A2 Pick a project (Start from an Idea) · C3 Home, no specs (when no project exists).
+Goes to: B2 Intake (Start, enabled once the idea box has text) · A2 (Needs a project · Add One).
+Same screen as B1 New Spec in its empty, no-project state.
+Map of all screens: FLOW.md
+-->
+<title>First New Spec: empty</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+textarea::placeholder{color:#aeaeb2}
+textarea:focus{outline:none}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 20px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<span style="flex: 1; text-align: center; font-size: 13px; line-height: 18px; font-weight: 600; color: #6e6e73">New Spec</span>
+<span style="width: 52px"></span>
+</div>
+
+<main style="flex: 1; display: flex; justify-content: center; padding: 12px 32px 40px">
+<div style="width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">What are you making?</span>
+<div role="radiogroup" aria-label="Spec size" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px">
+<sc-for list="{{sizes}}" as="z" hint-placeholder-count="3">
+<div role="radio" aria-checked="{{z.checked}}" aria-disabled="{{z.disabled}}" style="{{z.style}}">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{z.label}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #3a3a3c">{{z.note}}</span>
+<sc-if value="{{z.locked}}" hint-placeholder-val="{{false}}">
+<a href="Native-E2-PickFolder.dc.html" style="font-size: 11px; line-height: 14px; color: #0066d6; text-decoration: none">Needs a project · Add One</a>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; color: #aeaeb2">Untitled Spec</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">Mel suggests a name once you describe your idea.</span>
+</div>
+
+<div style="display: flex; flex-direction: column; border-radius: 14px; background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06)">
+<label for="fs-idea" style="padding: 14px 16px 0; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Your idea</label>
+<textarea id="fs-idea" rows="6" value="{{idea}}" onChange="{{onIdea}}" placeholder="What should it do, and who is it for? Plain words are fine. A messy paragraph is enough." style="box-sizing: border-box; width: 100%; resize: none; padding: 6px 16px 12px; border: 0; background: transparent; font: inherit; font-size: 15px; line-height: 23px; color: #1d1d1f"></textarea>
+<div style="padding: 8px 16px 10px; border-top: 0.5px solid rgba(0,0,0,0.06); font-size: 11px; line-height: 14px; color: #6e6e73">You can also drop screenshots, sketches or a doc you already wrote.</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Not sure how to start? Try one</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{examples}}" as="e" hint-placeholder-count="3">
+<button onClick="{{e.use}}" style="height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{e.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
+<span style="flex: 1; font-size: 12px; line-height: 16px; color: #6e6e73">{{hint}}</span>
+<a href="Native-2-Discovery.dc.html" aria-disabled="{{disabled}}" style="{{ctaStyle}}">Start<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">⌘↩</span></a>
+</div>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { idea: '' };
+}
+renderVals() {
+const has = this.state.idea.trim().length > 0;
+const base = 'display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 12px; border-radius: 12px; ';
+const sizes = [
+{ label: 'Product', note: 'A new app from an idea', on: true },
+{ label: 'Feature', note: 'One feature in an existing app', locked: true },
+{ label: 'Quick fix', note: 'A bug or a small change', locked: true }
+].map((z) => ({
+label: z.label, note: z.note, locked: !!z.locked,
+checked: z.on ? 'true' : 'false',
+disabled: z.locked ? 'true' : 'false',
+style: base + (z.on ? 'background: rgba(0,122,255,0.08); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: #fbfbfd; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08); color: #6e6e73')
+}));
+const examples = [
+{ label: 'Habit tracker for couples', text: 'A habit tracker for couples. Both partners see each other’s streaks and can send a nudge.' },
+{ label: 'Booking app for a studio', text: 'An app for my yoga studio where members book classes, buy class packs and get reminders.' },
+{ label: 'Internal tool for a bar', text: 'A back-office app for a bar that shows daily sales and warns when stock runs low.' }
+].map((e) => ({ label: e.label, use: () => this.setState({ idea: e.text }) }));
+return {
+sizes, examples,
+idea: this.state.idea,
+onIdea: (e) => this.setState({ idea: e.target.value }),
+hint: has ? 'About 5 questions, then 5 files and a final check.' : 'Describe your idea to start. Nothing is written until you press Start.',
+disabled: has ? 'false' : 'true',
+ctaStyle: 'height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px 0 20px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (has ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (has ? 'auto' : 'none')
+};
+}
+}
+</script>
+</body>
+</html>

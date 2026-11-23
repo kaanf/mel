@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN A1x · Welcome, no agent found
+Lane: A First run · alternative to A1
+Purpose: first launch when no coding agent is installed. Explains that Mel uses the user's own agent and shows install commands.
+Comes from: app launch with no agent found.
+Goes to: A1 Welcome (Check Again, once an agent is found) · C4 Settings › Agents (Choose path) · A2 Pick a project (Look around first).
+Map of all screens: FLOW.md
+-->
+<title>Welcome: no agents found</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div class="tl" style="height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 20px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<span style="flex: 1"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Setup</span>
+</div>
+
+<main style="flex: 1; display: flex; justify-content: center; padding: 8px 24px 40px">
+<div style="width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<svg width="96" height="96" viewBox="0 0 100 100" role="img" aria-label="Mel" style="filter: drop-shadow(0 10px 18px rgba(150,90,0,0.22))"><defs><linearGradient id="e1Bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF9EC"></stop><stop offset="1" stop-color="#FBE1AE"></stop></linearGradient></defs><rect width="100" height="100" rx="22.4" fill="url(#e1Bg)"></rect><g fill="#D97F00" stroke="#D97F00" stroke-width="2.4" stroke-linejoin="round"><polygon points="33.00,36.10 29.50,42.16 22.50,42.16 19.00,36.10 22.50,30.04 29.50,30.04"></polygon><polygon points="33.00,49.96 29.50,56.02 22.50,56.02 19.00,49.96 22.50,43.89 29.50,43.89"></polygon><polygon points="33.00,63.81 29.50,69.87 22.50,69.87 19.00,63.81 22.50,57.75 29.50,57.75"></polygon><polygon points="81.00,36.10 77.50,42.16 70.50,42.16 67.00,36.10 70.50,30.04 77.50,30.04"></polygon><polygon points="81.00,49.96 77.50,56.02 70.50,56.02 67.00,49.96 70.50,43.89 77.50,43.89"></polygon><polygon points="81.00,63.81 77.50,69.87 70.50,69.87 67.00,63.81 70.50,57.75 77.50,57.75"></polygon><polygon points="45.00,43.03 41.50,49.09 34.50,49.09 31.00,43.03 34.50,36.97 41.50,36.97"></polygon><polygon points="69.00,43.03 65.50,49.09 58.50,49.09 55.00,43.03 58.50,36.97 65.50,36.97"></polygon></g><polygon points="57.00,49.96 53.50,56.02 46.50,56.02 43.00,49.96 46.50,43.89 53.50,43.89" fill="#2A2A2E" stroke="#2A2A2E" stroke-width="2.4" stroke-linejoin="round"></polygon><rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#000000" stroke-opacity="0.08"></rect></svg>
+<h1 style="margin: 6px 0 0; font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.02em">Welcome to Mel</h1>
+<p style="margin: 0; max-width: 440px; font-size: 13px; line-height: 19px; color: #3a3a3c">Mel doesn’t run its own AI. Your specs are written by a coding agent on this Mac, with your own account. We didn’t find one yet.</p>
+</div>
+
+<div style="background: #f5f5f7; border-radius: 12px">
+<sc-for list="{{agents}}" as="a" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-bottom: 0.5px solid rgba(0,0,0,0.08)">
+<div style="display: flex; align-items: center; gap: 10px">
+<span aria-hidden="true" style="flex: 0 0 30px; width: 30px; height: 30px; border-radius: 7px; background: #1d1d1f; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5l3 3-3 3M8.5 11.5H12"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 13px; line-height: 18px; font-weight: 500">{{a.name}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{a.note}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span><span style="font-size: 12px; line-height: 16px; color: #6e6e73">Not found</span></span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; margin-left: 40px">
+<code style="flex: 1; min-width: 0; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; padding: 6px 8px; border-radius: 6px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{a.cmd}}</code>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Copy</button>
+</div>
+</div>
+</sc-for>
+<div style="padding: 10px 12px; font-size: 11px; line-height: 15px; color: #6e6e73">Install one in Terminal and sign in once. Mel checks again when you come back to this window.</div>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<a href="Native-0-Welcome.dc.html" style="height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 22px; border-radius: 17px; background: #007aff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12); font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none">Check Again</a>
+<div style="display: flex; gap: 16px">
+<a href="Native-Settings-Agents.dc.html" style="font-size: 12px; line-height: 16px; color: #0066d6; text-decoration: none">Installed somewhere else? Choose path…</a>
+<a href="Native-E2-PickFolder.dc.html" style="font-size: 12px; line-height: 16px; color: #0066d6; text-decoration: none">Look around first</a>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+agents: [
+{ name: 'Claude Code', note: 'Needs a Claude account', cmd: 'npm install -g @anthropic-ai/claude-code' },
+{ name: 'Codex', note: 'Needs a ChatGPT account', cmd: 'npm install -g @openai/codex' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN B1 · New Spec
+Lane: B Write a spec · step 1
+Purpose: start a spec. Pick size first (Quick fix, Feature, Product); the rest adapts:
+  Quick fix: project picker, "What's wrong?" box, Happens now / Should happen / Where fields, attached logs and recordings, Link Issue, Paste Log. Start works with only a log.
+  Feature: project picker, "What should it do?" box, Builds on chips (existing modules from project context).
+  Product: "Your idea" box, no project picker, saved to a new folder.
+Comes from: A3 Project context (Save and Start a Spec) · sidebar New Spec on any screen · C3 Home.
+Goes to: B2 Intake (Start) · A2 Pick a project (Add Project) · A3 Project context (Read Repo, for a project without context).
+Empty first-run version: A4x (Native-E4-FirstSpec).
+Map of all screens: FLOW.md
+-->
+<title>New Spec</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+input::placeholder,textarea::placeholder{color:#aeaeb2}
+input:focus,textarea:focus{outline:none}
+.idea:focus-within{box-shadow:0 0 0 0.5px #007aff,0 0 0 3.5px rgba(0,122,255,0.3)!important}
+.name:focus{box-shadow:0 0 0 0.5px #007aff,0 0 0 3.5px rgba(0,122,255,0.3)}
+.chip:hover{background:rgba(0,0,0,0.08)!important}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<div style="height: 52px; flex: 0 0 52px; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 20px">
+<div class="tl" style="display: flex; gap: 8px; align-items: center; flex: 1">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<a href="Native-Settings-Agents.dc.html" aria-label="Settings" style="width: 36px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(255,255,255,0.8); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.08); color: #1d1d1f">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2.2"></circle><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"></path></svg>
+</a>
+</div>
+
+<main style="flex: 1; display: flex; justify-content: center; padding: 12px 24px 40px">
+<div style="width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="32" height="32" viewBox="0 0 100 100" aria-hidden="true" style="filter: drop-shadow(0 3px 6px rgba(150,90,0,0.18))"><defs><linearGradient id="melBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF9EC"></stop><stop offset="1" stop-color="#FBE1AE"></stop></linearGradient></defs><rect width="100" height="100" rx="22.4" fill="url(#melBg)"></rect><g fill="#D97F00" stroke="#D97F00" stroke-width="2.4" stroke-linejoin="round"><polygon points="33.00,36.10 29.50,42.16 22.50,42.16 19.00,36.10 22.50,30.04 29.50,30.04"></polygon><polygon points="33.00,49.96 29.50,56.02 22.50,56.02 19.00,49.96 22.50,43.89 29.50,43.89"></polygon><polygon points="33.00,63.81 29.50,69.87 22.50,69.87 19.00,63.81 22.50,57.75 29.50,57.75"></polygon><polygon points="81.00,36.10 77.50,42.16 70.50,42.16 67.00,36.10 70.50,30.04 77.50,30.04"></polygon><polygon points="81.00,49.96 77.50,56.02 70.50,56.02 67.00,49.96 70.50,43.89 77.50,43.89"></polygon><polygon points="81.00,63.81 77.50,69.87 70.50,69.87 67.00,63.81 70.50,57.75 77.50,57.75"></polygon><polygon points="45.00,43.03 41.50,49.09 34.50,49.09 31.00,43.03 34.50,36.97 41.50,36.97"></polygon><polygon points="69.00,43.03 65.50,49.09 58.50,49.09 55.00,43.03 58.50,36.97 65.50,36.97"></polygon></g><polygon points="57.00,49.96 53.50,56.02 46.50,56.02 43.00,49.96 46.50,43.89 53.50,43.89" fill="#2A2A2E" stroke="#2A2A2E" stroke-width="2.4" stroke-linejoin="round"></polygon><rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#000000" stroke-opacity="0.08"></rect></svg>
+<span id="ns-title" style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6e6e73">New Spec</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">What are you making?</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Mel shapes the questions and files to the work</span>
+</div>
+<div role="radiogroup" aria-label="Spec size" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px">
+<sc-for list="{{sizes}}" as="z" hint-placeholder-count="3">
+<button role="radio" aria-checked="{{z.checked}}" onClick="{{z.pick}}" style="{{z.style}}">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{z.label}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #3a3a3c">{{z.note}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">{{z.files}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{inRepo}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; border-radius: 14px; background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06)">
+<div style="min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; flex-wrap: wrap">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path></svg>
+<span style="flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 1px">
+<label for="ns-project" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Project</label>
+<select id="ns-project" value="{{projectId}}" onChange="{{onProject}}" style="width: fit-content; max-width: 100%; height: 22px; margin: 0 0 0 -4px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 14px; line-height: 18px; font-weight: 600; color: #1d1d1f">
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="2">
+<option value="{{p.id}}">{{p.name}}</option>
+</sc-for>
+</select>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">{{projectMeta}}</span>
+</span>
+<span style="{{ctxBadgeStyle}}">{{ctxBadge}}</span>
+<a href="Native-E2-PickFolder.dc.html" style="font-size: 12px; line-height: 16px; color: #0066d6; text-decoration: none">Add Project…</a>
+</div>
+<sc-if value="{{noCtx}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 0.5px solid rgba(0,0,0,0.06); flex-wrap: wrap">
+<span style="flex: 1; min-width: 200px; font-size: 12px; line-height: 16px; color: #3a3a3c">Mel hasn’t read this repo yet. Without project context the agent may rebuild code that already exists.</span>
+<a href="Native-0b-ProjectSetup.dc.html" style="height: 26px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 13px; background: #007aff; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; text-decoration: none">Read Repo (about 1 min)</a>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<label for="ns-name" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Spec name</label>
+<input id="ns-name" class="name" type="text" value="{{name}}" onChange="{{onName}}" placeholder="Untitled Spec" style="box-sizing: border-box; width: calc(100% + 16px); margin: 0 -8px; padding: 2px 8px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.02em; color: #1d1d1f">
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{nameHint}}</span>
+</div>
+
+<div class="idea" style="display: flex; flex-direction: column; border-radius: 14px; background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06)">
+<label for="ns-idea" style="padding: 14px 16px 0; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">{{ideaLabel}}</label>
+<textarea id="ns-idea" rows="6" value="{{idea}}" onChange="{{onIdea}}" placeholder="{{ideaPlaceholder}}" style="box-sizing: border-box; width: 100%; resize: none; padding: 6px 16px 12px; border: 0; background: transparent; font: inherit; font-size: 15px; line-height: 23px; color: #1d1d1f"></textarea>
+<sc-if value="{{isQuick}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; border-top: 0.5px solid rgba(0,0,0,0.06)">
+<sc-for list="{{bugFields}}" as="b" hint-placeholder-count="3">
+<div style="min-height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 0.5px solid rgba(0,0,0,0.06)">
+<label for="{{b.id}}" style="flex: 0 0 104px; font-size: 12px; line-height: 16px; color: #6e6e73">{{b.label}}</label>
+<input id="{{b.id}}" type="text" value="{{b.value}}" onChange="{{b.change}}" placeholder="{{b.ph}}" style="flex: 1; min-width: 0; height: 28px; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+</div>
+</sc-for>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 2px">
+<sc-for list="{{evidence}}" as="v" hint-placeholder-count="2">
+<span style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 10px; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.05)">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #1d1d1f">{{v.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{v.kind}}</span>
+<button aria-label="{{v.removeLabel}}" onClick="{{v.remove}}" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 9px; background: rgba(0,0,0,0.06); color: #6e6e73"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+</span>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px 10px; border-top: 0.5px solid rgba(0,0,0,0.06)">
+<button style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 7.5l-5.3 5.3a3.5 3.5 0 0 1-5-5l5.6-5.6a2.3 2.3 0 0 1 3.3 3.3L6.6 11a1.2 1.2 0 0 1-1.7-1.7l4.9-4.9"></path></svg>
+<span>Add Files</span>
+</button>
+<sc-if value="{{isQuick}}" hint-placeholder-val="{{false}}">
+<button style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Link Issue</button>
+<button style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Paste Log</button>
+</sc-if>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73; flex: 1">{{dropHint}}</span>
+</div>
+</div>
+
+<sc-if value="{{showBuilds}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Builds on</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">From project context. Agents extend these instead of rebuilding them.</span>
+</div>
+<div role="group" aria-label="Builds on" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{builds}}" as="f" hint-placeholder-count="4">
+<button aria-pressed="{{f.pressed}}" onClick="{{f.toggle}}" style="{{f.style}}">
+<span style="font-size: 12px; line-height: 16px">{{f.label}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">{{f.path}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasIdea}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Mel will ask about</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">You can skip any of these</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{topics}}" as="t" hint-placeholder-count="5">
+<span style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 13px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px; color: #1d1d1f">
+<span style="width: 6px; height: 6px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
+<span>{{t.label}}</span>
+</span>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{noIdea}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Or start from an example</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{examples}}" as="e" hint-placeholder-count="3">
+<button class="chip" onClick="{{e.use}}" style="height: 26px; display: inline-flex; align-items: center; padding: 0 12px; border: 0; border-radius: 13px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{e.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<div style="background: #f5f5f7; border-radius: 14px">
+<div style="height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 16px">
+<span style="font-size: 13px; line-height: 18px; flex: 1">Agent</span>
+<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 14px; color: #6e6e73">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+Ready
+</span>
+<button aria-label="Agent: Claude Code" style="height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 10px; border: 0; border-radius: 7px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<span>Claude Code</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#1d1d1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="margin-left: 16px; height: 0.5px; background: rgba(0,0,0,0.08)"></div>
+<div style="height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 16px">
+<span style="font-size: 13px; line-height: 18px; flex: 1">Save to</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0">{{path}}</span>
+<button aria-label="Choose folder" style="height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 8px; border: 0; border-radius: 7px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path></svg>
+<span>Developer</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#1d1d1f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="margin-left: 16px; height: 0.5px; background: rgba(0,0,0,0.08)"></div>
+<div style="min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 8px 16px">
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px">Let Mel fill small gaps</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Each one is marked as an assumption for you to confirm.</span>
+</span>
+<button role="switch" aria-label="Let Mel fill small gaps" aria-checked="{{assumeChecked}}" onClick="{{toggleAssume}}" style="{{trackStyle}}"><span style="{{knobStyle}}"></span></button>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px; padding-top: 4px">
+<span style="flex: 1; font-size: 12px; line-height: 16px; color: #6e6e73">{{footHint}}</span>
+<a href="Native-2-Discovery.dc.html" aria-disabled="{{disabledAttr}}" style="{{ctaStyle}}">Start<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">⌘↩</span></a>
+</div>
+
+</div>
+</main>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = {
+size: 'feature',
+project: 'yoga',
+assume: true,
+names: { product: 'Yoga Studio Booking', feature: 'Filter schedule by teacher', quick: 'Double booking on fast taps' },
+ideas: {
+product: 'An app for my yoga studio where members book classes, buy class packs and get reminders. Teachers should see who is coming to each class.',
+feature: 'Members can filter the weekly schedule by teacher and see a short teacher profile on each class.',
+quick: ''
+},
+bug: { now: 'Two quick taps on Book create two bookings and take two credits.', should: 'One booking, one credit. The second tap does nothing.', where: 'Class detail › Book button' },
+evidence: [{ name: 'crash-1123.log', kind: 'Log' }, { name: 'double-tap.mov', kind: 'Screen recording' }],
+builds: ['schedule']
+};
+}
+slug(s) {
+return (s || 'untitled-spec').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'untitled-spec';
+}
+renderVals() {
+const s = this.state;
+const size = s.size;
+const quick = size === 'quick';
+const feature = size === 'feature';
+const idea = s.ideas[size];
+const name = s.names[size];
+const projectList = [
+{ id: 'yoga', name: 'yoga-studio-booking', path: '~/Developer/yoga-studio-booking', branch: 'main', ctx: true },
+{ id: 'habits', name: 'habit-tracker', path: '~/Developer/habit-tracker', branch: 'develop', ctx: false }
+];
+const proj = projectList.find((p) => p.id === s.project) || projectList[0];
+const inRepo = size !== 'product';
+const setIn = (k, v) => this.setState({ [k]: Object.assign({}, s[k], { [size]: v }) });
+const has = idea.trim().length > 0 || (quick && (s.evidence.length > 0 || s.bug.now.trim().length > 0));
+const bugFields = [
+{ key: 'now', label: 'Happens now', ph: 'What goes wrong?' },
+{ key: 'should', label: 'Should happen', ph: 'What should happen instead?' },
+{ key: 'where', label: 'Where', ph: 'Screen, file or module' }
+].map((b) => ({
+id: 'bug-' + b.key, label: b.label, ph: b.ph, value: s.bug[b.key],
+change: (e) => this.setState({ bug: Object.assign({}, s.bug, { [b.key]: e.target.value }) })
+}));
+const evidence = s.evidence.map((v, i) => ({
+name: v.name, kind: v.kind, removeLabel: 'Remove ' + v.name,
+remove: () => this.setState({ evidence: s.evidence.filter((x, j) => j !== i) })
+}));
+const chipBase = 'height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 15px; font: inherit; color: #1d1d1f; ';
+const builds = [
+{ id: 'signin', label: 'Sign-in', path: 'feature/auth' },
+{ id: 'schedule', label: 'Schedule', path: 'feature/schedule' },
+{ id: 'classdetail', label: 'Class detail', path: 'feature/schedule/detail' },
+{ id: 'new', label: 'Something new', path: 'new module' }
+].map((f) => {
+const on = s.builds.indexOf(f.id) >= 0;
+return {
+label: f.label, path: f.path,
+pressed: on ? 'true' : 'false',
+toggle: () => this.setState({ builds: on ? s.builds.filter((x) => x !== f.id) : s.builds.concat([f.id]) }),
+style: chipBase + (on ? 'background: rgba(0,122,255,0.08); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: rgba(0,0,0,0.05); box-shadow: none')
+};
+});
+const copy = {
+product: { label: 'Your idea', ph: 'What should it do, and who is it for? Plain words are fine.', name: 'Suggested from your idea. Click to rename.', drop: 'or drop screenshots, docs and links here', empty: 'Describe your idea to start.' },
+feature: { label: 'What should it do?', ph: 'Describe the change for users. Mel already knows the code.', name: 'Suggested from the change. Click to rename.', drop: 'or drop screenshots, mockups and links here', empty: 'Describe the change to start.' },
+quick: { label: 'What’s wrong? (optional if you attach a log)', ph: 'Anything else the agent should know.', name: 'Taken from the issue or the first line. Click to rename.', drop: 'or drop logs, recordings and screenshots', empty: 'Describe the bug or attach a log to start.' }
+}[size];
+const on = s.assume;
+const examples = [
+{ label: 'Habit tracker for couples', text: 'A habit tracker for couples. Both partners see each other’s streaks and can send a nudge.' },
+{ label: 'Booking app for a studio', text: 'An app for my yoga studio where members book classes, buy class packs and get reminders.' },
+{ label: 'Internal tool for a bar', text: 'A back-office app for a bar that shows daily sales and warns when stock runs low.' }
+].map((e) => ({ label: e.label, use: () => this.setState({ idea: e.text, name: e.label }) }));
+const sizeBase = 'display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 12px; border: 0; border-radius: 12px; font: inherit; text-align: left; color: #1d1d1f; ';
+const sizes = [
+{ id: 'quick', label: 'Quick fix', note: 'A bug or a small change', files: 'SPEC.md' },
+{ id: 'feature', label: 'Feature', note: 'One feature in an existing app', files: 'REQUIREMENTS · ARCHITECTURE · TASKS' },
+{ id: 'product', label: 'Product', note: 'A new app or an area with new screens', files: '+ PRODUCT · EXPERIENCE' }
+].map((z) => ({
+label: z.label, note: z.note, files: z.files,
+checked: z.id === size ? 'true' : 'false',
+pick: () => this.setState({ size: z.id }),
+style: sizeBase + (z.id === size ? 'background: rgba(0,122,255,0.08); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08)')
+}));
+const topicSets = {
+quick: ['What breaks today', 'Expected behavior', 'How to verify'],
+feature: ['Goal', 'Existing code it touches', 'Edge cases', 'Out of scope'],
+product: ['Goal and success metric', 'Users and roles', 'Payments', 'Platforms', 'Privacy and offline', 'Out of scope']
+};
+const hints = {
+quick: '1 or 2 questions, then one SPEC.md.',
+feature: 'About 3 questions, then 3 files and a final check.',
+product: 'About 5 questions, then 5 files and a final check.'
+};
+return {
+sizes: sizes,
+name: name,
+idea: idea,
+onName: (e) => setIn('names', e.target.value),
+onIdea: (e) => setIn('ideas', e.target.value),
+hasIdea: has,
+noIdea: !has && size === 'product',
+isQuick: quick,
+isFeature: feature,
+inRepo: inRepo,
+projects: projectList.map((p) => ({ id: p.id, name: p.name })),
+projectId: proj.id,
+onProject: (e) => this.setState({ project: e.target.value }),
+projectMeta: proj.path + ' · ' + proj.branch,
+noCtx: !proj.ctx,
+ctxBadge: proj.ctx ? 'Context ready' : 'No context yet',
+ctxBadgeStyle: 'height: 22px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 11px; font-size: 11px; line-height: 14px; font-weight: 500; ' + (proj.ctx ? 'background: rgba(36,138,61,0.1); color: #1b6e30' : 'background: rgba(178,80,0,0.1); color: #8a3d00'),
+showBuilds: feature && proj.ctx,
+bugFields: bugFields,
+evidence: evidence,
+builds: builds,
+ideaLabel: copy.label,
+ideaPlaceholder: copy.ph,
+nameHint: copy.name,
+dropHint: copy.drop,
+topics: topicSets[size].map((l) => ({ label: l })),
+examples: examples,
+path: inRepo ? proj.path + '/specs/' + this.slug(name) : '~/Developer/' + this.slug(name) + '/specs',
+assumeChecked: on ? 'true' : 'false',
+toggleAssume: () => this.setState({ assume: !s.assume }),
+trackStyle: 'flex: 0 0 32px; width: 32px; height: 18px; border: 0; padding: 0; border-radius: 9px; position: relative; background: ' + (on ? '#007aff' : 'rgba(0,0,0,0.12)'),
+knobStyle: 'position: absolute; top: 2px; left: ' + (on ? '16px' : '2px') + '; width: 14px; height: 14px; border-radius: 7px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: left 150ms cubic-bezier(0.25,0.46,0.45,0.94)',
+footHint: has ? hints[size] : copy.empty,
+disabledAttr: has ? 'false' : 'true',
+ctaStyle: 'height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px 0 20px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (has ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (has ? 'auto' : 'none') + '; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12)'
+};
+}
+}
+</script>
+</body>
+</html>

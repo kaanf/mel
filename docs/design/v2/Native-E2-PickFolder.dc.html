@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN A2 · Pick a project
+Lane: A First run · step 2
+Purpose: choose the repo folder specs are written for. Drop zone, git repos found in ~/Developer, or start from an idea with no code.
+Comes from: A1 Welcome (Continue) · A1x (Look around first) · B1 New Spec (Add Project).
+Goes to: A3 Project context (Read This Repo, enabled after a folder is chosen) · A4x First spec, no project (Start from an Idea) · A1x (Back).
+Map of all screens: FLOW.md
+-->
+<title>Project setup: no folder yet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 20px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<span style="flex: 1; text-align: center; font-size: 13px; line-height: 18px; font-weight: 600; color: #6e6e73">Set Up Project</span>
+<span style="width: 52px"></span>
+</div>
+
+<main style="flex: 1; display: flex; justify-content: center; padding: 16px 32px 40px">
+<div style="width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Step 2 of 2</span>
+<h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em">Where does the work happen?</h1>
+<p style="margin: 0; font-size: 14px; line-height: 21px; color: #3a3a3c">Pick the repo you want specs for. Mel reads it once on this Mac. Code only leaves it through the coding agent you chose.</p>
+</div>
+
+<button onClick="{{pick}}" style="{{dropStyle}}">
+<svg width="40" height="40" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path><path d="M8 7.25v4M6 9.25h4"></path></svg>
+<span style="font-size: 15px; line-height: 20px; font-weight: 600">{{dropTitle}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{dropSub}}</span>
+</button>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 4px; font-size: 13px; line-height: 18px; font-weight: 600">Git repos Mel found in ~/Developer</h2>
+<div style="background: #f5f5f7; border-radius: 12px; padding: 4px 0">
+<sc-for list="{{found}}" as="f" hint-placeholder-count="3">
+<button onClick="{{f.choose}}" style="width: 100%; min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">{{f.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{f.meta}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); flex-wrap: wrap">
+<span style="flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 500">No code yet?</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">Start from an idea. Mel creates the folder and fills project context from your first spec.</span>
+</span>
+<a href="Native-E4-FirstSpec.dc.html" style="height: 30px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 15px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; color: #1d1d1f; text-decoration: none">Start from an Idea</a>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<a href="Native-E1-NoAgents.dc.html" style="font-size: 12px; line-height: 16px; color: #0066d6; text-decoration: none">Back</a>
+<a href="Native-0b-ProjectSetup.dc.html" aria-disabled="{{disabled}}" style="{{ctaStyle}}">Read This Repo</a>
+</div>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { chosen: null };
+}
+renderVals() {
+const c = this.state.chosen;
+const repos = [
+{ name: 'yoga-studio-booking', meta: 'Kotlin · edited today' },
+{ name: 'habit-tracker', meta: 'Kotlin · 2 weeks ago' },
+{ name: 'portfolio-site', meta: 'TypeScript · 3 months ago' }
+];
+return {
+found: repos.map((r) => ({ name: r.name, meta: r.meta, choose: () => this.setState({ chosen: r.name }) })),
+pick: () => this.setState({ chosen: 'yoga-studio-booking' }),
+dropTitle: c ? c : 'Drop a project folder here',
+dropSub: c ? '~/Developer/' + c + ' · ready to read' : 'or click to choose one in Finder',
+dropStyle: 'width: 100%; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 24px; border: 0; border-radius: 16px; font: inherit; color: #1d1d1f; ' + (c ? 'background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: #fbfbfd; box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.14)'),
+disabled: c ? 'false' : 'true',
+ctaStyle: 'height: 34px; display: inline-flex; align-items: center; padding: 0 20px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (c ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (c ? 'auto' : 'none')
+};
+}
+}
+</script>
+</body>
+</html>

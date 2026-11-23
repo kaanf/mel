@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN B5 · Review EXPERIENCE.md
+Lane: B Write a spec · step 5 (Product size only)
+Purpose: review flows, screens and states before architecture is written. Flow diagram with criteria ids, screens-and-states table (missing states in red), visual direction assumption. Inspector: references from the user's files and agent suggestions.
+Comes from: B3 Drafting (EXPERIENCE.md finished), after REQUIREMENTS.md was approved in B4.
+Goes to: B3 Drafting of ARCHITECTURE.md, then B4 for ARCHITECTURE.md and TASKS.md, then B6 Analyze (Approve; the mockup links straight to B6).
+Map of all screens: FLOW.md
+-->
+<title>Review EXPERIENCE.md</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+input::placeholder{color:#aeaeb2}
+input:focus{outline:none}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Specs" style="flex: 0 0 232px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px 6px; height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5L8 2.5l5.5 4v6.25a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">Project context</span>
+</a>
+<div style="padding: 4px 18px 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Specs</div>
+<div style="flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 1px">
+<div style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg><span style="font-size: 13px; line-height: 18px">Yoga Studio Booking</span></div>
+<sc-for list="{{side}}" as="r" hint-placeholder-count="7">
+<a href="{{r.href}}" aria-current="{{r.current}}" style="{{r.style}}">
+<span style="font-size: 13px; line-height: 18px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.name}}</span>
+<span style="{{r.dot}}"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{r.word}}</span>
+</a>
+</sc-for>
+</div>
+</nav>
+
+<section style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+<div style="height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 20px">
+<div style="display: flex; flex-direction: column; min-width: 130px">
+<div style="font-size: 15px; line-height: 19px; font-weight: 600">EXPERIENCE.md</div>
+<div style="font-size: 11px; line-height: 14px; color: #6e6e73">Flows, screens and states</div>
+</div>
+<div style="flex: 1; display: flex; justify-content: center; min-width: 0">
+<div role="status" style="height: 30px; width: 100%; max-width: 320px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 15px; background: rgba(0,0,0,0.04); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06)">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
+<span style="font-size: 12px; line-height: 16px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Idle · ARCHITECTURE.md starts when you approve</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">3 of 5</span>
+</div>
+</div>
+<a href="Native-3c-Analyze.dc.html" style="height: 32px; padding: 0 16px; border-radius: 16px; background: #007aff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.12); font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; gap: 8px">Approve<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">⌘↩</span></a>
+</div>
+
+<div style="flex: 1; padding: 20px 32px 40px; display: flex; justify-content: center">
+<article style="width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 14px">
+<h1 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.02em">Experience</h1>
+<p style="margin: 0; font-size: 13px; line-height: 18px; color: #6e6e73">2 flows, 7 screens, 26 states. Written from REQUIREMENTS.md and the 2 screenshots you added.</p>
+
+<div style="background: #f5f5f7; border-radius: 10px">
+<div style="padding: 10px 12px 6px; font-size: 13px; line-height: 18px; font-weight: 600">Before you approve</div>
+<a href="#screens" style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; color: #1d1d1f; text-decoration: none">
+<span style="width: 8px; height: 8px; border-radius: 50%; background: #c93400"></span>
+<span style="font-size: 13px; line-height: 18px; flex: 1">2 screens have no error state</span>
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg>
+</a>
+<div style="margin-left: 28px; height: 0.5px; background: rgba(0,0,0,0.1)"></div>
+<a href="#direction" style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; color: #1d1d1f; text-decoration: none">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#1d1d1f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.75l1.6 3.9 4.15.35-3.15 2.75.95 4.05L8 10.6l-3.55 2.2.95-4.05L2.25 6l4.15-.35z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">1 assumption about visual direction</span>
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg>
+</a>
+</div>
+
+<h2 style="margin: 10px 0 0; font-size: 17px; line-height: 22px; font-weight: 600">Flow 1 · Book a class</h2>
+<div style="font-size: 11px; line-height: 14px; color: #6e6e73">Covers 1.1, 1.2, 1.3</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 12px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.14)">
+<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{flow}}" as="n" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 6px">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; min-width: 96px; border-radius: 8px; background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08)">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">{{n.name}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">{{n.crit}}</span>
+</div>
+<sc-if value="{{n.arrow}}" hint-placeholder-val="{{true}}">
+<svg width="18" height="10" viewBox="0 0 18 10" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 5h15M12 1.5L16 5l-4 3.5"></path></svg>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-left: 112px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px"><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1v5h12M10 3l3 3-3 3"></path></svg><span style="color: #6e6e73">Class is full</span><span style="padding: 3px 8px; border-radius: 6px; background: #f5f5f7; font-weight: 600">Waitlist sheet</span><span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; color: #6e6e73">1.2</span></div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px"><svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1v5h12M10 3l3 3-3 3"></path></svg><span style="color: #6e6e73">No credits left</span><span style="padding: 3px 8px; border-radius: 6px; background: #f5f5f7; font-weight: 600">Buy pack</span><span style="font-size: 11px; color: #6e6e73">goes to Flow 2</span></div>
+</div>
+</div>
+
+<h2 id="screens" style="margin: 10px 0 0; font-size: 17px; line-height: 22px; font-weight: 600">Screens and states</h2>
+<div style="font-size: 11px; line-height: 14px; color: #6e6e73">Every screen lists what it shows when data is missing, slow, failing or offline.</div>
+<div role="table" aria-label="Screens and states" style="border-radius: 10px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.14)">
+<div role="row" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.1); font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">
+<span role="columnheader" style="flex: 0 0 130px">Screen</span>
+<span role="columnheader" style="flex: 1">States</span>
+<span role="columnheader" style="flex: 0 0 64px; text-align: right">Criteria</span>
+</div>
+<sc-for list="{{screens}}" as="s" hint-placeholder-count="7">
+<div role="row" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.06)">
+<span role="cell" style="flex: 0 0 130px; font-size: 13px; line-height: 18px; font-weight: 500">{{s.name}}</span>
+<span role="cell" style="flex: 1; display: flex; flex-wrap: wrap; gap: 4px">
+<sc-for list="{{s.states}}" as="t" hint-placeholder-count="4">
+<span style="{{t.style}}">{{t.label}}</span>
+</sc-for>
+</span>
+<span role="cell" style="flex: 0 0 64px; text-align: right; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">{{s.crit}}</span>
+</div>
+</sc-for>
+</div>
+
+<h2 id="direction" style="margin: 10px 0 0; font-size: 17px; line-height: 22px; font-weight: 600">Visual direction</h2>
+<div style="background: #f5f5f7; border-radius: 10px">
+<div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 6px">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1d1d1f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.75l1.6 3.9 4.15.35-3.15 2.75.95 4.05L8 10.6l-3.55 2.2.95-4.05L2.25 6l4.15-.35z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Assumption</span>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 18px">Calm and light, one accent taken from the studio logo, large tap targets for use right before class. Platform-native controls on iOS and Android.</p>
+</div>
+<div style="margin-left: 12px; height: 0.5px; background: rgba(0,0,0,0.1)"></div>
+<div style="padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end">
+<button style="height: 24px; padding: 0 12px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Change…</button>
+<button style="height: 24px; padding: 0 12px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08); font: inherit; font-size: 12px; line-height: 16px; font-weight: 500; color: #1d1d1f">Confirm</button>
+</div>
+</div>
+</article>
+</div>
+</section>
+
+<aside aria-label="Inspector" style="flex: 1 1 288px; max-width: 100%; box-sizing: border-box; border-left: 0.5px solid rgba(0,0,0,0.1); display: flex; flex-direction: column">
+<div style="height: 52px; display: flex; align-items: center; padding: 0 16px">
+<div role="tablist" aria-label="Inspector" style="width: 100%; height: 26px; display: flex; padding: 2px; gap: 2px; box-sizing: border-box; border-radius: 13px; background: rgba(0,0,0,0.06)">
+<button role="tab" aria-selected="true" style="flex: 1; height: 22px; border: 0; border-radius: 11px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1); font: inherit; font-size: 12px; line-height: 16px; font-weight: 500; color: #1d1d1f">Agent</button>
+<button role="tab" aria-selected="false" style="flex: 1; height: 22px; border: 0; border-radius: 11px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">References <span style="color: #6e6e73">2</span></button>
+<button role="tab" aria-selected="false" style="flex: 1; height: 22px; border: 0; border-radius: 11px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">History</button>
+</div>
+</div>
+<div style="flex: 1; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">From your files</div>
+<div style="display: flex; gap: 8px">
+<div style="flex: 1; height: 76px; border-radius: 8px; background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.1); display: flex; align-items: flex-end; padding: 6px; box-sizing: border-box"><span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">studio-logo.png</span></div>
+<div style="flex: 1; height: 76px; border-radius: 8px; background: #f5f5f7; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.1); display: flex; align-items: flex-end; padding: 6px; box-sizing: border-box"><span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">old-schedule.jpg</span></div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Claude Code</div>
+<p style="margin: 0; font-size: 13px; line-height: 18px">Class detail and Confirm booking have no error state. I can add “Couldn’t load this class. Try again.” with a Retry button to both.</p>
+<div style="display: flex; gap: 8px">
+<button style="height: 24px; padding: 0 12px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Write My Own</button>
+<button style="height: 24px; padding: 0 12px; border: 0; border-radius: 12px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Suggest in File</button>
+</div>
+</div>
+<div style="font-size: 11px; line-height: 14px; color: #6e6e73">ARCHITECTURE.md is written from these screens, so its data model and API match what users actually see.</div>
+</div>
+<div style="padding: 12px 16px 16px">
+<div style="height: 32px; display: flex; align-items: center; gap: 6px; padding: 0 3px 0 12px; border-radius: 16px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.06)">
+<label for="ask-x" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask for changes to this file</label>
+<input id="ask-x" type="text" placeholder="Ask for changes to this file" style="flex: 1; min-width: 0; height: 26px; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<button aria-label="Send" style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: #007aff; color: #ffffff; padding: 0">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M4 7l4-4 4 4"></path></svg>
+</button>
+</div>
+</div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+const rowBase = 'height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none; ';
+const dots = {
+done: 'width: 8px; height: 8px; border-radius: 50%; background: #248a3d',
+review: 'width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #1d1d1f',
+locked: 'width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px dashed #aeaeb2'
+};
+const side = [
+{ name: 'Discovery', word: '5 of 5', st: 'done', href: 'Native-2-Discovery.dc.html' },
+{ name: 'PRODUCT.md', word: 'Approved', st: 'done', href: '#' },
+{ name: 'REQUIREMENTS.md', word: 'Approved', st: 'done', href: 'Native-3-Review.dc.html' },
+{ name: 'EXPERIENCE.md', word: 'Review', st: 'review', href: '#', cur: true },
+{ name: 'ARCHITECTURE.md', word: 'Locked', st: 'locked', href: '#' },
+{ name: 'TASKS.md', word: 'Locked', st: 'locked', href: '#' },
+{ name: 'Analyze', word: 'Locked', st: 'locked', href: 'Native-3c-Analyze.dc.html' }
+].map((r) => ({
+name: r.name, word: r.word, href: r.href,
+current: r.cur ? 'page' : 'false',
+dot: dots[r.st],
+style: rowBase + (r.cur ? 'background: rgba(0,0,0,0.08); font-weight: 500' : 'background: transparent')
+}));
+const flow = [
+{ name: 'Schedule', crit: '1.1' },
+{ name: 'Class detail', crit: '1.1 · 1.2' },
+{ name: 'Confirm booking', crit: '1.1' },
+{ name: 'Booked', crit: '1.1 · 1.3', last: true }
+].map((n) => ({ name: n.name, crit: n.crit, arrow: !n.last }));
+const ok = 'height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.05); font-size: 11px; line-height: 14px; color: #1d1d1f';
+const miss = 'height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px #c93400; font-size: 11px; line-height: 14px; font-weight: 600; color: #a52a00';
+const st = (list) => list.map((l) => (l.startsWith('!') ? { label: l.slice(1) + ' missing', style: miss } : { label: l, style: ok }));
+const screens = [
+{ name: 'Schedule', states: st(['Default', 'Empty week', 'Loading', 'Offline', 'Error']), crit: '1.1' },
+{ name: 'Class detail', states: st(['Default', 'Full', 'Loading', '!Error']), crit: '1.1 1.2' },
+{ name: 'Confirm booking', states: st(['Default', 'No credits', '!Error']), crit: '1.1' },
+{ name: 'Booked', states: st(['Default', 'Added to calendar']), crit: '1.1' },
+{ name: 'Waitlist sheet', states: st(['Default', 'Spot opened', 'Error']), crit: '1.2' },
+{ name: 'Upcoming', states: st(['Default', 'Empty', 'Cancel confirm', 'Late cancel']), crit: '1.3' },
+{ name: 'Buy pack', states: st(['Default', 'Paying', 'Paid', 'Card declined']), crit: '2.1' }
+];
+return { side, flow, screens };
+}
+}
+</script>
+</body>
+</html>

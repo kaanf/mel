@@ -35,7 +35,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 - **No third-party dependencies.** Ask before adding one. Only exception: Sparkle 2 for updates, imported only in `App/` (approved 2026-11-23).
 - Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI, `MelSpec` and `UniformTypeIdentifiers`. Rules: `agents/CONTRACTS.md` › Layers and dependencies. `MelSpec` stays pure (no I/O, no SwiftUI).
 - Keep the main actor free: process I/O, file writes and parsing run off it; throttle stream-driven UI updates.
-- Use system components, semantic colors and SF Symbols. Do not copy hex colors or shadows from the HTML canvas.
+- Match the v2 design (`docs/design/v2/`) pixel for pixel: its colors, spacing, padding, radii and type, kept as named tokens in one place. Icons: SF Symbols where they match the drawn glyph.
 - Every view has `#Preview`s for each state, built from fixtures.
 - Tests: Swift Testing (`import Testing`, `@Test`, `#expect`).
 

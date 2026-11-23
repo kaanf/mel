@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN C3 · Home, no specs yet
+Lane: C Other states (main window with zero specs)
+Purpose: the main window when a project exists but has no specs. Empty sidebar with placeholder rows, four-step "how it works", three start cards (Fix a bug, Add a feature, Plan a new app) with file count and time.
+Comes from: reopening the app with no specs · cancelling B1 New Spec · deleting the last spec.
+Goes to: B1 New Spec with the matching size preselected (start cards, New Spec, Cmd+N). With no project at all it opens A4x instead.
+Map of all screens: FLOW.md
+-->
+<title>Home: no specs yet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Specs" style="flex: 0 0 232px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px 6px; height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5L8 2.5l5.5 4v6.25a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z"></path></svg>
+<span style="font-size: 13px; line-height: 18px; flex: 1">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Ready</span>
+</a>
+<div style="padding: 4px 18px 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Specs</div>
+<div style="flex: 1; padding: 6px 18px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">No specs yet. Each spec you start shows up here with its files.</span>
+<div aria-hidden="true" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; opacity: 0.5">
+<span style="height: 8px; width: 70%; border-radius: 4px; background: rgba(0,0,0,0.08)"></span>
+<span style="height: 8px; width: 55%; margin-left: 14px; border-radius: 4px; background: rgba(0,0,0,0.06)"></span>
+<span style="height: 8px; width: 60%; margin-left: 14px; border-radius: 4px; background: rgba(0,0,0,0.06)"></span>
+</div>
+</div>
+<div style="padding: 10px 12px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="Native-1-NewSpec.dc.html" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 13px; line-height: 18px; color: #6e6e73; text-decoration: none">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+<span>New Spec</span>
+</a>
+</div>
+</nav>
+
+<section style="flex: 999 1 480px; min-width: 0; display: flex; justify-content: center; padding: 72px 32px 40px">
+<div style="width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em">Write your first spec</h1>
+<p style="margin: 0; font-size: 14px; line-height: 21px; color: #3a3a3c; max-width: 560px">Describe what you want in plain words. Mel’s agent asks a few questions, writes the spec files, and checks them against each other before any code is written.</p>
+</div>
+
+<ol aria-label="How it works" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+<li style="display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; background: #f5f5f7">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">{{s.n}}</span>
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{s.title}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #3a3a3c">{{s.text}}</span>
+</li>
+</sc-for>
+</ol>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 4px; font-size: 13px; line-height: 18px; font-weight: 600">Start with</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px">
+<sc-for list="{{starts}}" as="t" hint-placeholder-count="3">
+<a href="Native-1-NewSpec.dc.html" style="display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 12px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); color: #1d1d1f; text-decoration: none">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{t.title}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #3a3a3c">{{t.text}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{t.meta}}</span>
+</a>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<a href="Native-1-NewSpec.dc.html" style="height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px 0 18px; border-radius: 17px; background: #007aff; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12)">New Spec<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">⌘N</span></a>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">Writing with Claude Code on your account. Change in Settings.</span>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+steps: [
+{ n: '1', title: 'Describe', text: 'An idea, a feature or a bug.' },
+{ n: '2', title: 'Answer', text: 'A few questions. Skip any.' },
+{ n: '3', title: 'Review', text: 'Plain Markdown files, one at a time.' },
+{ n: '4', title: 'Hand off', text: 'Any coding agent builds from them.' }
+],
+starts: [
+{ title: 'Fix a bug', text: 'Paste a log or describe what breaks.', meta: '1 file · about 2 min' },
+{ title: 'Add a feature', text: 'Extend yoga-studio-booking.', meta: '3 files · about 6 min' },
+{ title: 'Plan a new app', text: 'From an idea, with screens.', meta: '5 files · about 12 min' }
+]
+};
+}
+}
+</script>
+</body>
+</html>
