@@ -25,8 +25,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- 5.1 in Wave 3 (end-to-end with fake-claude.sh).
-- Once platform adds `AgentRequest.systemPrompt`, decide with the orchestrator whether to move the stage contract out of the prompt files. Today everything goes on stdin.
+- Wave 2 and the fix batch are merged (d4bc101). Wait for Wave 3: 5.1, end-to-end with fake-claude.sh through the real AgentRunner.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -44,7 +43,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Ready to merge: fix batch on top of main (1fad575): FileWatcher deinit race (the flaky 0.000 s SpecSessionTests), notification permission + REQ 5.8 posts, `preview(conflict:)`. Full `xcodebuild … test` green 5 runs in a row after rebase.
+- (none; fix batch merged in d4bc101)
 
 ## Questions for the user
 - (none)
