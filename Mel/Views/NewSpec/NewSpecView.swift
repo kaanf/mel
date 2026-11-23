@@ -325,27 +325,8 @@ struct NewSpecView: View {
                 .textStyle(Theme.Text.captionBold)
                 .foregroundStyle(Theme.Colors.secondaryLabel)
                 .padding(EdgeInsets(top: Theme.Space.x14, leading: Theme.Space.x16, bottom: 0, trailing: Theme.Space.x16))
-            TextEditor(text: $draft.idea)
-                .font(Theme.Text.lead.font)
-                .lineHeight(.exact(points: Theme.Text.lead.lineHeight!))
-                .foregroundStyle(Theme.Colors.label)
-                .scrollContentBackground(.hidden)
-                .scrollIndicators(.never)
+            IdeaTextArea(text: $draft.idea, label: copy.ideaLabel, placeholder: copy.ideaPlaceholder)
                 .focused($focus, equals: .idea)
-                .focusEffectDisabled()
-                .overlay(alignment: .topLeading) {
-                    if draft.idea.isEmpty {
-                        Text(copy.ideaPlaceholder)
-                            .font(Theme.Text.lead.font)
-                            .foregroundStyle(Theme.Colors.tertiary)
-                            .padding(.leading, Self.editorInset)
-                            .allowsHitTesting(false)
-                    }
-                }
-                // The editor puts a line's extra leading below it; CSS splits it, so move down by half.
-                .frame(height: Theme.Text.lead.lineHeight! * CGFloat(Theme.Size.ideaLines) - Theme.Text.lead.glyphShift)
-                .padding(EdgeInsets(top: Theme.Space.x6 + Theme.Text.lead.glyphShift, leading: Theme.Space.x16 - Self.editorInset, bottom: Theme.Space.x12, trailing: Theme.Space.x16 - Self.editorInset))
-                .accessibilityLabel(copy.ideaLabel)
             if size == .quickFix { bugFields }
             HStack(spacing: Theme.Space.x8) {
                 smallButton("Add Files", glyph: .paperclip) { isAddingFiles = true }
@@ -368,9 +349,6 @@ struct NewSpecView: View {
         }
     }
 
-    /// NSTextView's line fragment padding inside TextEditor.
-    private static let editorInset: CGFloat = 5
-
     private var bugFields: some View {
         VStack(alignment: .leading, spacing: 0) {
             bugRow("Happens now", "What goes wrong?", text: $draft.happensNow)
@@ -378,7 +356,7 @@ struct NewSpecView: View {
             bugRow("Where", "Screen, file or module", text: $draft.location)
             if !evidence.isEmpty {
                 FlowLayout(spacing: Theme.Space.x6) {
-                    ForEach(evidence) { item in evidenceChip(item) }
+                    ForEach(evidence) { item in EvidenceChip(name: item.name, kind: item.kind, remove: item.remove) }
                 }
                 .padding(EdgeInsets(top: Theme.Space.x10, leading: Theme.Space.x16, bottom: Theme.Space.x2, trailing: Theme.Space.x16))
             }
@@ -425,30 +403,6 @@ struct NewSpecView: View {
         if type.conforms(to: .image) { return "Screenshot" }
         if type.conforms(to: .log) || url.pathExtension == "log" { return "Log" }
         return "File"
-    }
-
-    private func evidenceChip(_ item: Evidence) -> some View {
-        HStack(spacing: Theme.Space.x6) {
-            Text(item.name)
-                .textStyle(Theme.Text.codeCaption)
-                .foregroundStyle(Theme.Colors.label)
-            Text(item.kind)
-                .textStyle(Theme.Text.caption)
-                .foregroundStyle(Theme.Colors.secondaryLabel)
-            Button(action: item.remove) {
-                DesignIcon(glyph: .close, size: Theme.Size.removeIcon)
-                    .foregroundStyle(Theme.Colors.secondaryLabel)
-                    .frame(width: Theme.Size.removeButton, height: Theme.Size.removeButton)
-                    .background(Theme.Colors.badgeFill, in: Circle())
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Remove \(item.name)")
-        }
-        .padding(.leading, Theme.Space.x10)
-        .padding(.trailing, Theme.Space.x4)
-        .frame(height: Theme.Size.buttonSmall)
-        .surface(Theme.Colors.background, .buttonSmallLight, in: Capsule())
     }
 
     private func smallButton(_ title: String, glyph: DesignIcon.Glyph? = nil, action: @escaping () -> Void) -> some View {
@@ -544,7 +498,8 @@ struct NewSpecView: View {
         }
     }
 
-    private static let examples = [
+    /// B1 and A4x example chips: label and the idea they fill in.
+    static let examples = [
         ("Habit tracker for couples", "A habit tracker for couples. Both partners see each other’s streaks and can send a nudge."),
         ("Booking app for a studio", "An app for my yoga studio where members book classes, buy class packs and get reminders."),
         ("Internal tool for a bar", "A back-office app for a bar that shows daily sales and warns when stock runs low."),
@@ -729,6 +684,72 @@ struct NewSpecView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+}
+
+/// The idea text area of B1 and A4x: 15/23 text, 6 lines, placeholder, padding 6/16/12 as drawn.
+struct IdeaTextArea: View {
+    @Binding var text: String
+    let label: String
+    let placeholder: String
+
+    /// NSTextView's line fragment padding inside TextEditor.
+    private static let inset: CGFloat = 5
+
+    var body: some View {
+        // A multi-line TextField ignores line height; TextEditor honors it.
+        TextEditor(text: $text)
+            .font(Theme.Text.lead.font)
+            .lineHeight(.exact(points: Theme.Text.lead.lineHeight!))
+            .foregroundStyle(Theme.Colors.label)
+            .scrollContentBackground(.hidden)
+            .scrollIndicators(.never)
+            .focusEffectDisabled()
+            .overlay(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text(placeholder)
+                        .font(Theme.Text.lead.font)
+                        .lineHeight(.exact(points: Theme.Text.lead.lineHeight!))
+                        .foregroundStyle(Theme.Colors.tertiary)
+                        .padding(.horizontal, Self.inset)
+                        .allowsHitTesting(false)
+                }
+            }
+            // The editor puts a line's extra leading below it; CSS splits it, so move down by half.
+            .frame(height: Theme.Text.lead.lineHeight! * CGFloat(Theme.Size.ideaLines) - Theme.Text.lead.glyphShift)
+            .padding(EdgeInsets(top: Theme.Space.x6 + Theme.Text.lead.glyphShift, leading: Theme.Space.x16 - Self.inset, bottom: Theme.Space.x12, trailing: Theme.Space.x16 - Self.inset))
+            .accessibilityLabel(label)
+    }
+}
+
+/// An attached file or pasted log (B1): name, kind and a remove button.
+struct EvidenceChip: View {
+    let name: String
+    let kind: String
+    let remove: () -> Void
+
+    var body: some View {
+        HStack(spacing: Theme.Space.x6) {
+            Text(name)
+                .textStyle(Theme.Text.codeCaption)
+                .foregroundStyle(Theme.Colors.label)
+            Text(kind)
+                .textStyle(Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+            Button(action: remove) {
+                DesignIcon(glyph: .close, size: Theme.Size.removeIcon)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .frame(width: Theme.Size.removeButton, height: Theme.Size.removeButton)
+                    .background(Theme.Colors.badgeFill, in: Circle())
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove \(name)")
+        }
+        .padding(.leading, Theme.Space.x10)
+        .padding(.trailing, Theme.Space.x4)
+        .frame(height: Theme.Size.buttonSmall)
+        .surface(Theme.Colors.background, .buttonSmallLight, in: Capsule())
     }
 }
 

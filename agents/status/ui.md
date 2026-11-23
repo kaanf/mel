@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1 done (B1 merged 3bb09f8, bottom fixes after); next A4x
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x done; next B2
 Updated: 2026-11-23
 
 ## Done
@@ -76,12 +76,16 @@ Updated: 2026-11-23
   - Compared against the mock top (1280 × 800) and bottom (debug `-scrollBottom YES` opens the scroll view at its end; scratchpad `tools/bottom.sh`): within 1–2 px. Fixed in the bottom pass: Save to path was squeezed to nothing, switch knob drew black, CSS min-height excludes padding (project and switch rows are 52 + 16). Known deviations: SwiftUI line breaking avoids one-word last lines ("new screens", "· TASKS" wrap one word earlier; no API); SF Mono 10 pt ~3 % wider than WebKit; mock wraps "Save to" onto two lines (mock artifact), we keep one line, so the path truncates a bit earlier. Quick fix, Product and no-context states checked visually (the mock only renders the Feature state).
   - Idea text area is a TextEditor (multi-line TextField ignores line height); it creates an off-screen 500 × 500 window, so the scratchpad `winid` now picks on-screen windows only.
 
+- A4x First spec (`Views/Setup/FirstSpecView.swift`), SetupFlow `.firstSpec`, debug screen `firstSpec`, previews Empty / With idea. Compared at 1280 × 800: within 1–2 px; only deviation is SwiftUI's one-word-last-line rule in the placeholder wrap. Product only; locked Feature/Quick fix cards link to A2; name is fixed "Untitled Spec" (as drawn: "Mel suggests a name once you describe your idea"; no suggestion yet); drop adds files shown as B1 evidence chips (not drawn, B1's part); Start passes no project/parent, core creates `~/Developer/<slug>/`.
+  - Shared with B1 now: `IdeaTextArea` (placeholder gets the 23 pt line height too, fixes B1's placeholder), `EvidenceChip`, `NewSpecView.examples`.
+
 ## Next
-- A4x (`Native-E4-FirstSpec.dc.html`, own view from B1's parts: centered "New Spec" 44 pt bar, sizes Product/Feature/Quick fix with "Needs a project · Add One", "Not sure how to start? Try one" examples), then B2–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- B2 Intake next, then B3–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
+- Small fixes: batch them with the next screen, no separate merge request (orchestrator, 2026-11-23).
 - Before saying ready to merge: squash temp/wip commits (orchestrator, 2026-11-23).
 - Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.
 - GUI checks (2026-11-23, worked): select sidebar rows with `set value of attribute "AXSelected" of row N of outline` (outline = UI element 1 of UI element 1 of UI element 1 of UI element 1 of UI element 1 of window 1); System Events `click at` and CGEvent clicks do not select rows. Launch with `-ApplePersistenceIgnoreState YES`. Another agent's `xcodebuild test` starts a test-host Mel with the same debug bundle id and can quit the debug app: check `pgrep -x Mel` count == 1 before each step. Screens: CGWindowList by PID + `screencapture -l`.
