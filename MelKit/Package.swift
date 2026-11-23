@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "MelSystem", targets: ["MelSystem"]),
     ],
     targets: [
-        .target(name: "MelSpec"),
+        .target(name: "MelSpec", resources: [.process("Prompts")]),
         .target(name: "MelStorage", dependencies: ["MelSpec"]),
         .target(name: "MelAgent", dependencies: ["MelSpec"]),
         .target(name: "MelSystem"),
