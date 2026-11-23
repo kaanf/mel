@@ -17,10 +17,31 @@ public struct ProjectContext: Codable, Hashable, Sendable {
     public static let fileNames = ["product.md", "tech.md", "structure.md", "principles.md"]
 
     /// `structure.md`'s `## Modules` list (`- Name — path`): B1's "Builds on" chips.
-    public var modules: [Module] { [] }
+    public var modules: [Module] {
+        var inModules = false
+        var modules: [Module] = []
+        for line in structure.split(whereSeparator: \.isNewline) {
+            if line.hasPrefix("## ") {
+                inModules = line.dropFirst(3).trimming(while: \.isWhitespace) == "Modules"
+            } else if inModules, line.hasPrefix("- "), let dash = line.range(of: " — ") {
+                modules.append(Module(name: String(line[line.index(line.startIndex, offsetBy: 2)..<dash.lowerBound]),
+                                      path: String(line[dash.upperBound...].trimming(while: { $0.isWhitespace || $0 == "`" }))))
+            }
+        }
+        return modules
+    }
 
-    /// Decodes the A3 run's JSON reply.
-    public static func decode(_ reply: String) throws -> ProjectContext { fatalError("stub") }
+    /// Decodes the A3 run's JSON reply: `{"product": …, "tech": …, "structure": …, "principles": …}`.
+    public static func decode(_ reply: String) throws -> ProjectContext {
+        try JSONDecoder().decode(ProjectContext.self, from: jsonObject(in: reply))
+    }
+
+    /// Every later prompt's `{{project}}`.
+    public var promptText: String {
+        zip(Self.fileNames, [product, tech, structure, principles])
+            .map { "### .mel/project/\($0)\n\n\($1.trimmingCharacters(in: .whitespacesAndNewlines))" }
+            .joined(separator: "\n\n")
+    }
 }
 
 public struct Module: Codable, Hashable, Sendable {
@@ -51,8 +72,8 @@ public struct Project: Identifiable, Hashable, Sendable {
 
 extension URL {
     /// One form for a folder, so project URLs compare and key dictionaries reliably: standardized,
-    /// symlinks resolved (/tmp and /private/tmp agree), with a trailing slash.
+    /// with a trailing slash. No disk access: bookmarks and pickers already give real paths.
     public var normalizedFolder: URL {
-        URL(filePath: standardizedFileURL.resolvingSymlinksInPath().path(percentEncoded: false), directoryHint: .isDirectory)
+        URL(filePath: standardizedFileURL.path(percentEncoded: false), directoryHint: .isDirectory)
     }
 }
