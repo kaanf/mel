@@ -1,0 +1,7 @@
+{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-0000000000d1","tools":["Glob","Grep","Read"],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"2 tasks\n\n# Tasks\n\n- [ ] "}},"session_id":"e2e00000-0000-4000-8000-0000000000d1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"1. Booking screen\n  - Co"}},"session_id":"e2e00000-0000-4000-8000-0000000000d1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"vers: 1.1\n- [ ] 2. Cance"}},"session_id":"e2e00000-0000-4000-8000-0000000000d1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"l booking\n  - Covers: 2."}},"session_id":"e2e00000-0000-4000-8000-0000000000d1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"1\n"}},"session_id":"e2e00000-0000-4000-8000-0000000000d1"}
+{"type":"result","subtype":"success","is_error":false,"result":"2 tasks\n\n# Tasks\n\n- [ ] 1. Booking screen\n  - Covers: 1.1\n- [ ] 2. Cancel booking\n  - Covers: 2.1\n","session_id":"e2e00000-0000-4000-8000-0000000000d1"}
