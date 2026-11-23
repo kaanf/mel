@@ -4,6 +4,166 @@ The types and signatures the three agents share. core stubs **all** of them in W
 
 Only the orchestrator changes this file. Need a change? Write a request in your status file.
 
+## v2 changes (Wave 6, merged 2026-11-23)
+
+This section changes the v1 sections below. Where they differ, this section wins. Source: core's step 0 (887ca9e). Product rules: [docs/V2.md](../docs/V2.md).
+
+```swift
+// MelSpec / Models.swift
+public struct Spec {                                   // + size, buildsOn, attachments, analyze, analysis
+    public var size: SpecSize
+    public var folder: URL                             // now <project>/specs/<slug>/
+    public var buildsOn: [String]                      // B1 chips: module names or "Something new"
+    public var attachments: [Attachment]
+    public var analyze: AnalyzeStatus
+    public var analysis: AnalyzeResult?
+    public var project: URL { get }                    // folder/../..
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL,
+                stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil /* size.allLocked */,
+                questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [],
+                attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked,
+                analysis: AnalyzeResult? = nil, sessionID: String? = nil)
+}
+public enum SpecSize: String, Codable, CaseIterable { case quickFix, feature, product
+    var files: [DocKind]                               // [.spec] · [.requirements, .architecture, .tasks] · [.product, .requirements, .experience, .architecture, .tasks]
+    var intakeQuestions: Int                           // 2 · 3 · 5
+    var hasAnalyze: Bool                               // false for quickFix
+    var needsProject: Bool                             // false for product (A4x)
+    func file(after: DocKind) -> DocKind?
+    var allLocked: [DocKind: DocStatus]
+}
+public enum DocKind { case product, requirements, experience, architecture, tasks, spec   // - design, - next, - allLocked
+    var draftSteps: [String]                           // B3 checklist (stub: [])
+}
+public enum Stage { … + case analyze }                 // discovery, drafting, review, stopped, analyze, done
+public enum DocStatus { … + case edited, stale }       // locked, writing, stopped, review, approved, edited, stale
+public enum AnalyzeStatus: Codable, Hashable { case locked, running, issues(Int), passed, stale }
+public enum QuestionRound: Int, Codable { case intake = 1, draft = 2 }
+public struct Question { + public var round: QuestionRound   // init(…, shapes:, round: = .intake, options:, answer:) }
+public struct Attachment: Codable, Identifiable, Hashable { public var fileName: String; id = fileName }
+
+// MelSpec / Analysis.swift
+public struct OpenQuestion: Identifiable, Hashable { kind: DocKind, index: Int, text: String; id "kind-index"
+    static func parse(_ text: String, kind: DocKind) -> [OpenQuestion] }
+public struct AnalyzeResult: Codable, Hashable {
+    var stats: [Stat]                                  // Stat { value: String, label: String }
+    var issues: [Issue]                                // Issue { id, kind: IssueKind, location, text, actions: [Action] } (2 actions, 2nd is primary)
+    var coverage: [CoverageRow]                        // CoverageRow { id "1.3", text, screen: Mark?, architecture, task, test: Mark }
+    enum IssueKind: String { case contradiction, noTask, qualityNotCovered, scopeCreep }
+    struct Action { label: String, fix: String, files: [DocKind] }
+    enum Mark: String { case covered, missing, conflict }
+    static func decode(_ reply: String) throws -> AnalyzeResult
+}
+public struct ImpactResult: Codable, Hashable { var items: [Item]   // Item { kind: DocKind, what: String, count: String }
+    static func decode(_ reply: String) throws -> ImpactResult }
+
+// MelSpec / Decision.swift
+public struct Decision: Codable, Identifiable, Hashable { id "D-07", title, reason, source, date: Date, replaces: String?, affects: [String]
+    static func nextID(after: [Decision]) -> String
+    static func markdown(_ decisions: [Decision]) -> String
+    static func parse(_ text: String) -> [Decision] }
+
+// MelSpec / ProjectContext.swift
+public struct ProjectContext: Codable, Hashable { product, tech, structure, principles: String
+    static let fileNames: [String]                     // product.md tech.md structure.md principles.md
+    var modules: [Module]                              // structure.md "## Modules" (- Name — path)
+    static func decode(_ reply: String) throws -> ProjectContext }
+public struct Module: Codable, Hashable { name: String, path: String }
+public struct Project: Identifiable, Hashable { folder: URL, isMissing: Bool, hasContext: Bool; id = folder; name = folder.lastPathComponent }
+
+// MelSpec / Handoff.swift
+public struct SpecTask: Identifiable, Hashable { number: Int, title, priority: String, covers: [String], reads: String, verify: String, parallelWith: [Int]; id = number
+    static func parse(_ tasks: String) -> [SpecTask]
+    var promptFileName: String                         // task-01.md
+    func prompt(requirements: String) -> String }
+
+// MelStorage / SpecStore (actor, folder = <project>/specs/<slug>/)
+static func specFolder(slug: String, project: URL) -> URL
+static func scan(project: URL) -> [Spec]               // specs/*/.mel/state.json
+func snapshot(_ kind: DocKind) -> String?              // .mel/approved/<FILE>.md
+func saveSnapshot(_ text: String, for kind: DocKind) throws
+func readDecisions() -> [Decision]                     // DECISIONS.md
+func writeDecisions(_ decisions: [Decision]) throws
+func attach(copying file: URL) throws -> Attachment    // .mel/attachments/
+func attachLog(_ text: String) throws -> Attachment    // log-N.txt
+func remove(_ attachment: Attachment) throws
+nonisolated func url(_ attachment: Attachment) -> URL
+func writeTaskPrompts(_ tasks: [SpecTask], requirements: String) throws -> [URL]   // prompts/task-NN.md
+// kept for v1 until wiring: specsFolder(name:parent:)
+
+// MelStorage / ProjectStore (enum, new)
+static func contextFolder(project: URL) -> URL         // .mel/project/
+static func readContext(project: URL) -> ProjectContext?
+static func writeContext(_ context: ProjectContext, project: URL) throws
+static func addRule(_ rule: String, project: URL) throws
+static func isEmpty(project: URL) -> Bool              // A3 "New project, no code yet"
+static func createProject(name: String, parent: URL) throws -> URL
+// Library: unchanged API; v2 stores project folders (AppState will use a new key, so v1 entries drop out)
+
+// Mel / AppState (+)
+var projects: [Project]
+private(set) var contexts: [Project.ID: ProjectContext]
+private(set) var foundRepositories: [URL]              // A2
+private(set) var projectSetup: ProjectSetup?           // A3
+func specs(in project: Project) -> [Spec]
+func findRepositories() async
+@discardableResult func addProject(_ folder: URL) throws -> Project
+@discardableResult func createProject(name: String, parent: URL) throws -> Project
+func removeProject(_ project: Project)
+func setUpProject(_ project: Project) async
+func addRule(_ rule: String, to project: Project) throws
+func showContext(of project: Project)
+func createSpec(name: String, idea: String, size: SpecSize, project: Project?, buildsOn: [String] = [], files: [URL] = [], logs: [String] = []) throws -> SpecSession
+static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [URL] = [], projectSetup: ProjectSetup? = nil) -> AppState
+struct ProjectSetup: Hashable { project: Project, isNewProject: Bool, isRunning: Bool, activity: [ActivityLine], context: ProjectContext?, lastError: String? }
+
+// Mel / SpecSession (+)
+private(set) var draftStep: Int                        // B3
+private(set) var impact: ImpactResult?                 // C1
+private(set) var snapshots: [DocKind: String]          // C1 diff / Undo
+private(set) var decisions: [Decision]
+currentQuestion / answeredQuestions                    // now round 1 only
+func followUpQuestions(for kind: DocKind) -> [Question]   // round 2, unanswered
+func openQuestions(in kind: DocKind) -> [OpenQuestion]
+var tasks: [SpecTask]                                  // B7
+func attach(_ files: [URL]) async throws
+func attachLog(_ text: String) async throws
+func removeAttachment(_ attachment: Attachment) async throws
+func answerFollowUp(questionID: String, _ answer: Answer) async      // → revise
+func answerOpenQuestion(_ question: OpenQuestion, _ answer: String) async   // → revise
+func analyze() async
+func fixIssues() async                                 // each issue's primary action, then Analyze again
+func apply(_ action: AnalyzeResult.Action) async
+func handOffAnyway()
+func saveDecision(title: String, reason: String, for kind: DocKind) async throws
+func undoEdit(_ kind: DocKind) async
+func refine() async
+func keepAsIs()
+func resumeLater()                                     // C2
+func writeTaskPrompts() async throws -> [URL]
+func writeAgentsMD() throws
+static func preview(_ spec: Spec, documents:, liveText:, activity:, isRunning:, lastError:, conflict:,
+                    draftStep: Int = 0, impact: ImpactResult? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = []) -> SpecSession
+```
+
+Additions requested by the orchestrator (core, in Wave 6):
+
+```swift
+// MelSpec
+public struct Spec { public var fillGaps: Bool }        // B1 "Let Mel fill small gaps" (default true); off → no assumptions, gaps become open questions
+extension SpecSize { var topics: [String] }             // B1 "Mel will ask about" chips; also the seed of the intake coverage list
+public struct BugReport: Codable, Hashable {            // B1 Quick fix fields
+    public var now: String, should: String, where: String
+    public var ideaText: String { get }                 // what goes into Spec.idea
+}
+public enum AgentsFile {                                // pure; replaces platform's marker-block writer
+    static func merge(existing: String?, block: String) -> String   // inserts or replaces only Mel's <!-- mel:begin --> … <!-- mel:end --> block
+}
+// AppState.createSpec(… , fillGaps: Bool = true, …)
+```
+
+Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
+
 ## Project conventions
 
 - Xcode project `Mel.xcodeproj`, shared scheme `Mel`. The app target `Mel` holds only `App/`, `Views/`, `Session/`; its test target `MelTests` holds `Session/` tests.
