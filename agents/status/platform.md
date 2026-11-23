@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 5 done, ready to merge (step 3 local update test passed, docs/research/SPARKLE-UPDATE-TEST.md)
+Wave: 5 merged (main 0a47fe9); standing by while the orchestrator cuts v0.2
 Updated: 2026-11-23
 
 ## Done (Wave 3)
