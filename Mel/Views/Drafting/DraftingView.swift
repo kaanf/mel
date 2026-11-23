@@ -59,11 +59,14 @@ struct DraftingView: View {
         .navigationSubtitle(spec.name)
         .toolbar {
             ToolbarItem(placement: .status) {
-                if isStopped {
-                    StatusBadge(status: .stopped)
-                } else {
-                    StatusBadge(status: .checking, title: "Running · \(session.activity.last?.text ?? "Starting")")
+                Group {
+                    if isStopped {
+                        StatusBadge(status: .stopped)
+                    } else {
+                        StatusBadge(status: .checking, title: "Running · \(session.activity.last?.text ?? "Starting")")
+                    }
                 }
+                .padding(.horizontal, 10)   // the glass capsule adds no inset of its own
             }
             if !isStopped {
                 ToolbarItem {
