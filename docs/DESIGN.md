@@ -38,7 +38,7 @@ Layers are modules: one app target for the UI and session objects, one local Swi
 Mel.xcodeproj
 ├── Mel/                 app target (default isolation MainActor)
 │   ├── App/             MelApp: scenes, commands, composition root
-│   ├── Views/           one folder per screen, Components/, Preview/   → SwiftUI, MelSpec
+│   ├── Views/           one folder per screen, Components/, Preview/   → SwiftUI, MelSpec, UTI
 │   └── Session/         AppState, SpecSession                         → all MelKit modules
 ├── MelTests/Session/
 ├── MelKit/              local package (nonisolated by default)
