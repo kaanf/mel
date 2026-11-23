@@ -61,6 +61,8 @@ public enum MarkdownParser {
         var openIndex = 0
         // The list item the next indented line continues, and its text so far.
         var item: String?
+        // The task whose indented sub-items follow.
+        var currentTask: Int?
 
         func flushParagraph() {
             guard !paragraph.isEmpty else { return }
@@ -127,6 +129,7 @@ public enum MarkdownParser {
                 continue
             }
             item = nil
+            if !indented, !trimmed.isEmpty { currentTask = nil }
 
             if trimmed.isEmpty {
                 flushParagraph()
@@ -153,13 +156,17 @@ public enum MarkdownParser {
                 blocks.append(special)
             } else if let listItem = listItemText(trimmed) {
                 flushParagraph()
-                if indented, let covers = coversList(listItem), case .task(let id, let text, let done, _) = blocks.last {
-                    blocks[blocks.count - 1] = .task(id: id, text: text, done: done, covers: covers)
+                // `Covers:` may follow other sub-items (`Priority:`) of the same task.
+                if indented, let covers = coversList(listItem), let i = currentTask, case .task(let id, let text, let done, _) = blocks[i] {
+                    blocks[i] = .task(id: id, text: text, done: done, covers: covers)
                 } else if !indented, let number = orderedNumber(trimmed) {
                     blocks.append(.orderedItem(number: number, text: String(listItem)))
                 } else {
                     blocks.append(listBlock(listItem))
-                    if !indented { item = String(listItem) }
+                    if !indented {
+                        item = String(listItem)
+                        if case .task = blocks.last { currentTask = blocks.count - 1 }
+                    }
                 }
             } else if trimmed.hasPrefix(">") {
                 paragraph.append(quoteContent(trimmed))
@@ -283,11 +290,12 @@ public enum MarkdownParser {
         return .listItem(String(item))
     }
 
-    /// `Covers: 1.1, 1.2` → ["1.1", "1.2"]; `Covers: —` → [].
+    /// `Covers: 1.1, Q1` → ["1.1", "Q1"]; `Covers: —` → [].
     private static func coversList(_ item: Substring) -> [String]? {
         guard item.hasPrefix("Covers:") else { return nil }
         return item.dropFirst("Covers:".count).split(separator: ",").compactMap { part in
             let id = part.trimming(while: \.isWhitespace)
+            if id.first == "Q" { return leadingID(id.dropFirst()).map { "Q" + $0 } }
             return leadingID(id).map(String.init)
         }
     }

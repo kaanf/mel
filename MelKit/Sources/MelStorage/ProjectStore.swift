@@ -13,7 +13,8 @@ public enum ProjectStore {
         let folder = contextFolder(project: project)
         guard FileManager.default.fileExists(atPath: folder.path) else { return nil }
         let texts = ProjectContext.fileNames.map { (try? String(contentsOf: folder.appending(path: $0), encoding: .utf8)) ?? "" }
-        return ProjectContext(product: texts[0], tech: texts[1], structure: texts[2], principles: texts[3])
+        let meta = (try? Data(contentsOf: folder.appending(path: metaFile))).flatMap { try? JSONDecoder().decode(Meta.self, from: $0) }
+        return ProjectContext(product: texts[0], tech: texts[1], structure: texts[2], principles: texts[3], read: meta?.read ?? [], sources: meta?.sources ?? [:])
     }
 
     public static func writeContext(_ context: ProjectContext, project: URL) throws {
@@ -22,6 +23,17 @@ public enum ProjectStore {
         for (name, text) in zip(ProjectContext.fileNames, [context.product, context.tech, context.structure, context.principles]) {
             try Data(text.utf8).write(to: folder.appending(path: name), options: .atomic)
         }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(Meta(read: context.read, sources: context.sources)).write(to: folder.appending(path: metaFile), options: .atomic)
+    }
+
+    /// A3's "What Mel read" rows and card state words, next to the four files.
+    private static let metaFile = "context.json"
+
+    private struct Meta: Codable {
+        var read: [ReadItem]
+        var sources: [String: String]
     }
 
     /// A3 "Add Rule": appends `- rule` to `principles.md`.

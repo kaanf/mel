@@ -20,10 +20,12 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var fillGaps: Bool
     /// Files waiting for a revise run, in order (analyze fixes, refine).
     public var queue: [DocKind]
+    /// The pending revise instruction per file (an answer, an analyze fix, a refine); cleared when its revise ends.
+    public var instructions: [DocKind: String]
     public var sessionID: String?
 
     /// A new spec starts in Discovery with every file of its size locked.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, queue: [DocKind] = [], sessionID: String? = nil) {
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, queue: [DocKind] = [], instructions: [DocKind: String] = [:], sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -39,6 +41,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.analysis = analysis
         self.fillGaps = fillGaps
         self.queue = queue
+        self.instructions = instructions
         self.sessionID = sessionID
     }
 
