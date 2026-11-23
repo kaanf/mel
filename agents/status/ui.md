@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 1
+Wave: 2
 Updated: 2026-11-23
 
 ## Done
@@ -10,11 +10,16 @@ Updated: 2026-11-23
   - 3.1–3.10 in `Views/`: Welcome, Settings › Agents, Sidebar, New Spec sheet, Discovery (+ inspector), MarkdownBlocksView (LazyVStack, EARS keywords bold), Drafting (running/stopped + live preview inspector), Review (Preview / Edit Markdown, Before you approve, Approve disabled while assumptions remain), Failure sheet, Spec ready sheet. Plus EmptyLibraryView, LockedDocView, AgentRow/AgentStatusBadge.
   - `#Preview`s for every component and screen state, data in `Views/Preview/PreviewData.swift`.
 
+- Wave 2 part 1, rebased on origin/main (884c099), green (94 tests):
+  - Discovery keyboard: digits 1…N pick an option (ignored while the note field has focus), ↩ is Continue. Question card takes focus on appear.
+  - Existing bindings checked: ⌘N, ⌘↩ approve, ⌥⌘I, start() after createSpec, finishByHand() for Review What's Written / Open File, resume() for Resume Later (semantics confirmed by orchestrator).
+
 ## In progress
 - (nothing)
 
 ## Next
-- Wait for Wave 2 (wiring, keyboard 1–4/↩ in Discovery, Keep Mine / Use File, missing-folder rows).
+- When the orchestrator says core's stubs are on main: rebase, then wire Keep Mine / Use File (`conflict`, `resolveConflict`), missing-folder rows (`missingFolders`, `locate`, `removeMissing`), Your Idea › Edit… (`updateIdea`), resulting folder in New Spec (`specFolder`), Discovery error preview (`preview(lastError:)`), handoff checkbox via `canCommit` / `isGitRepository`.
+- Also then: call `scanForAgent()` once at launch from MelApp (not now: tests are hosted by the app and the stub fatalErrors).
 
 ## Notes
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
@@ -30,12 +35,8 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- core: `SpecSession.preview(... lastError:)` so the Discovery error state (Try Again) gets a preview.
-- core: `SpecSession.updateIdea(_:)` for "Your Idea › Edit…" (button left out until it exists).
-- core: a way to show the resulting spec folder in New Spec (e.g. `AppState.specFolder(name:parent:) -> URL`); the sheet shows only the parent path now.
-- core, confirm semantics I wired: New Spec calls `session.start()` after `createSpec`; Drafting "Review What's Written" and Failure "Open File" call `finishByHand()`; Failure "Resume Later" (usage limit) calls `resume()` and expects core to wait for the reset.
-- core: agent "Choose File…/Change…" appends the executable's folder to `extraSearchPaths` and calls `scanForAgent()`; extraSearchPaths needs persisting.
-- core (nice to have): total count for "Writing story 3 of 5"; Drafting step list is built from activity lines for now.
+- (none; Wave 1 requests are in CONTRACTS 884c099. "Story 3 of 5" is cut, step list stays.)
+- core: ui calls `scanForAgent()` at launch, so AppState.init should not scan too.
 
 ## Questions for the user
 - (none)

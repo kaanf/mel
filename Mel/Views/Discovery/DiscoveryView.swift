@@ -143,6 +143,8 @@ private struct QuestionCard: View {
     let number: Int
     @State private var choice: Int?
     @State private var note = ""
+    @FocusState private var cardFocused: Bool
+    @FocusState private var noteFocused: Bool
 
     /// `question.options.count` stands for "You decide".
     init(session: SpecSession, question: Question, number: Int) {
@@ -183,6 +185,7 @@ private struct QuestionCard: View {
                     }
                 }
                 TextField("Note for the agent (optional)", text: $note)
+                    .focused($noteFocused)
                 HStack {
                     Text("Press 1 to \(question.options.count + 1) to choose. Answers can be changed later.")
                         .font(.callout)
@@ -194,6 +197,16 @@ private struct QuestionCard: View {
                 }
             }
             .padding(4)
+        }
+        // Digits pick an option unless the note field is taking text; ↩ is Continue (default action).
+        .focusable()
+        .focusEffectDisabled()
+        .focused($cardFocused)
+        .onAppear { cardFocused = true }
+        .onKeyPress(characters: .decimalDigits) { press in
+            guard !noteFocused, let digit = Int(press.characters), (1...question.options.count + 1).contains(digit) else { return .ignored }
+            choice = digit - 1
+            return .handled
         }
     }
 
