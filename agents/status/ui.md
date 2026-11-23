@@ -11,7 +11,9 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wait for orchestrator to start Wave 1. Then: add `#Preview`s for every Wave 0 component, 0.2 MelApp, 3.1–3.10 screens.
+- Hold. core is moving layers into local package MelKit (0.1b); rebase on origin/main again when the orchestrator says so, re-run build test. Then wait for Wave 1.
+- New rule (read ui.md + CONTRACTS.md "Layers and dependencies" after that rebase): files in Mel/Views/ import only SwiftUI + MelSpec; view actions (copy, Finder, Terminal, Sign In) go through AppState/SpecSession.
+- Wave 1: Then: add `#Preview`s for every Wave 0 component, 0.2 MelApp, 3.1–3.10 screens.
 
 ## Notes
 - Components take plain values (strings, Int index, Bool), no model types, so they stay reusable; screens map `Question`/`DocStatus` to them.
