@@ -40,7 +40,7 @@ claude -p \
   --output-format stream-json --verbose \
   --input-format text \
   --restricted --strict-mcp-config \
-  --tools Read,Glob,Grep \
+  --tools Read,Glob,Grep \         # --tools "" when AgentRequest.allowsTools is false (init then lists tools: [])
   --permission-mode manual --permission-prompts none \
   --disable-slash-commands --no-chrome \
   [--resume <session_id>]           # verified; drop --no-session-persistence to allow it
@@ -74,8 +74,8 @@ The agent returns one JSON object as the final `result` text; Mel decodes it. No
 |---|---|---|---|---|---|---|
 | Project context | A3 | repo (agent reads it), `mode` | `{"product", "tech", "structure", "principles"}`: Markdown of the four `.mel/project/` files | `ProjectContext.decode` | `project-context` | ~22 s, 9 turns |
 | Intake | B2 | context, idea, size and its files, builds-on, attachment paths, topics, question count, kinds | `{"coverage": [CoverageItem], "questions": [question]}`, all round-1 questions at once | `Intake.decode` | `intake` | ~16 s |
-| Analyze | B6 | every approved file inline | `AnalyzeResult` JSON | `AnalyzeResult.decode` | `analyze` | ~78 s, 6 turns |
-| Impact | C1 | the changed part before and after, the later files inline | `{"items": [{"kind", "what", "count"}]}` | `ImpactResult.decode` | `impact` | ~7 s |
+| Analyze | B6 | every approved file inline | `AnalyzeResult` JSON | `AnalyzeResult.decode` | `analyze` | ~77 s, 1 turn, no tools |
+| Impact | C1 | the changed part before and after, the later files inline | `{"items": [{"kind", "what", "count"}]}` | `ImpactResult.decode` | `impact` | ~4 s, no tools |
 
 Field rules:
 
@@ -85,7 +85,7 @@ Field rules:
 - **AnalyzeResult**: `stats` (4 × `{"value", "label"}`), `issues` (`{"id", "kind", "location", "text", "actions"}`, `kind` ∈ `contradiction`, `noTask`, `qualityNotCovered`, `scopeCreep`, exactly 2 actions `{"label", "fix", "files": [DocKind]}`, the second primary), `coverage` (`{"id", "text", "screen", "architecture", "task", "test"}`, marks `covered`/`missing`/`conflict`, `screen` is `null` without EXPERIENCE.md).
 - **ImpactResult**: one item per affected later file, `kind` a `DocKind` raw value; unaffected files are left out.
 
-Analyze and Impact pass the files inline but still allow Read/Glob/Grep: the analyze run spent 6 turns reading the repo (~78 s, against ~56 s and 1 turn when told not to read). Impact did not read.
+Analyze and Impact pass the files inline and run with `allowsTools: false` (`--tools ""`). The prompt must then say not to read files: with no tools and a prompt that invites reading, the model writes tool calls as plain text and the run never finishes (seen: 11+ min).
 
 ### Streaming Markdown stages (drafting, revise)
 

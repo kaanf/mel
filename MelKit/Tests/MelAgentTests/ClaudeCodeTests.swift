@@ -37,6 +37,13 @@ struct ClaudeCodeTests {
         #expect(!args.contains { $0.contains("Write") || $0.contains("Edit") || $0.contains("Bash") })
     }
 
+    @Test func noToolsPassesEmptyToolList() {
+        let request = AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false, allowsTools: false)
+        let args = claude.arguments(for: request)
+        #expect(args[args.firstIndex(of: "--tools")! + 1] == "")
+        #expect(args.filter { $0 == "--tools" }.count == 1)
+    }
+
     @Test func resumeKeepsSession() {
         let request = AgentRequest(prompt: "x", workingDirectory: folder, resumeSessionID: "abc", persistSession: true)
         let args = claude.arguments(for: request)

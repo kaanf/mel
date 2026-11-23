@@ -1,7 +1,14 @@
 # platform status
 
-Wave: 6 follow-ups **ready to merge** (re-recorded fixtures, Git.Repository, branch, fileCount); project-context re-record waits for core's read/sources prompt
+Wave: 7, done (ready to merge)
 Updated: 2026-11-23
+
+## Done (Wave 7)
+- `ClaudeCode.arguments` maps core's `AgentRequest.allowsTools` (on main): false → `--tools ""` (init lists `tools: []`). Test `noToolsPassesEmptyToolList`.
+- The "--tools \"\" hang" was not the CLI: the old analyze prompt said "You may read files", so with no tools the model wrote tool calls as plain text and never finished. Core's W7 prompts say "Do not read any files"; with those, analyze is 1 turn/~77 s, impact ~4 s, no tools. Noted in AGENT-INTEGRATION.md.
+- Re-recorded `analyze`, `impact` (`--no-tools`) and `project-context` (main's project.md: `read` + `sources`, module names now plain "FocusTimer"). Tests: `analyzeAndImpactRunWithoutTools`, V2DecodeTests checks `read`/`sources`. `inputs/context.json` left as is (the other fixtures were recorded with it).
+- v1 `Git.specPaths` removed (SpecSession uses `specPaths(slug:project:)`); the repeat-commit test now uses the v2 paths. `record.py` has a 300 s timeout.
+- Full `xcodebuild … test` green.
 
 ## Done (Wave 3)
 - fix: `fake-claude.sh` hang mode is `exec tail -n +1 -f` (plain `tail -f` started at the last 10 lines and lost `init`). `hangingRun` now pads with 10 unmapped records, so the hang tests fail without the fix (checked). Full `xcodebuild … test` green 3× in a row. Commit 2718415.
@@ -60,9 +67,8 @@ Updated: 2026-11-23
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- When core's project-context prompt with `read`/`sources` is on main: re-record project-context only (`docs/research/v2-prompts/`, README there), check `ProjectContext.decode`, push.
-- When SpecSession uses `Git.specPaths(slug:project:)`: drop the v1 `Git.specPaths` constant and its test.
-- Then Wave 7 real-run check.
+- Wave 7 real-run check when the orchestrator asks. Otherwise waiting.
+- Scratchpad probe copies are gone after a session ends; recreate from `docs/research/v2-prompts/probe/` per its README.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -79,8 +85,7 @@ Updated: 2026-11-23
 - (none; Notifier gaps handed to core)
 
 ## For core (from the re-recording with your prompts)
-- Module names: the model wrote `- FocusTimer (executable CLI) — Sources/FocusTimer`, so `modules` gives the B1 chip "FocusTimer (executable CLI)". Suggest the prompt say "name only, no notes", or the parser drop a trailing `( … )`. `V2DecodeTests` pins the current output.
-- Analyze reply came inside a ```json fence; your decoder handles it. It also read the repo for 6 turns (~78 s) although the files are inline; my provisional "Do not read other files" run took 1 turn (~56 s). Consider dropping Read/Glob/Grep from analyze.md (and impact.md) for speed.
+- Analyze reply still comes inside a ```json fence; your decoder handles it.
 - Draft trailer questions left out `shapes` (your prompt doesn't ask for it); `DraftText.questions` defaults it, fine.
 - Impact leaves out unaffected files, as your prompt says.
 
