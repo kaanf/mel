@@ -77,3 +77,17 @@ extension URL {
         URL(filePath: standardizedFileURL.path(percentEncoded: false), directoryHint: .isDirectory)
     }
 }
+
+/// A2: a git repo found one level under `~/Developer`, with its meta line ("Kotlin · edited today").
+public struct FoundRepository: Identifiable, Hashable, Sendable {
+    public var url: URL
+    public var language: String?
+    public var modified: Date?
+    public var id: URL { url }
+
+    public init(url: URL, language: String? = nil, modified: Date? = nil) {
+        self.url = url
+        self.language = language
+        self.modified = modified
+    }
+}
