@@ -1,33 +1,38 @@
 # platform status
 
-Wave: 0 (done, merged to main)
+Wave: 1 (done)
 Updated: 2026-11-23
 
 ## Done
-- 1.1 CLI verified on 2.1.311, findings in `docs/research/CLAUDE-CODE-CLI.md`, 4 new fixtures in `docs/research/fixtures/` (commit 29e8cd5)
-  - `claude auth status`: JSON, free, exit 0 signed in / 1 signed out, `loggedIn` + `authMethod`. Login: `claude auth login`.
-  - `--include-partial-messages`: `stream_event` with raw API events, text in `content_block_delta`/`text_delta`. Whole `assistant` messages still arrive, so take text from deltas only.
-  - `--append-system-prompt` works with the read-only vector.
-  - Discovery-style JSON-only answer with `Read,Glob,Grep`: bare JSON in `result.result`, parses directly.
-- 1.2 `Mel/Agent/ShellPath.swift` replaces core's stub, `nonisolated`, contract signature unchanged. Rebased on origin/main; `xcodebuild build test` green.
+- Wave 0: 1.1 CLI verified, 1.2 ShellPath (merged to main).
+- Fixtures moved to `MelKit/Tests/MelAgentTests/Fixtures/`, links in `docs/research/CLAUDE-CODE-CLI.md` updated. New: `claude-2.1.311-unknown-resume.jsonl` (no `init`, `result` with `errors[]` and no `result` field).
+- 1.2 ShellPath tests (core's two + login PATH, dedupe/dirs, hanging shell times out in 5 s). `ShellPath` is now `public` (AppState needs `loginPATH()`).
+- 1.3 `ClaudeCode` (commit d0b836e): detect = login PATH + extras → `--version` → `auth status` (`loggedIn` && `authMethod == "claude.ai"`). Arguments = verified read-only vector + `--include-partial-messages`. Environment = allowlist. Parse: text only from `text_delta`, steps from `tool_use`, failure table `ClaudeCode.failures`, API key in `init` → `failed(.crashed(apiKeyMessage))`.
+- 1.4 `AgentRunner`: `posix_spawn` (own process group, only stdio inherited, default signals), prompt on stdin, stdout lines on a background thread, 64 KB stderr tail, inactivity watchdog, `stop()` = SIGINT then SIGTERM after 3 s. A rejected rate limit turns a later failure into `usageLimit(resetsAt)`.
+- 1.5 `RealClaudeTests` runs only with `MEL_REAL_CLAUDE=1` (`cd MelKit && MEL_REAL_CLAUDE=1 swift test --filter RealClaudeTests`). Passed once on 2.1.311 (detect → ready, session, deltas, done).
+- System: `SystemActions` (Terminal via a self-deleting temporary `.command` file, Finder, pasteboard), `Git` (commit 8534ae2). Tests: command-file content, Git in a temp repo.
+- `xcodebuild … build test` green: 33 tests, including the MelKit ones.
 
 ## In progress
 - (nothing)
 
 ## Next
-- Wave 1 (wait for orchestrator's Wave 1 message): first `git fetch origin && git rebase origin/main`. Code moves to `MelKit/Sources/MelAgent` and `MelSystem`, tests to `MelKit/Tests/...` (core does the move in 0.1b); follow CONTRACTS.md "Layers and dependencies": MelAgent imports only MelSpec, MelSystem imports nothing, `AgentStatus` lives in MelSpec. Then move fixtures to `MelTests/Fixtures/`, ShellPath tests, then 1.3 ClaudeCode, 1.4 AgentRunner.
+- Wave 2 (wait for orchestrator): 4.7 Notifier (still a stub), detection in `AppState.scanForAgent()`, 4.6 handoff pieces, `scripts/release.sh` draft.
 
 ## Notes
-- ShellPath timeout: kill the shell, then drain the pipe non-blocking. A child left by a login script can hold stdout open, so `readDataToEndOfFile` would wait past 5 s (seen with a hanging test shell). Wave 1 test: `SHELL` pointing to a script that sleeps must return "" in about 5 s.
-- `loginPATH()` isn't cached; each `find` runs the shell (~70 ms). Cache in the caller if it's called more than once per scan.
-- `auth status` also needs `USER` in the environment, same as runs.
+- Running only MelKit is faster: `cd MelKit && swift test`.
+- `fake-claude.sh <fixture> [hang | exit N]` runs via `/bin/sh` (`FakeClaude` adapter in AgentRunnerTests). Hang mode is `exec tail -f` on purpose: a shell waiting on a child swallows early signals, which made stop tests flaky. Fixture lines must end in a newline; the runner only delivers complete lines.
+- `loginPATH()` uses `$SHELL -l -i` (per AGENT-INTEGRATION.md, so `.zshrc` PATH edits count). The runner calls it once per `AgentRunner` and prepends the executable's folder.
+- Stopping the runner (or cancelling the stream's consumer) ends the stream with `failed(.user)`. Spawn failure throws `SpawnError`.
+- `Git` is synchronous; call it off the main actor. `Git.isAvailable` is false without the Command Line Tools (`/usr/bin/git` alone is an installer stub).
 - Older fixtures contain `/Users/kaan/JojoDisposable/...` probe paths: a username, not a secret.
 
 ## Blocked
 - (nothing)
 
 ## Requests to orchestrator
-- Done by orchestrator: `docs/AGENT-INTEGRATION.md` updated. (Was: it still said "to verify" for auth status, the login command, `--include-partial-messages` and `--append-system-prompt`. All verified now: use `claude auth status` (read `loggedIn`; `authMethod` must be `claude.ai`), login with `claude auth login`, partial messages on (text from `text_delta` only, tool calls from `assistant` blocks), stage contract via `--append-system-prompt`.)
+- CONTRACTS, `AgentRequest`: no field for the stage contract, so `--append-system-prompt` isn't used yet; prompts must put the contract at the top of stdin. Proposal: `public var systemPrompt: String?` → `--append-system-prompt`. One line in `ClaudeCode.arguments` once it exists.
+- CONTRACTS, `StopReason` (MelSpec, core): an unknown `--resume` session currently arrives as `failed(.crashed("No conversation found with session ID: …"))`. SpecSession has to run fresh in that case. Proposal: `case sessionNotFound`, mapped in `ClaudeCode.failures` (one line). Otherwise SpecSession has to match the text.
 
 ## Questions for the user
 - (none)
