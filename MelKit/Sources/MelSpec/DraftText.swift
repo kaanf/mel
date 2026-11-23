@@ -10,6 +10,47 @@ public enum DraftText {
         return String(reply[newline...].drop(while: \.isNewline))
     }
 
+    /// The last `<!-- mel:step N -->` the agent reached, or 0 before the first.
+    public static func step(in reply: String) -> Int {
+        var step = 0
+        var rest = reply[...]
+        while let marker = rest.range(of: "<!-- mel:step ") {
+            let digits = rest[marker.upperBound...].prefix(while: \.isNumber)
+            // Only a complete marker counts: "1" may still become "12".
+            if let n = Int(digits), rest[digits.endIndex...].hasPrefix(" -->") { step = n }
+            rest = rest[marker.upperBound...]
+        }
+        return step
+    }
+
+    /// `text` without step-marker lines, the `<!-- mel:questions … -->` trailer, and a
+    /// comment still being streamed at the end.
+    public static func strippingMarkers(_ text: String) -> String {
+        var body = text[...]
+        if let trailer = body.range(of: "<!-- mel:questions", options: .backwards) { body = body[..<trailer.lowerBound] }
+        if let open = body.range(of: "<!--", options: .backwards), body[open.upperBound...].range(of: "-->") == nil {
+            body = body[..<open.lowerBound]
+        }
+        let lines = body.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).filter { line in
+            let t = line.trimming(while: \.isWhitespace)
+            return !(t.hasPrefix("<!-- mel:step ") && t.hasSuffix("-->"))
+        }
+        var result = lines.joined(separator: "\n")
+        if text.range(of: "<!-- mel:questions") != nil {
+            while result.last?.isWhitespace == true { result.removeLast() }
+            result += "\n"
+        }
+        return result
+    }
+
+    /// Up to 3 round-2 questions from the draft's trailer: `<!-- mel:questions [ … ] -->`.
+    public static func questions(in reply: String, kind: DocKind) -> [Question] {
+        guard let start = reply.range(of: "<!-- mel:questions", options: .backwards),
+              let data = try? jsonObject(in: String(reply[start.upperBound...]), open: "[", close: "]"),
+              let wire = try? JSONDecoder().decode([WireQuestion].self, from: data) else { return [] }
+        return wire.prefix(3).map { $0.question(round: .draft, shapes: kind) }
+    }
+
     /// Cuts `text` before its last `##` heading: that section may be incomplete. Ends with a
     /// blank line so appended text starts a new block. Text without a `##` heading is kept.
     public static func truncatedToLastCompleteSection(_ text: String) -> String {

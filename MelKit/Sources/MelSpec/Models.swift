@@ -98,7 +98,16 @@ public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hash
     public var title: String { rawValue.capitalized }
 
     /// B3's checklist, fixed in the prompt; the agent emits `<!-- mel:step N -->` as it reaches step N.
-    public var draftSteps: [String] { [] }
+    public var draftSteps: [String] {
+        switch self {
+        case .product: ["Read the idea and your answers", "Describe the problem and the goal", "Name the users and roles", "Set the scope and what is out of scope", "Define how success is measured", "Mark anything you didn’t confirm as an assumption"]
+        case .requirements: ["Read the approved files and your answers", "Write the stories with acceptance criteria", "Set priority P1 to P3 and mark the MVP line", "Add quality needs: privacy, speed, offline", "List edge cases for every P1 story", "Mark anything you didn’t confirm as an assumption", "Check that every criterion can be tested"]
+        case .experience: ["Read the approved files and your answers", "Map each flow and the criteria it covers", "List every screen with its states", "Flag states that are missing", "Set the visual direction", "Mark anything you didn’t confirm as an assumption"]
+        case .architecture: ["Read the approved files and the project context", "Lay out the modules and their boundaries", "Describe the data", "Describe the API and integrations", "Record the key decisions with reasons", "Mark anything you didn’t confirm as an assumption"]
+        case .tasks: ["Read the approved files", "Break the work into tasks", "Link each task to the criteria it covers", "Add what each task reads and how to verify it", "Mark tasks that can run in parallel", "Check that every P1 criterion has a task"]
+        case .spec: ["Read the report and the code it touches", "Describe what breaks", "Describe the expected behavior", "Write how to verify the fix", "List the code it touches", "Set what is out of scope"]
+        }
+    }
 }
 
 public enum Stage: Codable, Hashable, Sendable {

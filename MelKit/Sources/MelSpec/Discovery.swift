@@ -15,14 +15,8 @@ public struct DiscoveryTurn: Hashable, Sendable {
 
     /// Decodes the JSON object in `reply`. Text around the object (a stray code fence) is ignored.
     public static func decode(_ reply: String) throws -> DiscoveryTurn {
-        guard let start = reply.firstIndex(of: "{"), let end = reply.lastIndex(of: "}"), start < end else {
-            throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "No JSON object in the reply."))
-        }
-        let wire = try JSONDecoder().decode(Wire.self, from: Data(reply[start...end].utf8))
-        let next = wire.next.map { q in
-            Question(id: q.id, title: q.title, why: q.why ?? "", shapes: q.shapes,
-                     options: (q.options ?? []).map { Option(label: $0.label, note: $0.note ?? "", suggested: $0.suggested ?? false) })
-        }
+        let wire = try JSONDecoder().decode(Wire.self, from: jsonObject(in: reply))
+        let next = wire.next?.question(round: .intake, shapes: .product)
         return DiscoveryTurn(coverage: wire.coverage, next: next, done: wire.done ?? (next == nil))
     }
 
@@ -31,20 +25,55 @@ public struct DiscoveryTurn: Hashable, Sendable {
         var next: WireQuestion?
         var done: Bool?
     }
+}
 
-    private struct WireQuestion: Decodable {
-        var id: String
-        var title: String
-        var why: String?
-        var shapes: DocKind
-        var options: [WireOption]?
+/// The one-shot intake reply (V2.md §5 Intake): every round-1 question and the coverage list.
+public struct Intake: Hashable, Sendable {
+    public var coverage: [CoverageItem]
+    public var questions: [Question]
+
+    public init(coverage: [CoverageItem], questions: [Question]) {
+        self.coverage = coverage
+        self.questions = questions
     }
 
-    private struct WireOption: Decodable {
+    public static func decode(_ reply: String, size: SpecSize) throws -> Intake {
+        let wire = try JSONDecoder().decode(Wire.self, from: jsonObject(in: reply))
+        return Intake(coverage: wire.coverage, questions: wire.questions.map { $0.question(round: .intake, shapes: size.files[0]) })
+    }
+
+    private struct Wire: Decodable {
+        var coverage: [CoverageItem]
+        var questions: [WireQuestion]
+    }
+}
+
+/// A question as agents write it; optional fields get defaults.
+struct WireQuestion: Decodable {
+    var id: String
+    var title: String
+    var why: String?
+    var shapes: DocKind?
+    var options: [WireOption]?
+
+    struct WireOption: Decodable {
         var label: String
         var note: String?
         var suggested: Bool?
     }
+
+    func question(round: QuestionRound, shapes fallback: DocKind) -> Question {
+        Question(id: id, title: title, why: why ?? "", shapes: shapes ?? fallback, round: round,
+                 options: (options ?? []).map { Option(label: $0.label, note: $0.note ?? "", suggested: $0.suggested ?? false) })
+    }
+}
+
+/// The outermost JSON object or array in an agent reply; text around it (a stray code fence) is ignored.
+func jsonObject(in reply: String, open: Character = "{", close: Character = "}") throws -> Data {
+    guard let start = reply.firstIndex(of: open), let end = reply.lastIndex(of: close), start < end else {
+        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "No JSON in the reply."))
+    }
+    return Data(reply[start...end].utf8)
 }
 
 // Prompt text for `{{answers}}`, `{{coverage}}` and `{{decide}}`.

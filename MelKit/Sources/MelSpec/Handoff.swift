@@ -21,11 +21,53 @@ public struct SpecTask: Identifiable, Hashable, Sendable {
         self.parallelWith = parallelWith
     }
 
-    public static func parse(_ tasks: String) -> [SpecTask] { [] }
+    /// `- [ ] N. Title` lines and their indented `- Key: value` fields.
+    public static func parse(_ tasks: String) -> [SpecTask] {
+        var result: [SpecTask] = []
+        for line in tasks.split(whereSeparator: \.isNewline) {
+            let trimmed = line.trimming(while: \.isWhitespace)
+            if line.first?.isWhitespace != true, trimmed.hasPrefix("- ["), trimmed.dropFirst(3).first != nil, trimmed.dropFirst(4).hasPrefix("] ") {
+                let rest = trimmed.dropFirst(6)
+                let digits = rest.prefix(while: \.isNumber)
+                guard let number = Int(digits) else { continue }
+                let title = rest.dropFirst(digits.count).trimming(while: { $0 == "." || $0.isWhitespace })
+                result.append(SpecTask(number: number, title: String(title), priority: "", covers: [], reads: "", verify: ""))
+            } else if !result.isEmpty, trimmed.hasPrefix("- "), let colon = trimmed.firstIndex(of: ":") {
+                let key = trimmed[trimmed.index(trimmed.startIndex, offsetBy: 2)..<colon]
+                let value = String(trimmed[trimmed.index(after: colon)...].trimming(while: \.isWhitespace))
+                let list = value.split(separator: ",").map { String($0.trimming(while: \.isWhitespace)) }
+                switch key {
+                case "Priority": result[result.count - 1].priority = value
+                case "Covers": result[result.count - 1].covers = list
+                case "Reads": result[result.count - 1].reads = value
+                case "Verify": result[result.count - 1].verify = value.trimmingCharacters(in: ["`"])
+                case "Parallel with": result[result.count - 1].parallelWith = list.compactMap { Int($0) }
+                default: break
+                }
+            }
+        }
+        return result
+    }
 
     /// `prompts/task-NN.md`.
     public var promptFileName: String { String(format: "task-%02d.md", number) }
 
     /// The prompt file: the task, the criteria it covers in full, what it reads, the verify command.
-    public func prompt(requirements: String) -> String { fatalError("stub") }
+    public func prompt(requirements: String) -> String {
+        var criteria: [String: String] = [:]
+        for case .criterion(let id, let text) in MarkdownParser.blocks(requirements) { criteria[id] = text }
+        var lines = ["# Task \(number) · \(title)", ""]
+        let meta = [priority.isEmpty ? nil : "Priority: \(priority)",
+                    parallelWith.isEmpty ? nil : "Parallel with: \(parallelWith.map(String.init).joined(separator: ", "))"].compactMap { $0 }
+        if !meta.isEmpty { lines += [meta.joined(separator: " · "), ""] }
+        lines += ["Implement task \(number) of TASKS.md in the folder above this one. The spec files there are the source of truth.", ""]
+        if !covers.isEmpty {
+            lines += ["## Acceptance criteria", ""]
+            lines += covers.map { "- \($0) \(criteria[$0] ?? "(see REQUIREMENTS.md)")" }
+            lines.append("")
+        }
+        if !reads.isEmpty { lines += ["## Read first", "", reads, ""] }
+        if !verify.isEmpty { lines += ["## Done when", "", "`\(verify)` passes and every criterion above holds.", ""] }
+        return lines.joined(separator: "\n")
+    }
 }

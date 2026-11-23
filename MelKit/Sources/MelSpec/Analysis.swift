@@ -14,7 +14,12 @@ public struct OpenQuestion: Identifiable, Hashable, Sendable {
         self.text = text
     }
 
-    public static func parse(_ text: String, kind: DocKind) -> [OpenQuestion] { [] }
+    public static func parse(_ text: String, kind: DocKind) -> [OpenQuestion] {
+        MarkdownParser.blocks(text).compactMap { block in
+            guard case .openQuestion(let index, let text) = block else { return nil }
+            return OpenQuestion(kind: kind, index: index, text: text)
+        }
+    }
 }
 
 /// B6: the analyze run's JSON reply (V2.md §5 Analyze).
@@ -95,7 +100,9 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
     public enum Mark: String, Codable, Hashable, Sendable { case covered, missing, conflict }
 
     /// Decodes the JSON object in `reply`; text around it is ignored.
-    public static func decode(_ reply: String) throws -> AnalyzeResult { fatalError("stub") }
+    public static func decode(_ reply: String) throws -> AnalyzeResult {
+        try JSONDecoder().decode(AnalyzeResult.self, from: jsonObject(in: reply))
+    }
 }
 
 /// C1 "What this affects": one entry per stale file.
@@ -118,5 +125,7 @@ public struct ImpactResult: Codable, Hashable, Sendable {
         }
     }
 
-    public static func decode(_ reply: String) throws -> ImpactResult { fatalError("stub") }
+    public static func decode(_ reply: String) throws -> ImpactResult {
+        try JSONDecoder().decode(ImpactResult.self, from: jsonObject(in: reply))
+    }
 }
