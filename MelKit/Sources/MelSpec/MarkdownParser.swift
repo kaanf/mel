@@ -188,13 +188,13 @@ public enum MarkdownParser {
     private static func leadingID(_ s: String) -> Substring? { leadingID(s[...]) }
 
     /// `> text` → `text`.
-    private static func quoteContent(_ line: Substring) -> Substring {
+    static func quoteContent(_ line: Substring) -> Substring {
         let rest = line.dropFirst()
         return rest.first == " " ? rest.dropFirst() : rest
     }
 }
 
-private extension Substring {
+extension Substring {
     func trimming(while predicate: (Character) -> Bool) -> Substring {
         guard let start = firstIndex(where: { !predicate($0) }), let end = lastIndex(where: { !predicate($0) }) else {
             return self[endIndex...]
