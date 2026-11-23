@@ -28,7 +28,13 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Nothing planned. 5.2 app icon setting done (b54d893).
+- Waiting: don't start the proposal below until the orchestrator says the install test is over.
+
+## Proposal: test host and Debug builds keep away from the user's state (not started)
+1. **Debug bundle id (core, project only).** Set `PRODUCT_BUNDLE_IDENTIFIER = com.kaanf.mel.debug` in the Mel target's Debug configuration; Release stays `com.kaanf.mel`. `xcodebuild test` builds Debug, so the test host and Xcode runs get their own defaults domain (library, `extraSearchPaths`), their own notification permission and their own app identity. They can run next to `/Applications/Mel.app` without sharing anything. `TEST_HOST` is a path, so MelTests needs no change. Cost: two lines in pbxproj. Notification permission is asked once more for the Debug app.
+2. **Optional (ui owns `MelApp`).** When running as a test host (`ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil`), build `AppState.preview([], agent: .missing)` and skip `scanForAgent()`. This only saves the host a login-shell scan and window setup per run; once step 1 is in, it no longer protects user state. I'd skip it unless test runs feel slow.
+
+Recommendation: step 1 alone.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
