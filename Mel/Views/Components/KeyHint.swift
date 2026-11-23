@@ -18,3 +18,12 @@ struct KeyHint: View {
             .accessibilityHidden(true)
     }
 }
+
+#Preview {
+    HStack {
+        KeyHint("1")
+        KeyHint("4")
+        KeyHint("↩")
+    }
+    .padding()
+}
