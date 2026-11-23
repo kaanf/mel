@@ -138,7 +138,8 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - v0.2 published (tag v0.2 at 0a47fe9, build 242, notarized; appcast.xml live on main 98f0099). G5 passed.
 - v0.2.1 merged to `main` (version 0.2.1; ui: sidebar ↑ from PRODUCT.md to Discovery, short "Needs you" status below ~860 pt). All agents standing by.
 - 2026-11-23: v2 design adopted ([V2.md](V2.md), OQ #20–22). Phased discovery (Wave 4) is replaced by the short intake, so G4 is dropped.
-- Next: ui swaps in the honeycomb icon → cut v0.2.1 (first in-app update). Then Wave 6.
+- v0.2.1 published (build 264, notarized, honeycomb icon); appcast.xml on main. Waiting for the user to see the in-app update from v0.2.
+- Wave 6 step 0 (core contract stubs) in progress.
 
 ## Risks
 
