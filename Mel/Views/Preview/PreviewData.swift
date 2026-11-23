@@ -323,4 +323,42 @@ enum PreviewData {
         return spec
     }()
     static let reviewSession = SpecSession.preview(reviewRoundTwo, documents: [.product: "# Product", .requirements: reviewMarkdown])
+
+    // B5 Review EXPERIENCE.md as drawn.
+    static let experienceMarkdown = """
+        # Experience
+
+        ## Flow 1 · Book a class
+
+        Covers: 1.1, 1.2, 1.3
+
+        1. Schedule (1.1)
+        2. Class detail (1.1, 1.2)
+        3. Confirm booking (1.1)
+        4. Booked (1.1, 1.3)
+
+        - Class is full: Waitlist sheet (1.2)
+        - No credits left: Buy pack (2.1)
+
+        ## Screens and states
+
+        Every screen lists what it shows when data is missing, slow, failing or offline.
+
+        | Screen | States | Criteria |
+        |---|---|---|
+        | Schedule | Default, Empty week, Loading, Offline, Error | 1.1 |
+        | Class detail | Default, Full, Loading, !Error | 1.1, 1.2 |
+        | Confirm booking | Default, No credits, !Error | 1.1 |
+        | Booked | Default, Added to calendar | 1.1 |
+        | Waitlist sheet | Default, Spot opened, Error | 1.2 |
+        | Upcoming | Default, Empty, Cancel confirm, Late cancel | 1.3 |
+        | Buy pack | Default, Paying, Paid, Card declined | 2.1 |
+
+        ## Visual direction
+
+        > [!ASSUMPTION]
+        > Calm and light, one accent taken from the studio logo, large tap targets for use right before class. Platform-native controls on iOS and Android.
+        """
+    static let reviewExperience = spec(.review(.experience), docs(.approved, .approved, .review), questions: allAnswered)
+    static let experienceSession = SpecSession.preview(reviewExperience, documents: [.product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown])
 }

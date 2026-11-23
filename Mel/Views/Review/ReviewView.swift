@@ -2,7 +2,8 @@ import SwiftUI
 import MelSpec
 
 /// B4 Review (design/v2 Native-3-Review): one drafted file as an article or editable Markdown,
-/// "Before you approve", Approve. The review inspector and agent suggestions are hidden in v0.3 (V2 §2).
+/// "Before you approve", Approve. EXPERIENCE.md is B5 (Native-3b-Experience): flows, states table, Approve only.
+/// The review inspector and agent suggestions are hidden in v0.3 (V2 §2).
 struct ReviewView: View {
     let session: SpecSession
     let kind: DocKind
@@ -37,12 +38,26 @@ struct ReviewView: View {
     private var openQuestions: [Int] { blocks.compactMap { if case .openQuestion(let i, _) = $0 { i } else { nil } } }
     private var roundTwo: [Question] { spec.questions.filter { $0.round == .draft && $0.shapes == kind && $0.answer == nil } }
     private var compact: Bool { width < ToolbarStatus.fullTextWidth }
+    private var isExperience: Bool { kind == .experience }
+    /// B5: screens in the states table with a missing (`!`) state, and the states missing.
+    private var missingStates: (screens: Int, states: Set<String>) {
+        var screens = 0
+        var states = Set<String>()
+        for case .table(let header, let rows) in blocks where header.count == 3 && header[1] == "States" {
+            for row in rows where row.count > 1 {
+                let missing = row[1].split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { $0.hasPrefix("!") }
+                if !missing.isEmpty { screens += 1 }
+                states.formUnion(missing.map { String($0.dropFirst()) })
+            }
+        }
+        return (screens, states)
+    }
 
     var body: some View {
         content
             .background(Theme.Colors.background)
             .navigationTitle(kind.fileName)
-            .navigationSubtitle("Saved · your edits are never overwritten")
+            .navigationSubtitle(isExperience ? "Flows, screens and states" : "Saved · your edits are never overwritten")
             .toolbar { toolbar }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .focusedSceneValue(\.approve, approveAction)
@@ -101,7 +116,7 @@ struct ReviewView: View {
                     case .edit: editor
                     }
                 }
-                .frame(maxWidth: Theme.Size.articleMaxWidth, alignment: .leading)
+                .frame(maxWidth: isExperience ? Theme.Size.experienceMaxWidth : Theme.Size.articleMaxWidth, alignment: .leading)
                 .padding(EdgeInsets(top: Theme.Space.x20, leading: Theme.Space.x32, bottom: Theme.Space.x40, trailing: Theme.Space.x32))
                 .frame(maxWidth: .infinity)
             }
@@ -112,11 +127,11 @@ struct ReviewView: View {
         // The file's H1 is the article title; the summary and the checklist come right after it.
         let hasTitle = if case .heading(1, _)? = blocks.first { true } else { false }
         return VStack(alignment: .leading, spacing: Theme.Space.x14) {
-            if hasTitle { MarkdownBlocksView(blocks: Array(blocks.prefix(1))) }
+            if hasTitle { MarkdownBlocksView(blocks: Array(blocks.prefix(1)), isExperience: isExperience) }
             Text("\(summary.line(for: kind)) Written from \(source), project context and your answers.")
                 .textStyle(Theme.Text.body)
                 .foregroundStyle(Theme.Colors.secondaryLabel)
-            if !roundTwo.isEmpty || !assumptions.isEmpty || !openQuestions.isEmpty {
+            if !checklistRows.isEmpty {
                 checklist(proxy)
             }
             MarkdownBlocksView(
@@ -126,7 +141,8 @@ struct ReviewView: View {
                     editText = text
                     editing = (index, text)
                 },
-                onAnswer: { index, text in answering = OpenQuestion(kind: kind, index: index, text: text) }
+                onAnswer: { index, text in answering = OpenQuestion(kind: kind, index: index, text: text) },
+                isExperience: isExperience
             )
         }
     }
@@ -158,20 +174,26 @@ struct ReviewView: View {
                 }
                 checklistRow(rows[index], proxy: proxy)
             }
-            Text("You can approve anyway. Open items stay marked in the file so the next agent sees them.")
-                .textStyle(Theme.Text.caption)
-                .foregroundStyle(Theme.Colors.secondaryLabel)
-                .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x12, bottom: Theme.Space.x10, trailing: Theme.Space.x12))
+            if isExperience {
+                Color.clear.frame(height: Theme.Space.x4)
+            } else {
+                Text("You can approve anyway. Open items stay marked in the file so the next agent sees them.")
+                    .textStyle(Theme.Text.caption)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x12, bottom: Theme.Space.x10, trailing: Theme.Space.x12))
+            }
         }
         .foregroundStyle(Theme.Colors.label)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
 
-    private enum ChecklistRow { case roundTwo(Int), assumptions(Int), openQuestions(Int) }
+    private enum ChecklistRow { case missingStates(Int, Set<String>), roundTwo(Int), assumptions(Int), openQuestions(Int) }
 
     private var checklistRows: [ChecklistRow] {
         var rows: [ChecklistRow] = []
+        let missing = missingStates
+        if missing.screens > 0 { rows.append(.missingStates(missing.screens, missing.states)) }
         if !roundTwo.isEmpty { rows.append(.roundTwo(roundTwo.count)) }
         if !assumptions.isEmpty { rows.append(.assumptions(assumptions.count)) }
         if !openQuestions.isEmpty { rows.append(.openQuestions(openQuestions.count)) }
@@ -181,6 +203,22 @@ struct ReviewView: View {
     @ViewBuilder
     private func checklistRow(_ row: ChecklistRow, proxy: ScrollViewProxy) -> some View {
         switch row {
+        case .missingStates(let screens, let states):
+            // "2 screens have no error state" when one state is missing everywhere.
+            let text = states.count == 1
+                ? "\(screens == 1 ? "1 screen has" : "\(screens) screens have") no \(states.first!.lowercased()) state"
+                : "\(screens == 1 ? "1 screen has" : "\(screens) screens have") missing states"
+            Button { withAnimation { proxy.scrollTo("states", anchor: .top) } } label: {
+                HStack(spacing: Theme.Space.x8) {
+                    StatusDot(style: .filled(Theme.Colors.caution)).frame(width: Theme.Size.checklistIcon)
+                    Text(text).textStyle(Theme.Text.body).frame(maxWidth: .infinity, alignment: .leading)
+                    DesignIcon(glyph: .chevronRight, size: Theme.Size.rowChevron).foregroundStyle(Theme.Colors.secondaryLabel)
+                }
+                .padding(.horizontal, Theme.Space.x12)
+                .frame(height: Theme.Size.checklistRow)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         case .roundTwo(let n):
             Button { showsRoundTwo = true } label: {
                 HStack(spacing: Theme.Space.x8) {
@@ -255,19 +293,21 @@ struct ReviewView: View {
         } else {
             ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
         }
-        ToolbarItem {
-            HStack(spacing: Theme.Space.x2) {
-                modeButton(.preview, glyph: .docLines, label: "Preview")
-                modeButton(.edit, glyph: .code, label: "Edit Markdown")
+        if !isExperience {
+            ToolbarItem {
+                HStack(spacing: Theme.Space.x2) {
+                    modeButton(.preview, glyph: .docLines, label: "Preview")
+                    modeButton(.edit, glyph: .code, label: "Edit Markdown")
+                }
             }
-        }
-        ToolbarItem {
-            HStack(spacing: Theme.Space.x2) {
-                Button { session.showInFinder() } label: { toolbarIcon(.folder) }
-                    .accessibilityLabel("Show in Finder")
-                    .help("Show in Finder")
-                ShareLink(item: spec.folder.appending(path: kind.fileName)) { toolbarIcon(.share) }
-                    .accessibilityLabel("Share")
+            ToolbarItem {
+                HStack(spacing: Theme.Space.x2) {
+                    Button { session.showInFinder() } label: { toolbarIcon(.folder) }
+                        .accessibilityLabel("Show in Finder")
+                        .help("Show in Finder")
+                    ShareLink(item: spec.folder.appending(path: kind.fileName)) { toolbarIcon(.share) }
+                        .accessibilityLabel("Share")
+                }
             }
         }
         if spec.stage == .done {
@@ -290,7 +330,7 @@ struct ReviewView: View {
     @ViewBuilder
     private var status: some View {
         let count = files.firstIndex(of: kind).map { "\($0 + 1) of \(files.count)" } ?? ""
-        let maxWidth = compact ? Theme.Size.statusPillCompact : Theme.Size.statusPillReview
+        let maxWidth = compact ? Theme.Size.statusPillCompact : isExperience ? Theme.Size.statusPillExperience : Theme.Size.statusPillReview
         if let next, !isApproved {
             StatusPill(indicator: .idle, text: compact ? "Idle" : "Idle · \(next.fileName) starts when you approve", count: count, maxWidth: maxWidth)
         } else {

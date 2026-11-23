@@ -393,6 +393,14 @@ enum Theme {
         static let criterionID: CGFloat = 24
         static let checklistRow: CGFloat = 30
         static let checklistIcon: CGFloat = 13
+        /// B5: article max 640; flow node min 96 wide; flow arrow 18; branch rows indented 112 with a 16 pt glyph;
+        /// states table columns 130 (screen) and 64 (criteria); state chips 20 high.
+        static let experienceMaxWidth: CGFloat = 640
+        static let flowNodeMin: CGFloat = 96
+        static let flowArrow: CGFloat = 18
+        static let branchIndent: CGFloat = 112
+        static let screenColumn: CGFloat = 130
+        static let criteriaColumn: CGFloat = 64
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

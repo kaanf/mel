@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4 done; next B5
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5 done; next B6
 Updated: 2026-11-23
 
 ## Done
@@ -95,8 +95,11 @@ Updated: 2026-11-23
   - `QuestionCard` is now internal and takes `onAnswer`. CalloutView removed (unused). New glyphs star, question, docLines, code, share; SVG parser handles C/c.
   - Hidden (V2 §2): review inspector, suggested changes (Accept/Reject) and their checklist row. MVP line text has no "· stories 4 and 5 are P2" (not in the parsed data).
 
+- B5 Review EXPERIENCE.md: a variant of ReviewView (`isExperience`): subtitle "Flows, screens and states", only Approve in the toolbar, article 640, checklist row "n screens have no <state> state" (or "missing states") jumping to the table, no footer line. MarkdownBlocksView(`isExperience:`) draws numbered steps + following bullets as the flow diagram (nodes "Name (ids)", arrows, branch rows "Condition: Target (ids)") and the Screen/States/Criteria table with state chips (`!State` → "State missing", red outline). Debug screen `experience`. One compare pass: matches.
+  - Deviations: hidden inspector (references, agent); branch "goes to Flow 2" form not supported (only "(ids)"); a paragraph under "Screens and states" renders as body text (mock draws its fixed hint as a caption).
+
 ## Next
-- B5 Review EXPERIENCE next, then B6, B7, C1–C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- B6 Analyze next, then B7, C1–C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 

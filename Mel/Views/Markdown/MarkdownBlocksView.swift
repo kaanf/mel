@@ -13,6 +13,8 @@ struct MarkdownBlocksView: View {
     var onConfirm: ((Int) -> Void)?
     var onChange: ((Int, String) -> Void)?
     var onAnswer: ((Int, String) -> Void)?
+    /// EXPERIENCE.md (B5): numbered steps draw as a flow diagram with their branches; the screens table as state chips.
+    var isExperience = false
 
     /// Blocks grouped the way the article draws them: runs of criteria and list items share one list.
     private enum Item {
@@ -29,12 +31,22 @@ struct MarkdownBlocksView: View {
         case mvpLine
         case table(header: [String], rows: [[String]])
         case code(String)
+        case flow(steps: [String], branches: [String])
+        case states(rows: [[String]])
     }
 
     private var items: [Item] {
         var items: [Item] = []
         for block in blocks {
             switch (block, items.last) {
+            case (.orderedItem(_, let text), .flow(let steps, let branches)?) where isExperience && branches.isEmpty:
+                items[items.count - 1] = .flow(steps: steps + [text], branches: [])
+            case (.orderedItem(_, let text), _) where isExperience:
+                items.append(.flow(steps: [text], branches: []))
+            case (.listItem(let text), .flow(let steps, let branches)?) where isExperience:
+                items[items.count - 1] = .flow(steps: steps, branches: branches + [text])
+            case (.table(let header, let rows), _) where isExperience && header.count == 3 && header[1] == "States":
+                items.append(.states(rows: rows))
             case (.criterion(let id, let text), .criteria(let list)?):
                 items[items.count - 1] = .criteria(list + [(id, text)])
             case (.criterion(let id, let text), _):
@@ -182,6 +194,10 @@ struct MarkdownBlocksView: View {
                     GridRow { ForEach(rows[r].indices, id: \.self) { Text(inline(rows[r][$0])).textStyle(Theme.Text.callout) } }
                 }
             }
+        case .flow(let steps, let branches):
+            flowDiagram(steps: steps, branches: branches)
+        case .states(let rows):
+            statesTable(rows).id("states")
         case .code(let text):
             Text(text)
                 .textStyle(Theme.Text.codeBlock)
@@ -189,6 +205,122 @@ struct MarkdownBlocksView: View {
                 .padding(Theme.Space.x10)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.code))
+        }
+    }
+
+    /// "Schedule (1.1, 1.2)" → ("Schedule", "1.1 · 1.2").
+    private static func split(_ text: String) -> (name: String, ids: String?) {
+        guard text.hasSuffix(")"), let open = text.lastIndex(of: "(") else { return (text, nil) }
+        let ids = text[text.index(after: open)..<text.index(before: text.endIndex)]
+            .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: " · ")
+        return (text[..<open].trimmingCharacters(in: .whitespaces), ids)
+    }
+
+    private func flowDiagram(steps: [String], branches: [String]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x10) {
+            FlowLayout(spacing: Theme.Space.x6) {
+                ForEach(steps.indices, id: \.self) { i in
+                    let step = Self.split(steps[i])
+                    HStack(spacing: Theme.Space.x6) {
+                        VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                            Text(step.name).textStyle(Theme.Text.calloutBold)
+                            if let ids = step.ids {
+                                Text(ids).textStyle(Theme.Text.codeMicro).foregroundStyle(Theme.Colors.secondaryLabel)
+                            }
+                        }
+                        .padding(.vertical, Theme.Space.x8)
+                        .padding(.horizontal, Theme.Space.x10)
+                        .frame(minWidth: Theme.Size.flowNodeMin, alignment: .leading)
+                        .surface(Theme.Colors.fill, .outlineLight, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+                        if i < steps.count - 1 {
+                            DesignIcon(glyph: .flowArrow, size: Theme.Size.flowArrow).foregroundStyle(Theme.Colors.secondaryLabel)
+                        }
+                    }
+                }
+            }
+            if !branches.isEmpty {
+                VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                    ForEach(branches.indices, id: \.self) { i in
+                        // "Class is full: Waitlist sheet (1.2)"
+                        let parts = branches[i].split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+                        let target = Self.split(parts.last ?? "")
+                        HStack(spacing: Theme.Space.x8) {
+                            DesignIcon(glyph: .branch, size: Theme.Size.settingsIcon).foregroundStyle(Theme.Colors.secondaryLabel)
+                            if parts.count > 1 {
+                                Text(parts[0]).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
+                            }
+                            Text(target.name)
+                                .textStyle(Theme.Text.calloutBold)
+                                .padding(.vertical, Theme.Space.x3)
+                                .padding(.horizontal, Theme.Space.x8)
+                                .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.code))
+                            if let ids = target.ids {
+                                Text(ids).textStyle(Theme.Text.codeMicro).foregroundStyle(Theme.Colors.secondaryLabel)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+                .padding(.leading, Theme.Size.branchIndent)
+            }
+        }
+        .padding(Theme.Space.x16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .surface(.clear, .outlineCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    /// Screens and states: a `!` state is missing and drawn with a red outline.
+    private func statesTable(_ rows: [[String]]) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: Theme.Space.x10) {
+                Text("Screen").frame(width: Theme.Size.screenColumn, alignment: .leading)
+                Text("States").frame(maxWidth: .infinity, alignment: .leading)
+                Text("Criteria").frame(width: Theme.Size.criteriaColumn, alignment: .trailing)
+            }
+            .textStyle(Theme.Text.captionBold)
+            .foregroundStyle(Theme.Colors.secondaryLabel)
+            .padding(.vertical, Theme.Space.x8)
+            .padding(.horizontal, Theme.Space.x12)
+            .overlay(alignment: .bottom) { Rectangle().fill(Theme.Colors.separator).frame(height: Theme.Size.hairline) }
+            ForEach(rows.indices, id: \.self) { r in
+                let row = rows[r] + Array(repeating: "", count: max(0, 3 - rows[r].count))
+                HStack(spacing: Theme.Space.x10) {
+                    Text(row[0]).textStyle(Theme.Text.bodyMedium).frame(width: Theme.Size.screenColumn, alignment: .leading)
+                    FlowLayout(spacing: Theme.Space.x4) {
+                        ForEach(row[1].split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }, id: \.self) { state in
+                            stateChip(state)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(row[2].replacingOccurrences(of: ",", with: ""))
+                        .textStyle(Theme.Text.codeCaption)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .frame(width: Theme.Size.criteriaColumn, alignment: .trailing)
+                }
+                .padding(.vertical, Theme.Space.x8)
+                .padding(.horizontal, Theme.Space.x12)
+                .overlay(alignment: .bottom) { Rectangle().fill(Theme.Colors.separatorFaint).frame(height: Theme.Size.hairline) }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .surface(.clear, .outlineCard, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+    }
+
+    @ViewBuilder
+    private func stateChip(_ state: String) -> some View {
+        if state.hasPrefix("!") {
+            Text("\(state.dropFirst()) missing")
+                .textStyle(Theme.Text.captionBold)
+                .foregroundStyle(Theme.Colors.cautionText)
+                .padding(.horizontal, Theme.Space.x8)
+                .frame(height: Theme.Size.badge)
+                .surface(Theme.Colors.background, .missingBadge, in: Capsule())
+        } else {
+            Text(state)
+                .textStyle(Theme.Text.caption)
+                .padding(.horizontal, Theme.Space.x8)
+                .frame(height: Theme.Size.badge)
+                .background(Theme.Colors.chipFill, in: Capsule())
         }
     }
 
@@ -279,7 +411,8 @@ extension DocSummary {
         switch kind {
         case .product: "Problem, users and scope."
         case .requirements: "\(count(stories, "story", "stories")) (\(mvpStories) in the MVP), \(count(criteria, "acceptance criterion", "acceptance criteria")), \(count(quality, "quality requirement", "quality requirements"))."
-        case .experience, .architecture, .spec: "\(count(sections, "section", "sections"))."
+        case .experience: "\(count(flows, "flow", "flows")), \(count(screens, "screen", "screens"))."
+        case .architecture, .spec: "\(count(sections, "section", "sections"))."
         case .tasks: "\(count(tasks, "task", "tasks")), each linked to criteria."
         }
     }

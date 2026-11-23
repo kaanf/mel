@@ -3,7 +3,7 @@ import SwiftUI
 /// Line icons drawn in design/v2 that have no matching SF Symbol, stroked from the design's own SVG path data.
 struct DesignIcon: View {
     nonisolated enum Glyph {
-        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector, stop, lock, bell, star, question, docLines, code, share
+        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector, stop, lock, bell, star, question, docLines, code, share, flowArrow, branch
 
         /// SVG `d` attribute, as written in the `.dc.html` (circles written as two arcs).
         var path: String {
@@ -20,6 +20,8 @@ struct DesignIcon: View {
             case .docLines: "M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5zM9.5 1.5V5H13M5.5 8h5M5.5 10.5h3.5"
             case .code: "M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5"
             case .share: "M8 1.75v8M5 4.5l3-2.75 3 2.75M5.5 7H4a1.25 1.25 0 0 0-1.25 1.25v4.5A1.25 1.25 0 0 0 4 14h8a1.25 1.25 0 0 0 1.25-1.25v-4.5A1.25 1.25 0 0 0 12 7h-1.5"
+            case .flowArrow: "M1 5h15M12 1.5L16 5l-4 3.5"
+            case .branch: "M1 1v5h12M10 3l3 3-3 3"
             case .draftNow: "M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"
             case .inspector: "M3.75 2.75H12.25A2 2 0 0 1 14.25 4.75V11.25A2 2 0 0 1 12.25 13.25H3.75A2 2 0 0 1 1.75 11.25V4.75A2 2 0 0 1 3.75 2.75ZM10 2.75V13.25"
             case .plus: "M8 3v10M3 8h10"
@@ -41,7 +43,7 @@ struct DesignIcon: View {
         /// SVG stroke-width as drawn.
         var lineWidth: CGFloat {
             switch self {
-            case .house, .folder, .doc, .gear, .inspector, .question, .docLines, .code, .share: 1.4
+            case .house, .folder, .doc, .gear, .inspector, .question, .docLines, .code, .share, .flowArrow, .branch: 1.4
             case .chevronDown, .check: 2
             case .chevronRight, .arrowRight: 2.2
             case .plus, .terminal, .popUp, .stop, .lock: 1.6
@@ -52,8 +54,15 @@ struct DesignIcon: View {
             }
         }
 
-        /// SVG viewBox (16 × 16, except the pop-up arrows: 10 × 14).
-        var viewBox: CGSize { self == .popUp ? CGSize(width: 10, height: 14) : CGSize(width: 16, height: 16) }
+        /// SVG viewBox (16 × 16, except the pop-up arrows 10 × 14 and B5's flow arrow 18 × 10 and branch 16 × 12).
+        var viewBox: CGSize {
+            switch self {
+            case .popUp: CGSize(width: 10, height: 14)
+            case .flowArrow: CGSize(width: 18, height: 10)
+            case .branch: CGSize(width: 16, height: 12)
+            default: CGSize(width: 16, height: 16)
+            }
+        }
     }
 
     let glyph: Glyph
