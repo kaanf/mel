@@ -14,9 +14,6 @@ import MelSystem
     private(set) var lastError: String?
     private(set) var conflict: DocKind?
 
-    /// Posts the usage-limit reset notification; tests replace it.
-    @ObservationIgnored var notify: (_ title: String, _ body: String, _ at: Date) -> Void = { Notifier.post(title: $0, body: $1, at: $2) }
-
     @ObservationIgnored private weak var app: AppState?
     @ObservationIgnored private let store: SpecStore?
     @ObservationIgnored private var watcher: FileWatcher?
@@ -56,13 +53,14 @@ import MelSystem
         }
     }
 
-    private init(spec: Spec, documents: [DocKind: String], liveText: String, activity: [ActivityLine], isRunning: Bool, lastError: String?) {
+    private init(spec: Spec, documents: [DocKind: String], liveText: String, activity: [ActivityLine], isRunning: Bool, lastError: String?, conflict: DocKind?) {
         self.spec = spec
         self.documents = documents
         self.liveText = liveText
         self.activity = activity
         self.isRunning = isRunning
         self.lastError = lastError
+        self.conflict = conflict
         self.store = nil
     }
 
@@ -138,6 +136,7 @@ import MelSystem
             break
         case .stopped(let reason):
             lastError = Self.message(reason)
+            app?.notify("\(spec.name) stopped", Self.message(reason), nil)
         }
     }
 
@@ -160,7 +159,7 @@ import MelSystem
     func resume() async {
         guard case .stopped(let kind, let reason) = spec.stage else { return }
         if case .usageLimit(let resetsAt?) = reason, resetsAt > .now {
-            notify("\(spec.name) can continue", "Your Claude usage limit has reset. Open Mel and press Resume to finish \(kind.fileName).", resetsAt)
+            app?.notify("\(spec.name) can continue", "Your Claude usage limit has reset. Open Mel and press Resume to finish \(kind.fileName).", resetsAt)
             try? await Task.sleep(for: .seconds(resetsAt.timeIntervalSinceNow))
             guard spec.stage == .stopped(kind, reason) else { return }
         }
@@ -199,11 +198,13 @@ import MelSystem
             documents[kind] = final
             write(final, for: kind)
             spec.apply(.draftFinished)
+            app?.notify("\(kind.fileName) is ready for review", spec.name, nil)
         case .stopped(let reason):
             let text = DraftText.file(fromReply: reply, kind: kind)
             documents[kind] = text
             write(text, for: kind)
             spec.apply(.draftStopped(reason))
+            if reason != .user { app?.notify("\(spec.name) stopped", Self.message(reason), nil) }
         case .refused:
             spec.apply(.draftStopped(.user))
         }
@@ -243,6 +244,7 @@ import MelSystem
             lastError = "Claude Code isn't ready. Check Settings."
             return .refused
         }
+        app.requestNotificationsOnce()
         let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession)
         app.runningSpecID = spec.id
         self.runner = runner
@@ -378,8 +380,7 @@ import MelSystem
     func finish(commitToGit: Bool) throws {
         guard commitToGit else { return }
         if !isGitRepository { try Git.initRepository(projectFolder) }
-        let folder = spec.folder.lastPathComponent
-        try Git.commit(paths: DocKind.allCases.map { "\(folder)/\($0.fileName)" }, message: "Add spec for \(spec.name)", in: projectFolder)
+        try Git.commit(paths: Git.specPaths, message: "Add spec for \(spec.name)", in: projectFolder)
     }
 
     var canCommit: Bool { Git.isAvailable }
@@ -420,7 +421,7 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil) -> SpecSession {
-        SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError)
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil) -> SpecSession {
+        SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict)
     }
 }

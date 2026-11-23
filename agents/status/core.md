@@ -18,6 +18,9 @@ Updated: 2026-11-23
 - 4.2–4.5, 4.8 (2567564). `SpecSession` is real: Discovery turns (`DiscoveryTurn.decode`, unreadable reply → `lastError` + `retry()`), Draft Now (open question → "You decide", uncovered topics → decide list), drafting (preview 10/s, file every 500 ms, plan line stripped, final trim + newline), review (`save` debounced 500 ms, confirm/change assumption, approve blocked by assumptions then drafts the next file, Keep Mine / Use File), recovery (`stop`, `resume` truncates to the last complete `##` and continues with `--resume`; an unknown session redrafts from scratch; usage limit with future `resetsAt` notifies and waits), `finishByHand`, one run at a time via `runningSpecID`. `AppState` restores the library (missing → `missingFolders`; a spec saved mid-draft loads as stopped), caches sessions, `createSpec`, `locate`, `removeMissing`, `removeFromLibrary`, `scanForAgent`, `signIn`. Also real: `finish(commitToGit:)`, `showInFinder`, `openStartCommandInTerminal`, `updateIdea`.
 - Pure helpers in MelSpec: `DiscoveryTurn`, `Spec.answersText/coverageText/decideText`, `DraftText` (plan strip, truncate, assumption edits). The "Done when" test (`MelTests/Session/SpecSessionTests`) drives idea → 4 approved files with a fake `AgentRunning`, including stop and resume. Full suite green 3 runs in a row.
 
+- Flaky SpecSessionTests fixed: the crash report showed `FileWatcher` was retained during its own deinit. The FSEvents callback used `takeUnretainedValue` on the watcher while main dropped the last SpecSession. The stream now owns a separate `Core`, and deinit drains the queue first. Not caused by UserDefaults suites (each test uses a unique one) or by notifications (stubbed).
+- Notifications: `AppState.notify` / `authorizeNotifications` hooks (Notifier by default); permission requested once before the first run; posts on draft finished, failure stop (not user Stop, not sessionNotFound), Discovery failure, usage-limit reset. `finish()` uses `Git.specPaths`. `preview(…, conflict:)`.
+
 ## In progress
 - (nothing)
 
@@ -41,9 +44,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Wave 2 ready to merge: 2567564 (+ status commit).
-- Not done, needs a decision: REQ 5.8 "notify when a file finishes if Mel isn't frontmost". Session can't check frontmost without AppKit. Either Notifier gets an `isAppActive` check, or MelApp tells AppState. Also: `Notifier.post` is still a platform stub (fatalError); resume after a usage limit calls it.
-- Stubs ready ed94bba (merged?). Note: adding `StopReason.sessionNotFound` broke the exhaustive switch in ui's `Mel/Views/Failure/FailureSheet.swift`; that commit adds `.sessionNotFound` to the `.user` case (one line) so main compiles. Tell ui.
+- Ready to merge: fix batch on top of main (1fad575): FileWatcher deinit race (the flaky 0.000 s SpecSessionTests), notification permission + REQ 5.8 posts, `preview(conflict:)`. Full `xcodebuild … test` green 5 runs in a row after rebase.
 
 ## Questions for the user
 - (none)
