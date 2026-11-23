@@ -28,7 +28,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- 5.1 merged. Done unless the app icon arrives; then set ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon on the Mel target (Debug and Release) in `chore(core): app icon setting (5.2)`.
+- Nothing planned. 5.2 app icon setting done (b54d893).
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -46,7 +46,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none; 5.1 merged, tail fix passed to platform)
+- Ready to merge: b54d893 sets ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon (Mel, Debug and Release). Builds and tests green without ui's asset catalog, so merge order doesn't matter.
 
 ## Questions for the user
 - (none)
