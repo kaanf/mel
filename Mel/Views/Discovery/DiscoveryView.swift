@@ -139,26 +139,31 @@ private struct AnsweredList: View {
         GroupBox("Answered") {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(session.answeredQuestions) { question in
-                    Menu {
-                        ForEach(question.options.indices, id: \.self) { index in
-                            Button(question.options[index].label) { change(question, to: .option(index, note: nil)) }
+                    if question.options.isEmpty {
+                        TextAnswerRow(question: question, text: answerText(question)) { change(question, to: $0) }
+                            .disabled(session.isRunning)
+                    } else {
+                        Menu {
+                            ForEach(question.options.indices, id: \.self) { index in
+                                Button(question.options[index].label) { change(question, to: .option(index, note: nil)) }
+                            }
+                            Divider()
+                            Button("You Decide") { change(question, to: .agentDecides) }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(question.title)
+                                    .foregroundStyle(.secondary)
+                                Text(answerText(question))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(.rect)
                         }
-                        Divider()
-                        Button("You Decide") { change(question, to: .agentDecides) }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(question.title)
-                                .foregroundStyle(.secondary)
-                            Text(answerText(question))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(.rect)
+                        .menuStyle(.button)
+                        .buttonStyle(.plain)
+                        .menuIndicator(.hidden)
+                        .help("Change this answer")
+                        .disabled(session.isRunning)
                     }
-                    .menuStyle(.button)
-                    .buttonStyle(.plain)
-                    .menuIndicator(.hidden)
-                    .help("Change this answer")
-                    .disabled(session.isRunning)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -174,10 +179,63 @@ private struct AnsweredList: View {
         case .option(let index, let note):
             let label = question.options.indices.contains(index) ? question.options[index].label : "Option \(index + 1)"
             return note.map { "\(label) · \($0)" } ?? label
-        case .agentDecides: return "You decide"
         case .text(let text): return text
+        case .agentDecides: return question.options.isEmpty ? "Skipped · the agent decides" : "You decide"
         case nil: return ""
         }
+    }
+}
+
+/// Answered open question: click to edit the text; saving it empty skips the question.
+private struct TextAnswerRow: View {
+    let question: Question
+    let text: String
+    let change: (Answer) -> Void
+    @State private var editing = false
+    @State private var draft = ""
+
+    var body: some View {
+        Button {
+            if case .text(let text) = question.answer { draft = text } else { draft = "" }
+            editing = true
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(question.title)
+                    .foregroundStyle(.secondary)
+                Text(text)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help("Change this answer")
+        .popover(isPresented: $editing, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(question.title).font(.headline)
+                TextField("Your answer", text: $draft, axis: .vertical)
+                    .lineLimit(3...8)
+                    .onSubmit(save)
+                HStack {
+                    Text("Leave empty to let the agent decide.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Cancel") { editing = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Save", action: save)
+                        .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(16)
+            .frame(width: 400)
+        }
+    }
+
+    private func save() {
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let answer: Answer = trimmed.isEmpty ? .agentDecides : .text(trimmed)
+        editing = false
+        if answer != question.answer { change(answer) }
     }
 }
 
@@ -187,6 +245,7 @@ private struct QuestionCard: View {
     let number: Int
     @State private var choice: Int?
     @State private var note = ""
+    @State private var text = ""
     @FocusState private var cardFocused: Bool
     @FocusState private var noteFocused: Bool
 
@@ -212,51 +271,88 @@ private struct QuestionCard: View {
                     .font(.title3.bold())
                 Text(question.why)
                     .foregroundStyle(.secondary)
-                VStack(spacing: 2) {
-                    ForEach(question.options.indices, id: \.self) { index in
-                        let option = question.options[index]
-                        RadioRow(label: option.label, note: option.note, suggested: option.suggested, keyHint: "\(index + 1)", isSelected: choice == index) {
-                            choice = index
-                        }
-                    }
-                    RadioRow(
-                        label: "You decide",
-                        note: "The agent picks the best option and marks it as an assumption",
-                        keyHint: "\(question.options.count + 1)",
-                        isSelected: choice == question.options.count
-                    ) {
-                        choice = question.options.count
-                    }
-                }
-                TextField("Note for the agent (optional)", text: $note)
-                    .focused($noteFocused)
-                HStack {
-                    Text("Press 1 to \(question.options.count + 1) to choose. Answers can be changed later.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Continue", action: submit)
-                        .keyboardShortcut(.defaultAction)
-                        .disabled(choice == nil || session.isRunning)
+                if question.options.isEmpty {
+                    openAnswer
+                } else {
+                    optionAnswer
                 }
             }
             .padding(4)
         }
-        // Digits pick an option unless the note field is taking text; ↩ is Continue (default action).
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Question \(number)")
         .focusable()
         .focusEffectDisabled()
         .focused($cardFocused)
-        .onAppear { cardFocused = true }
+        .onAppear {
+            if question.options.isEmpty { noteFocused = true } else { cardFocused = true }
+        }
+        // Digits pick an option unless a text field is taking text; ↩ is Continue (default action).
         .onKeyPress(characters: .decimalDigits) { press in
-            guard !noteFocused, let digit = Int(press.characters), (1...question.options.count + 1).contains(digit) else { return .ignored }
+            guard !question.options.isEmpty, !noteFocused, let digit = Int(press.characters), (1...question.options.count + 1).contains(digit) else { return .ignored }
             choice = digit - 1
             return .handled
         }
     }
 
+    private var trimmedText: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// Open question: multi-line answer (↩ continues, ⌥↩ adds a line), or Skip.
+    @ViewBuilder
+    private var openAnswer: some View {
+        TextField("Your answer", text: $text, axis: .vertical)
+            .lineLimit(3...8)
+            .focused($noteFocused)
+            .onSubmit { if !trimmedText.isEmpty && !session.isRunning { submit() } }
+        HStack {
+            Text("Skip lets the agent decide. Answers can be changed later.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button("Skip") { Task { await session.answer(.agentDecides) } }
+                .disabled(session.isRunning)
+            Button("Continue", action: submit)
+                .keyboardShortcut(.defaultAction)
+                .disabled(trimmedText.isEmpty || session.isRunning)
+        }
+    }
+
+    @ViewBuilder
+    private var optionAnswer: some View {
+        VStack(spacing: 2) {
+            ForEach(question.options.indices, id: \.self) { index in
+                let option = question.options[index]
+                RadioRow(label: option.label, note: option.note, suggested: option.suggested, keyHint: "\(index + 1)", isSelected: choice == index) {
+                    choice = index
+                }
+            }
+            RadioRow(
+                label: "You decide",
+                note: "The agent picks the best option and marks it as an assumption",
+                keyHint: "\(question.options.count + 1)",
+                isSelected: choice == question.options.count
+            ) {
+                choice = question.options.count
+            }
+        }
+        TextField("Note for the agent (optional)", text: $note)
+            .focused($noteFocused)
+        HStack {
+            Text("Press 1 to \(question.options.count + 1) to choose. Answers can be changed later.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button("Continue", action: submit)
+                .keyboardShortcut(.defaultAction)
+                .disabled(choice == nil || session.isRunning)
+        }
+    }
+
     private func submit() {
+        if question.options.isEmpty {
+            Task { await session.answer(.text(trimmedText)) }
+            return
+        }
         guard let choice else { return }
         let answer: Answer = choice == question.options.count
             ? .agentDecides
@@ -268,10 +364,15 @@ private struct QuestionCard: View {
 private struct DiscoveryInspector: View {
     let spec: Spec
 
+    /// Phases in file order, only those with coverage items.
+    private var phases: [DocKind] { DocKind.allCases.filter { kind in spec.coverage.contains { $0.phase == kind } } }
+
     var body: some View {
         Form {
-            Section {
-                ForEach(spec.coverage, id: \.label) { item in
+            ForEach(phases, id: \.self) { phase in
+                let items = spec.coverage.filter { $0.phase == phase }
+                Section {
+                    ForEach(items, id: \.label) { item in
                     Label {
                         Text(item.label)
                     } icon: {
@@ -282,11 +383,19 @@ private struct DiscoveryInspector: View {
                         }
                     }
                     .accessibilityValue(item.state == .covered ? "Covered" : item.state == .asking ? "Asking" : "Not yet")
+                    }
+                } header: {
+                    HStack {
+                        Text(phase.title)
+                        Spacer()
+                        Text("\(items.count { $0.state == .covered }) of \(items.count)")
+                            .monospacedDigit()
+                    }
+                } footer: {
+                    if phase == phases.last {
+                        Text("Questions continue until every item is covered.")
+                    }
                 }
-            } header: {
-                Text("Understanding \(spec.coverage.count { $0.state == .covered }) of \(spec.coverage.count)")
-            } footer: {
-                Text("Questions continue until every item is covered.")
             }
             Section {
                 LabeledContent("Agent", value: "Claude Code · Spec mode")
@@ -303,6 +412,19 @@ private struct DiscoveryInspector: View {
         DiscoveryView(session: PreviewData.session(PreviewData.discovery), showInspector: $showInspector)
     }
     .frame(width: 1000, height: 800)
+}
+
+#Preview("Open Question") {
+    @Previewable @State var showInspector = true
+    NavigationStack {
+        DiscoveryView(session: PreviewData.session(PreviewData.discoveryOpen), showInspector: $showInspector)
+    }
+    .frame(width: 1000, height: 900)
+}
+
+#Preview("Inspector") {
+    DiscoveryInspector(spec: PreviewData.discovery)
+        .frame(width: 260, height: 600)
 }
 
 #Preview("Edit Idea") {
