@@ -64,35 +64,35 @@ Record mapping:
 
 ## Stage protocols
 
-Two kinds of stage output. Every run uses the same read-only invocation above; only the prompt changes. Fixtures for every shape below are in `MelKit/Tests/MelAgentTests/Fixtures/` (recorded 2026-11-23 on 2.1.311 with the provisional prompts in [research/v2-prompts/](research/v2-prompts/); re-record with `record.py` there when core's prompts land).
+Two kinds of stage output. Every run uses the same read-only invocation above; only the prompt changes. Fixtures for every shape below are in `MelKit/Tests/MelAgentTests/Fixtures/` (recorded 2026-11-23 on 2.1.311 with core's prompts in `MelKit/Sources/MelSpec/Prompts/`; [research/v2-prompts/](research/v2-prompts/) has the inputs and scripts to re-record).
 
 ### Structured (JSON) stages
 
-The agent returns one JSON object as the final `result` text; Mel decodes it. No schema flag: ask for "one JSON object and nothing else". Verified: all recorded runs returned bare JSON (no code fence). If decoding fails, show the error with a Retry button.
+The agent returns one JSON object as the final `result` text; Mel decodes it. No schema flag: ask for "one JSON object and nothing else". Verified: the model sometimes wraps the object in a ```json fence (the analyze recording), so decoders take the outermost `{…}`. If decoding fails, show the error with a Retry button.
 
 | Run | Screen | Prompt gets | Returns | Decoder | Fixture | Time |
 |---|---|---|---|---|---|---|
-| Project context | A3 | repo (agent reads it), new-project flag | `{"product", "tech", "structure", "principles"}`: Markdown of the four `.mel/project/` files | `ProjectContext.decode` | `project-context` | ~23 s, 8 turns |
-| Intake | B2 | context, idea, size and its files, builds-on, attachment paths, topics, question count | `{"coverage": [CoverageItem], "questions": [question]}`, all round-1 questions at once | core (intake type) | `intake` | ~24 s |
-| Analyze | B6 | every approved file inline | `AnalyzeResult` JSON | `AnalyzeResult.decode` | `analyze` | ~56 s, 1 turn |
-| Impact | C1 | the edit as a unified diff, the stale files inline | `{"items": [{"kind", "what", "count"}]}` | `ImpactResult.decode` | `impact` | ~4 s |
+| Project context | A3 | repo (agent reads it), `mode` | `{"product", "tech", "structure", "principles"}`: Markdown of the four `.mel/project/` files | `ProjectContext.decode` | `project-context` | ~22 s, 9 turns |
+| Intake | B2 | context, idea, size and its files, builds-on, attachment paths, topics, question count, kinds | `{"coverage": [CoverageItem], "questions": [question]}`, all round-1 questions at once | `Intake.decode` | `intake` | ~16 s |
+| Analyze | B6 | every approved file inline | `AnalyzeResult` JSON | `AnalyzeResult.decode` | `analyze` | ~78 s, 6 turns |
+| Impact | C1 | the changed part before and after, the later files inline | `{"items": [{"kind", "what", "count"}]}` | `ImpactResult.decode` | `impact` | ~7 s |
 
 Field rules:
 
 - **Question** (intake and draft trailer): `{"id", "title", "why", "shapes", "options": [{"label", "note", "suggested"}]}`, the v1 Discovery question. `options: []` is an open question. Exactly one option has `suggested: true`. The app adds "You decide".
-- **Coverage item**: `{"label", "phase", "state"}`; `phase` is a `DocKind` raw value of the spec's size; `state` is `covered`, `asking` or `notYet`.
+- **Coverage item** (intake): `{"label", "state"}`, `state` `covered` or `notYet`.
 - **ProjectContext.structure** has `## Modules` with lines `- Name — path` (em dash), which B1's "Builds on" chips read.
 - **AnalyzeResult**: `stats` (4 × `{"value", "label"}`), `issues` (`{"id", "kind", "location", "text", "actions"}`, `kind` ∈ `contradiction`, `noTask`, `qualityNotCovered`, `scopeCreep`, exactly 2 actions `{"label", "fix", "files": [DocKind]}`, the second primary), `coverage` (`{"id", "text", "screen", "architecture", "task", "test"}`, marks `covered`/`missing`/`conflict`, `screen` is `null` without EXPERIENCE.md).
-- **ImpactResult**: one item per stale file in file order, `kind` a `DocKind` raw value, `"what": "Nothing"` and `"count": "0"` when unaffected.
+- **ImpactResult**: one item per affected later file, `kind` a `DocKind` raw value; unaffected files are left out.
 
-Analyze and Impact pass the files inline and say "do not read other files": one turn, no tool calls. Intake and Project context let the agent read the repo.
+Analyze and Impact pass the files inline but still allow Read/Glob/Grep: the analyze run spent 6 turns reading the repo (~78 s, against ~56 s and 1 turn when told not to read). Impact did not read.
 
 ### Streaming Markdown stages (drafting, revise)
 
 The agent outputs only the file's Markdown; Mel shows the text deltas live and saves the final `result`. Two kinds of comment, both stripped before saving:
 
 - **Step markers** `<!-- mel:step N -->` on their own line, N counting from 1, before each step of the file kind's fixed checklist (`DocKind.draftSteps`, listed in the prompt). B3 moves the checklist to the highest N seen. Verified: all 7 markers arrive in order, but two can come back to back (steps 2 and 3 written together), so never assume one marker per section.
-- **Gap questions**: at most one trailing `<!-- mel:questions` + newline + JSON array of up to 3 questions (shape above, `shapes` is the file's kind) + newline + `-->` at the very end. Absent when there are no gaps. They become round-2 questions in B4.
+- **Gap questions**: at most one trailing `<!-- mel:questions` + newline + JSON array of up to 3 questions (shape above; the model may leave out `shapes`, which then defaults to the file's kind) + newline + `-->` at the very end. Absent when there are no gaps. They become round-2 questions in B4.
 
 Markers and the trailer are **split across text deltas** (recorded: `"<!-- mel:"` + `"step 1 -->"`, `"<!-"` + `"- mel:questions\n["`). Strip from the accumulated text, never per delta, and hold back a trailing partial `<!--` from the live preview until it closes.
 
@@ -104,7 +104,7 @@ B1 copies files into `specs/<slug>/.mel/attachments/`; prompts list their paths 
 
 ## Prompts
 
-Prompts are Markdown files in the app bundle (`MelKit/Sources/MelSpec/Prompts/`) with `{{placeholders}}` filled by plain string replacement (`Prompt.build`), owned by core. Every prompt includes the four project context files when they exist. The provisional v2 texts used for the fixtures are in [research/v2-prompts/](research/v2-prompts/): `context.md`, `intake.md`, `draft-requirements.md`, `analyze.md`, `impact.md`.
+Prompts are Markdown files in the app bundle (`MelKit/Sources/MelSpec/Prompts/`) with `{{placeholders}}` filled by plain string replacement (`Prompt.build`), owned by core; the placeholders per prompt are pinned in `PromptTests.placeholdersPerPrompt`. Every prompt includes the four project context files (`ProjectContext.promptText`) when they exist.
 
 Drafting prompts: open questions (`> [!OPEN QUESTION]`) and assumptions (`> [!ASSUMPTION]`) may stay in a file (V2.md §5, OQ #18). With "Let Mel fill small gaps" off, gaps become open questions instead of assumptions. Topics answered "You decide", and topics left at Draft Now, are passed as "decide and mark as assumption".
 

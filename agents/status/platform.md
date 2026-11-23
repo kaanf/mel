@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 6 merged (main 34896c2); standing by for core's v2 prompts
+Wave: 6 follow-ups **ready to merge** (re-recorded fixtures, Git.Repository, branch, fileCount); project-context re-record waits for core's read/sources prompt
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -36,6 +36,10 @@ Updated: 2026-11-23
 ## In progress
 - (nothing)
 
+## Done (Wave 6 follow-ups)
+- Re-recorded project-context, intake, draft-steps, analyze, impact against core's `MelSpec/Prompts/` (`build.py` mirrors `Prompt.build` + helpers; committed inputs reproduce the prompts byte for byte). core's decoders read all five (`V2DecodeTests` green). Provisional prompts deleted.
+- `Git.repositories(in:) -> [Git.Repository]` (url, language from root build files, modified = mtime of index or HEAD, following a worktree's `gitdir:`). `Git.branch(at:)` reads HEAD (detached → nil). `Git.fileCount(at:)` = `git ls-files -z` count, nil when git fails. Tests for all.
+
 ## Done (Wave 6)
 - 1 Fixtures (real `claude` 2.1.311 runs, app's exact flags and env allowlist, paths rewritten to `/tmp/mel-probe`, no secrets): `project-context`, `intake`, `draft-steps`, `analyze`, `impact`, `attachments` (`.jsonl` in MelAgentTests/Fixtures). Recorded with **provisional prompts** in `docs/research/v2-prompts/` because core's v2 prompts don't exist yet; `record.py` there re-records. `V2FixtureTests` checks stream + JSON keys only (core's decoders are stubs).
 - 2 Attachments: Read opens `.log` (numbered text) and `.png` (`image` tool result, described correctly) in `specs/<slug>/.mel/attachments/` under the current read-only flags. Inside the cwd, so no `--add-dir`.
@@ -56,7 +60,7 @@ Updated: 2026-11-23
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- Stand by. When core says its v2 prompts landed: re-record all six v2 fixtures with `docs/research/v2-prompts/record.py` against **core's** prompts (inputs in `v2-prompts/probe/`, copy out of the repo first), check core's parsers decode them (`ProjectContext.decode`, intake, `AnalyzeResult.decode`, `ImpactResult.decode`, marker/trailer stripping), push.
+- When core's project-context prompt with `read`/`sources` is on main: re-record project-context only (`docs/research/v2-prompts/`, README there), check `ProjectContext.decode`, push.
 - When SpecSession uses `Git.specPaths(slug:project:)`: drop the v1 `Git.specPaths` constant and its test.
 - Then Wave 7 real-run check.
 
@@ -74,12 +78,11 @@ Updated: 2026-11-23
 ## Requests to orchestrator
 - (none; Notifier gaps handed to core)
 
-## For core (prompt coordination)
-- Provisional prompts + shapes: `docs/research/v2-prompts/*.md`, AGENT-INTEGRATION.md › Stage protocols. Adopt or replace; tell me and I re-record.
-- Proposed wire shapes: intake `{"coverage": [CoverageItem], "questions": [question]}` (question = v1 Discovery `WireQuestion`); draft trailer `<!-- mel:questions\n[question, …]\n-->` (JSON array, same question shape, so `DiscoveryTurn`'s wire decoder can be reused).
-- Parser facts from `draft-steps`: markers and trailer are split across text deltas (strip from accumulated text, hold back a partial `<!--` in the live preview); two markers can be back to back (steps 2 and 3), so move the checklist to the highest N seen.
-- Analyze/Impact pass files inline + "do not read other files": 1 turn, no tool calls (analyze ~56 s, impact ~4 s).
-- `Git.specPaths` v1 → `Git.specPaths(slug:project:)` at SpecSession.swift:441 when wiring; then I'll drop the v1 constant. `AppState.findRepositories` → `Git.repositories(in: ~/Developer)` off the main actor.
+## For core (from the re-recording with your prompts)
+- Module names: the model wrote `- FocusTimer (executable CLI) — Sources/FocusTimer`, so `modules` gives the B1 chip "FocusTimer (executable CLI)". Suggest the prompt say "name only, no notes", or the parser drop a trailing `( … )`. `V2DecodeTests` pins the current output.
+- Analyze reply came inside a ```json fence; your decoder handles it. It also read the repo for 6 turns (~78 s) although the files are inline; my provisional "Do not read other files" run took 1 turn (~56 s). Consider dropping Read/Glob/Grep from analyze.md (and impact.md) for speed.
+- Draft trailer questions left out `shapes` (your prompt doesn't ask for it); `DraftText.questions` defaults it, fine.
+- Impact leaves out unaffected files, as your prompt says.
 
 ## Questions for the user
 - (none)

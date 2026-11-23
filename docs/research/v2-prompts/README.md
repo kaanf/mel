@@ -1,36 +1,24 @@
-# Provisional v2 prompts
+# Re-recording the v2 fixtures
 
-Written by platform to record the Wave 6 fixtures before core's prompts exist. core owns the real prompts in `MelKit/Sources/MelSpec/Prompts/`; take what helps, then re-record with the final text.
+The v2 fixtures (`MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-{project-context,intake,draft-steps,analyze,impact,attachments}.jsonl`) are real runs of core's prompts in `MelKit/Sources/MelSpec/Prompts/`. `V2FixtureTests` checks the streams, `V2DecodeTests` runs core's decoders over them.
 
-| Prompt | Fixture (`MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-…`) | Placeholders |
-|---|---|---|
-| `context.md` | `project-context.jsonl` | `newProject` |
-| `intake.md` | `intake.jsonl` | `context`, `size`, `files`, `buildsOn`, `idea`, `attachments`, `topics`, `count` |
-| `draft-requirements.md` | `draft-steps.jsonl` | `context`, `idea`, `answers`, `steps` |
-| `analyze.md` | `analyze.jsonl` | `files`, `kinds`, `screenRule` |
-| `impact.md` | `impact.jsonl` | `file`, `diff`, `files`, `kinds` |
+- `probe/`: the probe projects and the inputs. `focus-timer/` is a small Swift package (`TimerCore`, `SessionStore`, `FocusTimer`) with the Feature idea "short and long breaks plus a daily goal". `inputs/` holds the values: `REQUIREMENTS.md` comes from an earlier draft run; `ARCHITECTURE.md` and `TASKS.md` are hand-written with planted issues (`config.json` vs `settings.json`, story 6 without a task, a sound task nothing asks for, Q4 uncovered); `before.md`/`after.md` change the long break from every 4th to every 3rd session.
+- `build.py <probe-copy> <out-dir>`: fills core's templates from `inputs/`, mirroring `Prompt.build` and the MelSpec text helpers. Update it when `PromptTests.placeholdersPerPrompt` changes.
+- `record.py <prompt> <probe-folder> <out.jsonl>`: runs `claude` with `ClaudeCode.arguments`' flags and the env allowlist, and rewrites the probe path to `/tmp/mel-probe`, also inside split `input_json_delta` chunks.
 
-`attachments.jsonl` used a two-line prompt asking for the ERROR line of a `.log` and a description of a `.png`.
-
-The probe project was a small Swift package (FocusTimer: `TimerCore`, `SessionStore`, `FocusTimer` targets) with the Feature idea "short and long breaks plus a daily goal". Analyze and Impact ran on its REQUIREMENTS.md (from the draft run) plus a hand-written ARCHITECTURE.md and TASKS.md with planted issues (`config.json` vs `settings.json`, story 6 without a task, a sound task nothing asks for).
-
-Re-record: `python3 -I record.py <prompt.md> <probe-folder> <out.jsonl> key=value key=@file …`. See [AGENT-INTEGRATION.md](../../AGENT-INTEGRATION.md) › Stage protocols for the shapes.
-
-`probe/` holds everything the recordings used: the two probe folders and `inputs/` (filled placeholder values; `context.txt` is the project-context run's four files joined). **Copy `probe/` out of the Mel repo first** (e.g. into the session scratchpad and `git init` the copy): run inside this repo, Claude Code would also load Mel's own CLAUDE.md from the parent folders. Commands used, from the copy (`R` = this folder):
+**Copy `probe/` out of the Mel repo first** (e.g. into the session scratchpad, then `git init` the `focus-timer` copy). Run inside this repo, Claude Code would also load Mel's own CLAUDE.md from the parent folders.
 
 ```sh
-python3 -I $R/record.py $R/context.md focus-timer out/project-context.jsonl newProject=
-python3 -I $R/record.py $R/intake.md focus-timer out/intake.jsonl context=@inputs/context.txt size=Feature \
-  "files=requirements, architecture, tasks" "buildsOn=TimerCore, SessionStore" idea=@inputs/idea.txt \
-  "attachments=- specs/breaks-and-goal/.mel/attachments/feedback.txt" \
-  "topics=Main flows, Data and storage, Constraints, Milestones" count=3
-python3 -I $R/record.py $R/draft-requirements.md focus-timer out/draft-steps.jsonl context=@inputs/context.txt \
-  idea=@inputs/idea.txt answers=@inputs/answers.txt steps=@inputs/steps.txt
-python3 -I $R/record.py $R/analyze.md focus-timer out/analyze.jsonl files=@inputs/files.txt \
-  "kinds=requirements, architecture, tasks" "screenRule=This spec has no EXPERIENCE.md, so \`screen\` is null."
-python3 -I $R/record.py $R/impact.md focus-timer out/impact.jsonl file=REQUIREMENTS.md diff=@inputs/diff.txt \
-  files=@inputs/stale.txt "kinds=architecture, tasks"
+cp -R $R/probe $W && cd $W && (cd focus-timer && git init -q && git add -A && git commit -qm init)
+python3 -I $R/build.py $W prompts
+python3 -I $R/record.py prompts/project.md focus-timer out/project-context.jsonl
+# put the new reply into inputs/context.json, then rebuild so the other prompts carry it
+python3 -I $R/build.py $W prompts
+python3 -I $R/record.py prompts/intake.md focus-timer out/intake.jsonl
+python3 -I $R/record.py prompts/requirements.md focus-timer out/draft-steps.jsonl
+python3 -I $R/record.py prompts/analyze.md focus-timer out/analyze.jsonl
+python3 -I $R/record.py prompts/impact.md focus-timer out/impact.jsonl
 python3 -I $R/record.py inputs/attach-prompt.md probe-attach out/attachments.jsonl
 ```
 
-With core's prompts the placeholder names change; map them to the same inputs.
+Check new recordings for secrets (`grep -iE 'Users/|private/|sk-ant'`) and `"apiKeySource":"none"` before committing.

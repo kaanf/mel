@@ -1,7 +1,7 @@
-1. Read the project context and your answers
+1. Read the approved files and your answers
 2. Write the stories with acceptance criteria
 3. Set priority P1 to P3 and mark the MVP line
-4. Add quality requirements
+4. Add quality needs: privacy, speed, offline
 5. List edge cases for every P1 story
-6. Mark anything you didn't confirm as an assumption
+6. Mark anything you didn’t confirm as an assumption
 7. Check that every criterion can be tested
