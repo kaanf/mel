@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1 done; next A4x
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1 done (B1 merged 3bb09f8, bottom fixes after); next A4x
 Updated: 2026-11-23
 
 ## Done
@@ -73,16 +73,16 @@ Updated: 2026-11-23
   - MainView shows it full-window while `isShowingNewSpec`; Esc cancels; Add Project… → A2 and Read Repo → A3 run SetupFlow from MainView (`setupStep`) and return to B1; A2 Back returns to B1 when a library exists.
   - Parts: `FlowLayout` (wrapping chips), `DesignSwitchStyle`; B1 tokens in Theme.Size; `TextStyle.naturalHeight`. Debug screens `newSpec`, `newSpecNoContext`, `newSpecQuickFix`, `newSpecProduct`, `newSpecEmpty`; previews for the same five states.
   - Decisions (tell the user): Quick fix fields go into the idea as "Happens now: …" lines (no separate session fields); Paste Log is a small sheet with a text editor (views can't read NSPasteboard); empty name → "Untitled Spec" (no name suggestion yet); "Save to" button chooses the parent (Product) or adds another project folder (Feature/Quick fix); project branch shows only when A3 ran this launch (no persisted branch; ask core if wanted); Link Issue hidden (V2 §2).
-  - Compared at 1280 × 800 against the mock (top 800 pt): within ~1 px after fixes. Known deviations: SwiftUI line breaking avoids one-word last lines ("new screens", "· TASKS" wrap one word earlier than WebKit; no API); SF Mono 10 pt ~3 % wider than WebKit; mock wraps "Save to" onto two lines (mock artifact, no min-width), we keep one line. NOT compared yet: settings box and footer below the fold (scroll events posted to the PID don't reach the background window; next try: a taller crop via a debug window size or reading the rows' frames).
+  - Compared against the mock top (1280 × 800) and bottom (debug `-scrollBottom YES` opens the scroll view at its end; scratchpad `tools/bottom.sh`): within 1–2 px. Fixed in the bottom pass: Save to path was squeezed to nothing, switch knob drew black, CSS min-height excludes padding (project and switch rows are 52 + 16). Known deviations: SwiftUI line breaking avoids one-word last lines ("new screens", "· TASKS" wrap one word earlier; no API); SF Mono 10 pt ~3 % wider than WebKit; mock wraps "Save to" onto two lines (mock artifact), we keep one line, so the path truncates a bit earlier. Quick fix, Product and no-context states checked visually (the mock only renders the Feature state).
   - Idea text area is a TextEditor (multi-line TextField ignores line height); it creates an off-screen 500 × 500 window, so the scratchpad `winid` now picks on-screen windows only.
 
 ## Next
-- Compare B1's lower part (settings box, footer, Quick fix and Product states).
 - A4x (`Native-E4-FirstSpec.dc.html`, own view from B1's parts: centered "New Spec" 44 pt bar, sizes Product/Feature/Quick fix with "Needs a project · Add One", "Not sure how to start? Try one" examples), then B2–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
+- Before saying ready to merge: squash temp/wip commits (orchestrator, 2026-11-23).
 - Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.
 - GUI checks (2026-11-23, worked): select sidebar rows with `set value of attribute "AXSelected" of row N of outline` (outline = UI element 1 of UI element 1 of UI element 1 of UI element 1 of UI element 1 of window 1); System Events `click at` and CGEvent clicks do not select rows. Launch with `-ApplePersistenceIgnoreState YES`. Another agent's `xcodebuild test` starts a test-host Mel with the same debug bundle id and can quit the debug app: check `pgrep -x Mel` count == 1 before each step. Screens: CGWindowList by PID + `screencapture -l`.
 - Earlier: System Events can't tell two "Mel" processes apart (`first process whose unix id is …` + `window 1` still hit /Applications/Mel.app on 2026-11-23). Rule (orchestrator): no System Events / GUI scripting at all while /Applications/Mel.app is running, debug pid or not. Screenshots come from the orchestrator/user. Earlier toolbar screenshots after 15:55 were of the user's app, not the debug build.
