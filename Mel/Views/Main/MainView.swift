@@ -21,6 +21,10 @@ struct MainView: View {
                 .padding(.top, 72)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .ignoresSafeArea()
+        } else if DebugScreen.current == .settings {
+            // `-screen settings`: C4's pane in the window, for comparison with the drawn dialog.
+            SettingsView(updates: PreviewData.updates())
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         } else {
             content
         }

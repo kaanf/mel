@@ -427,6 +427,17 @@ enum Theme {
         static let homeTextWidth: CGFloat = 560
         static let homeStepMin: CGFloat = 140
         static let homeStartMin: CGFloat = 190
+        /// C4: window 640; agent row 48 with a 26 pt tile (radius 6, 14 pt glyph), detail rows 36 indented 48 with a 72 pt label;
+        /// search path rows 26, list footer 24 with 28 pt +/− buttons and 12 pt glyphs.
+        static let settingsWidth: CGFloat = 640
+        static let agentCardRow: CGFloat = 48
+        static let agentCardTile: CGFloat = 26
+        static let agentDetailRow: CGFloat = 36
+        static let agentDetailIndent: CGFloat = 48
+        static let agentDetailLabel: CGFloat = 72
+        static let pathRow: CGFloat = 26
+        static let pathFooter: CGFloat = 24
+        static let pathButton: CGFloat = 28
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

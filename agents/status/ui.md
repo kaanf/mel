@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6, B7, C1, C2, C3 done; next C4
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6, B7, all Wave 6 screens done (A1–A4x, B1–B7, C1–C4); ready to merge
 Updated: 2026-11-23
 
 ## Done
@@ -111,6 +111,8 @@ Updated: 2026-11-23
   - Hidden (V2 §2): Continue now with Codex. System sheet instead of the drawn dialog shadow (Theme note).
 
 - C3 Home (`Views/Main/HomeView.swift`, replaces EmptyLibraryView; MainView shows it when there are no specs): no toolbar row, how-it-works tiles, start cards (Fix a bug / Add a feature "Extend <project>." / Plan a new app → B1 with that size, `MainView.newSpecSize`), New Spec ⌘N. Card meta shows the file count only (time estimates hidden). Debug screen `home`. One compare pass: matches.
+
+- C4 Settings › Agents (`Views/Settings/SettingsView.swift` rewritten): Claude Code card (tile, status, Location + Change…, Account + Open Terminal…), Detection (search path list with selectable rows, +/−, footnote), Updates group (not drawn; same look), Scan Now. Hidden: General/Specs/Advanced tabs, Codex card, per-agent switch (V2 §2), scan-on-launch switch (earlier decision: always scans). Debug screen `settings` draws the pane in the window. One compare pass: matches.
 
 ## Next
 - C4 Settings next; then the full test run and one ready-to-merge message, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
