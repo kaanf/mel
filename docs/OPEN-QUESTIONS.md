@@ -28,4 +28,5 @@ Each has a recommended default that the other docs already assume; change the do
 | 13 | What does the Discovery "Edit…" on the idea do after questions were answered? | Edit the idea; agent re-checks coverage, answers kept | Undefined in the design |
 | 14 | Settings tabs General, Specs, Advanced aren't designed | Use the proposal in UI.md | Needed for M3 3.2 |
 | 15 | Telemetry / crash reporting? | None in MVP | Privacy promise: Mel makes no network calls |
+| 19 | Bundle identifier | `com.kaanf.mel` (placeholder until the Apple Developer account is set up) | Needed in Wave 0 |
 | 16 | Apple Developer account (for Developer ID + notarization) available? | Needed before M5 | Without it the DMG triggers Gatekeeper warnings |

@@ -35,17 +35,21 @@ The app launches the user-installed `claude` CLI, which reads `~/.claude` and ne
 One app target, one test target. Folders, not modules. Split into a package only if build times or reuse demand it.
 
 ```
-Mel.xcodeproj
+Mel.xcodeproj            synchronized folders: adding files never edits the project
 ├── Mel/
-│   ├── App/            MelApp, scenes, AppState
-│   ├── Agent/          ClaudeCode (detect, run, parse), AgentRunner
-│   ├── Spec/           models, pipeline reducer, Markdown parser, prompts
-│   ├── Storage/        spec folder I/O, state.json, library, Git
-│   └── Views/          one folder per screen
+│   ├── App/             MelApp, scenes, commands
+│   ├── Views/           one folder per screen, Components/, Preview/
+│   ├── Session/         AppState, SpecSession
+│   ├── Spec/            models, pipeline reducer, Markdown parser, Prompts/
+│   ├── Storage/         spec folder I/O, state.json, library, file watcher
+│   ├── Agent/           Claude Code adapter, AgentRunner, ShellPath
+│   └── System/          Terminal, Finder, pasteboard, Git, notifications
 ├── MelTests/
-│   └── Fixtures/       recorded Claude Code NDJSON output
+│   └── Fixtures/        recorded Claude Code NDJSON, fake-claude.sh
 └── scripts/release.sh
 ```
+
+Exact types and signatures: [agents/CONTRACTS.md](../agents/CONTRACTS.md).
 
 Rule: `Spec/` stays pure (no I/O, no SwiftUI) so the pipeline is unit-testable.
 
