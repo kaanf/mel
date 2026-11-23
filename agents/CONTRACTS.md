@@ -358,7 +358,7 @@ import Observation
     var isGitRepository: Bool { get }              // false → commit asks before `git init`
     func updateIdea(_ idea: String)                 // "Your Idea › Edit…"
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil) -> SpecSession
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil) -> SpecSession
 }
 ```
 
