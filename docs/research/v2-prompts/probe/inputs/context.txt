@@ -1,0 +1,54 @@
+# Product
+
+FocusTimer is a command-line Pomodoro timer for macOS. It is for one person working at their own Mac. It has no network access and no accounts.
+
+What it does today:
+- `start` runs one 25-minute focus session, waits until it ends, saves it and prints "Done. Take a break."
+- `log` prints today's saved sessions, one line each: the kind and the start time.
+- Any other argument prints `usage: focus start | log`.
+
+Sessions are saved as JSON in `~/Library/Application Support/FocusTimer/`, one file per day.
+
+Not built yet:
+- The `shortBreak` and `longBreak` session kinds exist in the model, but no command uses them.
+- The 25-minute length is fixed in code. There is no configuration.
+- Sessions are only saved when they finish, so a session stopped early is not recorded.
+- The README calls the command `focus`, but the SwiftPM executable target is named `FocusTimer`.
+
+# Tech
+
+- Language: Swift 6.2 (`swift-tools-version: 6.2`), so Swift 6 strict concurrency applies.
+- Platform: macOS 15 or later only.
+- Frameworks: Foundation only. No third-party packages.
+- Tests: Swift Testing (`import Testing`, `@Test`, `#expect`), not XCTest.
+- Storage: one JSON file per day, named `YYYY-MM-DD.json`, in `URL.applicationSupportDirectory/FocusTimer`. Each file holds an array of `Session`. Data is written with `JSONEncoder`/`JSONDecoder` using their default settings.
+- Time: `Duration` for lengths, `Date` for points in time.
+
+Commands:
+- Build: `swift build`
+- Run: `swift run FocusTimer start` or `swift run FocusTimer log`
+- Test: `swift test`
+
+# Structure
+
+## Modules
+- FocusTimer — Sources/FocusTimer
+- TimerCore — Sources/TimerCore
+- SessionStore — Sources/SessionStore
+- TimerCoreTests — Tests/TimerCoreTests
+
+## Notes
+- TimerCore has no dependencies. It defines `Countdown` and `Countdown.Kind` (`focus`, `shortBreak`, `longBreak`).
+- SessionStore depends on TimerCore. It defines `Session` (kind, start, end) and `Store`, which can `append` a session or `load` the sessions for a day.
+- FocusTimer is the executable. It depends on both libraries. `main.swift` reads the command-line arguments, drives the countdown with a `sleep(1)` loop, and creates the `Store` with the real folder.
+- TimerCoreTests tests only TimerCore. SessionStore has no tests yet.
+- Dependencies point one way: FocusTimer → SessionStore → TimerCore. New logic goes in a library target. `main.swift` stays a thin layer of argument parsing and I/O.
+
+# Principles
+
+- Timer logic stays pure: pass in the current time (`now: Date`) instead of reading the clock or sleeping inside TimerCore.
+- Writes are atomic: save files with `.write(to:options: .atomic)`, and never edit a file in place.
+- Storage stays local, with no network and no accounts. Data goes in JSON files in the app's Application Support folder, one file per day.
+- Library code receives what it needs from the caller. For example, `Store` is given its folder, and only `main.swift` uses real system paths.
+- Public model types are `Sendable` value types. Anything that is saved to disk is also `Codable`.
+- Each new piece of library behavior gets a Swift Testing `@Test` that uses fixed dates.

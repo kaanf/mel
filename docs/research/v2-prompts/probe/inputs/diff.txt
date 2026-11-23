@@ -1,0 +1,14 @@
+--- REQUIREMENTS.md
++++ REQUIREMENTS.md
+@@ -27,3 +27,3 @@
+ 
+-## 2. Long break every 4th focus session of the day
++## 2. Long break every 3rd focus session of the day
+ 
+@@ -35,4 +35,4 @@
+ 
+-- 2.1 WHEN a focus session finishes AND the number of finished focus sessions saved for that day (including this one) is a multiple of 4, THE APP SHALL start a long break.
+-- 2.2 WHEN a focus session finishes AND the number of finished focus sessions saved for that day (including this one) is not a multiple of 4, THE APP SHALL start a short break.
++- 2.1 WHEN a focus session finishes AND the number of finished focus sessions saved for that day (including this one) is a multiple of 3, THE APP SHALL start a long break.
++- 2.2 WHEN a focus session finishes AND the number of finished focus sessions saved for that day (including this one) is not a multiple of 3, THE APP SHALL start a short break.
+ - 2.3 WHEN counting focus sessions for the day, THE APP SHALL ignore sessions of kind `shortBreak` and `longBreak`.

@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 6, **ready to merge** (all five platform tasks done, full `xcodebuild … test` green)
+Wave: 6 merged (main 34896c2); standing by for core's v2 prompts
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -56,7 +56,9 @@ Updated: 2026-11-23
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- Wait for merge. Re-record the five fixtures with core's final prompts when they land (`docs/research/v2-prompts/record.py`).
+- Stand by. When core says its v2 prompts landed: re-record all six v2 fixtures with `docs/research/v2-prompts/record.py` against **core's** prompts (inputs in `v2-prompts/probe/`, copy out of the repo first), check core's parsers decode them (`ProjectContext.decode`, intake, `AnalyzeResult.decode`, `ImpactResult.decode`, marker/trailer stripping), push.
+- When SpecSession uses `Git.specPaths(slug:project:)`: drop the v1 `Git.specPaths` constant and its test.
+- Then Wave 7 real-run check.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
