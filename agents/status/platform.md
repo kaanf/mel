@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 4 planned, waiting for the orchestrator's go (Wave 3 merged, install test passed)
+Wave: 4 go received; waiting for the orchestrator's message that core's model + discovery prompt are on main (record from main, not agent/core)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
