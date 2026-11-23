@@ -173,6 +173,27 @@ struct DocSummary { … + mvpStories, quality, openQuestions, flows, screens, mi
 extension URL { var normalizedFolder: URL }            // MelSpec; Project.init and Spec.project use it
 ```
 
+Wave 6 end (core 0e57a16). SPEC-FORMAT.md has every file and JSON reply format; the MVP line is `<!-- MVP line -->`.
+
+```swift
+// MelSpec
+public struct Intake { var coverage: [CoverageItem]; var questions: [Question]
+    static func decode(_ reply: String, size: SpecSize) throws -> Intake }
+extension DraftText {
+    static func step(in reply: String) -> Int                    // highest complete <!-- mel:step N -->
+    static func strippingMarkers(_ text: String) -> String       // also hides a half-streamed <!--
+    static func questions(in reply: String, kind: DocKind) -> [Question]   // trailer, max 3, round .draft
+}
+extension Prompt { cases: project, intake, discovery (v1), product, requirements, experience, architecture, tasks, spec, revise, analyze, impact, continue
+    func build(_ values: [String: String], fillGaps: Bool = true) -> String }
+extension DocKind { var stepsText: String }
+extension SpecSize { var filesText: String; var kindsText: String }
+extension ProjectContext { var promptText: String }
+extension Decision { func replacedBy(in: [Decision]) -> String? }
+// MelStorage
+extension SpecStore { nonisolated var decisionsURL: URL }
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
