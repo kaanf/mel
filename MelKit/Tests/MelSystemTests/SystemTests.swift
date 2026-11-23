@@ -22,6 +22,23 @@ struct SystemActionsTests {
     }
 }
 
+struct NotifierTests {
+    @Test func futureDateSchedulesPastOrNilShowsNow() throws {
+        let reset = Date.now.addingTimeInterval(3600)
+        let trigger = try #require(Notifier.trigger(at: reset))
+        let next = try #require(trigger.nextTriggerDate())
+        #expect(abs(next.timeIntervalSince(reset)) < 1)
+        #expect(!trigger.repeats)
+        #expect(Notifier.trigger(at: .now.addingTimeInterval(-1)) == nil)
+        #expect(Notifier.trigger(at: nil) == nil)
+    }
+
+    @Test func outsideAnAppBundleIsANoOp() async {
+        await Notifier.requestAuthorization()
+        Notifier.post(title: "Requirements is ready", body: "Review it in Mel.")
+    }
+}
+
 @Suite(.enabled(if: Git.isAvailable))
 struct GitTests {
     let folder: URL
@@ -50,6 +67,23 @@ struct GitTests {
 
         #expect(try Git.run(["log", "--format=%s"], in: folder) == "Add spec\n")
         #expect(try Git.run(["ls-files"], in: folder) == "specs/PRODUCT.md\n")
+    }
+
+    @Test func specCommitSkipsMelStateAndRepeatsQuietly() throws {
+        defer { cleanUp() }
+        try Git.initRepository(folder)
+        try Git.run(["config", "user.name", "Mel Tests"], in: folder)
+        try Git.run(["config", "user.email", "tests@example.com"], in: folder)
+        let state = folder.appendingPathComponent("specs/.mel")
+        try FileManager.default.createDirectory(at: state, withIntermediateDirectories: true)
+        try "{}".write(to: state.appendingPathComponent("state.json"), atomically: true, encoding: .utf8)
+        try "# Tasks\n".write(to: folder.appendingPathComponent("specs/TASKS.md"), atomically: true, encoding: .utf8)
+
+        try Git.commit(paths: Git.specPaths, message: "Add spec", in: folder)
+        try Git.commit(paths: Git.specPaths, message: "Again", in: folder)
+
+        #expect(try Git.run(["log", "--format=%s"], in: folder) == "Add spec\n")
+        #expect(try Git.run(["ls-files"], in: folder) == "specs/TASKS.md\n")
     }
 
     @Test func failureCarriesGitOutput() throws {

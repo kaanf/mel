@@ -30,9 +30,14 @@ public enum Git {
         try run(["init", "--quiet"], in: url)
     }
 
-    /// Commits exactly `paths` (relative to `directory`), leaving anything else the user staged alone.
+    /// What the handoff commits (REQ 8.3): the spec files, never Mel's state in `specs/.mel/`.
+    public static let specPaths = ["specs", ":(exclude)specs/.mel"]
+
+    /// Commits exactly `paths` (relative to `directory`, pathspecs allowed), leaving anything else the user
+    /// staged alone. No-op when they have no changes, so finishing a spec twice doesn't fail.
     public static func commit(paths: [String], message: String, in directory: URL) throws {
         try run(["add", "--"] + paths, in: directory)
+        guard (try? run(["diff", "--cached", "--quiet", "--"] + paths, in: directory)) == nil else { return }
         try run(["commit", "--quiet", "-m", message, "--"] + paths, in: directory)
     }
 
