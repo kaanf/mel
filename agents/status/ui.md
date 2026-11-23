@@ -16,6 +16,7 @@ Updated: 2026-11-23
 - Wave 1: Then: add `#Preview`s for every Wave 0 component, 0.2 MelApp, 3.1–3.10 screens.
 
 ## Notes
+- Grouped rows (ROADMAP's "grouped row" component): no custom component. Use system `Form` with `.formStyle(.grouped)` + `LabeledContent` / `Section` (Settings › Agents, Welcome agent row, New Spec). ProgressStrip came from the Wave 0 list in agents/ui.md.
 - Components take plain values (strings, Int index, Bool), no model types, so they stay reusable; screens map `Question`/`DocStatus` to them.
 - StatusBadge.Status is its own enum (ready/checking/needsYou/stopped/locked/approved); optional `title` overrides the label (e.g. "Not signed in", "Queued").
 - ProgressStrip `value: nil` = indeterminate pulse; pulse and StatusBadge checking pulse are off with Reduce Motion.
