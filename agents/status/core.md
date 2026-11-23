@@ -30,7 +30,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Nothing planned. Run the full `xcodebuild … test` once the orchestrator says the install test is over.
+- Nothing planned; waiting. Full test runs allowed again (Debug is com.kaanf.mel.debug). Never touch com.kaanf.mel defaults or /Applications/Mel.app.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -48,7 +48,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Ready to merge: 5cdeebf (Debug bundle id). Build only; tests not run yet, at your request.
+- (none; Debug bundle id merged in 64efe09)
 
 ## Questions for the user
 - (none)
