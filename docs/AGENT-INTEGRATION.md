@@ -64,7 +64,7 @@ Two kinds of stage output.
 
 Used for Discovery (and later "Ask for changes"). The agent must return one JSON object. Use the CLI's schema flag if M1 1.1 confirms it exists; otherwise ask for JSON only and decode the final result text. If decoding fails, show the error with a Retry button. No automatic retry loop.
 
-Discovery turn request: idea, answers so far, coverage list, `fillGaps`, max questions (default 5). Response:
+Discovery turn request: idea, answers so far, coverage list. There is no question limit: the agent keeps asking until every coverage topic is covered, and may add topics when an answer reveals a new one. To keep it short, the prompt tells it to ask only questions whose answer changes the spec, to combine related points into one question, and to always mark a suggested option. Response:
 
 ```json
 {
@@ -88,7 +88,7 @@ Discovery turn request: idea, answers so far, coverage list, `fillGaps`, max que
 }
 ```
 
-The app always appends the "Not sure yet" option itself. `done: true` with no `next` ends Discovery. The first turn also proposes the coverage list from the idea.
+The app always appends the "You decide" option itself. `done: true` with no `next` ends Discovery. The first turn also proposes the coverage list from the idea.
 
 Later, ask-for-changes response: `{ "reply": "…", "suggestions": [{ "find": "…", "replace": "…" }] }` (see SPEC-FORMAT.md › Suggestions).
 
@@ -100,12 +100,11 @@ Used for drafting the four files. The agent outputs only the file's Markdown. Fo
 
 Prompts are Markdown files in the app bundle (`Mel/Spec/Prompts/`: `discovery.md`, `product.md`, `requirements.md`, `design.md`, `tasks.md`, `continue.md`) with `{{placeholders}}` filled by plain string replacement. Each embeds the relevant section of [SPEC-FORMAT.md](SPEC-FORMAT.md).
 
-Fill-gaps policy text:
+Completeness rule, in every drafting prompt:
 
-- on: "When information is missing and a reasonable default exists, use it and wrap it in a `> [!ASSUMPTION]` callout."
-- off: "When information is missing, do not invent it; add a `> [!OPEN QUESTION]` callout."
+- "The file must be complete. Never write open questions, TBD, TODO or placeholders. When information is missing, choose the best option and wrap that decision in a `> [!ASSUMPTION]` callout."
 
-Topics the user answered "Not sure yet" or "Decide Later" are always written as open questions.
+Topics the user answered "You decide", and topics left when the user clicked Draft Now, are passed to the agent as "decide and mark as assumption".
 
 ## Failure classification
 

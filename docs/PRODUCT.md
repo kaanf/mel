@@ -11,7 +11,7 @@ The agents that could help write it (Claude Code and others) live in the termina
 A native Mac app that runs a guided **idea → spec** pipeline:
 
 1. **Idea** — the user names the project and describes it in plain words.
-2. **Discovery** — the agent asks a few multiple-choice questions (about five) until the important topics are covered or explicitly left open.
+2. **Discovery** — the agent asks multiple-choice questions, as many as the idea needs, until every topic the spec depends on is decided. There is no question limit.
 3. **Draft** — the agent writes PRODUCT.md, then REQUIREMENTS.md, DESIGN.md and TASKS.md, one at a time.
 4. **Review** — the user reads, edits, confirms assumptions and approves each file. The next file stays locked until the previous one is approved.
 5. **Handoff** — four approved Markdown files plus a ready-to-run command that points a coding agent at them.
@@ -32,8 +32,8 @@ These come straight from the design canvas and should drive every decision.
 
 1. **Bring your own agent.** The app has no model and no account. It drives the agent CLI on the Mac with the user's subscription.
 2. **The user owns the file.** During review only the user changes the file; the agent doesn't touch it. User edits are never overwritten.
-3. **Plain Markdown on disk.** The spec is ordinary files in the user's folder, readable by any tool or agent. App metadata lives alongside, never inside, unless it is meaningful to the next agent (assumptions, open questions).
-4. **Nothing is silently invented.** Gaps the agent fills are marked as assumptions. Unanswered questions stay marked as open questions in the file.
+3. **Plain Markdown on disk.** The spec is ordinary files in the user's folder, readable by any tool or agent. App metadata lives alongside, never inside, unless it is meaningful to the next agent (assumptions).
+4. **Complete files, nothing silently invented.** The finished files contain no open questions, TBDs or placeholders. Every decision comes from the user's answers; when the user lets the agent decide (or skips ahead), the agent picks the best option and marks it as an assumption for the user to confirm.
 5. **Never lose work.** Stop, crash, usage limit: whatever is written is saved, approved files are untouched, and the user is offered a way forward.
 6. **Native Mac.** HIG-correct macOS 26 app: sidebar, toolbar, inspector, sheets, keyboard shortcuts, notifications, Finder/Terminal integration.
 
@@ -42,10 +42,10 @@ These come straight from the design canvas and should drive every decision.
 In:
 
 - First-launch detection of Claude Code: found / not signed in / missing; Sign In via Terminal.
-- New Spec sheet: name, idea, "let the agent fill small gaps", save location.
-- Discovery: one question at a time, 1–4 keyboard choice, suggested answer, optional note, Decide Later, Draft Now, coverage checklist.
+- New Spec sheet: name, idea, save location.
+- Discovery: one question at a time, no limit, 1–4 keyboard choice, suggested answer, "You decide" option, optional note, Draft Now, coverage checklist.
 - Drafting with live progress, step list, activity log, live read-only preview, Stop.
-- Review: rendered preview and editable raw Markdown, assumptions (confirm/change), open questions (answer now), Approve (⌘↩).
+- Review: rendered preview and editable raw Markdown, assumptions (confirm/change), Approve (⌘↩).
 - Sequential gating of the four files.
 - Failure recovery: partial result saved; resume later or finish by hand.
 - Handoff: summary, copyable build command, Open in Terminal, optional Git commit, Show in Finder.

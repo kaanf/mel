@@ -10,6 +10,7 @@
 | 7 | Codex in the MVP? | **No.** Claude Code only; adapter protocol kept for later | 2026-11-23 |
 | 4 | Who writes the spec files? | **Mel.** Claude Code runs read-only and streams Markdown; Mel appends it to the file | 2026-11-23 |
 | 17 | Costly canvas features | **Deferred:** Pause, Ask-for-changes + suggestions, Review inspector/History, time estimates, parallel runs | 2026-11-23 |
+| 6 | Discovery question limit / open questions | **No limit; no open questions.** Discovery runs until every topic is covered; files are complete, agent decisions are marked as assumptions | 2026-11-23 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open
@@ -19,7 +20,6 @@ Each has a recommended default that the other docs already assume; change the do
 | # | Question | Recommended default | Why it matters |
 |---|---|---|---|
 | 5 | Language of the app UI and of generated specs? | UI English (as designed); spec language follows the idea's language | Localization (e.g. Turkish) adds a String Catalog task |
-| 6 | Max Discovery questions? | **5**, agent may stop earlier | Canvas shows "2 of 5"; too many questions hurts the non-technical user |
 | 9 | Keep `.mel/` in Git? | **No** (offer `.gitignore` entry) | App state is noise in the repo; the four files are the spec |
 | 10 | Should "Save in" create `<folder>/<slug>/specs` or allow an existing project folder? | Both: if the chosen folder is an existing repo, use `<folder>/specs` | Developers will point it at an existing repo |
 | 11 | Does the Jojo design system linked to the canvas matter for the native app? | **No**, use system components and semantic colors | None of the native screens use Jojo tokens |

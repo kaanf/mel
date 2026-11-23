@@ -75,7 +75,6 @@ Artboard `Native-1-NewSpec`. Sheet over the main window (main window empty state
   - Name: `TextField`
   - Idea: multi-line `TextField(axis: .vertical)` 6 lines, placeholder "What should it do, and for whom?", help "Plain words are fine. Say who uses it and what they do."
   - Agent: read-only "Claude Code" + "Found on this Mac"
-  - (no label) `Toggle(.checkbox)` "Let the agent fill small gaps" + "Each one is marked as an assumption for you to confirm."
   - Save in: folder pop-up (recent folders + "Choose…" → `fileImporter` / `NSOpenPanel` directory) and monospaced resulting path.
 - Footer: help button (?), Cancel (`.cancelAction`), Continue (`.defaultAction`, disabled until valid).
 
@@ -83,15 +82,15 @@ Artboard `Native-1-NewSpec`. Sheet over the main window (main window empty state
 
 Artboard `Native-2-Discovery`.
 
-- Sidebar: spec expanded: Discovery (selected, badge "2 of 5"), PRODUCT.md "Draft", REQUIREMENTS.md "Waiting", DESIGN.md "Queued", TASKS.md "Queued".
-- Toolbar: title "Discovery", subtitle spec name; status "Needs you · Claude Code is waiting for an answer"; "2 of 5"; "Draft Now" button (help tooltip: "Skip the remaining questions. The agent fills gaps and marks each one as an assumption."); inspector toggle.
+- Sidebar: spec expanded: Discovery (selected, badge "3 of 7" = topics covered), PRODUCT.md "Draft", REQUIREMENTS.md "Waiting", DESIGN.md "Queued", TASKS.md "Queued".
+- Toolbar: title "Discovery", subtitle spec name; status "Needs you · Claude Code is waiting for an answer"; "Draft Now" button (help tooltip: "Skip the remaining questions. The agent decides the rest and marks each decision as an assumption."); inspector toggle.
 - Content column (max ~620 pt, centered):
-  - Stepper: Idea ✓ › Questions 2 of 5 › Draft › Review.
+  - Stepper: Idea ✓ › Questions › Draft › Review.
   - "Your Idea" card with idea text + "Edit…".
   - "Answered" list: question → answer, each clickable.
-  - Current question card: "Question 2 of 5" · "Shapes REQUIREMENTS.md"; title; why-text; radio options with note, "Suggested" badge and key hint 1–4; "Note for the agent (optional)" text field.
-  - Footer: "Press 1 to 4 to choose. Answers can be changed later." · "Decide Later" · "Continue ↩" (default).
-- Inspector: "Understanding 3 of 7" checklist (Covered ✓ / Asking ● / Not yet ○), footnote "Questions stop when every item is covered or left open."; Agent "Claude Code · Spec mode"; Folder "specs/".
+  - Current question card: "Question 4" · "Shapes REQUIREMENTS.md"; title; why-text; radio options with note, "Suggested" badge and key hint 1–4, last option "You decide" ("The agent picks the best option and marks it as an assumption"); "Note for the agent (optional)" text field.
+  - Footer: "Press 1 to 4 to choose. Answers can be changed later." · "Continue ↩" (default).
+- Inspector: "Understanding 3 of 7" checklist (Covered ✓ / Asking ● / Not yet ○), footnote "Questions continue until every item is covered."; Agent "Claude Code · Spec mode"; Folder "specs/".
 
 SwiftUI: custom radio rows (`Picker(.radioGroup)` cannot show notes and badges), `.onKeyPress(characters: "1234")`, `.keyboardShortcut(.defaultAction)`.
 
@@ -117,9 +116,9 @@ Artboard `Native-3-Review`.
 - Toolbar: file name; "Saved · your edits are never overwritten"; "Idle · DESIGN.md starts when you approve"; "2 of 4"; segmented Preview / Edit Markdown; Share; Show in Finder; "Approve ⌘↩" prominent. No inspector in the MVP.
 - Document (Preview mode):
   - Title, summary line "5 stories, 14 acceptance criteria. Written from PRODUCT.md and your answers."
-  - "Before you approve" box: 1 assumption to confirm · 1 open question — "You can approve anyway. Open items stay marked in the file so the next agent sees them."
+  - "Before you approve" box: "1 assumption to confirm" — "You can approve anyway. Unconfirmed assumptions stay marked in the file so the next agent sees them."
   - Story blocks: title, user story, numbered criteria with bold EARS keywords.
-  - Assumption callout (Change… / Confirm), Open Question callout ("Left for later", Answer Now…).
+  - Assumption callout (Change… / Confirm).
 - Edit Markdown mode: monospaced editable source (`TextEditor`; `NSTextView` only if large files feel slow).
 
 ## Failure · Agent stopped
@@ -138,7 +137,7 @@ Artboard `Native-Error-Partial`.
 Artboard `Native-4-Done`. Sheet.
 
 - "Spec ready" — "All four files are approved and saved as plain Markdown. Any coding agent can build from them."
-- File list with green checks and summaries (Problem, users, scope · 5 stories, 14 criteria · 6 sections · 11 tasks, each linked to criteria) and "1 open question stays marked in REQUIREMENTS.md · Answer Now…".
+- File list with green checks and summaries (Problem, users, scope · 5 stories, 14 criteria · 6 sections · 11 tasks, each linked to criteria) and, if any, "1 assumption not yet confirmed · Review…".
 - "Start building": "Run this in the project folder. It points the agent at your spec." Command box `claude "Read specs/ and implement TASKS.md, task 1"` + Copy (→ "Copied" 2 s). Link: Open in Terminal.
 - Checkbox "Commit the spec to Git — Creates one commit in yoga-studio-booking so the spec has history."
 - Footer: path · Show in Finder · Done.
@@ -158,4 +157,4 @@ Undesigned tabs (proposal, confirm before building):
 
 ## Copy and tone
 
-Short, plain sentences, no jargon, no exclamation marks. Title Case for buttons and menu items ("Scan Again", "Draft Now", "Answer Now…"). Ellipsis on buttons that open more UI. No time estimates in the MVP.
+Short, plain sentences, no jargon, no exclamation marks. Title Case for buttons and menu items ("Scan Again", "Draft Now", "Review…"). Ellipsis on buttons that open more UI. No time estimates in the MVP.

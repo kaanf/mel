@@ -1,6 +1,6 @@
 # Spec format
 
-The Markdown contract for the files Mel generates. Agents are prompted with this contract, and the app parses it to drive the review UI (counts, assumptions, open questions, links between tasks and criteria). Keep files readable in any Markdown viewer.
+The Markdown contract for the files Mel generates. Agents are prompted with this contract, and the app parses it to drive the review UI (counts, assumptions, links between tasks and criteria). Keep files readable in any Markdown viewer.
 
 ## Folder layout
 
@@ -23,17 +23,16 @@ The spec folder defaults to `<chosen folder>/<project-slug>/specs`, for example 
 
 - One `#` heading per file: `# Product`, `# Requirements`, `# Design`, `# Tasks`.
 - Sections use `##`. Numbered sections (`## 1. Book a class`) are stable IDs.
-- Callouts use GitHub alert syntax with two custom types:
+- Assumptions use GitHub alert syntax with a custom type:
 
 ```markdown
 > [!ASSUMPTION]
 > The waitlist is first come, first served.
-
-> [!OPEN QUESTION]
-> What happens to unused credits when a pack expires?
 ```
 
-  GitHub renders unknown alert types as plain block quotes, which is acceptable. An assumption is removed from the file (the text stays, the callout wrapper goes) when the user confirms it; "Change…" replaces the text and removes the wrapper.
+  GitHub renders the unknown alert type as a plain block quote, which is acceptable. An assumption is a full decision the agent made (because the user chose "You decide", clicked Draft Now, or drafting met an uncovered gap), flagged for confirmation. Confirm removes the callout wrapper and keeps the text; "Change…" replaces the text and removes the wrapper.
+
+- **No open questions.** The files never contain `[!OPEN QUESTION]`, "TBD", "TODO" or placeholders. Every point is decided, either by the user or as an assumption.
 
 - No HTML, no front matter in the four files. Everything the next agent needs is in the prose and callouts.
 

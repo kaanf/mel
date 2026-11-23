@@ -73,7 +73,6 @@ struct Spec: Codable, Identifiable {
     var name: String                 // "Yoga Studio Booking"
     var idea: String
     var folder: URL                  // …/yoga-studio-booking/specs
-    var fillGaps: Bool
     var stage: Stage
     var docs: [DocKind: DocStatus]
     var questions: [Question]
@@ -92,9 +91,9 @@ struct Question: Codable, Identifiable {
     var answer: Answer?
 }
 struct Option: Codable { var label: String; var note: String; var suggested: Bool }
-enum Answer: Codable { case option(Int, note: String?), decideLater }
+enum Answer: Codable { case option(Int, note: String?), agentDecides }
 struct CoverageItem: Codable { var label: String; var state: CoverageState }
-enum CoverageState: String, Codable { case covered, asking, notYet, leftOpen }
+enum CoverageState: String, Codable { case covered, asking, notYet }
 
 enum StopReason: Codable { case user, usageLimit(resetsAt: Date?), signedOut, crashed(String), timeout }
 ```
@@ -134,7 +133,7 @@ review(d) ──Approve──▶ drafting(next d) | done
 - Preview = parsed Markdown rendered with SwiftUI. Edit = `TextEditor` on the raw text (switch to `NSTextView` only if large files feel slow).
 - In-app edits save on change (debounced, atomic).
 - External edits: watch the file (`DispatchSource`). If the in-app editor has no unsaved changes → reload. If it does → ask "Keep Mine / Use File". No merge algorithm.
-- Assumptions and open questions are plain callouts in the file; Confirm / Change / Answer Now are small text edits Mel applies to the file.
+- Assumptions are plain callouts in the file; Confirm / Change are small text edits Mel applies to the file. Files never contain open questions.
 - The activity log during drafting lives in memory only (not persisted).
 - Approve: status → approved. Editing an approved file sets it back to review; nothing else cascades.
 
