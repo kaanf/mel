@@ -345,10 +345,10 @@ import MelSystem
         saveNow(edited, for: kind)
     }
 
-    /// Approves `kind` (blocked while assumptions remain) and starts the next file.
+    /// Approves `kind` (assumptions and open questions may remain) and starts the next file.
     func approve(_ kind: DocKind) async {
         if pendingSaves[kind] != nil { saveNow(documents[kind] ?? "", for: kind) }
-        guard spec.apply(.approve(kind, assumptionsLeft: summary(kind).assumptions)) else { return }
+        guard spec.apply(.approve(kind)) else { return }
         persist()
         if case .drafting(let next) = spec.stage { await draft(next) }
     }

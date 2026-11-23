@@ -43,8 +43,16 @@ public struct Project: Identifiable, Hashable, Sendable {
     public var name: String { folder.lastPathComponent }
 
     public init(folder: URL, isMissing: Bool = false, hasContext: Bool = false) {
-        self.folder = folder
+        self.folder = folder.normalizedFolder
         self.isMissing = isMissing
         self.hasContext = hasContext
+    }
+}
+
+extension URL {
+    /// One form for a folder, so project URLs compare and key dictionaries reliably: standardized,
+    /// symlinks resolved (/tmp and /private/tmp agree), with a trailing slash.
+    public var normalizedFolder: URL {
+        URL(filePath: standardizedFileURL.resolvingSymlinksInPath().path(percentEncoded: false), directoryHint: .isDirectory)
     }
 }

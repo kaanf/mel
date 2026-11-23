@@ -133,9 +133,6 @@ final class EndToEndTests {
         #expect(session.summary(.requirements).stories == 2)
         #expect(session.summary(.requirements).criteria == 2)
 
-        // The assumption blocks Approve until confirmed.
-        await session.approve(.requirements)
-        #expect(session.spec.stage == .review(.requirements))
         session.confirmAssumption(index: 0, in: .requirements)
         await session.approve(.requirements)
         #expect(session.spec.stage == .review(.experience))
@@ -150,13 +147,13 @@ final class EndToEndTests {
         #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
 
         await session.approve(.tasks)
-        #expect(session.spec.stage == .done)
+        #expect(session.spec.stage == .analyze)   // the analyze run is wired in Wave 7
         await session.flush()
         for kind in session.spec.size.files {
             #expect(try text(session, kind) == session.documents[kind])
             #expect(!(try text(session, kind)).contains("[!ASSUMPTION]"))
         }
-        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .done)
+        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .analyze)
         #expect(script.requests.count == 8)
         #expect(script.requests.allSatisfy { $0.workingDirectory == session.spec.folder.deletingLastPathComponent() })
     }

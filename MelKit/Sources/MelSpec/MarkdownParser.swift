@@ -3,27 +3,47 @@ import Foundation
 public enum Block: Hashable, Sendable {
     case heading(level: Int, text: String)
     case paragraph(String)
-    case criterion(id: String, text: String)        // "1.1", EARS text
+    case criterion(id: String, text: String)        // "1.1" or "Q1", EARS text
     case task(id: String, text: String, done: Bool, covers: [String])
     case listItem(String)
+    case orderedItem(number: Int, text: String)      // EXPERIENCE flow steps
     case assumption(index: Int, text: String)        // index = order in file, used by confirm/change
+    case openQuestion(index: Int, text: String)      // `[!OPEN QUESTION]`, counted separately
+    case priority(String, mvp: Bool)                 // story tag line `P1 · MVP`
+    case source(String)                              // `Source: …`
+    case covers([String])                            // flow `Covers: 1.1, 1.2`
+    case mvpLine                                     // `MVP line` marker in REQUIREMENTS
+    case table(header: [String], rows: [[String]])
     case code(String)
 }
 
 public struct DocSummary: Hashable, Sendable {
     public var stories: Int
+    public var mvpStories: Int
     public var criteria: Int
+    public var quality: Int
     public var sections: Int
     public var tasks: Int
     public var assumptions: Int
+    public var openQuestions: Int
+    public var flows: Int
+    public var screens: Int
+    /// Screen states prefixed `!` in EXPERIENCE's table.
+    public var missingStates: Int
     public var uncoveredCriteria: [String]
 
-    public init(stories: Int = 0, criteria: Int = 0, sections: Int = 0, tasks: Int = 0, assumptions: Int = 0, uncoveredCriteria: [String] = []) {
+    public init(stories: Int = 0, mvpStories: Int = 0, criteria: Int = 0, quality: Int = 0, sections: Int = 0, tasks: Int = 0, assumptions: Int = 0, openQuestions: Int = 0, flows: Int = 0, screens: Int = 0, missingStates: Int = 0, uncoveredCriteria: [String] = []) {
         self.stories = stories
+        self.mvpStories = mvpStories
         self.criteria = criteria
+        self.quality = quality
         self.sections = sections
         self.tasks = tasks
         self.assumptions = assumptions
+        self.openQuestions = openQuestions
+        self.flows = flows
+        self.screens = screens
+        self.missingStates = missingStates
         self.uncoveredCriteria = uncoveredCriteria
     }
 }
@@ -35,20 +55,36 @@ public enum MarkdownParser {
         var blocks: [Block] = []
         var paragraph: [Substring] = []
         var code: [Substring]?
-        var assumption: [Substring]?
+        var table: [[String]]?
+        var callout: (open: Bool, lines: [Substring])?
         var assumptionIndex = 0
+        var openIndex = 0
+        // The list item the next indented line continues, and its text so far.
+        var item: String?
 
         func flushParagraph() {
             guard !paragraph.isEmpty else { return }
             blocks.append(.paragraph(paragraph.joined(separator: " ")))
             paragraph = []
         }
-        func flushAssumption() {
-            guard let lines = assumption else { return }
+        func flushCallout() {
+            guard let (open, lines) = callout else { return }
             let text = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
-            blocks.append(.assumption(index: assumptionIndex, text: text))
-            assumptionIndex += 1
-            assumption = nil
+            if open {
+                blocks.append(.openQuestion(index: openIndex, text: text))
+                openIndex += 1
+            } else {
+                blocks.append(.assumption(index: assumptionIndex, text: text))
+                assumptionIndex += 1
+            }
+            callout = nil
+        }
+        func flushTable() {
+            guard let rows = table else { return }
+            // Row 2 is the `|---|` separator.
+            let body = rows.dropFirst().filter { !$0.allSatisfy { $0.allSatisfy { "-: ".contains($0) } } }
+            blocks.append(.table(header: rows.first ?? [], rows: Array(body)))
+            table = nil
         }
 
         // `isNewline` also matches "\r\n", which Swift treats as one Character.
@@ -64,31 +100,62 @@ public enum MarkdownParser {
                 }
                 continue
             }
-            if assumption != nil {
+            if callout != nil {
                 if trimmed.hasPrefix(">") {
-                    assumption!.append(quoteContent(trimmed))
+                    callout!.lines.append(quoteContent(trimmed))
                     continue
                 }
-                flushAssumption()
+                flushCallout()
             }
+            if table != nil {
+                if trimmed.hasPrefix("|") {
+                    table!.append(cells(trimmed))
+                    continue
+                }
+                flushTable()
+            }
+            let indented = line.first?.isWhitespace == true
+            if let text = item, indented, !trimmed.isEmpty, listItemText(trimmed) == nil, !trimmed.hasPrefix(">") {
+                // A wrapped list item: join and classify again (a criterion's SHALL may be on line 2).
+                let joined = text + " " + trimmed
+                item = joined
+                var rebuilt = listBlock(joined[...])
+                if case .task(let id, let t, let done, _) = rebuilt, case .task(_, _, _, let covers) = blocks.last {
+                    rebuilt = .task(id: id, text: t, done: done, covers: covers)
+                }
+                blocks[blocks.count - 1] = rebuilt
+                continue
+            }
+            item = nil
+
             if trimmed.isEmpty {
                 flushParagraph()
+            } else if trimmed.hasPrefix("<!--"), trimmed.hasSuffix("-->") {
+                continue                                    // mel markers and other comments
             } else if trimmed.hasPrefix("```") {
                 flushParagraph()
                 code = []
-            } else if trimmed.hasPrefix(">"), quoteContent(trimmed).uppercased() == "[!ASSUMPTION]" {
+            } else if trimmed.hasPrefix(">"), let open = calloutKind(quoteContent(trimmed)) {
                 flushParagraph()
-                assumption = []
+                callout = (open, [])
+            } else if trimmed.hasPrefix("|") {
+                flushParagraph()
+                table = [cells(trimmed)]
             } else if let heading = heading(trimmed) {
                 flushParagraph()
                 blocks.append(heading)
-            } else if let item = listItemText(trimmed) {
+            } else if let special = lineBlock(trimmed) {
                 flushParagraph()
-                let indented = line.first?.isWhitespace == true
-                if indented, let covers = coversList(item), case .task(let id, let text, let done, _) = blocks.last {
+                blocks.append(special)
+            } else if let listItem = listItemText(trimmed) {
+                flushParagraph()
+                if indented, let covers = coversList(listItem), case .task(let id, let text, let done, _) = blocks.last {
                     blocks[blocks.count - 1] = .task(id: id, text: text, done: done, covers: covers)
+                } else if !indented, let number = orderedNumber(trimmed) {
+                    blocks.append(.orderedItem(number: number, text: String(listItem)))
                 } else {
-                    blocks.append(listBlock(item))
+                    blocks.append(listBlock(listItem))
+                    if !indented { item = String(listItem) }
                 }
             } else if trimmed.hasPrefix(">") {
                 paragraph.append(quoteContent(trimmed))
@@ -97,7 +164,8 @@ public enum MarkdownParser {
             }
         }
         if let lines = code { blocks.append(.code(lines.joined(separator: "\n"))) }
-        flushAssumption()
+        flushCallout()
+        flushTable()
         flushParagraph()
         return blocks
     }
@@ -105,20 +173,25 @@ public enum MarkdownParser {
     /// Counts for the review summary. `uncoveredCriteria` stays empty here: it needs both
     /// REQUIREMENTS.md and TASKS.md, see `uncoveredCriteria(requirements:tasks:)`.
     public static func summary(_ text: String, kind: DocKind) -> DocSummary {
-        let blocks = blocks(text)
         var summary = DocSummary()
-        for (i, block) in blocks.enumerated() {
+        var inStory = false
+        for block in blocks(text) {
             switch block {
             case .heading(2, let title):
                 summary.sections += 1
-                // Story: `## <n>. <title>` followed by a paragraph starting "As a".
-                if kind == .requirements, leadingID(title) != nil, i + 1 < blocks.count,
-                   case .paragraph(let next) = blocks[i + 1], next.hasPrefix("As a") {
-                    summary.stories += 1
-                }
-            case .criterion: summary.criteria += 1
+                inStory = kind == .requirements && leadingID(title) != nil
+                if inStory { summary.stories += 1 }
+                if kind == .experience, title.hasPrefix("Flow ") { summary.flows += 1 }
+            case .priority(_, let mvp): if inStory, mvp { summary.mvpStories += 1 }
+            case .criterion(let id, _): if id.hasPrefix("Q") { summary.quality += 1 } else { summary.criteria += 1 }
             case .task: summary.tasks += 1
             case .assumption: summary.assumptions += 1
+            case .openQuestion: summary.openQuestions += 1
+            case .table(let header, let rows) where kind == .experience && header.first == "Screen":
+                summary.screens += rows.count
+                for row in rows where row.count > 1 {
+                    summary.missingStates += row[1].split(separator: ",").filter { $0.trimming(while: \.isWhitespace).hasPrefix("!") }.count
+                }
             default: break
             }
         }
@@ -155,6 +228,39 @@ public enum MarkdownParser {
         return nil
     }
 
+    /// `[!ASSUMPTION]` → false, `[!OPEN QUESTION]` → true, else nil.
+    private static func calloutKind(_ content: Substring) -> Bool? {
+        switch content.uppercased() {
+        case "[!ASSUMPTION]": false
+        case "[!OPEN QUESTION]": true
+        default: nil
+        }
+    }
+
+    /// One-line REQUIREMENTS and EXPERIENCE markers.
+    private static func lineBlock(_ line: Substring) -> Block? {
+        if line.hasPrefix("Source:") { return .source(String(line.dropFirst("Source:".count).trimming(while: \.isWhitespace))) }
+        if line.hasPrefix("Covers:"), let ids = coversList(line) { return .covers(ids) }
+        if line.lowercased().hasPrefix("mvp line") { return .mvpLine }
+        // `P1` or `P1 · MVP`.
+        let parts = line.split(separator: "·").map { $0.trimming(while: \.isWhitespace) }
+        guard let p = parts.first, p.count == 2, p.first == "P", p.last?.isNumber == true,
+              parts.count == 1 || (parts.count == 2 && parts[1] == "MVP") else { return nil }
+        return .priority(String(p), mvp: parts.count == 2)
+    }
+
+    /// `| a | b |` → ["a", "b"].
+    private static func cells(_ line: Substring) -> [String] {
+        var inner = line.dropFirst()
+        if inner.hasSuffix("|") { inner = inner.dropLast() }
+        return inner.split(separator: "|", omittingEmptySubsequences: false).map { String($0.trimming(while: \.isWhitespace)) }
+    }
+
+    private static func orderedNumber(_ line: Substring) -> Int? {
+        let digits = line.prefix(while: \.isNumber)
+        return digits.isEmpty || !line.dropFirst(digits.count).hasPrefix(". ") ? nil : Int(digits)
+    }
+
     private static func listBlock(_ item: Substring) -> Block {
         for (marker, done) in [("[ ] ", false), ("[x] ", true), ("[X] ", true)] where item.hasPrefix(marker) {
             let rest = item.dropFirst(marker.count)
@@ -165,6 +271,11 @@ public enum MarkdownParser {
         // Criterion: `<n>.<m> ` containing SHALL.
         if let id = leadingID(item), id.contains("."), item.dropFirst(id.count).first == " ", item.contains("SHALL") {
             return .criterion(id: String(id), text: String(item.dropFirst(id.count + 1)))
+        }
+        // Quality requirement: `Q<n> …`.
+        let q = item.dropFirst().prefix(while: \.isNumber)
+        if item.first == "Q", !q.isEmpty, item.dropFirst(q.count + 1).first == " " {
+            return .criterion(id: "Q" + q, text: String(item.dropFirst(q.count + 2)))
         }
         return .listItem(String(item))
     }

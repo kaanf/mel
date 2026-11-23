@@ -86,7 +86,7 @@ struct MarkdownParserTests {
 
     @Test func plainListsAndQuotes() {
         #expect(MarkdownParser.blocks("1. First\n* Second\n> quoted\n#nospace") == [
-            .listItem("First"),
+            .orderedItem(number: 1, text: "First"),
             .listItem("Second"),
             .paragraph("quoted #nospace"),
         ])
@@ -130,10 +130,110 @@ struct MarkdownParserTests {
         #expect(MarkdownParser.uncoveredCriteria(requirements: requirements, tasks: tasks) == ["1.1", "2.1"])
     }
 
-    @Test func storiesNeedAsAParagraph() {
-        let text = "## 1. Story\n\nAs a user, I want x.\n\n## 2. Not a story\n\nSomething else.\n\n## Unnumbered\n\nAs a user."
+    @Test func storiesAreNumberedSections() {
+        let text = "## 1. Story\n\nAs a user, I want x.\n\n## 2. Another\n\nP2\n\n## Quality requirements\n\n- Q1 THE APP SHALL be fast."
         let s = MarkdownParser.summary(text, kind: .requirements)
-        #expect(s.stories == 1)
+        #expect(s.stories == 2)
         #expect(s.sections == 3)
+        #expect(s.quality == 1)
+    }
+
+    private let v2Requirements = """
+    # Requirements
+
+    ## 1. Book a class
+
+    P1 · MVP
+    Source: your idea, Question 4 (cancellations)
+
+    As a member, I want to book a class,
+    so that my spot is guaranteed.
+
+    - 1.1 WHEN a member books a class with free spots,
+      THE APP SHALL reserve one spot.
+    - 1.2 WHEN a class is full, THE APP SHALL offer the waitlist.
+
+    > [!ASSUMPTION]
+    > The waitlist is first come, first served.
+
+    > [!OPEN QUESTION]
+    > What happens to unused credits?
+
+    MVP line
+
+    ## 2. Gift cards
+
+    P2
+    Source: Question 2
+
+    - 2.1 WHEN a member buys a gift card, THE APP SHALL email it.
+
+    ## Quality requirements
+
+    - Q1 THE APP SHALL open the schedule in under 1 second.
+    - Q2 WHILE offline, THE APP SHALL show the last schedule.
+
+    ## Edge cases
+
+    - Two members book the last spot at once.
+    <!-- mel:step 4 -->
+    """
+
+    @Test func v2RequirementsBlocks() {
+        let blocks = MarkdownParser.blocks(v2Requirements)
+        #expect(blocks.contains(.priority("P1", mvp: true)))
+        #expect(blocks.contains(.priority("P2", mvp: false)))
+        #expect(blocks.contains(.source("your idea, Question 4 (cancellations)")))
+        #expect(blocks.contains(.criterion(id: "1.1", text: "WHEN a member books a class with free spots, THE APP SHALL reserve one spot.")))
+        #expect(blocks.contains(.criterion(id: "Q2", text: "WHILE offline, THE APP SHALL show the last schedule.")))
+        #expect(blocks.contains(.assumption(index: 0, text: "The waitlist is first come, first served.")))
+        #expect(blocks.contains(.openQuestion(index: 0, text: "What happens to unused credits?")))
+        #expect(blocks.contains(.mvpLine))
+        #expect(blocks.last == .listItem("Two members book the last spot at once."))   // marker skipped
+    }
+
+    @Test func v2RequirementsSummary() {
+        let s = MarkdownParser.summary(v2Requirements, kind: .requirements)
+        #expect(s == DocSummary(stories: 2, mvpStories: 1, criteria: 3, quality: 2, sections: 4, assumptions: 1, openQuestions: 1))
+    }
+
+    @Test func experienceFlowsAndScreens() {
+        let text = """
+        # Experience
+
+        ## Flow 1 · Book a class
+
+        Covers: 1.1, 1.2
+
+        1. Schedule (1.1)
+        2. Class detail (1.1, 1.2)
+
+        ## Screens and states
+
+        | Screen | States | Criteria |
+        |---|---|---|
+        | Schedule | Default, Empty week, Offline | 1.1 |
+        | Class detail | Default, Full, !Error | 1.1, 1.2 |
+
+        ## Visual direction
+
+        Calm and light.
+        """
+        let blocks = MarkdownParser.blocks(text)
+        #expect(blocks.contains(.covers(["1.1", "1.2"])))
+        #expect(blocks.contains(.orderedItem(number: 2, text: "Class detail (1.1, 1.2)")))
+        #expect(blocks.contains(.table(header: ["Screen", "States", "Criteria"], rows: [
+            ["Schedule", "Default, Empty week, Offline", "1.1"],
+            ["Class detail", "Default, Full, !Error", "1.1, 1.2"],
+        ])))
+        let s = MarkdownParser.summary(text, kind: .experience)
+        #expect(s.flows == 1)
+        #expect(s.screens == 2)
+        #expect(s.missingStates == 1)
+    }
+
+    @Test func wrappedTaskKeepsCovers() {
+        let blocks = MarkdownParser.blocks("- [ ] 1. Build the\n  booking store\n  - Covers: 1.1")
+        #expect(blocks == [.task(id: "1", text: "Build the booking store", done: false, covers: ["1.1"])])
     }
 }

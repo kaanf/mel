@@ -62,6 +62,28 @@ struct MarkdownBlocksView: View {
             } else {
                 CalloutView(text: text)
             }
+        case .orderedItem(let number, let text):
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("\(number).").monospacedDigit().foregroundStyle(.secondary)
+                Text(inline(text))
+            }
+        case .openQuestion(_, let text):
+            CalloutView(text: text)
+        case .priority(let priority, let mvp):
+            Text(mvp ? "\(priority) · MVP" : priority).font(.caption.bold()).foregroundStyle(.secondary)
+        case .source(let text):
+            Text("Source: \(text)").font(.caption).foregroundStyle(.secondary)
+        case .covers(let ids):
+            Text("Covers \(ids.joined(separator: ", "))").font(.caption).foregroundStyle(.secondary)
+        case .mvpLine:
+            Divider().overlay(Text("MVP line").font(.caption).padding(.horizontal, 4).background(.background))
+        case .table(let header, let rows):
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                GridRow { ForEach(header.indices, id: \.self) { Text(header[$0]).bold() } }
+                ForEach(rows.indices, id: \.self) { r in
+                    GridRow { ForEach(rows[r].indices, id: \.self) { Text(inline(rows[r][$0])) } }
+                }
+            }
         case .code(let text):
             Text(text)
                 .font(.callout.monospaced())

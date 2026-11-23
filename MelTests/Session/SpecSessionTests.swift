@@ -132,9 +132,6 @@ final class SpecSessionTests {
         #expect(requirements.components(separatedBy: "## 2. Cancel").count == 2)
         #expect(session.summary(.requirements).criteria == 2)
 
-        // Approve is blocked until the assumption is confirmed.
-        await session.approve(.requirements)
-        #expect(session.spec.stage == .review(.requirements))
         session.confirmAssumption(index: 0, in: .requirements)
         #expect(session.summary(.requirements).assumptions == 0)
         await session.approve(.requirements)
@@ -152,7 +149,7 @@ final class SpecSessionTests {
         #expect(runner.requests[7].prompt.contains("### ARCHITECTURE.md"))
 
         await session.approve(.tasks)
-        #expect(session.spec.stage == .done)
+        #expect(session.spec.stage == .analyze)   // the analyze run is wired in Wave 7
         #expect(session.spec.size.files.allSatisfy { session.spec.docs[$0] == .approved })
 
         // Everything is on disk, and the sidebar copy is current.
@@ -160,8 +157,8 @@ final class SpecSessionTests {
         for kind in session.spec.size.files {
             #expect(try String(contentsOf: session.spec.folder.appending(path: kind.fileName), encoding: .utf8) == session.documents[kind])
         }
-        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .done)
-        #expect(app.specs.first?.stage == .done)
+        #expect(try SpecStore.loadState(in: session.spec.folder).stage == .analyze)
+        #expect(app.specs.first?.stage == .analyze)
         #expect(authorizations == 1)
     }
 
