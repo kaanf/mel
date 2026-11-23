@@ -18,8 +18,11 @@ struct V2FixtureTests {
         return result
     }
 
+    /// The reply's outermost `{…}`: analyze came back inside a ```json fence once.
     func object(_ name: String) throws -> [String: Any] {
-        try #require(JSONSerialization.jsonObject(with: Data(result(name).utf8)) as? [String: Any])
+        let reply = try result(name)
+        let start = try #require(reply.firstIndex(of: "{")), end = try #require(reply.lastIndex(of: "}"))
+        return try #require(JSONSerialization.jsonObject(with: Data(reply[start...end].utf8)) as? [String: Any])
     }
 
     enum Failure: Error { case noResult }
@@ -28,7 +31,7 @@ struct V2FixtureTests {
         let context = try object("project-context")
         #expect(Set(context.keys) == ["product", "tech", "structure", "principles"])
         let structure = try #require(context["structure"] as? String)
-        #expect(structure.contains("## Modules\n- FocusTimer — Sources/FocusTimer\n- TimerCore — Sources/TimerCore"))
+        #expect(structure.contains("## Modules\n\n- FocusTimer (executable CLI) — Sources/FocusTimer\n- TimerCore — Sources/TimerCore"))
     }
 
     @Test func intake() throws {
@@ -42,18 +45,18 @@ struct V2FixtureTests {
         #expect(coverage.allSatisfy { ["covered", "asking", "notYet"].contains($0["state"]) })
     }
 
-    /// Markers arrive split across deltas (`"<!-- mel:"` + `"step 1 -->"`), so stripping them needs a buffer.
+    /// Markers arrive split across deltas (`"<!-- m"`, `"-- mel:step 2"`), so stripping them needs a buffer.
     @Test func draftWithStepMarkersAndTrailer() throws {
         let events = try events("draft-steps")
         let deltas = events.compactMap { if case .text(let t) = $0 { t } else { nil } }
-        #expect(deltas.contains("<!-- mel:"))
+        #expect(deltas.contains("<!-- m"))
         let draft = try result("draft-steps")
         let markers = draft.matches(of: #/<!-- mel:step (\d+) -->/#).map { Int($0.1)! }
         #expect(markers == Array(1...7))
         let trailer = try #require(draft.firstMatch(of: #/<!-- mel:questions\n(.*)\n-->$/#.dotMatchesNewlines()))
         let questions = try #require(JSONSerialization.jsonObject(with: Data(trailer.1.utf8)) as? [[String: Any]])
         #expect((1...3).contains(questions.count))
-        #expect(questions.allSatisfy { $0["shapes"] as? String == "requirements" })
+        #expect(questions.allSatisfy { $0["shapes"] == nil })  // left out; DraftText.questions defaults it to the file's kind
     }
 
     @Test func analyze() throws {
@@ -68,7 +71,7 @@ struct V2FixtureTests {
 
     @Test func impact() throws {
         let items = try #require(try object("impact")["items"] as? [[String: String]])
-        #expect(items.map { $0["kind"] } == ["architecture", "tasks"])
+        #expect(items.map { $0["kind"] } == ["tasks"])  // unaffected files are left out
         #expect(items.allSatisfy { Set($0.keys) == ["kind", "what", "count"] })
     }
 
