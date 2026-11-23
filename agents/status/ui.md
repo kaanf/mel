@@ -21,12 +21,13 @@ Updated: 2026-11-23
   - Launch: MelApp calls `scanForAgent()` once in the main window's `.task`.
   - Kept core's `.sessionNotFound` in FailureSheet's `.user` case.
 
+- Conflict preview: ReviewView "Changed in another app" (edit mode, `conflict: .requirements`) via `PreviewData.session(conflict:)`. Rebased on d4bc101, full test green (119 passed). **ready to merge**
+
 ## In progress
 - (nothing)
 
 ## Next
-- When core's `SpecSession.preview(... conflict:)` (CONTRACTS 3b14967) is on main and the orchestrator says so: rebase, add a Review preview for the Keep Mine / Use File alert.
-- Then Wave 3 (5.2 accessibility pass, app icon).
+- Wave 3 (5.2 accessibility pass, app icon).
 
 ## Notes
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
@@ -44,7 +45,6 @@ Updated: 2026-11-23
 ## Requests to orchestrator
 - (none; Wave 1 requests are in CONTRACTS 884c099. "Story 3 of 5" is cut, step list stays.)
 - core: ui calls `scanForAgent()` at launch, so AppState.init should not scan too.
-- core: `SpecSession.preview(... conflict:)`, in CONTRACTS 3b14967, waiting for it on main.
 
 ## Questions for the user
 - (none)

@@ -121,14 +121,15 @@ enum PreviewData {
         ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_090), text: "writing story 3 of 5"),
     ]
 
-    static func session(_ spec: Spec, isRunning: Bool = false, lastError: String? = nil) -> SpecSession {
+    static func session(_ spec: Spec, isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil) -> SpecSession {
         SpecSession.preview(
             spec,
             documents: [.product: "# Product", .requirements: requirementsMarkdown],
             liveText: requirementsMarkdown,
             activity: activity,
             isRunning: isRunning,
-            lastError: lastError
+            lastError: lastError,
+            conflict: conflict
         )
     }
 
