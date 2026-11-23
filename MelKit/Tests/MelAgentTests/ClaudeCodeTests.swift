@@ -99,6 +99,21 @@ struct ClaudeCodeTests {
         #expect((try? JSONSerialization.jsonObject(with: Data(result.utf8))) != nil)
     }
 
+    /// First turn of the real discovery.md prompt, as SpecSession runs it: an open Product question.
+    @Test func discoveryFirstTurnIsOpenProductQuestion() throws {
+        let events = try events("claude-2.1.311-discovery-open.jsonl")
+        guard case .session = events.first else { Issue.record("no session first"); return }
+        guard case .done(let result) = events.last else { Issue.record("no done"); return }
+        #expect(text(events) == result)
+        let turn = try DiscoveryTurn.decode(result)
+        #expect(!turn.done)
+        let next = try #require(turn.next)
+        #expect(next.options.isEmpty)
+        #expect(next.shapes == .product)
+        #expect(!turn.coverage.isEmpty)
+        #expect(Set(turn.coverage.map(\.phase)) == Set(DocKind.allCases))
+    }
+
     @Test func wholeMessageRunGivesStepsAndResult() throws {
         let events = try events("claude-2.1.311-read-only-run.jsonl")
         #expect(events.contains { if case .step(let s) = $0 { s.hasPrefix("read ") } else { false } })

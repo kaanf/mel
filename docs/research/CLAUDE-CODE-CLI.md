@@ -105,6 +105,7 @@ Real recordings, safe to commit (no secrets; `cwd` paths point at disposable pro
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-edit-run-long.jsonl` | Write-enabled run with tool use and thinking tokens (24 records) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-partial-messages.jsonl` | Read-only run with `--include-partial-messages` and `--append-system-prompt`, text only (15 records) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-json.jsonl` | Read-only Discovery-style run with partial messages: `Read` tool call, then a JSON-only answer |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-open.jsonl` | First Discovery turn with the real `discovery.md` prompt and SpecSession's exact arguments (no answers yet): `DiscoveryTurn` JSON with an open Product question (`options: []`) and coverage items carrying `phase` (58 records, ~$0.03) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-in.json` | `claude auth status` signed in (email/org replaced with placeholders) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-out.json` | `claude auth status` signed out (no `USER` in the environment) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-unknown-resume.jsonl` | `--resume` with an unknown session ID (1 record) |

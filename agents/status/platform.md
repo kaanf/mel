@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 4 go received; waiting for the orchestrator's message that core's model + discovery prompt are on main (record from main, not agent/core)
+Wave: 4 done, ready to merge (discovery-open fixture + parse test, rebased on main 5b9883b)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -36,10 +36,12 @@ Updated: 2026-11-23
 ## In progress
 - (nothing)
 
+## Done (Wave 4)
+- `claude-2.1.311-discovery-open.jsonl`: first Discovery turn with the real discovery.md prompt and SpecSession's exact arguments/environment, recorded in a `mktemp -d` folder under /tmp; no secrets (`apiKeySource: none`, cwd under /tmp). Noted in CLAUDE-CODE-CLI.md › Fixtures.
+- `discoveryFirstTurnIsOpenProductQuestion`: session first, deltas == result, decodes with `DiscoveryTurn.decode`, next question open (`options` empty) and `shapes == .product`, coverage covers all four phases.
+
 ## Next
-- Wave 4 (after the go message, and after core's model + discovery.md prompt are on main; rebase first):
-  - Record one real Discovery turn with the new prompt in a throwaway folder under /tmp, built exactly as SpecSession does it (`Prompt.discovery.build(…)` + its systemPrompt, `ClaudeCode().arguments`/`environment`). First turn, no answers: expect a Product-phase open question (`options` empty) and coverage items with `phase`. Claude Code is 2.1.311 → `MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-open.jsonl`; check for secrets; note it in CLAUDE-CODE-CLI.md › Fixtures.
-  - Parse test: session first, text from deltas == `done` result, result decodes with `DiscoveryTurn.decode` (MelSpec), next question has empty options, every coverage item has a phase, current phase is product.
+- Wait for the orchestrator's next wave.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
