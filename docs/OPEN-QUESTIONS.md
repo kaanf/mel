@@ -21,7 +21,7 @@ Each has a recommended default that the other docs already assume; change the do
 | # | Question | Recommended default | Why it matters |
 |---|---|---|---|
 | 5 | Language of the app UI and of generated specs? | UI English (as designed); spec language follows the idea's language | Localization (e.g. Turkish) adds a String Catalog task |
-| 9 | Keep `.mel/` in Git? | **No** (offer `.gitignore` entry) | App state is noise in the repo; the four files are the spec |
+| 9 | Keep `.mel/` in Git? | **No** (excluded from the spec commit by pathspec) | App state is noise in the repo; the four files are the spec |
 | 10 | Should "Save in" create `<folder>/<slug>/specs` or allow an existing project folder? | Both: if the chosen folder is an existing repo, use `<folder>/specs` | Developers will point it at an existing repo |
 | 11 | Does the Jojo design system linked to the canvas matter for the native app? | **No**, use system components and semantic colors | None of the native screens use Jojo tokens |
 | 12 | Model selection exposed in the UI? | Not in MVP; Advanced › extra CLI arguments covers it | Keeps New Spec simple |
