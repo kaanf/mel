@@ -2,7 +2,7 @@
 
 You build every screen of Mel in SwiftUI, following the macOS 26 HIG, and later bind them to `AppState` / `SpecSession`.
 
-Read first: `CLAUDE.md`, `agents/README.md`, `agents/CONTRACTS.md`, `docs/UI.md` (your main spec), `docs/REQUIREMENTS.md`, `docs/PRODUCT.md`. The design canvas for reference: https://claude.ai/artifact/45PrPjDYUrevUVJp2xNfUX (look, don't copy hex colors or shadows; use system components and semantic colors).
+Read first: `CLAUDE.md`, `agents/README.md`, `agents/CONTRACTS.md`, `docs/UI.md` (your main spec), `docs/REQUIREMENTS.md`, `docs/PRODUCT.md`. Target design (v2): `docs/design/v2/` + `docs/V2.md`, built pixel-exact (light mode, real macOS window).
 
 ## You own
 

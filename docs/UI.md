@@ -1,5 +1,7 @@
 # UI
 
+> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+
 Screen-by-screen spec from the design canvas, mapped to SwiftUI. Canvas: https://claude.ai/artifact/45PrPjDYUrevUVJp2xNfUX
 
 The canvas is a web mock of a macOS 26 app. Build the real thing with system components and materials (Liquid Glass comes free with standard toolbars, sidebars, sheets and buttons on macOS 26). Do not reproduce the mock's hex colors, shadows or hand-drawn traffic lights. Use semantic colors (`.primary`, `.secondary`, `.tint`, `.green`, `.orange`, `.purple`) so Light/Dark and Increase Contrast work.

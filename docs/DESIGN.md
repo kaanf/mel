@@ -1,5 +1,7 @@
 # Design
 
+> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+
 Guiding rule: **performance, speed and the least complexity that works.** No speculative abstractions, no fallback layers, no dependencies unless essential. When something here starts to grow, cut scope before adding machinery.
 
 Deferred to a later version (see REQUIREMENTS.md › Later): Pause/Resume, "Ask for changes" with suggestions, Review inspector/History, time estimates, parallel runs. Only one agent run at a time across the app: `AgentRunner` is a single shared instance.

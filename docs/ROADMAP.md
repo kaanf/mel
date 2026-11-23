@@ -103,6 +103,30 @@ The user wants "Check for Updates…" with a full in-place update (decided 2026-
 
 Gate G5: a local Release build updates itself from a localhost feed to a higher build, and v0.2's `appcast.xml` is live on `main`.
 
+## Wave 6 · v2 parts (target: [V2.md](V2.md))
+
+Starts after v0.2.1 ships. Step 0 first, then the three agents in parallel.
+
+| Agent | Tasks |
+|---|---|
+| core | **0. Contract v2 stubs** (first, alone): models for size, the new `DocKind`s (product, requirements, experience, architecture, tasks, spec), statuses (`edited`, `stale`), question round, open questions, decisions, project/spec folders, analyze result, impact result, attachments; `AppState`/`SpecSession` v2 signatures with `preview(…)` factories. Push stubs, write the diff in your status; the orchestrator updates CONTRACTS.md and merges before ui and platform build on it. **Then:** reducer for the v2 pipeline (sizes, analyze, edited/stale, revise), parser for V2.md §6 formats, `SpecStore` layout (§3, approved snapshots, DECISIONS.md, project library scan), prompts (project context, one-shot intake, each file with step markers and round-2 trailer, revise, analyze, impact), per-task prompt files. Rewrite SPEC-FORMAT.md from V2.md §6. Tests. |
+| platform | Fixtures from real `claude` runs for every new JSON shape (project context, intake, analyze, impact) and for a draft with step markers + trailer; check that the Read tool opens attachments (text, images) under current flags; `~/Developer` repo scan; AGENTS.md marker-block writer; Git commit with the new pathspecs. Update AGENT-INTEGRATION.md. |
+| ui | `Theme.swift` tokens taken from `docs/design/v2/*.dc.html`; light-only appearance; every screen A1–C4 as a view, pixel-exact inside a real window, minus V2.md §2; `#Preview`s for every state drawn in the mock (from fixtures on core's stubs). |
+| orchestrator | Merge core step 0 → update CONTRACTS.md → tell ui and platform to rebase. Merge core, platform, ui. Update REQUIREMENTS.md and UI.md from V2.md. |
+
+Gate G6: all three merged; tests green; every v2 screen has previews; side-by-side check of each preview against its `.dc.html` at the same size.
+
+## Wave 7 · v2 wiring and v0.3
+
+| Agent | Tasks |
+|---|---|
+| core | `SpecSession`/`AppState` v2 end to end against `AgentRunning`; end-to-end tests with the fake script for Quick fix, Feature and Product (incl. round 2, analyze fix, refine, stop + resume). |
+| ui | Wire every screen to the session; keyboard shortcuts as drawn (↩, ⌘↩, 1–4, ⌘N). |
+| platform | Real-run check on this Mac (Debug build only): a Feature spec on an existing repo and a Product spec from an idea, start to handoff. Notes in `docs/research/`. |
+| orchestrator | Merge core → ui → platform. Cut v0.3 (`release.sh`, `gh release create v0.3 --prerelease`, push `appcast.xml`); v0.2.x installs update in-app. |
+
+Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Product spec end to end.
+
 ## Status (2026-11-23)
 
 - Waves 0–3 merged to `main`. G0–G2 passed (G2's fake-script part covered by core's 5.1 EndToEndTests).
@@ -113,7 +137,8 @@ Gate G5: a local Release build updates itself from a localhost feed to a higher 
 - Wave 5 merged except platform's local update test (core f66608a + 95146bf, platform 0ebf1ba, ui 4e37bc9). Toolbar check done, no change.
 - v0.2 published (tag v0.2 at 0a47fe9, build 242, notarized; appcast.xml live on main 98f0099). G5 passed.
 - v0.2.1 merged to `main` (version 0.2.1; ui: sidebar ↑ from PRODUCT.md to Discovery, short "Needs you" status below ~860 pt). All agents standing by.
-- Next: user re-tests one real spec on v0.2 (G4). Then cut v0.2.1 with `release.sh` + `gh release create v0.2.1 --prerelease` + push `appcast.xml`; installed v0.2 must offer it in-app (first real Sparkle update).
+- 2026-11-23: v2 design adopted ([V2.md](V2.md), OQ #20–22). Phased discovery (Wave 4) is replaced by the short intake, so G4 is dropped.
+- Next: ui swaps in the honeycomb icon → cut v0.2.1 (first in-app update). Then Wave 6.
 
 ## Risks
 

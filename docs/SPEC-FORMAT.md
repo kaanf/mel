@@ -1,5 +1,7 @@
 # Spec format
 
+> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+
 The Markdown contract for the files Mel generates. Agents are prompted with this contract, and the app parses it to drive the review UI (counts, assumptions, links between tasks and criteria). Keep files readable in any Markdown viewer.
 
 ## Folder layout

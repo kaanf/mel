@@ -1,5 +1,7 @@
 # Requirements
 
+> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+
 EARS acceptance criteria, same format Mel generates (see [SPEC-FORMAT.md](SPEC-FORMAT.md)). "THE APP" means Mel. Screens are named as in [UI.md](UI.md).
 
 ## 1. Detect the coding agent
