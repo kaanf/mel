@@ -406,6 +406,12 @@ enum Theme {
         static let statTileMin: CGFloat = 190
         static let coverageID: CGFloat = 52
         static let coverageCell: CGFloat = 84
+        /// B7: column 760; file tiles min 140; task number column 22; ready icon 20; task priority badge 18 high.
+        static let specReadyWidth: CGFloat = 760
+        static let fileTileMin: CGFloat = 140
+        static let taskNumber: CGFloat = 22
+        static let readyIcon: CGFloat = 20
+        static let priorityBadge: CGFloat = 18
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

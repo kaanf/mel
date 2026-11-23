@@ -395,4 +395,30 @@ enum PreviewData {
         """
     static let reviewExperience = spec(.review(.experience), docs(.approved, .approved, .review), questions: allAnswered)
     static let experienceSession = SpecSession.preview(reviewExperience, documents: [.product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown])
+
+    // B7 Spec ready as drawn.
+    static let tasksMarkdown = """
+        # Tasks
+
+        - [ ] 1. Booking data model and local store
+          - Priority: P1
+          - Covers: 1.1, 1.2
+          - Reads: ARCHITECTURE § Data
+          - Verify: `./gradlew :shared:allTests --tests "*Booking*"`
+        - [ ] 2. Schedule and Class detail screens
+          - Priority: P1
+          - Covers: 1.1, Q1
+          - Reads: EXPERIENCE › Schedule, Class detail
+          - Verify: `./gradlew :androidApp:connectedCheck`
+          - Parallel with: 3
+        - [ ] 3. Class pack checkout
+          - Priority: P1
+          - Covers: 2.1, Q2
+          - Reads: EXPERIENCE › Buy pack
+          - Verify: `./gradlew :shared:allTests --tests "*Checkout*"`
+          - Parallel with: 2
+        """
+    static let doneSession = SpecSession.preview(done, documents: [
+        .product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture", .tasks: tasksMarkdown,
+    ])
 }

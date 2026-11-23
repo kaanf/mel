@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6 done; next B7
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6, B7 done; next C1
 Updated: 2026-11-23
 
 ## Done
@@ -101,8 +101,11 @@ Updated: 2026-11-23
 - B6 Analyze (`Views/Analyze/AnalyzeView.swift`, new; MainView `.analyze`): stat tiles (adaptive min 190), issue cards (dot by kind, kind word + location, text, two actions → `session.apply`; second action medium weight), coverage matrix (Screen column only when rows have a screen mark), running and error states; toolbar Hand Off Anyway → `handOffAnyway`, "Fix n Issues with Claude Code" → `fixIssues`, both without system glass. Fixture `PreviewData.analysis` (the mock's data); debug screen `analyze`. One compare pass: matches.
   - Deviation: subtitle has no time ("· 12:31"; the result has no timestamp).
 
+- B7 Spec ready (`Views/SpecReady/SpecReadyView.swift`, replaces SpecReadySheet): shown in the Analyze row when `stage == .done` (MainView), and as a sheet from Review's "Start Building…" (Quick fix). No toolbar row (title removed, content under the toolbar, 40 pt top). File tiles, P1 tasks (Start here / Parallel with n, Builds · reads, Verify, Copy Prompt → `task.prompt(requirements:)`), start command + Open in Terminal, Write AGENTS.md switch (on → `writeAgentsMD()`, starts off), Commit (→ `finish(commitToGit: true)`, git init confirm). Task prompts are written when the screen opens (`writeTaskPrompts`). Debug screen `ready`. One compare pass: matches.
+  - Hidden (V2 §2): Keep the spec in sync, Use Codex Instead. Deviation: the AGENTS.md switch starts off (mock shows on); turning it on writes the file at once.
+
 ## Next
-- B7 Spec ready next, then C1–C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- C1 Refine next, then C2, C3, C4, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 

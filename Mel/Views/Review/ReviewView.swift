@@ -101,7 +101,13 @@ struct ReviewView: View {
             }
             .sheet(isPresented: $showsRoundTwo) { roundTwoSheet }
             .sheet(isPresented: $showReady) {
-                SpecReadySheet(session: session)
+                SpecReadyView(session: session)
+                    .frame(width: Theme.Size.specReadyWidth + 2 * Theme.Space.x32, height: Theme.Size.windowHeight - Theme.Size.toolbar)
+                    .overlay(alignment: .topTrailing) {
+                        Button("Done") { showReady = false }
+                            .keyboardShortcut(.cancelAction)
+                            .padding(Theme.Space.x16)
+                    }
             }
     }
 

@@ -87,7 +87,12 @@ struct MainView: View {
                 LockedDocView(kind: kind, size: session.spec.size)
             }
         case .analyze(let id):
-            AnalyzeView(session: state.session(for: id))
+            let session = state.session(for: id)
+            if session.spec.stage == .done {
+                SpecReadyView(session: session)
+            } else {
+                AnalyzeView(session: session)
+            }
         }
     }
 }

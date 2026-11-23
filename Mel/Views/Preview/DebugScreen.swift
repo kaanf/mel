@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case welcome, noAgent, pickProject, projectSetup, firstSpec, newSpec, newSpecNoContext, newSpecQuickFix, newSpecProduct, newSpecEmpty, intake, drafting, review, experience, edited, analyze, stopped, home
+    case welcome, noAgent, pickProject, projectSetup, firstSpec, newSpec, newSpecNoContext, newSpecQuickFix, newSpecProduct, newSpecEmpty, intake, drafting, review, experience, edited, analyze, ready, stopped, home
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
@@ -47,6 +47,7 @@ enum DebugScreen: String, CaseIterable {
         case .experience: PreviewData.appState([PreviewData.reviewExperience], sessions: [PreviewData.experienceSession])
         case .edited: PreviewData.appState([PreviewData.edited])
         case .analyze: PreviewData.appState([PreviewData.analyzeIssues])
+        case .ready: PreviewData.appState([PreviewData.done], sessions: [PreviewData.doneSession])
         case .stopped: PreviewData.appState([PreviewData.usageLimit])
         case .home: PreviewData.appState([])
         }
