@@ -7,6 +7,7 @@ struct DraftingView: View {
     let kind: DocKind
     @Binding var showInspector: Bool
     @State private var dismissedFailure = false
+    @State private var width: CGFloat = .infinity
 
     private var spec: Spec { session.spec }
 
@@ -19,6 +20,17 @@ struct DraftingView: View {
     private var failure: StopReason? {
         guard let stopReason, stopReason != .user, !dismissedFailure else { return nil }
         return stopReason
+    }
+
+    private var compact: Bool { width < ToolbarStatus.fullTextWidth }
+
+    @ViewBuilder
+    private var status: some View {
+        if isStopped {
+            ToolbarStatus(status: .stopped)
+        } else {
+            ToolbarStatus(status: .checking, title: "Running", detail: session.activity.last?.text ?? "Starting", compact: compact)
+        }
     }
 
     var body: some View {
@@ -58,15 +70,11 @@ struct DraftingView: View {
         .navigationTitle("Drafting")
         .navigationSubtitle(spec.name)
         .toolbar {
-            ToolbarItem(placement: .status) {
-                Group {
-                    if isStopped {
-                        StatusBadge(status: .stopped)
-                    } else {
-                        StatusBadge(status: .checking, title: "Running · \(session.activity.last?.text ?? "Starting")")
-                    }
-                }
-                .padding(.horizontal, 10)   // the glass capsule adds no inset of its own
+            // Two items, not one: NSToolbar doesn't widen an item whose content grows.
+            if compact {
+                ToolbarItem(placement: .status) { status }
+            } else {
+                ToolbarItem(placement: .status) { status }
             }
             if !isStopped {
                 ToolbarItem {
@@ -83,6 +91,7 @@ struct DraftingView: View {
             LivePreview(text: session.liveText, kind: kind, isRunning: !isStopped)
                 .inspectorColumnWidth(min: 280, ideal: 340)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .focusedSceneValue(\.inspectorShown, $showInspector)
         .sheet(isPresented: Binding(get: { failure != nil }, set: { if !$0 { dismissedFailure = true } })) {
             if let failure {
