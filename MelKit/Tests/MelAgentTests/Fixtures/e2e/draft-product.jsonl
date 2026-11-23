@@ -1,0 +1,8 @@
+{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-0000000000a1","tools":["Glob","Grep","Read"],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_e2e","name":"Read","input":{"file_path":"/tmp/yoga/README.md"}}]},"session_id":"e2e00000-0000-4000-8000-0000000000a1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"# Product\n\n## Problem\n\nM"}},"session_id":"e2e00000-0000-4000-8000-0000000000a1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"embers can't book yoga c"}},"session_id":"e2e00000-0000-4000-8000-0000000000a1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"lasses online.\n\n## Users"}},"session_id":"e2e00000-0000-4000-8000-0000000000a1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" and roles\n\nMembers and "}},"session_id":"e2e00000-0000-4000-8000-0000000000a1"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"studio staff.\n"}},"session_id":"e2e00000-0000-4000-8000-0000000000a1"}
+{"type":"result","subtype":"success","is_error":false,"result":"# Product\n\n## Problem\n\nMembers can't book yoga classes online.\n\n## Users and roles\n\nMembers and studio staff.\n","session_id":"e2e00000-0000-4000-8000-0000000000a1"}

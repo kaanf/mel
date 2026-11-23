@@ -240,7 +240,7 @@ import MelSystem
             lastError = "Another spec is running. Wait for it to finish or stop it."
             return .refused
         }
-        guard let runner = app.makeAgentRunner() else {
+        guard let runner = app.agentRunner() else {
             lastError = "Claude Code isn't ready. Check Settings."
             return .refused
         }

@@ -1,6 +1,6 @@
 # core status
 
-Wave: 2
+Wave: 3
 Updated: 2026-11-23
 
 ## Done
@@ -21,12 +21,14 @@ Updated: 2026-11-23
 - Flaky SpecSessionTests fixed: the crash report showed `FileWatcher` was retained during its own deinit. The FSEvents callback used `takeUnretainedValue` on the watcher while main dropped the last SpecSession. The stream now owns a separate `Core`, and deinit drains the queue first. Not caused by UserDefaults suites (each test uses a unique one) or by notifications (stubbed).
 - Notifications: `AppState.notify` / `authorizeNotifications` hooks (Notifier by default); permission requested once before the first run; posts on draft finished, failure stop (not user Stop, not sessionNotFound), Discovery failure, usage-limit reset. `finish()` uses `Git.specPaths`. `preview(…, conflict:)`.
 
+- 5.1 `MelTests/Session/EndToEndTests.swift`: the real `AgentRunner` + `ClaudeCode.parse` + disk, with `fake-claude.sh` replaying scripted fixtures in `MelKit/Tests/MelAgentTests/Fixtures/e2e/` (README there). It covers idea → 4 approved files with a real Stop (SIGINT to the `hang` process) and `--resume` with the right session id, one run at a time across two specs, and the recorded unknown-resume run → fresh redraft with no notification. About 0.1 s per test after the runner's one login-shell PATH read.
+- Found by 5.1: `AppState` built a new `AgentRunner` per run, so every Discovery turn and draft re-ran `$SHELL -l -i`. It now keeps one runner per executable.
+
 ## In progress
 - (nothing)
 
 ## Next
-- 5.1 in Wave 3 (end-to-end with fake-claude.sh).
-- Once platform adds `AgentRequest.systemPrompt`, decide with the orchestrator whether to move the stage contract out of the prompt files. Today everything goes on stdin.
+- Wave 3 core work done; waiting for the orchestrator.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -44,7 +46,9 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Ready to merge: fix batch on top of main (1fad575): FileWatcher deinit race (the flaky 0.000 s SpecSessionTests), notification permission + REQ 5.8 posts, `preview(conflict:)`. Full `xcodebuild … test` green 5 runs in a row after rebase.
+- Ready to merge: 5.1 on agent/core. Full `xcodebuild … test` green 5 runs in a row.
+- For platform: `fake-claude.sh … hang` uses `tail -f`, which prints only the **last 10 lines**, so longer fixtures silently lose their `init` record (and session id). Suggest `exec tail -n +1 -f "$1"`. My hang fixture stays under 10 lines until then.
+- AppIcon setting (5.2): on hold per orchestrator, not started.
 
 ## Questions for the user
 - (none)
