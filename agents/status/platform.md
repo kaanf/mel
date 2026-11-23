@@ -1,9 +1,18 @@
 # platform status
 
-Wave: 1 (done)
+Wave: 2 ready to merge
 Updated: 2026-11-23
 
-## Done
+## Done (Wave 2)
+- G1: edit-run fixtures now tested (`editRunsGiveOnlyStepsAndResult`: thinking, permission_denied and tool results stay silent; Edit/Write give bare "edit"/"write" steps). Commit 81dfa7c.
+- `AgentRequest.systemPrompt` (init param, default nil) → `--append-system-prompt <text>`. 81dfa7c.
+- 4.7 `Notifier`: `UNUserNotificationCenter`, future `at` → `UNCalendarNotificationTrigger` (wall clock, fires after sleep), else immediate. No delegate, so banners only show while Mel isn't frontmost (REQ 5.8 for free). No-op outside a `.app` bundle (swift test). 0d40ff1.
+- 4.6: `Git.specPaths = ["specs", ":(exclude)specs/.mel"]` for the handoff commit (REQ 8.3); `Git.commit` is a no-op when the paths have nothing to commit (finishing twice doesn't throw). Test in a temp repo. 0d40ff1.
+- `scripts/release.sh`: without `TEAM_ID` → ad-hoc signed (hardened runtime) `.build/release/Mel-<version>.dmg`, verified locally. With `TEAM_ID` + `NOTARY_PROFILE` → archive, export developer-id, notarize + staple app, DMG, codesign + notarize + staple DMG, `spctl` check (untested, needs the account). 0535bea.
+- "No conversation found" → `.sessionNotFound` in `ClaudeCode.failures`; unknown-resume test updated.
+- Rebased on main (c5c1487 + docs); `xcodebuild … test` green with the real Notifier.
+
+## Done (Wave 0–1)
 - Wave 0: 1.1 CLI verified, 1.2 ShellPath (merged to main).
 - Fixtures moved to `MelKit/Tests/MelAgentTests/Fixtures/`, links in `docs/research/CLAUDE-CODE-CLI.md` updated. New: `claude-2.1.311-unknown-resume.jsonl` (no `init`, `result` with `errors[]` and no `result` field).
 - 1.2 ShellPath tests (core's two + login PATH, dedupe/dirs, hanging shell times out in 5 s). `ShellPath` is now `public` (AppState needs `loginPATH()`).
@@ -17,7 +26,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wave 2 (wait for orchestrator): 4.7 Notifier (still a stub), detection in `AppState.scanForAgent()`, 4.6 handoff pieces, `scripts/release.sh` draft.
+- Wave 3 when the orchestrator starts it: 5.3 signing (needs the Apple Developer account), 5.4 clean-install test.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -31,8 +40,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- CONTRACTS, `AgentRequest`: no field for the stage contract, so `--append-system-prompt` isn't used yet; prompts must put the contract at the top of stdin. Proposal: `public var systemPrompt: String?` → `--append-system-prompt`. One line in `ClaudeCode.arguments` once it exists.
-- CONTRACTS, `StopReason` (MelSpec, core): an unknown `--resume` session currently arrives as `failed(.crashed("No conversation found with session ID: …"))`. SpecSession has to run fresh in that case. Proposal: `case sessionNotFound`, mapped in `ClaudeCode.failures` (one line). Otherwise SpecSession has to match the text.
+- For core: nothing calls `Notifier.requestAuthorization()`, and `UNUserNotificationCenter` silently drops posts from an app without authorization, so the usage-limit reset notification never shows. Call it once before the first run (e.g. `SpecSession.start()`). Also REQ 5.8 (notify when a file finishes) has no `notify` call yet.
 
 ## Questions for the user
-- (none)
+- (for Wave 3) Apple Developer Team ID and a `notarytool store-credentials` profile name (OPEN-QUESTIONS 16).
