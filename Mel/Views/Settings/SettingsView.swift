@@ -2,8 +2,17 @@ import SwiftUI
 import MelSpec
 import UniformTypeIdentifiers
 
-/// Settings is Agents only in the MVP (docs/UI.md › Settings › Agents).
+/// What the Updates group shows and does; App/ fills it from Sparkle so views never import it.
+struct UpdateSettings {
+    var version: String               // "0.2 (build 123)"
+    var canCheck: Bool                // false while Sparkle is already checking
+    var automaticallyChecks: Binding<Bool>
+    var check: () -> Void
+}
+
+/// Settings is Agents plus Updates (docs/UI.md › Settings).
 struct SettingsView: View {
+    let updates: UpdateSettings
     @Environment(AppState.self) private var state
     @State private var picking: Pick?
 
@@ -58,6 +67,13 @@ struct SettingsView: View {
                 Button("Scan Now") { Task { await state.scanForAgent() } }
                     .disabled(state.agent == .checking)
             }
+            Section("Updates") {
+                Text("Version \(updates.version)")
+                Toggle("Automatically check for updates", isOn: updates.automaticallyChecks)
+                    .toggleStyle(.switch)
+                Button("Check for Updates…", action: updates.check)
+                    .disabled(!updates.canCheck)
+            }
         }
         .formStyle(.grouped)
         .frame(width: 560)
@@ -83,13 +99,18 @@ struct SettingsView: View {
 }
 
 #Preview("Ready") {
-    SettingsView().environment(PreviewData.appState(agent: PreviewData.ready))
+    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState(agent: PreviewData.ready))
 }
 
 #Preview("Not signed in") {
-    SettingsView().environment(PreviewData.appState(agent: PreviewData.notSignedIn))
+    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState(agent: PreviewData.notSignedIn))
 }
 
 #Preview("Not found") {
-    SettingsView().environment(PreviewData.appState(agent: .missing))
+    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState(agent: .missing))
+}
+
+#Preview("Checking for Updates") {
+    SettingsView(updates: PreviewData.updates(canCheck: false, automaticallyChecks: false))
+        .environment(PreviewData.appState(agent: PreviewData.ready))
 }
