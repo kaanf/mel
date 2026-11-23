@@ -28,9 +28,13 @@ struct SetupFlow: View {
                     onRead: { step = .projectSetup($0) },
                     onIdea: { step = .firstSpec }
                 )
-            case .projectSetup:
-                ContentUnavailableView("Project Context", systemImage: "house")   // A3, next in Wave 6
-                    .setupChrome(title: "Set Up Project")
+            case .projectSetup(let project):
+                ProjectSetupView(
+                    project: project,
+                    isNewProject: state.projectSetup?.project == project ? state.projectSetup!.isNewProject : false,
+                    onChange: { step = .pickProject },
+                    onDone: { onFinish(true) }
+                )
             case .firstSpec:
                 ContentUnavailableView("New Spec", systemImage: "doc")            // A4x, with B1
                     .setupChrome(title: "New Spec")

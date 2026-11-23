@@ -3,7 +3,7 @@ import MelSpec
 
 /// Fixtures for `#Preview`s: one yoga studio spec in every stage.
 enum PreviewData {
-    static let project = Project(folder: URL(filePath: "/Users/me/Developer/yoga-studio-booking"), hasContext: true)
+    static let project = Project(folder: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer/yoga-studio-booking"), hasContext: true)
     static let folder = project.folder.appending(path: "specs/yoga-studio-booking")
     static let executable = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".local/bin/claude")
     static let ready = AgentStatus.ready(executable: executable, version: "2.1.4")
@@ -171,8 +171,28 @@ enum PreviewData {
         )
     }
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], foundRepositories: [FoundRepository] = [], missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects, foundRepositories: foundRepositories)
+    static let context = ProjectContext(
+        product: "# Product\n\nMembers book yoga classes. Sign-in and schedule are live; do not change their behavior.",
+        tech: "# Tech\n\nKotlin Multiplatform, Compose Multiplatform, Ktor, SQLDelight, Koin.",
+        structure: "# Structure\n\nFeature-first packages under shared/feature/<name>. One ViewModel per screen.\n\n## Modules\n\n- shared — shared/\n- androidApp — androidApp/\n- iosApp — iosApp/",
+        principles: "# Principles\n\n1. Reuse existing modules before adding new ones. Name the module you extend.\n2. No new dependency without a short reason in ARCHITECTURE.md.\n3. Every acceptance criterion gets a test before the task counts as done.",
+        read: [
+            ReadItem(label: "README and docs folder", source: "README.md, docs/"),
+            ReadItem(label: "Build files and dependencies", source: "build.gradle.kts"),
+            ReadItem(label: "3 modules: shared, androidApp, iosApp", source: "settings.gradle.kts"),
+            ReadItem(label: "2 features already built: sign-in, schedule", source: "shared/feature/"),
+        ],
+        sources: ["product.md": "From README", "tech.md": "Detected", "structure.md": "Detected"]
+    )
+
+    static let readLines = ["README and docs folder", "Build files and dependencies", "3 modules: shared, androidApp, iosApp", "2 features already built: sign-in, schedule"]
+        .enumerated().map { ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_000 + Double($0.offset)), text: $0.element) }
+
+    static let projectSetup = ProjectSetup(project: project, isNewProject: false, isRunning: false, activity: readLines, context: context, lastError: nil, branch: "main", fileCount: 214)
+    static let projectSetupRunning = ProjectSetup(project: project, isNewProject: false, isRunning: true, activity: Array(readLines.prefix(2)), context: nil, lastError: nil, branch: "main", fileCount: 214)
+
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, foundRepositories: foundRepositories, projectSetup: projectSetup)
         state.missingFolders = missing
         return state
     }

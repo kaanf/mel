@@ -334,6 +334,13 @@ enum Theme {
         static let dropZone: CGFloat = 180
         static let dropIcon: CGFloat = 40
         static let repoRow: CGFloat = 40
+        /// A3: column 760 wide, intro max 600; folder row 48 with an 18 pt icon; context cards min 330 wide; 12 · read-list check.
+        static let projectSetupWidth: CGFloat = 760
+        static let projectSetupTextWidth: CGFloat = 600
+        static let folderRow: CGFloat = 48
+        static let folderIcon: CGFloat = 18
+        static let contextCardMin: CGFloat = 330
+        static let smallCheck: CGFloat = 12
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

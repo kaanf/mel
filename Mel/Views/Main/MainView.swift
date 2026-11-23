@@ -11,12 +11,19 @@ struct MainView: View {
 
     var body: some View {
         if !didShowWelcome || state.projects.isEmpty {
-            SetupFlow(step: didShowWelcome ? .pickProject : .welcome) { newSpec in
+            SetupFlow(step: initialSetupStep) { newSpec in
                 isShowingNewSpec = newSpec
             }
         } else {
             library
         }
+    }
+
+    private var initialSetupStep: SetupFlow.Step {
+        #if DEBUG
+        if let step = DebugScreen.current?.setupStep { return step }
+        #endif
+        return didShowWelcome ? .pickProject : .welcome
     }
 
     private var library: some View {

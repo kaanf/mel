@@ -19,6 +19,8 @@ struct DesignIcon: View {
         case folder
         /// Folder with plus (`+ M8 7.25v4M6 9.25h4`), A2 drop zone at 40 pt, stroke 1.
         case folderPlus
+        /// Document with folded corner (`M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10…V5z`, `M9.5 1.5V5H13`), stroke 1.4.
+        case doc
     }
 
     let glyph: Glyph
@@ -44,6 +46,7 @@ struct DesignIcon: View {
         case .check: 2
         case .folder: 1.4
         case .folderPlus: 1
+        case .doc: 1.4
         }
     }
 }
@@ -104,6 +107,20 @@ nonisolated private struct GlyphShape: Shape {
                 path.move(to: p(6, 9.25))
                 path.addLine(to: p(10, 9.25))
             }
+        case .doc:
+            let r = 1.5 * s
+            path.move(to: p(9.5, 1.5))
+            path.addLine(to: p(4.5, 1.5))
+            path.addArc(tangent1End: p(3, 1.5), tangent2End: p(3, 3), radius: r)
+            path.addLine(to: p(3, 13))
+            path.addArc(tangent1End: p(3, 14.5), tangent2End: p(4.5, 14.5), radius: r)
+            path.addLine(to: p(11.5, 14.5))
+            path.addArc(tangent1End: p(13, 14.5), tangent2End: p(13, 13), radius: r)
+            path.addLine(to: p(13, 5))
+            path.closeSubpath()
+            path.move(to: p(9.5, 1.5))
+            path.addLine(to: p(9.5, 5))
+            path.addLine(to: p(13, 5))
         case .plus:
             path.move(to: p(8, 3))
             path.addLine(to: p(8, 13))
