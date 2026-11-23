@@ -75,12 +75,7 @@ struct NewSpecView: View {
     }
 
     /// `<project>/specs/<slug>/`, or `<parent>/<slug>/specs/<slug>/` for a Product without a project.
-    // TODO(B1): switch to `state.specFolder(name:size:project:parent:)` once core's 79046ef is on main.
-    private var destination: URL {
-        let slug = state.specFolder(name: name, parent: parent).deletingLastPathComponent().lastPathComponent
-        let root = project?.folder ?? parent.appending(path: slug, directoryHint: .isDirectory)
-        return root.appending(path: "specs/\(slug)", directoryHint: .isDirectory)
-    }
+    private var destination: URL { state.specFolder(name: name, size: size, project: project, parent: parent) }
 
     /// The folder the spec's root sits in ("Developer"): the project's parent, or the chosen parent.
     private var saveFolderName: String { (project?.folder.deletingLastPathComponent() ?? parent).lastPathComponent }
@@ -713,12 +708,12 @@ struct NewSpecView: View {
     private func start() {
         guard canStart else { return }
         do {
-            // TODO(B1): pass `parent:` for a Product once core's createSpec(…, parent:) is on main.
             let session = try state.createSpec(
                 name: name,
                 idea: fullIdea,
                 size: size,
                 project: project,
+                parent: parent,
                 buildsOn: size == .feature ? Array(draft.buildsOn).sorted() : [],
                 fillGaps: draft.fillGaps,
                 files: draft.files,
