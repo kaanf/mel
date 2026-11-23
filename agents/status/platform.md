@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 3 ready to merge (notarized DMG built and verified)
+Wave: 4 planned, waiting for the orchestrator's go (Wave 3 merged, install test passed)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -37,7 +37,9 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- User runs `docs/research/CLEAN-INSTALL.md` on a clean account with the DMG above (5.4); record results there.
+- Wave 4 (after the go message, and after core's model + discovery.md prompt are on main; rebase first):
+  - Record one real Discovery turn with the new prompt in a throwaway folder under /tmp, built exactly as SpecSession does it (`Prompt.discovery.build(…)` + its systemPrompt, `ClaudeCode().arguments`/`environment`). First turn, no answers: expect a Product-phase open question (`options` empty) and coverage items with `phase`. Claude Code is 2.1.311 → `MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-open.jsonl`; check for secrets; note it in CLAUDE-CODE-CLI.md › Fixtures.
+  - Parse test: session first, text from deltas == `done` result, result decodes with `DiscoveryTurn.decode` (MelSpec), next question has empty options, every coverage item has a phase, current phase is product.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -48,10 +50,10 @@ Updated: 2026-11-23
 - Older fixtures contain `/Users/kaan/JojoDisposable/...` probe paths: a username, not a secret.
 
 ## Blocked
-- Install test still running: don't touch com.kaanf.mel defaults or /Applications/Mel.app. `xcodebuild test` is fine again (Debug builds are com.kaanf.mel.debug since 64efe09).
+- (nothing)
 
 ## Requests to orchestrator
 - (none; Notifier gaps handed to core)
 
 ## Questions for the user
-- Run the clean-install checklist (docs/research/CLEAN-INSTALL.md) with `.build/release/Mel-0.1.dmg` from the platform worktree.
+- (none)
