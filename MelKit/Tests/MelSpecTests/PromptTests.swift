@@ -77,6 +77,8 @@ struct PromptTests {
         #expect(impact.items.map(\.kind) == [.experience, .tasks])
         let context = try ProjectContext.decode(sample(Prompt.project.build([:]), startingWith: #"{"product""#))
         #expect(context.modules == [Module(name: "Booking", path: "Sources/Booking")])
+        #expect(context.read.first == ReadItem(label: "README.md", source: "Product summary"))
+        #expect(context.sources["product.md"] == "From README")
     }
 
     @Test func stepsAndFilesText() {

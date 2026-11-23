@@ -205,6 +205,9 @@ struct ProjectSetup: Hashable {
     var activity: [ActivityLine]
     var context: ProjectContext?
     var lastError: String?
+    /// A3 header: the current git branch and the number of files Mel can read.
+    var branch: String? = nil
+    var fileCount: Int? = nil
 }
 
 /// Does nothing; backs `AppState.preview`.
