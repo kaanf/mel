@@ -13,6 +13,8 @@ struct DesignButtonStyle: ButtonStyle {
     /// "↩" or "⌘↩", drawn as a translucent key cap on accent buttons.
     var keyHint: String?
     var text: Theme.TextStyle = Theme.Text.bodyBold
+    /// Overrides the shadow picked from role and height (A2 "Start from an Idea" is 30 pt with the small-button shadow).
+    var elevation: Theme.Elevation?
 
     @Environment(\.isEnabled) private var isEnabled
 
@@ -31,7 +33,7 @@ struct DesignButtonStyle: ButtonStyle {
         .padding(.leading, leading)
         .padding(.trailing, trailing)
         .frame(height: height)
-        .surface(fill, elevation, in: Capsule())
+        .surface(fill, elevation ?? defaultElevation, in: Capsule())
         .opacity(configuration.isPressed ? 0.85 : 1)
         .contentShape(Capsule())
     }
@@ -43,7 +45,7 @@ struct DesignButtonStyle: ButtonStyle {
         }
     }
 
-    private var elevation: Theme.Elevation {
+    private var defaultElevation: Theme.Elevation {
         switch (role, height) {
         case (.primary, Theme.Size.buttonLarge): isEnabled ? .primaryLarge : .init()
         case (.primary, Theme.Size.buttonToolbar): .primaryToolbar

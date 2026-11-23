@@ -15,6 +15,10 @@ struct DesignIcon: View {
         case terminal
         /// Check mark (`M3.5 8.5l3 3 6-7`), stroke 2; the design also draws it at 2.2 and 2.4.
         case check
+        /// Folder (`M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13…z`), stroke 1.4 (A2 repo rows, sidebar).
+        case folder
+        /// Folder with plus (`+ M8 7.25v4M6 9.25h4`), A2 drop zone at 40 pt, stroke 1.
+        case folderPlus
     }
 
     let glyph: Glyph
@@ -38,6 +42,8 @@ struct DesignIcon: View {
         case .alert: 1.7
         case .terminal: 1.6
         case .check: 2
+        case .folder: 1.4
+        case .folderPlus: 1
         }
     }
 }
@@ -79,6 +85,25 @@ nonisolated private struct GlyphShape: Shape {
             path.move(to: p(3.5, 8.5))
             path.addLine(to: p(6.5, 11.5))
             path.addLine(to: p(12.5, 4.5))
+        case .folder, .folderPlus:
+            let r = 1.25 * s
+            path.move(to: p(1.75, 4.5))
+            path.addArc(tangent1End: p(1.75, 3.25), tangent2End: p(3, 3.25), radius: r)
+            path.addLine(to: p(6, 3.25))
+            path.addLine(to: p(7.5, 4.75))
+            path.addLine(to: p(13, 4.75))
+            path.addArc(tangent1End: p(14.25, 4.75), tangent2End: p(14.25, 6), radius: r)
+            path.addLine(to: p(14.25, 12.25))
+            path.addArc(tangent1End: p(14.25, 13.5), tangent2End: p(13, 13.5), radius: r)
+            path.addLine(to: p(3, 13.5))
+            path.addArc(tangent1End: p(1.75, 13.5), tangent2End: p(1.75, 12.25), radius: r)
+            path.closeSubpath()
+            if glyph == .folderPlus {
+                path.move(to: p(8, 7.25))
+                path.addLine(to: p(8, 11.25))
+                path.move(to: p(6, 9.25))
+                path.addLine(to: p(10, 9.25))
+            }
         case .plus:
             path.move(to: p(8, 3))
             path.addLine(to: p(8, 13))

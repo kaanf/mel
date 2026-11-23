@@ -23,8 +23,11 @@ struct SetupFlow: View {
                     WelcomeView(onContinue: leaveWelcome)
                 }
             case .pickProject:
-                ContentUnavailableView("Pick a Project", systemImage: "folder")   // A2, next in Wave 6
-                    .setupChrome(title: "Set Up Project")
+                PickProjectView(
+                    onBack: { step = .welcome },
+                    onRead: { step = .projectSetup($0) },
+                    onIdea: { step = .firstSpec }
+                )
             case .projectSetup:
                 ContentUnavailableView("Project Context", systemImage: "house")   // A3, next in Wave 6
                     .setupChrome(title: "Set Up Project")
@@ -44,27 +47,32 @@ struct SetupFlow: View {
 }
 
 extension View {
-    /// Setup window chrome: centered title (A2, A3, A4x) or the "Setup" step label at the right (A1, A1x).
-    func setupChrome(title: String? = nil, stepLabel: String? = nil) -> some View {
-        toolbar {
-            if let title {
-                ToolbarItem(placement: .principal) {
+    /// Setup window chrome: the design's bar, 44 pt with a centered title (A2, A3, A4x) or 52 pt with the
+    /// "Setup" step label at the right (A1, A1x). Drawn here instead of a system toolbar, whose height varies.
+    func setupChrome(title: String? = nil, stepLabel: String? = nil, barHeight: CGFloat = Theme.Size.titleBar, labelTrailing: CGFloat = Theme.Space.x12) -> some View {
+        VStack(spacing: 0) {
+            ZStack {
+                if let title {
                     Text(title)
                         .textStyle(Theme.Text.bodyBold)
                         .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .accessibilityAddTraits(.isHeader)
                 }
-                .sharedBackgroundVisibility(.hidden)
-            }
-            if let stepLabel {
-                ToolbarSpacer(.flexible)
-                ToolbarItem {
+                if let stepLabel {
                     Text(stepLabel)
                         .textStyle(Theme.Text.caption)
                         .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.trailing, labelTrailing)
                 }
-                .sharedBackgroundVisibility(.hidden)
             }
+            .frame(maxWidth: .infinity)
+            .frame(height: barHeight)
+            .contentShape(Rectangle())
+            .gesture(WindowDragGesture())
+            self.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .ignoresSafeArea(.container, edges: .top)
         .toolbar(removing: .title)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     }

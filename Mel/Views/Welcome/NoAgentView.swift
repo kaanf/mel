@@ -87,7 +87,7 @@ struct NoAgentView: View {
         .frame(maxWidth: Theme.Size.noAgentWidth)
         .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x24, bottom: Theme.Space.x40, trailing: Theme.Space.x24))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .setupChrome(stepLabel: "Setup")
+        .setupChrome(stepLabel: "Setup", barHeight: Theme.Size.toolbar, labelTrailing: Theme.Space.x20)
     }
 }
 

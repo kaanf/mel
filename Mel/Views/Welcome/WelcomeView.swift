@@ -43,7 +43,7 @@ struct WelcomeView: View {
             .padding(.top, Theme.Size.welcomeContentTop)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .setupChrome(stepLabel: "Setup")
+        .setupChrome(stepLabel: "Setup", barHeight: Theme.Size.toolbar)
     }
 }
 

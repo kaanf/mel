@@ -163,8 +163,16 @@ enum PreviewData {
         UpdateSettings(version: "0.2 (build 123)", canCheck: canCheck, automaticallyChecks: .constant(automaticallyChecks), check: {})
     }
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects)
+    static let repositories = [("yoga-studio-booking", "Kotlin", 0), ("habit-tracker", "Kotlin", 14), ("portfolio-site", "TypeScript", 100)].map { name, language, days in
+        FoundRepository(
+            url: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer/\(name)", directoryHint: .isDirectory),
+            language: language,
+            modified: Date.now.addingTimeInterval(-Double(days) * 86_400)
+        )
+    }
+
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], foundRepositories: [FoundRepository] = [], missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, foundRepositories: foundRepositories)
         state.missingFolders = missing
         return state
     }

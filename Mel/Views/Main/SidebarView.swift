@@ -19,7 +19,7 @@ struct SidebarView: View {
                         projectSection(project)
                     }
                 }
-                .padding(.top, Theme.Size.sidebarTitleBar)
+                .padding(.top, Theme.Size.titleBar)
             }
             .scrollIndicators(.never)
             footer

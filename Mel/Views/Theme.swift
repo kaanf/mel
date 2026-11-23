@@ -306,8 +306,8 @@ enum Theme {
         static let statusPillExperience: CGFloat = 320
         /// 300 · B4 Review.
         static let statusPillReview: CGFloat = 300
-        /// 44 · sidebar top row that holds the traffic lights.
-        static let sidebarTitleBar: CGFloat = 44
+        /// 44 · title bar row: sidebar top (traffic lights), A2/A3/A4x bar with the centered title.
+        static let titleBar: CGFloat = 44
         /// 15 · Project context house icon; 12 · spec row chevron; 14 · New Spec plus.
         static let projectIcon: CGFloat = 15
         static let chevron: CGFloat = 12
@@ -329,6 +329,11 @@ enum Theme {
         static let agentTile: CGFloat = 30
         static let terminalIcon: CGFloat = 16
         static let checkIcon: CGFloat = 14
+        /// A2: column 680 wide; drop zone min 180 with a 40 pt icon; repo rows min 40.
+        static let pickProjectWidth: CGFloat = 680
+        static let dropZone: CGFloat = 180
+        static let dropIcon: CGFloat = 40
+        static let repoRow: CGFloat = 40
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
