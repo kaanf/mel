@@ -10,6 +10,8 @@ struct MainView: View {
     @State private var showInspector = true
     /// B1's Add Project… (A2) or Read Repo (A3); back to B1 when done.
     @State private var setupStep: SetupFlow.Step?
+    /// C3's start cards open B1 with a size picked.
+    @State private var newSpecSize: SpecSize?
 
     var body: some View {
         #if DEBUG
@@ -41,6 +43,7 @@ struct MainView: View {
         } else if isShowingNewSpec {
             NewSpecView(draft: initialDraft, onAddProject: { setupStep = .pickProject }, onReadRepo: { setupStep = .projectSetup($0) }) {
                 isShowingNewSpec = false
+                newSpecSize = nil
             }
         } else {
             library
@@ -51,7 +54,7 @@ struct MainView: View {
         #if DEBUG
         if let draft = DebugScreen.current?.newSpecDraft { return draft }
         #endif
-        return NewSpecView.Draft()
+        return NewSpecView.Draft(size: newSpecSize)
     }
 
     private var initialSetupStep: SetupFlow.Step {
@@ -68,7 +71,10 @@ struct MainView: View {
             if let item, item.specID.map({ id in state.specs.contains { $0.id == id } }) ?? true {
                 detail(item).id(item)
             } else if state.specs.isEmpty {
-                EmptyLibraryView { isShowingNewSpec = true }
+                HomeView { size in
+                    newSpecSize = size
+                    isShowingNewSpec = true
+                }
             } else {
                 ContentUnavailableView("No Spec Selected", systemImage: "doc.text", description: Text("Choose a spec in the sidebar."))
             }
@@ -112,22 +118,6 @@ struct MainView: View {
             } else {
                 AnalyzeView(session: session)
             }
-        }
-    }
-}
-
-struct EmptyLibraryView: View {
-    @Environment(AppState.self) private var state
-    let onNewSpec: () -> Void
-
-    var body: some View {
-        ContentUnavailableView {
-            Label("No Specs Yet", systemImage: "doc.text")
-        } description: {
-            Text("Start from an idea. The agent turns it into a spec with you.")
-        } actions: {
-            Button("New Spec…", action: onNewSpec)
-                .disabled(!state.agent.isReady)
         }
     }
 }

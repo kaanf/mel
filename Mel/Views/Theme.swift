@@ -422,6 +422,11 @@ enum Theme {
         static let dialogWidth: CGFloat = 520
         static let dialogLogo: CGFloat = 52
         static let alertBadge: CGFloat = 24
+        /// C3: column 680, intro max 560; how-it-works tiles min 140; start cards min 190.
+        static let homeWidth: CGFloat = 680
+        static let homeTextWidth: CGFloat = 560
+        static let homeStepMin: CGFloat = 140
+        static let homeStartMin: CGFloat = 190
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
