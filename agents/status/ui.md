@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 5 merged (4e37bc9); standing by
+Wave: v0.2.1 follow-ups (ready to merge)
 Updated: 2026-11-23
 
 ## Done
@@ -38,16 +38,15 @@ Updated: 2026-11-23
 
 ## In progress
 - Wave 5 merged to main (4e37bc9), full test green (131).
-  - 3706daf Settings › Updates group: `SettingsView(updates: UpdateSettings)` (version string, canCheck, automaticallyChecks Binding, check closure), previews incl. "Checking for Updates".
-  - 8950309 `App/Updater.swift` (@MainActor @Observable around `SPUStandardUpdaterController(startingUpdater: true)`; `canCheckForUpdates` from KVO with `MainActor.assumeIsolated`; `automaticallyChecksForUpdates` mirrored with didSet; `checkForUpdates()`), "Check for Updates…" in `CommandGroup(after: .appInfo)`, MelApp wiring.
-  - Checked in the Debug app: app menu reads About Mel | Check for Updates… | Settings…; Settings shows "Version 0.2 (build 1)", switch off (Debug auto checks NO), button enabled. Did not run a real check.
-- Toolbar check (8dddc94) done in the Debug app: at >= 860 pt the status capsule shows the full "Needs you · Claude Code is waiting for an answer" with 10 pt insets. Narrower, AppKit moves the whole status item (and Draft Now, Inspector) into the » overflow; it never truncates or goes icon-only, so no `.fixedSize()` needed. No change.
+- v0.2.1 follow-ups (user-approved), full test green (131), **ready to merge**:
+  - feat(ui) short toolbar status: `ToolbarStatus(status:title:detail:compact:)` in StatusBadge.swift. Discovery and Drafting measure their width (content + inspector, `onGeometryChange` after `.inspector`) and pass `compact` below `ToolbarStatus.fullTextWidth` (660). Full and compact are separate `ToolbarItem`s (if/else) because NSToolbar never widens an item whose content grows; ViewThatFits does nothing in a toolbar (AppKit overflows by ideal width). Checked in the Debug app: full text + Draft Now + Inspector at 900 pt (inspector hidden) and 915 pt (shown); "Needs you" with all buttons at 860/760/655 pt; growing back works. A very long spec name in the subtitle can still push items into overflow.
+  - fix(ui) sidebar arrows: the question card took focus on every appear, so after arrowing up to Discovery the next arrow went to the card. Now only a question that arrives while Discovery is open takes focus (`openedOn` in DiscoveryView). Checked with keys posted to the debug PID: REQUIREMENTS ↑ PRODUCT ↑ Discovery ↓ PRODUCT ↓ REQUIREMENTS ↑ ↑ Discovery ↓ PRODUCT. Trade-off: opening Discovery from the sidebar no longer puts focus in the card; Tab or a click does. Not unit-testable (focus); no new test.
 
 ## Next
-- Wait for the orchestrator.
-- Follow-ups with the orchestrator/user, do not start until told: the status disappears into » overflow below ~860 pt (a shorter "Needs you" variant via ViewThatFits could keep it visible); in the sidebar, Up arrow from PRODUCT.md never selects the Discovery row (keyboard reachability).
+- Wait for the orchestrator (merge into v0.2.1).
 
 ## Notes
+- Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.
 - GUI checks (2026-11-23, worked): select sidebar rows with `set value of attribute "AXSelected" of row N of outline` (outline = UI element 1 of UI element 1 of UI element 1 of UI element 1 of UI element 1 of window 1); System Events `click at` and CGEvent clicks do not select rows. Launch with `-ApplePersistenceIgnoreState YES`. Another agent's `xcodebuild test` starts a test-host Mel with the same debug bundle id and can quit the debug app: check `pgrep -x Mel` count == 1 before each step. Screens: CGWindowList by PID + `screencapture -l`.
 - Earlier: System Events can't tell two "Mel" processes apart (`first process whose unix id is …` + `window 1` still hit /Applications/Mel.app on 2026-11-23). Rule (orchestrator): no System Events / GUI scripting at all while /Applications/Mel.app is running, debug pid or not. Screenshots come from the orchestrator/user. Earlier toolbar screenshots after 15:55 were of the user's app, not the debug build.
 - While the user runs an install test of /Applications/Mel.app: don't launch the debug app, don't touch com.kaanf.mel defaults, and don't run the full xcodebuild test (MelTests are hosted by Mel.app, same bundle id). Only `cd MelKit && swift test`. Wait for the orchestrator to say the test is over.
