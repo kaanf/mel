@@ -25,6 +25,7 @@ import MelSystem
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let library: Library
     @ObservationIgnored private var sessions: [Spec.ID: SpecSession] = [:]
+    @ObservationIgnored private var runner: (executable: URL, runner: any AgentRunning)?
     @ObservationIgnored private var isPreview = false
     private static let searchPathsKey = "extraSearchPaths"
 
@@ -115,10 +116,14 @@ import MelSystem
         Task { await authorizeNotifications() }
     }
 
-    /// A runner for the detected executable, or nil while Claude Code isn't ready.
-    func makeAgentRunner() -> (any AgentRunning)? {
+    /// The runner for the detected executable, or nil while Claude Code isn't ready. One per
+    /// executable: it reads the login PATH once, and `runningSpecID` keeps runs from overlapping.
+    func agentRunner() -> (any AgentRunning)? {
         guard case .ready(let executable, _) = agent else { return nil }
-        return makeRunner(executable)
+        if let runner, runner.executable == executable { return runner.runner }
+        let made = makeRunner(executable)
+        runner = (executable, made)
+        return made
     }
 
     /// Keeps the sidebar in step with a session's spec.
