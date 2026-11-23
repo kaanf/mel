@@ -6,12 +6,15 @@ public struct AgentRequest: Sendable {
     public var workingDirectory: URL         // project folder (parent of specs/)
     public var resumeSessionID: String?
     public var persistSession: Bool          // false → --no-session-persistence
+    public var systemPrompt: String?         // stage contract → --append-system-prompt
 
-    public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool) {
+    public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool,
+                systemPrompt: String? = nil) {
         self.prompt = prompt
         self.workingDirectory = workingDirectory
         self.resumeSessionID = resumeSessionID
         self.persistSession = persistSession
+        self.systemPrompt = systemPrompt
     }
 }
 

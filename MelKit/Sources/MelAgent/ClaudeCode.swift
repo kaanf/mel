@@ -61,6 +61,7 @@ public struct ClaudeCode: AgentAdapter {
         ]
         if let session = request.resumeSessionID { arguments += ["--resume", session] }
         if !request.persistSession { arguments.append("--no-session-persistence") }
+        if let system = request.systemPrompt { arguments += ["--append-system-prompt", system] }
         return arguments
     }
 

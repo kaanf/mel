@@ -42,6 +42,13 @@ struct ClaudeCodeTests {
         let args = claude.arguments(for: request)
         #expect(args[args.firstIndex(of: "--resume")! + 1] == "abc")
         #expect(!args.contains("--no-session-persistence"))
+        #expect(!args.contains("--append-system-prompt"))
+    }
+
+    @Test func systemPromptIsAppended() {
+        let request = AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false, systemPrompt: "Answer as JSON.")
+        let args = claude.arguments(for: request)
+        #expect(args[args.firstIndex(of: "--append-system-prompt")! + 1] == "Answer as JSON.")
     }
 
     @Test func environmentIsAnAllowlist() {
@@ -98,6 +105,21 @@ struct ClaudeCodeTests {
         #expect(text(events).isEmpty)  // no deltas without --include-partial-messages
         guard case .done(let result) = events.last else { Issue.record("no done"); return }
         #expect(result.contains("questions"))
+    }
+
+    /// Recorded with write tools Mel never grants; still checks thinking, permission_denied and tool results stay silent.
+    @Test func editRunsGiveOnlyStepsAndResult() throws {
+        let short = try events("claude-2.1.311-edit-run-short.jsonl")
+        #expect(short.count == 4)  // session, step, rate limit, done
+        #expect(short[1] == .step("write"))
+        #expect(short.last == .done(result: "done"))
+
+        let long = try events("claude-2.1.311-edit-run-long.jsonl")
+        let steps = long.compactMap { if case .step(let s) = $0 { s } else { nil } }
+        #expect(steps == ["read src/lib.txt", "edit", "write", "write", "write", "read .git/config", "edit"])
+        #expect(text(long).isEmpty)
+        guard case .done(let result) = long.last else { Issue.record("no done"); return }
+        #expect(result.contains("Succeeded"))
     }
 
     @Test func signedOut() throws {
