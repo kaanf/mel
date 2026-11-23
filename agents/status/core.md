@@ -1,6 +1,6 @@
 # core status
 
-Wave: 1
+Wave: 2
 Updated: 2026-11-23
 
 ## Done
@@ -13,11 +13,14 @@ Updated: 2026-11-23
 - Fix after review: FileWatcher's own-write race. `noteWritten` no longer overwrites `known`; own writes are kept as an ordered pending list per file and matched by content in `check()`. This also covers several quick writes in a row. New tests check before the write lands and cover rapid own writes.
 - Second review fix: FileWatcher tests that depend on reports wait for them (the live FSEvents stream may report first). `noteWritten` skips text equal to the file. Full `xcodebuild … test` green 6 runs in a row (65 tests).
 
+- Wave 2 contract stubs (ed94bba): `StopReason.sessionNotFound`, `AppState.missingFolders/locate/removeMissing/specFolder` (specFolder is real), `extraSearchPaths` persisted in UserDefaults (real; `init` takes an optional `defaults:` for tests), `SpecSession.conflict/resolveConflict/canCommit/isGitRepository/updateIdea` (canCommit, isGitRepository real), `preview(lastError:)`.
+
 ## In progress
 - (nothing)
 
 ## Next
-- Wave 1 merged (3b32462); CONTRACTS updated (24f650e). Wait for Wave 2, which opens after platform's merge and G1. ui's Session requests arrive then. Start with 4.2 discovery loop.
+- 4.2 discovery loop, then 4.3, 4.4, 4.5, 4.8.
+- Decisions from orchestrator: start() right after createSpec; "Review What's Written" and "Open File" both call finishByHand(); usage limit with future resetsAt → resume() schedules `Notifier.post(at: resetsAt)` and waits until then; no "story 3 of 5" total.
 
 ## Notes
 - `DocKind` is now `CodingKeyRepresentable`, so `docs` encodes as a JSON object in state.json, e.g. `"product" : "locked"`.
@@ -32,7 +35,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none; the Wave 1 API request is done in 24f650e)
+- Stubs ready ed94bba. Note: adding `StopReason.sessionNotFound` broke the exhaustive switch in ui's `Mel/Views/Failure/FailureSheet.swift`; that commit adds `.sessionNotFound` to the `.user` case (one line) so main compiles. Tell ui.
 
 ## Questions for the user
 - (none)
