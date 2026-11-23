@@ -349,7 +349,7 @@ struct CoverageItem: Codable, Hashable {
     var state: CoverageState
 }
 
-enum CoverageState: String, Codable, Hashable { case covered, asking, notYet }
+enum CoverageState: String, Codable, Hashable { case covered, asking, notYet, later }   // later: round 2 (B2), no intake question covers it
 
 enum StopReason: Codable, Hashable {
     case user
