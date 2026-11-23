@@ -194,6 +194,18 @@ extension Decision { func replacedBy(in: [Decision]) -> String? }
 extension SpecStore { nonisolated var decisionsURL: URL }
 ```
 
+A2 repo rows (requested by ui):
+
+```swift
+// MelSpec (core)
+public struct FoundRepository: Identifiable, Hashable, Sendable { var url: URL; var language: String?; var modified: Date?; id = url }
+// AppState (core): private(set) var foundRepositories: [FoundRepository]   (was [URL])
+// MelSystem (platform): Git.repositories(in:) -> [Git.Repository]  { url, language: String?, modified: Date? }
+//   language from build files only (Package.swift/*.xcodeproj → Swift, build.gradle(.kts) → Kotlin, tsconfig.json → TypeScript,
+//   package.json → JavaScript, Cargo.toml → Rust, go.mod → Go, pyproject.toml/requirements.txt → Python, Gemfile → Ruby), else nil;
+//   modified = mtime of .git/index (or .git/HEAD). No git process, no file walk.
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
