@@ -1,6 +1,6 @@
 # core status
 
-Wave: 3
+Wave: 4 (model + prompts ready to merge)
 Updated: 2026-11-23
 
 ## Done
@@ -26,11 +26,14 @@ Updated: 2026-11-23
 
 - Debug bundle id `com.kaanf.mel.debug` (5cdeebf), Release unchanged; test-host change skipped as decided. Verified with `xcodebuild build` only (built Info.plist shows the debug id); the test run waits for the end of the install test.
 
+- Wave 4 model + prompts (4.9): `Answer.text`, `CoverageItem.phase` (decoder defaults a missing phase to `.product`; init defaults to `.product` so previews compile), `DiscoveryTurn` takes empty or missing `options` (open question), `coverageText` = `- Label (phase): state`, `answersText` renders free text (extra lines indented). discovery.md: phases in file order, open question first per phase, new topics only current/later phase, UX in Design; sample reply decodes (tested). design.md: 7 sections, `1. User experience` first. DiscoveryView `answerText` got a minimal `.text` case so main compiles; ui owns the real card. Repo-doc counts: criteria 69. Full suite green 2 runs.
+
 ## In progress
 - (nothing)
 
 ## Next
-- Nothing planned. Run the full `xcodebuild … test` once the orchestrator says the install test is over.
+- After merge: optional follow-up (e2e fixture for a 7-section DESIGN.md; the current fixture's DESIGN.md has informal sections and no test counts them, so it isn't required).
+- Never touch com.kaanf.mel defaults or /Applications/Mel.app.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -48,7 +51,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Ready to merge: 5cdeebf (Debug bundle id). Build only; tests not run yet, at your request.
+- Merge agent/core (Wave 4 model + prompts).
 
 ## Questions for the user
 - (none)

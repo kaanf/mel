@@ -170,6 +170,17 @@ final class SpecSessionTests {
         #expect(session.currentQuestion?.id == "payments")
     }
 
+    @Test func openQuestionTakesFreeText() async throws {
+        let open = #"{"coverage":[{"label":"Problem","phase":"product","state":"asking"}],"next":{"id":"idea","title":"What do you have in mind?","why":"","shapes":"product","options":[]},"done":false}"#
+        let (session, runner, _) = try makeSession([[.done(result: open)], [.done(result: question)]])
+        await session.start()
+        #expect(session.currentQuestion?.options == [])
+        #expect(session.spec.coverage.first?.phase == .product)
+        await session.answer(.text("Calm, for small studios."))
+        #expect(runner.requests[1].prompt.contains("- What do you have in mind? Calm, for small studios."))
+        #expect(runner.requests[1].prompt.contains("- Problem (product): asking"))
+    }
+
     @Test func draftNowDecidesTheRest() async throws {
         let (session, runner, _) = try makeSession([[.done(result: question)], product])
         await session.start()

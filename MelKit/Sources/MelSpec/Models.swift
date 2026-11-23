@@ -84,15 +84,26 @@ public struct Option: Codable, Hashable, Sendable {
 public enum Answer: Codable, Hashable, Sendable {
     case option(Int, note: String?)
     case agentDecides
+    case text(String)
 }
 
 public struct CoverageItem: Codable, Hashable, Sendable {
     public var label: String
+    public var phase: DocKind
     public var state: CoverageState
 
-    public init(label: String, state: CoverageState) {
+    public init(label: String, phase: DocKind = .product, state: CoverageState) {
         self.label = label
+        self.phase = phase
         self.state = state
+    }
+
+    /// state.json from before phased Discovery has no `phase`; those topics load as `.product`.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        label = try c.decode(String.self, forKey: .label)
+        phase = try c.decodeIfPresent(DocKind.self, forKey: .phase) ?? .product
+        state = try c.decode(CoverageState.self, forKey: .state)
     }
 }
 

@@ -175,6 +175,7 @@ private struct AnsweredList: View {
             let label = question.options.indices.contains(index) ? question.options[index].label : "Option \(index + 1)"
             return note.map { "\(label) · \($0)" } ?? label
         case .agentDecides: return "You decide"
+        case .text(let text): return text
         case nil: return ""
         }
     }
