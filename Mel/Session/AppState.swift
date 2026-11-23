@@ -15,7 +15,7 @@ import MelSystem
     var projects: [Project] = []
     private(set) var contexts: [Project.ID: ProjectContext] = [:]
     /// A2: git repos one level under `~/Developer`.
-    private(set) var foundRepositories: [URL] = []
+    private(set) var foundRepositories: [FoundRepository] = []
     /// A3: the project-context run, while it's on screen.
     private(set) var projectSetup: ProjectSetup?
     var selection: Spec.ID?
@@ -183,7 +183,7 @@ import MelSystem
         return spec
     }
 
-    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [URL] = [], projectSetup: ProjectSetup? = nil) -> AppState {
+    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil) -> AppState {
         let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() }, defaults: UserDefaults(suiteName: "preview")!)
         state.isPreview = true
         state.specs = specs
