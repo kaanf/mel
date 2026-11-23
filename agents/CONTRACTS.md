@@ -223,6 +223,15 @@ struct AgentRequest { var allowsTools: Bool = true }   // core sets false for an
 // ProjectContext.read / .sources are persisted in .mel/project/context.json (core)
 ```
 
+B1 (requested by ui):
+
+```swift
+// AppState (core)
+func specFolder(name: String, size: SpecSize, project: Project?, parent: URL) -> URL   // B1 "Save to"; project nil → <parent>/<slug>/specs/<slug>/
+func createSpec(name:, idea:, size:, project: Project?, parent: URL? = nil /* used when project is nil; default ~/Developer */, buildsOn:, files:, logs:, fillGaps:) throws -> SpecSession
+// v1 specFolder(name:parent:) goes away once ui uses the new one
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
