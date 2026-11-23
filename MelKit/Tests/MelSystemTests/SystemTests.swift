@@ -86,6 +86,44 @@ struct GitTests {
         #expect(try Git.run(["ls-files"], in: folder) == "specs/TASKS.md\n")
     }
 
+    func write(_ text: String, _ path: String) throws {
+        let url = folder.appending(path: path)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try text.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    @Test func v2SpecCommitTakesOneSpecAndProjectContext() throws {
+        defer { cleanUp() }
+        try Git.initRepository(folder)
+        try Git.run(["config", "user.name", "Mel Tests"], in: folder)
+        try Git.run(["config", "user.email", "tests@example.com"], in: folder)
+        try write("# Requirements\n", "specs/breaks/REQUIREMENTS.md")
+        try write("{}", "specs/breaks/.mel/state.json")
+        try write("# Spec\n", "specs/other/SPEC.md")
+
+        // No .mel/project yet (A3 skipped): the commit still works.
+        try Git.commit(paths: Git.specPaths(slug: "breaks", project: folder), message: "Add spec", in: folder)
+        #expect(try Git.run(["ls-files"], in: folder) == "specs/breaks/REQUIREMENTS.md\n")
+
+        try write("# Tech\n", ".mel/project/tech.md")
+        #expect(Git.specPaths(slug: "breaks", project: folder).last == ".mel/project")
+        try Git.commit(paths: Git.specPaths(slug: "breaks", project: folder), message: "Context", in: folder)
+        #expect(try Git.run(["ls-files"], in: folder) == ".mel/project/tech.md\nspecs/breaks/REQUIREMENTS.md\n")
+    }
+
+    @Test func repositoriesOneLevelDeep() throws {
+        defer { cleanUp() }
+        try FileManager.default.createDirectory(at: folder.appending(path: "b-app/.git"), withIntermediateDirectories: true)
+        try write("gitdir: /elsewhere\n", "a-worktree/.git")
+        try FileManager.default.createDirectory(at: folder.appending(path: "notes"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: folder.appending(path: "group/nested/.git"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: folder.appending(path: ".hidden/.git"), withIntermediateDirectories: true)
+        try write("", "file.txt")
+
+        #expect(Git.repositories(in: folder).map(\.lastPathComponent) == ["a-worktree", "b-app"])
+        #expect(Git.repositories(in: folder.appending(path: "missing")).isEmpty)
+    }
+
     @Test func failureCarriesGitOutput() throws {
         defer { cleanUp() }
         #expect(throws: Git.Failure.self) { try Git.commit(paths: ["specs"], message: "x", in: folder) }

@@ -1,6 +1,6 @@
 # Agent integration
 
-> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+> Updated for v2 in Wave 6 (stage protocols, prompts, attachments). Where it still differs from [V2.md](V2.md), V2.md wins.
 
 How Mel finds, runs and recovers Claude Code. The MVP supports Claude Code only; Codex comes later as a second `AgentAdapter` (notes at the end). This is the riskiest part of the product: the CLI changes often. Flags marked verified were observed on Claude Code 2.1.311 (see [research/CLAUDE-CODE-CLI.md](research/CLAUDE-CODE-CLI.md), with real recorded fixtures). Anything else must be verified in task M1 1.1.
 
@@ -23,7 +23,7 @@ Run detection off the main actor; show "Checking" until it finishes. Re-run when
 
 Common invocation rules:
 
-- Working directory: the project folder (parent of `specs/`), so the agent can read existing code if any.
+- Working directory: the project folder (parent of `specs/` and `.mel/`), so the agent can read existing code and attachments.
 - Environment: `HOME`, `USER` (verified: without `USER` the CLI reports "Not logged in"), login-shell `PATH`, `TERM=dumb`, `NO_COLOR=1`. Nothing else: an allowlist, never the app's own environment.
 - **Subscription only, never the API.** Claude Code must run on the user's Claude subscription (their `claude` sign-in). The allowlist above keeps out `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK`, `CLAUDE_CODE_USE_VERTEX` and similar, which would switch the CLI to API billing. Check the `init` record: `apiKeySource` must be `"none"`; otherwise stop the run and show an error.
 - Prompt goes through **stdin**, not argv (length limits, escaping).
@@ -64,53 +64,49 @@ Record mapping:
 
 ## Stage protocols
 
-Two kinds of stage output.
+Two kinds of stage output. Every run uses the same read-only invocation above; only the prompt changes. Fixtures for every shape below are in `MelKit/Tests/MelAgentTests/Fixtures/` (recorded 2026-11-23 on 2.1.311 with the provisional prompts in [research/v2-prompts/](research/v2-prompts/); re-record with `record.py` there when core's prompts land).
 
 ### Structured (JSON) stages
 
-Used for Discovery (and later "Ask for changes"). The agent must return one JSON object. Use the CLI's schema flag if M1 1.1 confirms it exists; otherwise ask for JSON only and decode the final result text. If decoding fails, show the error with a Retry button. No automatic retry loop.
+The agent returns one JSON object as the final `result` text; Mel decodes it. No schema flag: ask for "one JSON object and nothing else". Verified: all recorded runs returned bare JSON (no code fence). If decoding fails, show the error with a Retry button.
 
-Discovery turn request: idea, answers so far, coverage list (each topic tagged with its phase: product, requirements, design, tasks). There is no question limit: the agent keeps asking until every coverage topic is covered. It works phase by phase in file order, opens each phase with an open question (free-text answer, `options` empty), and may add topics only to the current or a later phase (REQUIREMENTS 4.12–4.14). To keep it short, the prompt tells it to ask only questions whose answer changes the spec, to combine related points into one question, and to always mark a suggested option. Response:
+| Run | Screen | Prompt gets | Returns | Decoder | Fixture | Time |
+|---|---|---|---|---|---|---|
+| Project context | A3 | repo (agent reads it), new-project flag | `{"product", "tech", "structure", "principles"}`: Markdown of the four `.mel/project/` files | `ProjectContext.decode` | `project-context` | ~23 s, 8 turns |
+| Intake | B2 | context, idea, size and its files, builds-on, attachment paths, topics, question count | `{"coverage": [CoverageItem], "questions": [question]}`, all round-1 questions at once | core (intake type) | `intake` | ~24 s |
+| Analyze | B6 | every approved file inline | `AnalyzeResult` JSON | `AnalyzeResult.decode` | `analyze` | ~56 s, 1 turn |
+| Impact | C1 | the edit as a unified diff, the stale files inline | `{"items": [{"kind", "what", "count"}]}` | `ImpactResult.decode` | `impact` | ~4 s |
 
-```json
-{
-  "coverage": [
-    { "label": "Problem", "state": "covered" },
-    { "label": "Payments", "state": "asking" },
-    { "label": "Cancellations", "state": "notYet" }
-  ],
-  "next": {
-    "id": "payments",
-    "title": "How do members pay?",
-    "why": "Decides whether the spec covers checkout, refunds and receipts.",
-    "shapes": "requirements",
-    "options": [
-      { "label": "Class packs bought in the app", "note": "You mentioned buying class packs in your idea", "suggested": true },
-      { "label": "Paid at the desk, app only books", "note": "No checkout in the app; staff adds credits" },
-      { "label": "Monthly membership with auto-renew", "note": "Subscription, unlimited booking" }
-    ]
-  },
-  "done": false
-}
-```
+Field rules:
 
-The app always appends the "You decide" option itself. `done: true` with no `next` ends Discovery. The first turn also proposes the coverage list from the idea.
+- **Question** (intake and draft trailer): `{"id", "title", "why", "shapes", "options": [{"label", "note", "suggested"}]}`, the v1 Discovery question. `options: []` is an open question. Exactly one option has `suggested: true`. The app adds "You decide".
+- **Coverage item**: `{"label", "phase", "state"}`; `phase` is a `DocKind` raw value of the spec's size; `state` is `covered`, `asking` or `notYet`.
+- **ProjectContext.structure** has `## Modules` with lines `- Name — path` (em dash), which B1's "Builds on" chips read.
+- **AnalyzeResult**: `stats` (4 × `{"value", "label"}`), `issues` (`{"id", "kind", "location", "text", "actions"}`, `kind` ∈ `contradiction`, `noTask`, `qualityNotCovered`, `scopeCreep`, exactly 2 actions `{"label", "fix", "files": [DocKind]}`, the second primary), `coverage` (`{"id", "text", "screen", "architecture", "task", "test"}`, marks `covered`/`missing`/`conflict`, `screen` is `null` without EXPERIENCE.md).
+- **ImpactResult**: one item per stale file in file order, `kind` a `DocKind` raw value, `"what": "Nothing"` and `"count": "0"` when unaffected.
 
-Later, ask-for-changes response: `{ "reply": "…", "suggestions": [{ "find": "…", "replace": "…" }] }` (see SPEC-FORMAT.md › Suggestions).
+Analyze and Impact pass the files inline and say "do not read other files": one turn, no tool calls. Intake and Project context let the agent read the repo.
 
-### Streaming Markdown stages
+### Streaming Markdown stages (drafting, revise)
 
-Used for drafting the four files. The agent outputs only the file's Markdown. For REQUIREMENTS.md and TASKS.md the first line is a plan (`5 stories`, `11 tasks`) that Mel strips. Progress = `##` sections written vs. planned (DESIGN.md is always 6). The current step label is the last `##` heading ("Writing story 3 of 5: Cancel a booking"). No other markers.
+The agent outputs only the file's Markdown; Mel shows the text deltas live and saves the final `result`. Two kinds of comment, both stripped before saving:
+
+- **Step markers** `<!-- mel:step N -->` on their own line, N counting from 1, before each step of the file kind's fixed checklist (`DocKind.draftSteps`, listed in the prompt). B3 moves the checklist to the highest N seen. Verified: all 7 markers arrive in order, but two can come back to back (steps 2 and 3 written together), so never assume one marker per section.
+- **Gap questions**: at most one trailing `<!-- mel:questions` + newline + JSON array of up to 3 questions (shape above, `shapes` is the file's kind) + newline + `-->` at the very end. Absent when there are no gaps. They become round-2 questions in B4.
+
+Markers and the trailer are **split across text deltas** (recorded: `"<!-- mel:"` + `"step 1 -->"`, `"<!-"` + `"- mel:questions\n["`). Strip from the accumulated text, never per delta, and hold back a trailing partial `<!--` from the live preview until it closes.
+
+The v1 plan line (`5 stories`) is gone; progress is the step markers.
+
+### Attachments
+
+B1 copies files into `specs/<slug>/.mel/attachments/`; prompts list their paths relative to the project folder, and the agent opens them with Read. Verified under the read-only flags (fixture `attachments`): a `.log` comes back as numbered text, a `.png` as an `image` tool result the model describes. The files are inside the working directory, so no extra permission or `--add-dir` is needed. The step line reads `read attachments/<file>`.
 
 ## Prompts
 
-Prompts are Markdown files in the app bundle (`MelKit/Sources/MelSpec/Prompts/`: `discovery.md`, `product.md`, `requirements.md`, `design.md`, `tasks.md`, `continue.md`) with `{{placeholders}}` filled by plain string replacement. Each embeds the relevant section of [SPEC-FORMAT.md](SPEC-FORMAT.md).
+Prompts are Markdown files in the app bundle (`MelKit/Sources/MelSpec/Prompts/`) with `{{placeholders}}` filled by plain string replacement (`Prompt.build`), owned by core. Every prompt includes the four project context files when they exist. The provisional v2 texts used for the fixtures are in [research/v2-prompts/](research/v2-prompts/): `context.md`, `intake.md`, `draft-requirements.md`, `analyze.md`, `impact.md`.
 
-Completeness rule, in every drafting prompt:
-
-- "The file must be complete. Never write open questions, TBD, TODO or placeholders. When information is missing, choose the best option and wrap that decision in a `> [!ASSUMPTION]` callout."
-
-Topics the user answered "You decide", and topics left when the user clicked Draft Now, are passed to the agent as "decide and mark as assumption".
+Drafting prompts: open questions (`> [!OPEN QUESTION]`) and assumptions (`> [!ASSUMPTION]`) may stay in a file (V2.md §5, OQ #18). With "Let Mel fill small gaps" off, gaps become open questions instead of assumptions. Topics answered "You decide", and topics left at Draft Now, are passed as "decide and mark as assumption".
 
 ## Failure classification
 
