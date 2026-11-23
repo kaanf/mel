@@ -10,7 +10,7 @@ Updated: 2026-11-23
   - 3.1–3.10 in `Views/`: Welcome, Settings › Agents, Sidebar, New Spec sheet, Discovery (+ inspector), MarkdownBlocksView (LazyVStack, EARS keywords bold), Drafting (running/stopped + live preview inspector), Review (Preview / Edit Markdown, Before you approve, Approve disabled while assumptions remain), Failure sheet, Spec ready sheet. Plus EmptyLibraryView, LockedDocView, AgentRow/AgentStatusBadge.
   - `#Preview`s for every component and screen state, data in `Views/Preview/PreviewData.swift`.
 
-- Wave 2, rebased on origin/main (c5c1487), full `xcodebuild test` green (114 passed), no warnings from App/ or Views/. **wave 2 ready to merge**
+- Wave 2, rebased on origin/main (c5c1487), full `xcodebuild test` green (114 passed), no warnings from App/ or Views/. merged to main (1fad575)
   - Discovery keyboard: digits 1…N pick an option (ignored while the note field has focus), ↩ is Continue. Question card takes focus on appear.
   - Keep Mine / Use File: alert in Review while `session.conflict == kind` → `resolveConflict(keepMine:)`. Review no longer debounces itself; it calls `save` on change and the session debounces the write.
   - Missing rows: "Missing" section in the sidebar for `missingFolders` (title = project folder name), menu + context menu with Locate… (`fileImporter` → `locate(_:at:)`, error alert) and Remove from List (`removeMissing`).
@@ -25,7 +25,8 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wait for Wave 3 (5.2 accessibility pass, app icon).
+- When core's `SpecSession.preview(... conflict:)` (CONTRACTS 3b14967) is on main and the orchestrator says so: rebase, add a Review preview for the Keep Mine / Use File alert.
+- Then Wave 3 (5.2 accessibility pass, app icon).
 
 ## Notes
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
@@ -43,7 +44,7 @@ Updated: 2026-11-23
 ## Requests to orchestrator
 - (none; Wave 1 requests are in CONTRACTS 884c099. "Story 3 of 5" is cut, step list stays.)
 - core: ui calls `scanForAgent()` at launch, so AppState.init should not scan too.
-- core (small): `SpecSession.preview(... conflict:)` so the Keep Mine / Use File alert gets a preview; no preview for it now.
+- core: `SpecSession.preview(... conflict:)`, in CONTRACTS 3b14967, waiting for it on main.
 
 ## Questions for the user
 - (none)
