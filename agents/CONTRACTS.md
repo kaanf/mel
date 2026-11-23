@@ -160,6 +160,68 @@ enum MarkdownParser {
 }
 ```
 
+## MelSpec/Pipeline.swift, Prompt.swift (core)
+
+```swift
+extension DocKind {
+    var next: DocKind? { get }                 // product → requirements → design → tasks → nil
+}                                              // DocKind is also CodingKeyRepresentable
+
+enum PipelineEvent: Hashable, Sendable {
+    case discoveryFinished, draftFinished, draftStopped(StopReason), resume, finishByHand
+    case approve(DocKind, assumptionsLeft: Int)
+    case edited(DocKind)
+}
+
+extension Spec {
+    /// Pure reducer: applies the event, or returns false and leaves the spec unchanged.
+    @discardableResult mutating func apply(_ event: PipelineEvent) -> Bool
+}
+
+extension MarkdownParser {
+    static func uncoveredCriteria(requirements: String, tasks: String) -> [String]
+}
+
+enum Prompt: String, CaseIterable, Sendable {  // MelSpec/Prompts/*.md (+ shared rules.md), Bundle.module
+    case discovery, product, requirements, design, tasks, `continue`
+    init(drafting kind: DocKind)
+    func build(_ values: [String: String]) -> String   // single-pass {{key}} replacement
+}
+```
+
+## MelStorage (core)
+
+```swift
+actor SpecStore {                              // one per spec folder; atomic writes
+    init(folder: URL, debounce: Duration = .milliseconds(500))
+    static func slug(_ name: String) -> String
+    static func specsFolder(name: String, parent: URL) -> URL
+    static func existingFiles(in folder: URL) -> [DocKind]
+    static func create(_ spec: Spec) throws
+    static func loadState(in folder: URL) throws -> Spec
+    func read(_ kind: DocKind) -> String?
+    func readAll() -> [DocKind: String]
+    func write(_ text: String, for kind: DocKind) throws
+    nonisolated func url(_ kind: DocKind) -> URL
+    func saveState(_ spec: Spec)                // debounced .mel/state.json
+    func flushState() throws
+}
+
+final class FileWatcher: Sendable {            // FSEvents; onChange on a background queue
+    enum Resolution: Hashable, Sendable { case reload(String), conflict(fileText: String) }
+    init(folder: URL, onChange: @escaping @Sendable (DocKind, String) -> Void)
+    func noteWritten(_ text: String, for kind: DocKind)   // call before every Mel write
+    static func resolve(fileText: String, editorText: String, savedText: String) -> Resolution
+}
+
+struct Library {                               // ordered folder bookmarks in UserDefaults
+    struct Item: Hashable, Sendable { var isMissing: Bool /* … */ }
+    init(defaults: UserDefaults = .standard, key: String = "library")
+    func load() -> [Item]
+    func save(_ folders: [URL])
+}
+```
+
 ## MelAgent/AgentTypes.swift (platform)
 
 ```swift
