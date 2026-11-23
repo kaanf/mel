@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x done; next B2
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2 done; next B3
 Updated: 2026-11-23
 
 ## Done
@@ -79,8 +79,13 @@ Updated: 2026-11-23
 - A4x First spec (`Views/Setup/FirstSpecView.swift`), SetupFlow `.firstSpec`, debug screen `firstSpec`, previews Empty / With idea. Compared at 1280 × 800: within 1–2 px; only deviation is SwiftUI's one-word-last-line rule in the placeholder wrap. Product only; locked Feature/Quick fix cards link to A2; name is fixed "Untitled Spec" (as drawn: "Mel suggests a name once you describe your idea"; no suggestion yet); drop adds files shown as B1 evidence chips (not drawn, B1's part); Start passes no project/parent, core creates `~/Developer/<slug>/`.
   - Shared with B1 now: `IdeaTextArea` (placeholder gets the 23 pt line height too, fixes B1's placeholder), `EvidenceChip`, `NewSpecView.examples`.
 
+- B2 Intake (`Views/Discovery/DiscoveryView.swift` rewritten in v2 style), debug screen `intake` now uses `PreviewData.intake` (the mock's content). Compared at 1280 × 800: content column and inspector within ~1 px.
+  - Shared parts restyled to v2: `StageStepper` (check / filled dot / ring, 16 pt lines; used by B2, B3), `RadioRow` (B2 option row; C2 FailureSheet uses it too, C2 not redone yet). New glyphs chevronRight, arrowRight, draftNow, inspector. Toolbar status is now `StatusPill` in `.principal` with `sharedBackgroundVisibility(.hidden)` (no system glass around it).
+  - Behavior: no "You decide" option any more (not drawn); Decide Later answers `.agentDecides` (shown "Later · the agent decides" in Answered). Digits 1…N. Open questions (no options, not drawn) keep a 3-line answer field in the note field's look.
+  - Deviations: Draft Now and the inspector toggle sit at the window's trailing edge above the inspector (system toolbar; mock puts them left of the inspector; `.primaryAction` didn't change it). "About 2 min left" hidden (V2 §2). Coverage has no Round 2 state in the model, so later items show "Not yet". Understanding counts covered items (mock shows 4 of 10 with 3 covered). Long coverage labels truncate (mock wraps them out of their 28 pt rows). Note placeholder is "Note for the agent" (mock's is example text). Mock's B2 sidebar is the older wider variant; ours is variant (b).
+
 ## Next
-- B2 Intake next, then B3–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- B3 Drafting next, then B4–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 

@@ -1,7 +1,8 @@
 import SwiftUI
 import MelSpec
 
-/// Questions one at a time, answered list above, coverage in the inspector.
+/// B2 Intake (design/v2 Native-2-Discovery): the round-1 questions one at a time, answered list above,
+/// coverage in the inspector.
 struct DiscoveryView: View {
     let session: SpecSession
     @Binding var showInspector: Bool
@@ -18,57 +19,75 @@ struct DiscoveryView: View {
     }
 
     private var spec: Spec { session.spec }
+    private var intakeCount: Int { spec.questions.count { $0.round == .intake } }
+    private var number: Int { session.answeredQuestions.count + 1 }
+    /// "2 of 5" while a question is open.
+    private var progress: String? { session.currentQuestion == nil || intakeCount == 0 ? nil : "\(number) of \(intakeCount)" }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                StageStepper(current: 1)
-                GroupBox {
-                    Text(spec.idea)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } label: {
-                    HStack {
-                        Text("Your Idea")
-                        Spacer()
+            VStack(alignment: .leading, spacing: Theme.Space.x20) {
+                StageStepper(steps: ["Idea", progress.map { "Intake \($0)" } ?? "Intake", "Draft", "Review"], current: spec.stage == .discovery ? 1 : 2)
+                    .padding(.horizontal, Theme.Space.x12)
+                section("Your Idea") {
+                    HStack(alignment: .top, spacing: Theme.Space.x12) {
+                        Text(spec.idea)
+                            .textStyle(Theme.Text.body)
+                            .foregroundStyle(Theme.Colors.label)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         Button("Edit…") { editingIdea = true }
-                            .buttonStyle(.link)
+                            .buttonStyle(DesignLinkStyle(text: Theme.Text.body))
                             .disabled(session.isRunning)
                     }
+                    .padding(.vertical, Theme.Space.x10)
+                    .padding(.horizontal, Theme.Space.x12)
+                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
                 }
                 if !session.answeredQuestions.isEmpty {
-                    AnsweredList(session: session)
+                    section("Answered") { AnsweredList(session: session) }
                 }
                 current
             }
-            .frame(maxWidth: 620)
-            .padding(24)
+            .frame(maxWidth: Theme.Size.intakeWidth)
+            .padding(EdgeInsets(top: Theme.Space.x12, leading: Theme.Space.x24, bottom: Theme.Space.x32, trailing: Theme.Space.x24))
             .frame(maxWidth: .infinity)
         }
+        .background(Theme.Colors.background)
         .navigationTitle("Discovery")
         .navigationSubtitle(spec.name)
         .toolbar {
             // Two items, not one: NSToolbar doesn't widen an item whose content grows.
             if compact {
-                ToolbarItem(placement: .status) { status }
+                ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
             } else {
-                ToolbarItem(placement: .status) { status }
+                ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
             }
             if spec.stage == .discovery {
-                ToolbarItem {
-                    Button("Draft Now") { Task { await session.draftNow() } }
-                        .help("Skip the remaining questions. The agent decides the rest and marks each decision as an assumption.")
-                        .disabled(session.isRunning)
+                ToolbarItem(placement: .primaryAction) {
+                    Button { Task { await session.draftNow() } } label: {
+                        HStack(spacing: Theme.Space.x6) {
+                            DesignIcon(glyph: .draftNow, size: Theme.Size.alertIcon)
+                            Text("Draft Now").textStyle(Theme.Text.body)
+                        }
+                        .foregroundStyle(Theme.Colors.label)
+                        .padding(.horizontal, Theme.Space.x6)
+                    }
+                    .help("Skip the remaining questions. The agent fills gaps and marks each one as an assumption.")
+                    .disabled(session.isRunning)
                 }
             }
-            ToolbarItem {
-                Button("Inspector", systemImage: "sidebar.trailing") { showInspector.toggle() }
-                    .help("Show or hide the inspector")
+            ToolbarItem(placement: .primaryAction) {
+                Button { showInspector.toggle() } label: {
+                    DesignIcon(glyph: .inspector, size: Theme.Size.settingsIcon).foregroundStyle(Theme.Colors.label)
+                }
+                .accessibilityLabel(showInspector ? "Hide inspector" : "Show inspector")
+                .help("Show or hide the inspector")
             }
         }
         .inspector(isPresented: $showInspector) {
             DiscoveryInspector(spec: spec)
-                .inspectorColumnWidth(min: 220, ideal: 260)
+                .inspectorColumnWidth(min: Theme.Size.inspectorWidth, ideal: Theme.Size.inspectorWidth, max: Theme.Size.inspectorWidth)
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .focusedSceneValue(\.inspectorShown, $showInspector)
@@ -77,31 +96,50 @@ struct DiscoveryView: View {
         }
     }
 
+    private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x6) {
+            Text(title)
+                .textStyle(Theme.Text.bodyBold)
+                .foregroundStyle(Theme.Colors.label)
+                .padding(.horizontal, Theme.Space.x12)
+                .accessibilityAddTraits(.isHeader)
+            content()
+        }
+    }
+
     @ViewBuilder
     private var current: some View {
         if let question = session.currentQuestion {
-            QuestionCard(session: session, question: question, number: session.answeredQuestions.count + 1, takesFocus: question.id != openedOn)
+            QuestionCard(session: session, question: question, number: number, total: intakeCount, takesFocus: question.id != openedOn)
                 .id(question.id)
         } else if let error = session.lastError {
-            GroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    StatusBadge(status: .stopped, title: "Claude Code could not continue")
-                    Text(error)
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                    Button("Try Again") { Task { await session.retry() } }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                Text("Claude Code could not continue")
+                    .textStyle(Theme.Text.bodyBold)
+                    .foregroundStyle(Theme.Colors.label)
+                Text(error)
+                    .textStyle(Theme.Text.caption)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .textSelection(.enabled)
+                Button("Try Again") { Task { await session.retry() } }
+                    .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.button, leading: Theme.Space.x16, trailing: Theme.Space.x16, text: Theme.Text.body))
             }
+            .padding(Theme.Space.x12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
         } else if session.isRunning {
-            HStack(spacing: 8) {
-                ProgressView().controlSize(.small)
-                Text("Claude Code is thinking about the next question…")
-                    .foregroundStyle(.secondary)
+            HStack(spacing: Theme.Space.x8) {
+                StatusDot(style: .running)
+                Text("Claude Code is preparing the questions…")
+                    .textStyle(Theme.Text.callout)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
             }
+            .padding(.horizontal, Theme.Space.x12)
         } else if spec.stage != .discovery {
-            Text("Discovery is complete. The spec files are in the sidebar.")
-                .foregroundStyle(.secondary)
+            Text("Intake is complete. The spec files are in the sidebar.")
+                .textStyle(Theme.Text.callout)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+                .padding(.horizontal, Theme.Space.x12)
         }
     }
 
@@ -110,11 +148,11 @@ struct DiscoveryView: View {
     @ViewBuilder
     private var status: some View {
         if session.currentQuestion != nil {
-            ToolbarStatus(status: .needsYou, detail: "Claude Code is waiting for an answer", compact: compact)
+            StatusPill(indicator: .needsYou, text: compact ? "Needs you" : "Needs you · Claude Code is waiting for an answer", count: progress ?? "", maxWidth: Theme.Size.statusPillIntake)
         } else if session.lastError != nil {
-            ToolbarStatus(status: .stopped)
+            StatusPill(indicator: .idle, text: "Stopped", count: "", maxWidth: Theme.Size.statusPillIntake)
         } else if session.isRunning {
-            ToolbarStatus(status: .checking, title: "Running", detail: "Claude Code is thinking", compact: compact)
+            StatusPill(indicator: .running, text: compact ? "Running" : "Running · Claude Code is preparing the questions", count: "", maxWidth: Theme.Size.statusPillIntake)
         }
     }
 }
@@ -150,42 +188,36 @@ private struct IdeaEditor: View {
     }
 }
 
+/// Answered questions, one 36 pt row each; click to change the answer.
 private struct AnsweredList: View {
     let session: SpecSession
 
     var body: some View {
-        GroupBox("Answered") {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(session.answeredQuestions) { question in
-                    if question.options.isEmpty {
-                        TextAnswerRow(question: question, text: answerText(question)) { change(question, to: $0) }
-                            .disabled(session.isRunning)
-                    } else {
-                        Menu {
-                            ForEach(question.options.indices, id: \.self) { index in
-                                Button(question.options[index].label) { change(question, to: .option(index, note: nil)) }
-                            }
-                            Divider()
-                            Button("You Decide") { change(question, to: .agentDecides) }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(question.title)
-                                    .foregroundStyle(.secondary)
-                                Text(answerText(question))
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(.rect)
-                        }
-                        .menuStyle(.button)
-                        .buttonStyle(.plain)
-                        .menuIndicator(.hidden)
-                        .help("Change this answer")
+        VStack(spacing: 0) {
+            ForEach(Array(session.answeredQuestions.enumerated()), id: \.element.id) { index, question in
+                if index > 0 { rowSeparator }
+                if question.options.isEmpty {
+                    TextAnswerRow(question: question, text: answerText(question)) { change(question, to: $0) }
                         .disabled(session.isRunning)
+                } else {
+                    Menu {
+                        ForEach(question.options.indices, id: \.self) { index in
+                            Button(question.options[index].label) { change(question, to: .option(index, note: nil)) }
+                        }
+                        Divider()
+                        Button("Decide Later") { change(question, to: .agentDecides) }
+                    } label: {
+                        AnsweredRow(title: question.title, answer: answerText(question))
                     }
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
+                    .menuIndicator(.hidden)
+                    .help("Change this answer")
+                    .disabled(session.isRunning)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
 
     private func change(_ question: Question, to answer: Answer) {
@@ -198,13 +230,42 @@ private struct AnsweredList: View {
             let label = question.options.indices.contains(index) ? question.options[index].label : "Option \(index + 1)"
             return note.map { "\(label) · \($0)" } ?? label
         case .text(let text): return text
-        case .agentDecides: return question.options.isEmpty ? "Skipped · the agent decides" : "You decide"
+        case .agentDecides: return "Later · the agent decides"
         case nil: return ""
         }
     }
 }
 
-/// Answered open question: click to edit the text; saving it empty skips the question.
+private var rowSeparator: some View {
+    Rectangle().fill(Theme.Colors.separator).frame(height: Theme.Size.hairline).padding(.leading, Theme.Space.x12)
+}
+
+private struct AnsweredRow: View {
+    let title: String
+    let answer: String
+
+    var body: some View {
+        HStack(spacing: Theme.Space.x8) {
+            Text(title)
+                .textStyle(Theme.Text.body)
+                .foregroundStyle(Theme.Colors.label)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(answer)
+                .textStyle(Theme.Text.body)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+                .lineLimit(1)
+            DesignIcon(glyph: .chevronRight, size: Theme.Size.rowChevron)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+        }
+        .padding(.horizontal, Theme.Space.x12)
+        .frame(height: Theme.Size.answeredRow)
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Answered open question: click to edit the text; saving it empty leaves it to the agent.
 private struct TextAnswerRow: View {
     let question: Question
     let text: String
@@ -217,13 +278,7 @@ private struct TextAnswerRow: View {
             if case .text(let text) = question.answer { draft = text } else { draft = "" }
             editing = true
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(question.title)
-                    .foregroundStyle(.secondary)
-                Text(text)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(.rect)
+            AnsweredRow(title: question.title, answer: text)
         }
         .buttonStyle(.plain)
         .help("Change this answer")
@@ -261,6 +316,7 @@ private struct QuestionCard: View {
     let session: SpecSession
     let question: Question
     let number: Int
+    let total: Int
     let takesFocus: Bool
     @State private var choice: Int?
     @State private var note = ""
@@ -268,36 +324,35 @@ private struct QuestionCard: View {
     @FocusState private var cardFocused: Bool
     @FocusState private var noteFocused: Bool
 
-    /// `question.options.count` stands for "You decide".
-    init(session: SpecSession, question: Question, number: Int, takesFocus: Bool) {
+    init(session: SpecSession, question: Question, number: Int, total: Int, takesFocus: Bool) {
         self.session = session
         self.question = question
         self.number = number
+        self.total = total
         self.takesFocus = takesFocus
         _choice = State(initialValue: question.options.firstIndex(where: \.suggested))
     }
 
+    private var isOpen: Bool { question.options.isEmpty }
+    private var trimmedText: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     var body: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Question \(number)")
-                    Text("·")
+        VStack(alignment: .leading, spacing: Theme.Space.x20) {
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+                    Text(total > 0 ? "Question \(number) of \(total)" : "Question \(number)")
+                        .textStyle(Theme.Text.bodyBold)
+                        .foregroundStyle(Theme.Colors.label)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityAddTraits(.isHeader)
                     Text("Shapes \(question.shapes.fileName)")
+                        .textStyle(Theme.Text.caption)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
                 }
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                Text(question.title)
-                    .font(.title3.bold())
-                Text(question.why)
-                    .foregroundStyle(.secondary)
-                if question.options.isEmpty {
-                    openAnswer
-                } else {
-                    optionAnswer
-                }
+                .padding(.horizontal, Theme.Space.x12)
+                card
             }
-            .padding(4)
+            footer
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Question \(number)")
@@ -306,133 +361,217 @@ private struct QuestionCard: View {
         .focused($cardFocused)
         .onAppear {
             guard takesFocus else { return }
-            if question.options.isEmpty { noteFocused = true } else { cardFocused = true }
+            if isOpen { noteFocused = true } else { cardFocused = true }
         }
         // Digits pick an option unless a text field is taking text; ↩ is Continue (default action).
         .onKeyPress(characters: .decimalDigits) { press in
-            guard !question.options.isEmpty, !noteFocused, let digit = Int(press.characters), (1...question.options.count + 1).contains(digit) else { return .ignored }
+            guard !isOpen, !noteFocused, let digit = Int(press.characters), (1...question.options.count).contains(digit) else { return .ignored }
             choice = digit - 1
             return .handled
         }
     }
 
-    private var trimmedText: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-    /// Open question: multi-line answer (↩ continues, ⌥↩ adds a line), or Skip.
-    @ViewBuilder
-    private var openAnswer: some View {
-        TextField("Your answer", text: $text, axis: .vertical)
-            .lineLimit(3...8)
-            .focused($noteFocused)
-            .onSubmit { if !trimmedText.isEmpty && !session.isRunning { submit() } }
-        HStack {
-            Text("Skip lets the agent decide. Answers can be changed later.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Button("Skip") { Task { await session.answer(.agentDecides) } }
-                .disabled(session.isRunning)
-            Button("Continue", action: submit)
-                .keyboardShortcut(.defaultAction)
-                .disabled(trimmedText.isEmpty || session.isRunning)
-        }
-    }
-
-    @ViewBuilder
-    private var optionAnswer: some View {
-        VStack(spacing: 2) {
-            ForEach(question.options.indices, id: \.self) { index in
-                let option = question.options[index]
-                RadioRow(label: option.label, note: option.note, suggested: option.suggested, keyHint: "\(index + 1)", isSelected: choice == index) {
-                    choice = index
+    private var card: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                Text(question.title)
+                    .textStyle(Theme.Text.bodyBold)
+                    .foregroundStyle(Theme.Colors.label)
+                Text(question.why)
+                    .textStyle(Theme.Text.caption)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+            }
+            .padding(EdgeInsets(top: Theme.Space.x12, leading: Theme.Space.x12, bottom: Theme.Space.x10, trailing: Theme.Space.x12))
+            if !isOpen {
+                ForEach(question.options.indices, id: \.self) { index in
+                    let option = question.options[index]
+                    rowSeparator
+                    RadioRow(label: option.label, note: option.note, suggested: option.suggested, keyHint: "\(index + 1)", isSelected: choice == index) {
+                        choice = index
+                    }
                 }
             }
-            RadioRow(
-                label: "You decide",
-                note: "The agent picks the best option and marks it as an assumption",
-                keyHint: "\(question.options.count + 1)",
-                isSelected: choice == question.options.count
-            ) {
-                choice = question.options.count
+            rowSeparator
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                Text(isOpen ? "Your answer" : "Note for the agent (optional)")
+                    .textStyle(Theme.Text.caption)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                if isOpen {
+                    TextField("Your answer", text: $text, prompt: Text("Your answer").foregroundStyle(Theme.Colors.tertiary), axis: .vertical)
+                        .lineLimit(Theme.Size.openAnswerLines, reservesSpace: true)
+                        .onSubmit { if !trimmedText.isEmpty && !session.isRunning { submit() } }
+                        .modifier(NoteField())
+                        .focused($noteFocused)
+                } else {
+                    TextField("Note for the agent", text: $note, prompt: Text("Note for the agent").foregroundStyle(Theme.Colors.tertiary))
+                        .modifier(NoteField())
+                        .frame(height: Theme.Size.button)
+                        .focused($noteFocused)
+                }
             }
+            .padding(EdgeInsets(top: Theme.Space.x10, leading: Theme.Space.x12, bottom: Theme.Space.x12, trailing: Theme.Space.x12))
         }
-        TextField("Note for the agent (optional)", text: $note)
-            .focused($noteFocused)
-        HStack {
-            Text("Press 1 to \(question.options.count + 1) to choose. Answers can be changed later.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Spacer()
+        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+    }
+
+    private var footer: some View {
+        HStack(spacing: Theme.Space.x8) {
+            Text(isOpen ? "Decide Later lets the agent decide. Answers can be changed later." : "Press 1 to \(question.options.count) to choose. Answers can be changed later.")
+                .textStyle(Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+                .padding(.leading, Theme.Space.x12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Decide Later") { Task { await session.answer(.agentDecides) } }
+                .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.button, leading: Theme.Space.x16, trailing: Theme.Space.x16, text: Theme.Text.body))
+                .disabled(session.isRunning)
             Button("Continue", action: submit)
+                .buttonStyle(DesignButtonStyle(height: Theme.Size.button, leading: Theme.Space.x16, trailing: Theme.Space.x16, keyHint: "↩"))
                 .keyboardShortcut(.defaultAction)
-                .disabled(choice == nil || session.isRunning)
+                .disabled((isOpen ? trimmedText.isEmpty : choice == nil) || session.isRunning)
         }
     }
 
     private func submit() {
-        if question.options.isEmpty {
+        if isOpen {
             Task { await session.answer(.text(trimmedText)) }
             return
         }
         guard let choice else { return }
-        let answer: Answer = choice == question.options.count
-            ? .agentDecides
-            : .option(choice, note: note.isEmpty ? nil : note)
-        Task { await session.answer(answer) }
+        Task { await session.answer(.option(choice, note: note.isEmpty ? nil : note)) }
     }
 }
 
+/// The note field (B2): white, 7 pt corners, hairline ring with an inner shadow.
+private struct NoteField: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .textFieldStyle(.plain)
+            .textStyle(Theme.Text.body)
+            .foregroundStyle(Theme.Colors.label)
+            .labelsHidden()
+            .padding(.horizontal, Theme.Space.x8)
+            .padding(.vertical, Theme.Space.x5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .surface(Theme.Colors.background, .field, in: RoundedRectangle(cornerRadius: Theme.Radius.field))
+    }
+}
+
+/// B2 inspector: Understanding (coverage) and Agent.
 private struct DiscoveryInspector: View {
     let spec: Spec
 
-    /// Phases in file order, only those with coverage items.
-    private var phases: [DocKind] { DocKind.allCases.filter { kind in spec.coverage.contains { $0.phase == kind } } }
+    private var covered: Int { spec.coverage.count { $0.state == .covered } }
 
     var body: some View {
-        Form {
-            ForEach(phases, id: \.self) { phase in
-                let items = spec.coverage.filter { $0.phase == phase }
-                Section {
-                    ForEach(items, id: \.label) { item in
-                    Label {
-                        Text(item.label)
-                    } icon: {
-                        switch item.state {
-                        case .covered: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        case .asking: Image(systemName: "circle.inset.filled").foregroundStyle(.purple)
-                        case .notYet: Image(systemName: "circle").foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.x20) {
+                VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                    heading("Understanding")
+                    HStack(spacing: Theme.Space.x8) {
+                        GeometryReader { proxy in
+                            Capsule().fill(Theme.Colors.selectionFill)
+                                .overlay(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: Theme.Radius.progress)
+                                        .fill(Theme.Colors.secondaryLabel)
+                                        .frame(width: spec.coverage.isEmpty ? 0 : proxy.size.width * CGFloat(covered) / CGFloat(spec.coverage.count))
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.progress))
                         }
+                        .frame(height: Theme.Size.understandingBar)
+                        Text("\(covered) of \(spec.coverage.count)")
+                            .textStyle(Theme.Text.caption)
+                            .foregroundStyle(Theme.Colors.secondaryLabel)
                     }
-                    .accessibilityValue(item.state == .covered ? "Covered" : item.state == .asking ? "Asking" : "Not yet")
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Understanding")
+                    .accessibilityValue("\(covered) of \(spec.coverage.count)")
+                    VStack(spacing: 0) {
+                        ForEach(spec.coverage, id: \.label) { item in coverageRow(item) }
                     }
-                } header: {
-                    HStack {
-                        Text(phase.title)
-                        Spacer()
-                        Text("\(items.count { $0.state == .covered }) of \(items.count)")
-                            .monospacedDigit()
+                    .padding(.vertical, Theme.Space.x4)
+                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                    Text("Intake asks only what shapes the draft. Gaps Mel finds in the draft come back as a short second round.")
+                        .textStyle(Theme.Text.caption)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                }
+                VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                    heading("Agent")
+                    VStack(spacing: 0) {
+                        infoRow("Claude Code", value: sizeWord, mono: false)
+                        rowSeparator
+                        infoRow("Folder", value: "specs/", mono: true)
                     }
-                } footer: {
-                    if phase == phases.last {
-                        Text("Questions continue until every item is covered.")
-                    }
+                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
                 }
             }
-            Section {
-                LabeledContent("Agent", value: "Claude Code · Spec mode")
-                LabeledContent("Folder", value: "\(spec.folder.lastPathComponent)/")
-            }
+            .padding(EdgeInsets(top: 0, leading: Theme.Space.x16, bottom: Theme.Space.x16, trailing: Theme.Space.x16))
         }
-        .formStyle(.grouped)
+        .background(Theme.Colors.background)
+    }
+
+    private var sizeWord: String {
+        switch spec.size {
+        case .quickFix: "Quick fix"
+        case .feature: "Feature spec"
+        case .product: "Product spec"
+        }
+    }
+
+    private func heading(_ text: String) -> some View {
+        Text(text)
+            .textStyle(Theme.Text.captionBold)
+            .foregroundStyle(Theme.Colors.secondaryLabel)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private func coverageRow(_ item: CoverageItem) -> some View {
+        HStack(spacing: Theme.Space.x8) {
+            Group {
+                switch item.state {
+                case .covered: DesignIcon(glyph: .check, size: Theme.Size.smallCheck, weight: 2.2).foregroundStyle(Theme.Colors.success)
+                case .asking: DesignIcon(glyph: .arrowRight, size: Theme.Size.smallCheck).foregroundStyle(Theme.Colors.label)
+                case .notYet: StatusDot(style: .ring(Theme.Colors.secondaryLabel))
+                }
+            }
+            .frame(width: Theme.Size.smallCheck, height: Theme.Size.smallCheck)
+            Text(item.label)
+                .textStyle(Theme.Text.body)
+                .foregroundStyle(Theme.Colors.label)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(item.state == .covered ? "Covered" : item.state == .asking ? "Asking" : "Not yet")
+                .textStyle(Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+        }
+        .padding(.horizontal, Theme.Space.x12)
+        .frame(height: Theme.Size.coverageRow)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func infoRow(_ label: String, value: String, mono: Bool) -> some View {
+        HStack(spacing: Theme.Space.x8) {
+            Text(label)
+                .textStyle(Theme.Text.body)
+                .foregroundStyle(Theme.Colors.label)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(value)
+                .textStyle(mono ? Theme.Text.codeCaption : Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, Theme.Space.x12)
+        .frame(height: Theme.Size.inspectorRow)
+        .accessibilityElement(children: .combine)
     }
 }
 
 #Preview("Question") {
     @Previewable @State var showInspector = true
     NavigationStack {
-        DiscoveryView(session: PreviewData.session(PreviewData.discovery), showInspector: $showInspector)
+        DiscoveryView(session: PreviewData.session(PreviewData.intake), showInspector: $showInspector)
     }
-    .frame(width: 1000, height: 800)
+    .frame(width: 1048, height: 800)
 }
 
 #Preview("Open Question") {
@@ -440,12 +579,12 @@ private struct DiscoveryInspector: View {
     NavigationStack {
         DiscoveryView(session: PreviewData.session(PreviewData.discoveryOpen), showInspector: $showInspector)
     }
-    .frame(width: 1000, height: 900)
+    .frame(width: 1048, height: 800)
 }
 
 #Preview("Inspector") {
     DiscoveryInspector(spec: PreviewData.discovery)
-        .frame(width: 260, height: 600)
+        .frame(width: Theme.Size.inspectorWidth, height: 600)
 }
 
 #Preview("Edit Idea") {

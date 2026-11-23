@@ -41,7 +41,7 @@ enum DebugScreen: String, CaseIterable {
         case .firstSpec: PreviewData.appState([], projects: [])
         case .projectSetup: PreviewData.appState([], projects: [], projectSetup: PreviewData.projectSetup)
         case .newSpec, .newSpecNoContext, .newSpecQuickFix, .newSpecProduct, .newSpecEmpty: PreviewData.newSpecState
-        case .intake: PreviewData.appState([PreviewData.discovery])
+        case .intake: PreviewData.appState([PreviewData.intake])
         case .drafting: PreviewData.appState([PreviewData.drafting])
         case .review: PreviewData.appState([PreviewData.review])
         case .edited: PreviewData.appState([PreviewData.edited])
