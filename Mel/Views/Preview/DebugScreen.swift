@@ -45,7 +45,7 @@ enum DebugScreen: String, CaseIterable {
         case .drafting: PreviewData.appState([PreviewData.drafting], sessions: [PreviewData.draftingSession])
         case .review: PreviewData.appState([PreviewData.reviewRoundTwo], sessions: [PreviewData.reviewSession])
         case .experience: PreviewData.appState([PreviewData.reviewExperience], sessions: [PreviewData.experienceSession])
-        case .edited: PreviewData.appState([PreviewData.edited])
+        case .edited: PreviewData.appState([PreviewData.edited], sessions: [PreviewData.editedSession])
         case .analyze: PreviewData.appState([PreviewData.analyzeIssues])
         case .ready: PreviewData.appState([PreviewData.done], sessions: [PreviewData.doneSession])
         case .stopped: PreviewData.appState([PreviewData.usageLimit])

@@ -412,6 +412,12 @@ enum Theme {
         static let taskNumber: CGFloat = 22
         static let readyIcon: CGFloat = 20
         static let priorityBadge: CGFloat = 18
+        /// C1: column 640; banner icon 18; impact rows min 46; decisions column 288; "Why" field 2 lines.
+        static let refineMaxWidth: CGFloat = 640
+        static let bannerIcon: CGFloat = 18
+        static let impactRow: CGFloat = 46
+        static let decisionsWidth: CGFloat = 288
+        static let whyLines = 2
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

@@ -421,4 +421,33 @@ enum PreviewData {
     static let doneSession = SpecSession.preview(done, documents: [
         .product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture", .tasks: tasksMarkdown,
     ])
+
+    // C1 Refine as drawn: 1.3 edited from 12 to 24 hours.
+    static let editedSession: SpecSession = {
+        let before = """
+            # Requirements
+
+            ## 1. Book a class
+
+            - 1.3 WHEN a member cancels at least 12 hours before class,
+              THE APP SHALL return the credit.
+            """
+        let after = before.replacingOccurrences(of: "12 hours", with: "24 hours")
+        let date = Date.now
+        return SpecSession.preview(
+            edited, documents: [.product: "# Product", .requirements: after],
+            impact: ImpactResult(items: [
+                .init(kind: .experience, what: "Copy on Confirm booking and Upcoming › Late cancel", count: "2 places"),
+                .init(kind: .architecture, what: "Cancellation rule in BookingPolicy", count: "1 section"),
+                .init(kind: .tasks, what: "Task 4 “Cancel booking” and task 7 “Credit refund tests”", count: "2 tasks"),
+            ]),
+            snapshots: [.requirements: before],
+            decisions: [
+                Decision(id: "D-03", title: "Cancellation window 12 hours", reason: "Your first answer in review.", source: "You", date: date.addingTimeInterval(-86_400), affects: ["1.3"]),
+                Decision(id: "D-04", title: "Class packs bought in the app", reason: "Mentioned in the idea. Desk payments stay possible, staff adds credits.", source: "Discovery Q2", date: date.addingTimeInterval(-90_000), affects: ["2.1"]),
+                Decision(id: "D-06", title: "Waitlist is first come, first served", reason: "Confirmed assumption. Simple to explain at the desk.", source: "You", date: date.addingTimeInterval(-3_600), affects: ["1.2"]),
+                Decision(id: "D-07", title: "Cancellation window 24 hours", reason: "Studio policy changed. Teachers need a full day to offer freed spots to the waitlist.", source: "You", date: date, replaces: "D-03", affects: ["1.3"]),
+            ]
+        )
+    }()
 }
