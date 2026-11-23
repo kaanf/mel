@@ -37,8 +37,7 @@ struct SetupFlow: View {
                     onDone: { onFinish(true) }
                 )
             case .firstSpec:
-                ContentUnavailableView("New Spec", systemImage: "doc")            // A4x, with B1
-                    .setupChrome(title: "New Spec")
+                FirstSpecView(onAddProject: { step = .pickProject }, onStart: { onFinish(false) })
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
