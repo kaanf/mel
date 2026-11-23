@@ -2,7 +2,7 @@ import Foundation
 
 /// Resolves executables the way the user's terminal would. A Dock-launched app only gets
 /// `/usr/bin:/bin:/usr/sbin:/sbin`, so the login shell is asked for its `PATH`.
-nonisolated enum ShellPath {
+enum ShellPath {
     static let timeout: TimeInterval = 5
 
     /// `PATH` from `$SHELL -l -c 'printf %s "$PATH"'`, or "" on failure or after 5 s.

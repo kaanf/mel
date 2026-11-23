@@ -1,5 +1,5 @@
 import Testing
-@testable import Mel
+@testable import MelSpec
 
 struct ModelsTests {
     @Test func docKindFileName() {

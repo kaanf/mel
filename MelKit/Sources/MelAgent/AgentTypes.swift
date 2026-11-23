@@ -1,21 +1,21 @@
 import Foundation
+import MelSpec
 
-nonisolated enum AgentStatus: Hashable, Sendable {
-    case checking
-    case ready(executable: URL, version: String)
-    case notSignedIn(executable: URL)
-    case missing
-    case broken(String)
+public struct AgentRequest: Sendable {
+    public var prompt: String                // sent on stdin
+    public var workingDirectory: URL         // project folder (parent of specs/)
+    public var resumeSessionID: String?
+    public var persistSession: Bool          // false → --no-session-persistence
+
+    public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool) {
+        self.prompt = prompt
+        self.workingDirectory = workingDirectory
+        self.resumeSessionID = resumeSessionID
+        self.persistSession = persistSession
+    }
 }
 
-nonisolated struct AgentRequest: Sendable {
-    var prompt: String                // sent on stdin
-    var workingDirectory: URL         // project folder (parent of specs/)
-    var resumeSessionID: String?
-    var persistSession: Bool          // false → --no-session-persistence
-}
-
-nonisolated enum AgentEvent: Sendable, Hashable {
+public enum AgentEvent: Sendable, Hashable {
     case session(String)
     case text(String)                 // delta or whole message text
     case step(String)                 // "read specs/PRODUCT.md"
@@ -25,12 +25,12 @@ nonisolated enum AgentEvent: Sendable, Hashable {
 }
 
 /// What SpecSession depends on. AgentRunner implements it; tests use a fake.
-nonisolated protocol AgentRunning: Sendable {
+public protocol AgentRunning: Sendable {
     func run(_ request: AgentRequest) -> AsyncThrowingStream<AgentEvent, Error>
     func stop() async
 }
 
-nonisolated protocol AgentAdapter: Sendable {
+public protocol AgentAdapter: Sendable {
     func detect(extraPaths: [String]) async -> AgentStatus
     func loginCommand(executable: URL) -> String
     func arguments(for request: AgentRequest) -> [String]
