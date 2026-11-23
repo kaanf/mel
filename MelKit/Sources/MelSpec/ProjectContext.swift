@@ -6,12 +6,29 @@ public struct ProjectContext: Codable, Hashable, Sendable {
     public var tech: String
     public var structure: String
     public var principles: String
+    /// A3 "What Mel read": the run's reading list. Not stored in `.mel/project/`.
+    public var read: [ReadItem]
+    /// A3 card state words per file ("product.md": "From README"). Not stored in `.mel/project/`.
+    public var sources: [String: String]
 
-    public init(product: String, tech: String, structure: String, principles: String) {
+    public init(product: String, tech: String, structure: String, principles: String, read: [ReadItem] = [], sources: [String: String] = [:]) {
         self.product = product
         self.tech = tech
         self.structure = structure
         self.principles = principles
+        self.read = read
+        self.sources = sources
+    }
+
+    /// `read` and `sources` may be missing from a reply.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        product = try c.decode(String.self, forKey: .product)
+        tech = try c.decode(String.self, forKey: .tech)
+        structure = try c.decode(String.self, forKey: .structure)
+        principles = try c.decode(String.self, forKey: .principles)
+        read = try c.decodeIfPresent([ReadItem].self, forKey: .read) ?? []
+        sources = try c.decodeIfPresent([String: String].self, forKey: .sources) ?? [:]
     }
 
     public static let fileNames = ["product.md", "tech.md", "structure.md", "principles.md"]
@@ -41,6 +58,17 @@ public struct ProjectContext: Codable, Hashable, Sendable {
         zip(Self.fileNames, [product, tech, structure, principles])
             .map { "### .mel/project/\($0)\n\n\($1.trimmingCharacters(in: .whitespacesAndNewlines))" }
             .joined(separator: "\n\n")
+    }
+}
+
+/// One "What Mel read" row: "README.md" · "Product summary".
+public struct ReadItem: Codable, Hashable, Sendable {
+    public var label: String
+    public var source: String
+
+    public init(label: String, source: String) {
+        self.label = label
+        self.source = source
     }
 }
 
