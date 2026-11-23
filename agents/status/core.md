@@ -1,28 +1,31 @@
 # core status
 
-Wave: 0
+Wave: 0b
 Updated: 2026-11-23
 
 ## Done
-- 0.1 Xcode project (objectVersion 77, synchronized folders, shared scheme `Mel`), folder skeleton, contract stubs for every CONTRACTS.md type, `MelApp` placeholder, `DocKind.fileName` test. `xcodebuild … build test` green, no warnings.
+- 0.1 Xcode project, contract stubs, MelApp placeholder (commit 0ecb41d, merged).
+- 0.1b Layers moved into the local package `MelKit` (MelSpec, MelStorage→MelSpec, MelAgent→MelSpec, MelSystem). `AgentStatus` is now in MelSpec. Cross-module API is public with explicit inits. Added `AppState.init(adapter:makeRunner:)`, `signIn`/`copy`, the SpecSession handoff stubs, and `MelApp` as the composition root. `.gitkeep` files and their pbxproj exceptions are gone. The `Mel` scheme runs MelTests plus all four MelKit test targets. `xcodebuild … test` is green with no warnings, and ui's Components (rebased in) build unchanged.
 
 ## In progress
 - (nothing)
 
 ## Next
-- Wait for the orchestrator to merge G0 and open Wave 1 (2.1 Models + Reducer first).
+- Wait for the orchestrator to merge 0.1b and open Wave 1 (2.1 Models + Reducer first).
 
 ## Notes
-- Empty folders hold a `.gitkeep`. Synchronized folders would copy them as resources ("Multiple commands produce …/.gitkeep"), so `project.pbxproj` has a membership exception set per target listing each `.gitkeep`. Stale entries after a `.gitkeep` is deleted are harmless; a **new** `.gitkeep` in a new folder needs an entry (ask core).
-- Default actor isolation is MainActor. Value types in Spec/ and Agent/AgentTypes, the two protocols, `ClaudeCode`, `ShellPath`, `Git` and `MarkdownParser` are marked `nonisolated` (+ `Sendable`) so parsing and process work can run off the main actor and `AgentEvent`/`StopReason` cross actors. Signatures are unchanged otherwise.
-- `MarkdownParser` stub returns empty results (not fatalError) so `SpecSession.summary` works in previews. `AppState.session(for:)` returns a preview session for now.
-- Code signing: ad-hoc (`CODE_SIGN_IDENTITY = "-"`), no team set. Notarization setup is for later.
+- MemberImportVisibility is on for both app targets (`SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY`).
+- SwiftPM needs at least one source file per target, so there are placeholders: `MelStorage/SpecStore.swift` (`enum SpecStore {}`, replaced in 2.3), an empty `MelStorageTests/SpecStoreTests.swift` and an empty `MelSystemTests/SystemTests.swift`. `.copy("Fixtures")` fails if the folder is empty, so `MelAgentTests/Fixtures/README.md` keeps it non-empty.
+- Prompts are **not** yet declared as a MelSpec resource, because `Prompts/` has no files yet. Add `resources: [.process("Prompts")]` to MelSpec in Package.swift together with the first prompt in 4.1.
+- I added two small `ShellPath` tests in MelAgentTests to give that target real tests. They belong to platform now.
+- `AppState.preview` uses a private inert adapter and runner (in AppState.swift).
+- Code signing is ad hoc (`CODE_SIGN_IDENTITY = "-"`) with no team set.
 
 ## Blocked
 - (nothing)
 
 ## Requests to orchestrator
-- CONTRACTS: note the `nonisolated`/`Sendable` markings above so platform/ui keep them.
+- (none)
 
 ## Questions for the user
 - (none)
