@@ -17,7 +17,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wait for the orchestrator to merge Wave 1 and open Wave 2 (4.2 discovery loop first).
+- Wave 1 merged (3b32462); CONTRACTS updated (24f650e). Wait for Wave 2, which opens after platform's merge and G1. ui's Session requests arrive then. Start with 4.2 discovery loop.
 
 ## Notes
 - `DocKind` is now `CodingKeyRepresentable`, so `docs` encodes as a JSON object in state.json, e.g. `"product" : "locked"`.
@@ -32,7 +32,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- CONTRACTS: record the new public MelSpec API that others may use: `Spec.apply(_:)`/`PipelineEvent`, `MarkdownParser.uncoveredCriteria(requirements:tasks:)`, `Prompt`, and `DocKind.next`.
+- (none; the Wave 1 API request is done in 24f650e)
 
 ## Questions for the user
 - (none)
