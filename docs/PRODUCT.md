@@ -33,7 +33,7 @@ These come straight from the design canvas and should drive every decision.
 1. **Bring your own agent.** The app has no model and no account. It drives the agent CLI on the Mac with the user's subscription.
 2. **The user owns the file.** During review only the user changes the file; the agent doesn't touch it. User edits are never overwritten.
 3. **Plain Markdown on disk.** The spec is ordinary files in the user's folder, readable by any tool or agent. App metadata lives alongside, never inside, unless it is meaningful to the next agent (assumptions).
-4. **Complete files, nothing silently invented.** The finished files contain no open questions, TBDs or placeholders. Every decision comes from the user's answers; when the user lets the agent decide (or skips ahead), the agent picks the best option and marks it as an assumption for the user to confirm.
+4. **Complete files, nothing silently invented.** The finished files contain no open questions, TBDs or placeholders. Every decision comes from the user's answers; when the user lets the agent decide (or skips ahead), the agent picks the best option and marks it as an assumption. The user must confirm or change every assumption before a file can be approved.
 5. **Never lose work.** Stop, crash, usage limit: whatever is written is saved, approved files are untouched, and the user is offered a way forward.
 6. **Native Mac.** HIG-correct macOS 26 app: sidebar, toolbar, inspector, sheets, keyboard shortcuts, notifications, Finder/Terminal integration.
 

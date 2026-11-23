@@ -11,6 +11,7 @@
 | 4 | Who writes the spec files? | **Mel.** Claude Code runs read-only and streams Markdown; Mel appends it to the file | 2026-11-23 |
 | 17 | Costly canvas features | **Deferred:** Pause, Ask-for-changes + suggestions, Review inspector/History, time estimates, parallel runs | 2026-11-23 |
 | 6 | Discovery question limit / open questions | **No limit; no open questions.** Discovery runs until every topic is covered; files are complete, agent decisions are marked as assumptions | 2026-11-23 |
+| 18 | Approve with unconfirmed assumptions? | **No.** Approve is disabled until every assumption is confirmed or changed | 2026-11-23 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open

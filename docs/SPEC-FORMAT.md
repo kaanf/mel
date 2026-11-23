@@ -30,7 +30,7 @@ The spec folder defaults to `<chosen folder>/<project-slug>/specs`, for example 
 > The waitlist is first come, first served.
 ```
 
-  GitHub renders the unknown alert type as a plain block quote, which is acceptable. An assumption is a full decision the agent made (because the user chose "You decide", clicked Draft Now, or drafting met an uncovered gap), flagged for confirmation. Confirm removes the callout wrapper and keeps the text; "Change…" replaces the text and removes the wrapper.
+  GitHub renders the unknown alert type as a plain block quote, which is acceptable. An assumption is a full decision the agent made (because the user chose "You decide", clicked Draft Now, or drafting met an uncovered gap), flagged for confirmation. A file can only be approved once every assumption is confirmed or changed, so approved files contain no `[!ASSUMPTION]` callouts. Confirm removes the callout wrapper and keeps the text; "Change…" replaces the text and removes the wrapper.
 
 - **No open questions.** The files never contain `[!OPEN QUESTION]`, "TBD", "TODO" or placeholders. Every point is decided, either by the user or as an assumption.
 

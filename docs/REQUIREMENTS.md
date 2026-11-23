@@ -76,7 +76,7 @@ As a user, I want to read, edit and approve each file, so that the spec says exa
 - 6.3 THE APP SHALL show a "Before you approve" summary with the count of assumptions to confirm.
 - 6.4 THE APP SHALL show each assumption with Confirm and "Change…".
 - 6.5 THE generated files SHALL contain no open questions, TBDs or placeholders; WHEN drafting meets a gap Discovery didn't cover, the agent SHALL decide it and mark it as an assumption.
-- 6.6 WHEN the user clicks Approve or presses ⌘↩, THE APP SHALL mark the file Approved, even with open items, which stay marked in the file.
+- 6.6 WHILE the file has unconfirmed assumptions, THE APP SHALL disable Approve and say how many remain; WHEN none remain and the user clicks Approve or presses ⌘↩, THE APP SHALL mark the file Approved.
 - 6.7 WHEN a file is approved, THE APP SHALL unlock and start the next file.
 - 6.8 IF the user edits an approved file, THEN THE APP SHALL mark it back to Review.
 - 6.9 WHEN the user approves TASKS.md and a criterion is not covered by any task, THE APP SHALL warn before approving.
@@ -97,10 +97,9 @@ As a user, I want a clear way forward when the agent stops, so that I never lose
 As a user, I want to start building from the finished spec, so that the spec turns into software.
 
 - 8.1 WHEN all four files are approved, THE APP SHALL show the Spec ready sheet with each file and its summary (for example "5 stories, 14 criteria").
-- 8.2 THE APP SHALL show the number of unconfirmed assumptions, if any, with "Review…".
-- 8.3 THE APP SHALL show a Claude Code build command with Copy and "Open in Terminal" (in the project folder).
-- 8.4 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (excluding `.mel/` per settings), initializing a repository only after asking.
-- 8.5 THE APP SHALL offer "Show in Finder".
+- 8.2 THE APP SHALL show a Claude Code build command with Copy and "Open in Terminal" (in the project folder).
+- 8.3 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (excluding `.mel/` per settings), initializing a repository only after asking.
+- 8.4 THE APP SHALL offer "Show in Finder".
 
 ## 9. Library and app shell
 

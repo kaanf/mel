@@ -116,7 +116,7 @@ Artboard `Native-3-Review`.
 - Toolbar: file name; "Saved · your edits are never overwritten"; "Idle · DESIGN.md starts when you approve"; "2 of 4"; segmented Preview / Edit Markdown; Share; Show in Finder; "Approve ⌘↩" prominent. No inspector in the MVP.
 - Document (Preview mode):
   - Title, summary line "5 stories, 14 acceptance criteria. Written from PRODUCT.md and your answers."
-  - "Before you approve" box: "1 assumption to confirm" — "You can approve anyway. Unconfirmed assumptions stay marked in the file so the next agent sees them."
+  - "Before you approve" box: "1 assumption to confirm" — "Confirm or change each assumption to approve." Approve stays disabled until none remain.
   - Story blocks: title, user story, numbered criteria with bold EARS keywords.
   - Assumption callout (Change… / Confirm).
 - Edit Markdown mode: monospaced editable source (`TextEditor`; `NSTextView` only if large files feel slow).
@@ -137,7 +137,7 @@ Artboard `Native-Error-Partial`.
 Artboard `Native-4-Done`. Sheet.
 
 - "Spec ready" — "All four files are approved and saved as plain Markdown. Any coding agent can build from them."
-- File list with green checks and summaries (Problem, users, scope · 5 stories, 14 criteria · 6 sections · 11 tasks, each linked to criteria) and, if any, "1 assumption not yet confirmed · Review…".
+- File list with green checks and summaries (Problem, users, scope · 5 stories, 14 criteria · 6 sections · 11 tasks, each linked to criteria).
 - "Start building": "Run this in the project folder. It points the agent at your spec." Command box `claude "Read specs/ and implement TASKS.md, task 1"` + Copy (→ "Copied" 2 s). Link: Open in Terminal.
 - Checkbox "Commit the spec to Git — Creates one commit in yoga-studio-booking so the spec has history."
 - Footer: path · Show in Finder · Done.

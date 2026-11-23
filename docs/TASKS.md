@@ -58,7 +58,7 @@ Each screen gets `#Preview`s for every state shown on the canvas (minus the Late
 - [ ] 3.9 Failure sheet.
   - Covers: 7.2, 7.3, 7.4, 7.6
 - [ ] 3.10 Spec ready sheet.
-  - Covers: 8.1, 8.2, 8.3, 8.5
+  - Covers: 8.1, 8.2, 8.4
 
 ## M4 · Wire the pipeline
 
@@ -73,7 +73,7 @@ Each screen gets `#Preview`s for every state shown on the canvas (minus the Late
 - [ ] 4.5 Recovery: resume from partial with `--resume`, notification at usage-limit reset, finish by hand.
   - Covers: 7.4, 7.5
 - [ ] 4.6 Handoff actions: copy command, Open in Terminal, Git commit, Show in Finder.
-  - Covers: 8.3, 8.4, 8.5
+  - Covers: 8.2, 8.3, 8.4
 - [ ] 4.7 Notifications (ready to review, stopped, limit reset).
   - Covers: 5.8, 7.4
 - [ ] 4.8 One agent run at a time across the app.
