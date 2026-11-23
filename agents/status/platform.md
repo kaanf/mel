@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 5 in progress. Steps 1–2 done (keys, release.sh + appcast); step 3 waits for ui's merge
+Wave: 5 in progress. Steps 1–2 merged (main 0ebf1ba); step 3 waits for the orchestrator's message that ui's Sparkle wiring is merged
 Updated: 2026-11-23
 
 ## Done (Wave 3)
