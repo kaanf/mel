@@ -1,6 +1,6 @@
 # ui status
 
-Wave: v0.2.1 follow-ups (ready to merge)
+Wave: v0.2.1 follow-ups merged (e6a5480); standing by
 Updated: 2026-11-23
 
 ## Done
@@ -38,12 +38,12 @@ Updated: 2026-11-23
 
 ## In progress
 - Wave 5 merged to main (4e37bc9), full test green (131).
-- v0.2.1 follow-ups (user-approved), full test green (131), **ready to merge**:
+- v0.2.1 follow-ups (user-approved) merged to main (e6a5480), full test green (131):
   - feat(ui) short toolbar status: `ToolbarStatus(status:title:detail:compact:)` in StatusBadge.swift. Discovery and Drafting measure their width (content + inspector, `onGeometryChange` after `.inspector`) and pass `compact` below `ToolbarStatus.fullTextWidth` (660). Full and compact are separate `ToolbarItem`s (if/else) because NSToolbar never widens an item whose content grows; ViewThatFits does nothing in a toolbar (AppKit overflows by ideal width). Checked in the Debug app: full text + Draft Now + Inspector at 900 pt (inspector hidden) and 915 pt (shown); "Needs you" with all buttons at 860/760/655 pt; growing back works. A very long spec name in the subtitle can still push items into overflow.
   - fix(ui) sidebar arrows: the question card took focus on every appear, so after arrowing up to Discovery the next arrow went to the card. Now only a question that arrives while Discovery is open takes focus (`openedOn` in DiscoveryView). Checked with keys posted to the debug PID: REQUIREMENTS ↑ PRODUCT ↑ Discovery ↓ PRODUCT ↓ REQUIREMENTS ↑ ↑ Discovery ↓ PRODUCT. Trade-off: opening Discovery from the sidebar no longer puts focus in the card; Tab or a click does. Not unit-testable (focus); no new test.
 
 ## Next
-- Wait for the orchestrator (merge into v0.2.1).
+- Stand by for the orchestrator. GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
 - Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.
