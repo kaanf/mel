@@ -20,6 +20,11 @@ struct V2FormatTests {
         #expect(intake.questions.allSatisfy { $0.round == .intake && $0.answer == nil })
     }
 
+    @Test func intakeTopicLeftToTheDraftDecodesAsLater() throws {
+        let intake = try Intake.decode(#"{"coverage":[{"label":"Edge cases","state":"later"}],"questions":[]}"#, size: .feature)
+        #expect(intake.coverage.map(\.state) == [.later])
+    }
+
     @Test func analyzeDecodes() throws {
         let reply = """
         {"stats":[{"value":"14 of 15","label":"requirements have a task"}],

@@ -530,7 +530,7 @@ private struct DiscoveryInspector: View {
                 switch item.state {
                 case .covered: DesignIcon(glyph: .check, size: Theme.Size.smallCheck, weight: 2.2).foregroundStyle(Theme.Colors.success)
                 case .asking: DesignIcon(glyph: .arrowRight, size: Theme.Size.smallCheck).foregroundStyle(Theme.Colors.label)
-                case .notYet: StatusDot(style: .ring(Theme.Colors.secondaryLabel))
+                case .notYet, .later: StatusDot(style: .ring(Theme.Colors.secondaryLabel))
                 }
             }
             .frame(width: Theme.Size.smallCheck, height: Theme.Size.smallCheck)

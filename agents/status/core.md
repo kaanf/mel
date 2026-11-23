@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 follow-up ready to merge
+Wave: 7 merged (90c28df), standing by for ui requests
 Updated: 2026-11-23
 
 ## Done
@@ -46,11 +46,15 @@ Updated: 2026-11-23
 
 - W7 follow-up: removed v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)`. New `AppState.branches: [Project.ID: String]` (read from `.git/HEAD` when a project loads, refreshed by A3, cleared on remove; `preview(…, branches:)`). Full suite green 2 runs (186 tests).
 
+- `PromptTests.noToolsPromptsForbidReading`: analyze.md and impact.md must keep "Do not read any files." (platform finding: no-tools runs try to read otherwise).
+
+- ui request (B2): `CoverageState.later` (topic left to the draft, asked in round 2). intake.md: `notYet` = one of the intake questions asks it, else `later`; sample includes one. `decideText` lists `later` topics with the other uncovered ones. Compile fix in ui's DiscoveryView (`case .notYet, .later`). Full suite green 2 runs (190 tests).
+
 ## In progress
 - (nothing)
 
 ## Next
-- Stand by for the next wave.
+- Stand by for ui requests while ui builds the remaining screens.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -69,9 +73,9 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge** (W7 follow-up, rebased on 3bb09f8, full suite green, no warnings).
-- For **ui**: B1 can show the branch on any launch with `state.branches[project.id]` (NewSpecView line 285 reads `projectSetup?.branch` today).
-- CONTRACTS: add `AppState.branches: [Project.ID: String]` and `preview(…, branches:)`; drop the v1 `specFolder(name:parent:)` / `createSpec(name:idea:parentFolder:)`.
+**Ready to merge**: `CoverageState.later` (ui's B2 request) + the prompt-guard test. Rebased on 90c28df, full suite green.
+- CONTRACTS: `enum CoverageState { case covered, asking, notYet, later }`.
+- Touched ui's `Mel/Views/Discovery/DiscoveryView.swift` (one line, exhaustive switch). Platform may want to re-record intake against the updated intake.md (old fixtures still decode).
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.

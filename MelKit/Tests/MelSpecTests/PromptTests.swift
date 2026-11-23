@@ -66,7 +66,7 @@ struct PromptTests {
         let intake = try Intake.decode(line, size: .product)
         #expect(intake.questions.first?.shapes == .requirements)
         #expect(intake.questions.first?.options.count == 2)
-        #expect(intake.coverage.map(\.state) == [.covered, .notYet])
+        #expect(intake.coverage.map(\.state) == [.covered, .notYet, .later])
     }
 
     @Test func analyzeImpactAndProjectSamplesDecode() throws {
@@ -101,5 +101,10 @@ struct PromptTests {
 
     @Test func unknownKeysStay() {
         #expect(Prompt.continue.build([:]).contains("{{partial}}"))
+    }
+
+    /// Analyze and impact run without tools; the prompt must say so or Claude tries to read (platform finding).
+    @Test func noToolsPromptsForbidReading() {
+        for prompt in [Prompt.analyze, .impact] { #expect(prompt.build([:]).contains("Do not read any files.")) }
     }
 }
