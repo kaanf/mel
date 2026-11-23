@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 5 (ready to merge)
+Wave: 5 merged (4e37bc9); standing by
 Updated: 2026-11-23
 
 ## Done
@@ -37,7 +37,7 @@ Updated: 2026-11-23
 - Wave 4 merged to main (ad7c055), full test green (130): open question card (multi-line field, Continue ↩ → `.text`, Skip → `.agentDecides`, digits only for option questions), answered open questions edited in a popover (empty = Skip, shown as "Skipped · the agent decides"), inspector coverage grouped by phase with "n of m", previews "Open Question" and "Inspector".
 
 ## In progress
-- Wave 5, rebased on 95146bf, full test green (131 passed, 0 failed), no warnings from App/ or Views/. **ready to merge**
+- Wave 5 merged to main (4e37bc9), full test green (131).
   - 3706daf Settings › Updates group: `SettingsView(updates: UpdateSettings)` (version string, canCheck, automaticallyChecks Binding, check closure), previews incl. "Checking for Updates".
   - 8950309 `App/Updater.swift` (@MainActor @Observable around `SPUStandardUpdaterController(startingUpdater: true)`; `canCheckForUpdates` from KVO with `MainActor.assumeIsolated`; `automaticallyChecksForUpdates` mirrored with didSet; `checkForUpdates()`), "Check for Updates…" in `CommandGroup(after: .appInfo)`, MelApp wiring.
   - Checked in the Debug app: app menu reads About Mel | Check for Updates… | Settings…; Settings shows "Version 0.2 (build 1)", switch off (Debug auto checks NO), button enabled. Did not run a real check.
@@ -45,7 +45,7 @@ Updated: 2026-11-23
 
 ## Next
 - Wait for the orchestrator.
-- Possible follow-ups (not done, ask first): the status disappears into » overflow below ~860 pt (a shorter "Needs you" variant via ViewThatFits could keep it visible); in the sidebar, Up arrow from PRODUCT.md never selects the Discovery row (keyboard reachability).
+- Follow-ups with the orchestrator/user, do not start until told: the status disappears into » overflow below ~860 pt (a shorter "Needs you" variant via ViewThatFits could keep it visible); in the sidebar, Up arrow from PRODUCT.md never selects the Discovery row (keyboard reachability).
 
 ## Notes
 - GUI checks (2026-11-23, worked): select sidebar rows with `set value of attribute "AXSelected" of row N of outline` (outline = UI element 1 of UI element 1 of UI element 1 of UI element 1 of UI element 1 of window 1); System Events `click at` and CGEvent clicks do not select rows. Launch with `-ApplePersistenceIgnoreState YES`. Another agent's `xcodebuild test` starts a test-host Mel with the same debug bundle id and can quit the debug app: check `pgrep -x Mel` count == 1 before each step. Screens: CGWindowList by PID + `screencapture -l`.
