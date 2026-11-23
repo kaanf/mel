@@ -112,7 +112,8 @@ Gate G5: a local Release build updates itself from a localhost feed to a higher 
 - Wave 4 merged (core 5b9883b, ui ad7c055, platform 8f251a8); ui toolbar check waits for the user to quit /Applications/Mel.app.
 - Wave 5 merged except platform's local update test (core f66608a + 95146bf, platform 0ebf1ba, ui 4e37bc9). Toolbar check done, no change.
 - v0.2 published (tag v0.2 at 0a47fe9, build 242, notarized; appcast.xml live on main 98f0099). G5 passed.
-- Next: user installs v0.2 by hand and re-tests one real spec (G4). Then v0.2.1 = first in-app update: ui fixes sidebar ↑ from PRODUCT.md to Discovery and keeps a short "Needs you" status below ~860 pt (user approved 2026-11-23).
+- v0.2.1 merged to `main` (version 0.2.1; ui: sidebar ↑ from PRODUCT.md to Discovery, short "Needs you" status below ~860 pt). All agents standing by.
+- Next: user re-tests one real spec on v0.2 (G4). Then cut v0.2.1 with `release.sh` + `gh release create v0.2.1 --prerelease` + push `appcast.xml`; installed v0.2 must offer it in-app (first real Sparkle update).
 
 ## Risks
 
