@@ -41,12 +41,33 @@ struct DiscoveryTests {
             Question(id: "wait", title: "Is there a waitlist?", why: "", shapes: .requirements, options: options, answer: .agentDecides),
             Question(id: "open", title: "Open question?", why: "", shapes: .product, options: options),
         ]
-        spec.coverage = [CoverageItem(label: "Payments", state: .covered), CoverageItem(label: "Cancellations", state: .notYet)]
+        spec.coverage = [CoverageItem(label: "Payments", phase: .requirements, state: .covered), CoverageItem(label: "Cancellations", phase: .requirements, state: .notYet)]
         #expect(spec.answersText == """
             - How do members pay? At the desk (cash only)
             - Is there a waitlist? You decide: choose the best option and mark it as an assumption.
             """)
-        #expect(spec.coverageText == "- Payments: covered\n- Cancellations: notYet")
+        #expect(spec.coverageText == "- Payments (requirements): covered\n- Cancellations (requirements): notYet")
         #expect(spec.decideText == "- Is there a waitlist?\n- Cancellations")
+    }
+
+    @Test func coverageCarriesItsPhaseAndMissingPhaseIsProduct() throws {
+        let turn = try DiscoveryTurn.decode(#"{"coverage":[{"label":"Problem","state":"covered"},{"label":"Screens","phase":"design","state":"notYet"}],"done":true}"#)
+        #expect(turn.coverage == [CoverageItem(label: "Problem", phase: .product, state: .covered), CoverageItem(label: "Screens", phase: .design, state: .notYet)])
+    }
+
+    @Test func emptyOrMissingOptionsIsAnOpenQuestion() throws {
+        let empty = try DiscoveryTurn.decode(#"{"coverage":[],"next":{"id":"design-ideas","title":"What do you have in mind for the design?","shapes":"design","options":[]},"done":false}"#)
+        #expect(empty.next?.options == [])
+        #expect(empty.next?.shapes == .design)
+        #expect(!empty.done)
+        let missing = try DiscoveryTurn.decode(#"{"coverage":[],"next":{"id":"idea","title":"Tell me more.","shapes":"product"}}"#)
+        #expect(missing.next?.options == [])
+    }
+
+    @Test func freeTextAnswersKeepTheirLinesInTheList() {
+        var spec = Spec(name: "Yoga", idea: "Book classes", folder: URL(filePath: "/tmp/yoga/specs"))
+        spec.questions = [Question(id: "design-ideas", title: "What do you have in mind for the design?", why: "", shapes: .design, options: [], answer: .text("Calm, like Things.\nTwo tabs."))]
+        #expect(spec.answersText == "- What do you have in mind for the design? Calm, like Things.\n  Two tabs.")
+        #expect(spec.decideText == "(nothing)")
     }
 }

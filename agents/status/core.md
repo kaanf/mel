@@ -1,6 +1,6 @@
 # core status
 
-Wave: 4 (planned, waiting for go)
+Wave: 4 (model + prompts ready to merge)
 Updated: 2026-11-23
 
 ## Done
@@ -26,15 +26,13 @@ Updated: 2026-11-23
 
 - Debug bundle id `com.kaanf.mel.debug` (5cdeebf), Release unchanged; test-host change skipped as decided. Verified with `xcodebuild build` only (built Info.plist shows the debug id); the test run waits for the end of the install test.
 
+- Wave 4 model + prompts (4.9): `Answer.text`, `CoverageItem.phase` (decoder defaults a missing phase to `.product`; init defaults to `.product` so previews compile), `DiscoveryTurn` takes empty or missing `options` (open question), `coverageText` = `- Label (phase): state`, `answersText` renders free text (extra lines indented). discovery.md: phases in file order, open question first per phase, new topics only current/later phase, UX in Design; sample reply decodes (tested). design.md: 7 sections, `1. User experience` first. DiscoveryView `answerText` got a minimal `.text` case so main compiles; ui owns the real card. Repo-doc counts: criteria 69. Full suite green 2 runs.
+
 ## In progress
 - (nothing)
 
 ## Next
-- Wave 4 (ROADMAP › Wave 4, contracts 94000fe), on the orchestrator's go:
-  - Model: `Answer.text(String)`, `CoverageItem.phase: DocKind` (old state.json without `phase` decodes as `.product`).
-  - `DiscoveryTurn`: `phase` per coverage item; empty `options` = open question.
-  - Prompts: discovery.md phase by phase in file order, open question first in each phase, new topics only in the current or a later phase, UX questions in the Design phase when there is a UI; design.md writes `## 1. User experience` (7 sections, progress count 7).
-  - `answersText` renders free-text answers; tests (unit + session + e2e fixtures for the 7-section DESIGN.md).
+- After merge: optional follow-up (e2e fixture for a 7-section DESIGN.md; the current fixture's DESIGN.md has informal sections and no test counts them, so it isn't required).
 - Never touch com.kaanf.mel defaults or /Applications/Mel.app.
 
 ## Notes
@@ -53,7 +51,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none; read Wave 4, waiting for go)
+- Merge agent/core (Wave 4 model + prompts).
 
 ## Questions for the user
 - (none)

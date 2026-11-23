@@ -1,6 +1,7 @@
 import Foundation
 
 /// One Discovery reply from the agent (AGENT-INTEGRATION.md › Structured (JSON) stages).
+/// Coverage items carry their phase; a question with no options is an open question.
 public struct DiscoveryTurn: Hashable, Sendable {
     public var coverage: [CoverageItem]
     public var next: Question?
@@ -20,7 +21,7 @@ public struct DiscoveryTurn: Hashable, Sendable {
         let wire = try JSONDecoder().decode(Wire.self, from: Data(reply[start...end].utf8))
         let next = wire.next.map { q in
             Question(id: q.id, title: q.title, why: q.why ?? "", shapes: q.shapes,
-                     options: q.options.map { Option(label: $0.label, note: $0.note ?? "", suggested: $0.suggested ?? false) })
+                     options: (q.options ?? []).map { Option(label: $0.label, note: $0.note ?? "", suggested: $0.suggested ?? false) })
         }
         return DiscoveryTurn(coverage: wire.coverage, next: next, done: wire.done ?? (next == nil))
     }
@@ -36,7 +37,7 @@ public struct DiscoveryTurn: Hashable, Sendable {
         var title: String
         var why: String?
         var shapes: DocKind
-        var options: [WireOption]
+        var options: [WireOption]?
     }
 
     private struct WireOption: Decodable {
@@ -60,6 +61,8 @@ extension Spec {
                 let option = q.options.indices.contains(i) ? q.options[i].label : "?"
                 let extra = note.map { " (\($0))" } ?? ""
                 return "- \(q.title) \(option)\(extra)"
+            case .text(let text):
+                return "- \(q.title) \(text.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n  "))"
             }
         }
         return lines.isEmpty ? "(none yet)" : lines.joined(separator: "\n")
@@ -67,7 +70,7 @@ extension Spec {
 
     /// Empty on the first turn, which tells the agent to propose the list.
     public var coverageText: String {
-        coverage.map { "- \($0.label): \($0.state.rawValue)" }.joined(separator: "\n")
+        coverage.map { "- \($0.label) (\($0.phase.rawValue)): \($0.state.rawValue)" }.joined(separator: "\n")
     }
 
     /// "You decide" answers and topics Discovery didn't cover (Draft Now).

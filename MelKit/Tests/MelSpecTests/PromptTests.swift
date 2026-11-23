@@ -46,6 +46,26 @@ struct PromptTests {
         #expect(text.contains("Reply with one JSON object only"))
     }
 
+    @Test func discoveryRunsPhaseByPhaseWithAnOpenQuestionFirst() throws {
+        let text = Prompt.discovery.build([:])
+        #expect(text.contains("Work phase by phase in file order: `product`, `requirements`, `design`, `tasks`."))
+        #expect(text.contains("Open each phase with an open question"))
+        #expect(text.contains("only into the current phase or a later one"))
+        #expect(text.contains("main screens and navigation, visual style and tone, and reference apps"))
+        // The sample reply must decode, so the agent copies a shape Mel can read.
+        let sample = try #require(text.split(separator: "\n").first { $0.hasPrefix(#"{"coverage""#) })
+        let turn = try DiscoveryTurn.decode(String(sample))
+        #expect(turn.coverage.map(\.phase) == [.product, .requirements, .requirements, .design])
+        #expect(turn.next?.options.count == 2)
+    }
+
+    @Test func designStartsWithUserExperienceInSevenSections() {
+        let text = Prompt.design.build([:])
+        #expect(text.contains("# Design\n\n## 1. User experience\n## 2. Architecture"))
+        #expect(text.contains("## 7. Testing strategy"))
+        #expect(text.contains("Use exactly these seven sections"))
+    }
+
     @Test func valuesAreNotExpandedTwice() {
         let text = Prompt.continue.build(["file": "DESIGN.md", "partial": "Uses {{file}} literally"])
         #expect(text.contains("Uses {{file}} literally"))

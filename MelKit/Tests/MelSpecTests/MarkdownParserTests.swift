@@ -100,7 +100,7 @@ struct MarkdownParserTests {
     @Test func summaryOfRepoRequirements() throws {
         let s = MarkdownParser.summary(try doc("REQUIREMENTS.md"), kind: .requirements)
         #expect(s.stories == 9)
-        #expect(s.criteria == 66)
+        #expect(s.criteria == 69)
         #expect(s.sections == 10)
         #expect(s.assumptions == 0)
     }
@@ -111,9 +111,9 @@ struct MarkdownParserTests {
         #expect(s.stories == 0)
     }
 
-    @Test func designHasSixNumberedSectionsInSpecFormatSample() {
-        let text = (1...6).map { "## \($0). Section" }.joined(separator: "\n\n")
-        #expect(MarkdownParser.summary("# Design\n\n" + text, kind: .design).sections == 6)
+    @Test func designHasSevenNumberedSectionsInSpecFormatSample() {
+        let text = (1...7).map { "## \($0). Section" }.joined(separator: "\n\n")
+        #expect(MarkdownParser.summary("# Design\n\n" + text, kind: .design).sections == 7)
     }
 
     @Test func repoTasksCoverEveryRepoCriterion() throws {
