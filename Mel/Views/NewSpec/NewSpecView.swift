@@ -100,6 +100,9 @@ struct NewSpecView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.automatic)
+        #if DEBUG
+        .defaultScrollAnchor(UserDefaults.standard.bool(forKey: "scrollBottom") ? .bottom : .top)   // design comparisons
+        #endif
         .setupChrome(barHeight: Theme.Size.toolbar)
         .overlay(alignment: .topTrailing) { settingsButton }
         .background(Theme.Colors.background)
@@ -236,8 +239,9 @@ struct NewSpecView: View {
                 Button("Add Project…", action: onAddProject)
                     .buttonStyle(DesignLinkStyle())
             }
-            .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x16, bottom: Theme.Space.x8, trailing: Theme.Space.x10))
+            // CSS min-height leaves out the padding.
             .frame(minHeight: Theme.Size.projectRow)
+            .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x16, bottom: Theme.Space.x8, trailing: Theme.Space.x10))
             if let project, !hasContext {
                 HStack(spacing: Theme.Space.x10) {
                     Text("Mel hasn’t read this repo yet. Without project context the agent may rebuild code that already exists.")
@@ -606,13 +610,14 @@ struct NewSpecView: View {
             HStack(spacing: Theme.Space.x10) {
                 Text("Save to")
                     .textStyle(Theme.Text.body)
+                    .fixedSize()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .layoutPriority(1)
                 Text(destination.path(percentEncoded: false).abbreviatingHome)
                     .textStyle(Theme.Text.codeCaption)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .layoutPriority(1)
                 Button { isChoosingFolder = true } label: {
                     popUpLabel(spacing: Theme.Space.x6, leading: Theme.Space.x8) {
                         DesignIcon(glyph: .folder, size: Theme.Size.buttonFolderIcon)
@@ -641,8 +646,8 @@ struct NewSpecView: View {
                     .toggleStyle(DesignSwitchStyle())
                     .labelsHidden()
             }
-            .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x16, bottom: Theme.Space.x8, trailing: Theme.Space.x16))
             .frame(minHeight: Theme.Size.projectRow)
+            .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x16, bottom: Theme.Space.x8, trailing: Theme.Space.x16))
         }
         .foregroundStyle(Theme.Colors.label)
         .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.panel))
