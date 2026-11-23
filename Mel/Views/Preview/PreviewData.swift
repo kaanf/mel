@@ -60,14 +60,14 @@ enum PreviewData {
     )
 
     static let coverage: [CoverageItem] = [
-        CoverageItem(label: "Who uses it", state: .covered, phase: .product),
-        CoverageItem(label: "Payments", state: .covered, phase: .product),
-        CoverageItem(label: "Schedule", state: .covered, phase: .requirements),
-        CoverageItem(label: "Cancellations", state: .asking, phase: .requirements),
-        CoverageItem(label: "Waiting list", state: .notYet, phase: .requirements),
-        CoverageItem(label: "Teacher view", state: .notYet, phase: .design),
-        CoverageItem(label: "Notifications", state: .notYet, phase: .design),
-        CoverageItem(label: "Build order", state: .notYet, phase: .tasks),
+        CoverageItem(label: "Who uses it", phase: .product, state: .covered),
+        CoverageItem(label: "Payments", phase: .product, state: .covered),
+        CoverageItem(label: "Schedule", phase: .requirements, state: .covered),
+        CoverageItem(label: "Cancellations", phase: .requirements, state: .asking),
+        CoverageItem(label: "Waiting list", phase: .requirements, state: .notYet),
+        CoverageItem(label: "Teacher view", phase: .design, state: .notYet),
+        CoverageItem(label: "Notifications", phase: .design, state: .notYet),
+        CoverageItem(label: "Build order", phase: .tasks, state: .notYet),
     ]
 
     static let allAnswered: [Question] = questions.map { question in
