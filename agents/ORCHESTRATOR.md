@@ -42,5 +42,5 @@ The user relays messages to each terminal. Messages are short and concrete, e.g.
 
 1. Move `## [Unreleased]` items in `CHANGELOG.md` into a new `## [x.y.z] · date` section, written for users (what changed for them, not commit subjects). Update the compare links at the bottom.
 2. `TEAM_ID=SGWP227GBQ NOTARY_PROFILE=mel-notary scripts/release.sh`
-3. `scripts/release-notes.sh x.y.z > notes.md` (that version's CHANGELOG section + requirements line), then `gh release create vx.y.z .build/release/Mel-x.y.z.dmg --target main --prerelease --title "Mel x.y.z" --notes-file notes.md`.
+3. `scripts/release-notes.sh x.y.z > notes.md` (that version's CHANGELOG section + requirements line), then `gh release create vx.y.z .build/release/Mel-x.y.z.dmg --target main --latest --title "Mel x.y.z" --notes-file notes.md`.
 4. Commit `appcast.xml` + `CHANGELOG.md`, push. Share the release link with the user together with the notes.

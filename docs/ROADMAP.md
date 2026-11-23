@@ -123,7 +123,7 @@ Gate G6: all three merged; tests green; every v2 screen has previews; side-by-si
 | core | `SpecSession`/`AppState` v2 end to end against `AgentRunning`; end-to-end tests with the fake script for Quick fix, Feature and Product (incl. round 2, analyze fix, refine, stop + resume). |
 | ui | Wire every screen to the session; keyboard shortcuts as drawn (↩, ⌘↩, 1–4, ⌘N). |
 | platform | Real-run check on this Mac (Debug build only): a Feature spec on an existing repo and a Product spec from an idea, start to handoff. Notes in `docs/research/`. |
-| orchestrator | Merge core → ui → platform. Cut v0.3 (`release.sh`, `gh release create v0.3 --prerelease`, push `appcast.xml`); v0.2.x installs update in-app. |
+| orchestrator | Merge core → ui → platform. Cut v0.3 (`release.sh`, release notes from CHANGELOG, `gh release create v0.3 --latest`, push `appcast.xml`); v0.2.x installs update in-app. |
 
 Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Product spec end to end.
 
