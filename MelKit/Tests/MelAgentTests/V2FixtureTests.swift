@@ -42,7 +42,7 @@ struct V2FixtureTests {
             #expect(Set(question.keys) == ["id", "title", "why", "shapes", "options"])
         }
         let coverage = try #require(intake["coverage"] as? [[String: String]])
-        #expect(coverage.allSatisfy { ["covered", "asking", "notYet"].contains($0["state"]) })
+        #expect(coverage.allSatisfy { ["covered", "asking", "notYet", "later"].contains($0["state"]) })
     }
 
     /// Markers arrive split across deltas (`"<!-- m"`, `"-- mel:step 2"`), so stripping them needs a buffer.

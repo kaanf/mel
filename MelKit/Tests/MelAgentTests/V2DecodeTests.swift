@@ -20,6 +20,7 @@ struct V2DecodeTests {
         let intake = try Intake.decode(fixtures.result("intake"), size: .feature)
         #expect(!intake.questions.isEmpty)
         #expect(!intake.coverage.isEmpty)
+        #expect(intake.coverage.contains { $0.state == .later })  // topics no question covers
     }
 
     @Test func draftStripsMarkersAndReadsTheTrailer() throws {
