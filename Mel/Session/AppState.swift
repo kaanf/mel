@@ -128,7 +128,14 @@ import MelSystem
 
     /// B1. Creates `specs/<slug>/` in `project` (nil: Product from an idea, A4x), copies attachments
     /// and selects the spec; the caller then calls `start()` on the session.
-    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession { fatalError("stub") }
+    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, parent: URL? = nil, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession { fatalError("stub") }
+
+    /// B1 "Save to": `<project>/specs/<slug>/`, or with no project (Product) `<parent>/<slug>/specs/<slug>/`.
+    func specFolder(name: String, size: SpecSize, project: Project?, parent: URL) -> URL {
+        let slug = SpecStore.slug(name)
+        let folder = project?.folder ?? parent.appending(path: slug, directoryHint: .isDirectory)
+        return SpecStore.specFolder(slug: slug, project: folder)
+    }
 
     // System actions for views (views never import MelSystem)
     func signIn() {
