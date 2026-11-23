@@ -1,6 +1,6 @@
 # core status
 
-Wave: v0.2.1 version bump ready to merge
+Wave: v0.2.1 version merged, standing by (release waits for the user's v0.2 re-test)
 Updated: 2026-11-23
 
 ## Done
@@ -56,7 +56,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- Merge agent/core (MARKETING_VERSION 0.2.1).
+- (none; standing by)
 
 ## Questions for the user
 - (none)
