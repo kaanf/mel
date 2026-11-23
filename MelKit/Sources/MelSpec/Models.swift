@@ -104,6 +104,7 @@ public enum StopReason: Codable, Hashable, Sendable {
     case signedOut
     case crashed(String)
     case timeout
+    case sessionNotFound              // --resume id unknown: SpecSession reruns fresh, never shown to the user
 }
 
 public struct ActivityLine: Hashable, Identifiable, Sendable {

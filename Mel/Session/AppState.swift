@@ -2,23 +2,31 @@ import Foundation
 import Observation
 import MelAgent
 import MelSpec
+import MelStorage
 import MelSystem
 
 @Observable final class AppState {
     var agent: AgentStatus = .checking
-    var extraSearchPaths: [String] = []
+    var extraSearchPaths: [String] {
+        didSet { defaults.set(extraSearchPaths, forKey: Self.searchPathsKey) }
+    }
     var specs: [Spec] = []
+    var missingFolders: [URL] = []
     var selection: Spec.ID?
     var runningSpecID: Spec.ID?
 
     @ObservationIgnored private let adapter: any AgentAdapter
     @ObservationIgnored private let makeRunner: @Sendable (URL) -> any AgentRunning
+    @ObservationIgnored private let defaults: UserDefaults
+    private static let searchPathsKey = "extraSearchPaths"
 
     /// Composition root passes `ClaudeCode()` and `{ AgentRunner(adapter: ClaudeCode(), executable: $0) }`;
     /// tests and previews pass fakes.
-    init(adapter: any AgentAdapter, makeRunner: @escaping @Sendable (URL) -> any AgentRunning) {
+    init(adapter: any AgentAdapter, makeRunner: @escaping @Sendable (URL) -> any AgentRunning, defaults: UserDefaults = .standard) {
         self.adapter = adapter
         self.makeRunner = makeRunner
+        self.defaults = defaults
+        extraSearchPaths = defaults.stringArray(forKey: Self.searchPathsKey) ?? []
     }
 
     func scanForAgent() async { fatalError("stub") }
@@ -30,13 +38,16 @@ import MelSystem
 
     func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession { fatalError("stub") }
     func removeFromLibrary(_ id: Spec.ID) { fatalError("stub") }
+    func locate(_ missing: URL, at folder: URL) throws { fatalError("stub") }
+    func removeMissing(_ missing: URL) { fatalError("stub") }
+    func specFolder(name: String, parent: URL) -> URL { SpecStore.specsFolder(name: name, parent: parent) }
 
     // System actions for views (views never import MelSystem)
     func signIn() { fatalError("stub") }
     func copy(_ text: String) { SystemActions.copy(text) }
 
     static func preview(_ specs: [Spec], agent: AgentStatus) -> AppState {
-        let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() })
+        let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() }, defaults: UserDefaults(suiteName: "preview")!)
         state.specs = specs
         state.agent = agent
         state.selection = specs.first?.id
