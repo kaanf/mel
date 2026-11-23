@@ -1,6 +1,6 @@
 # ui status
 
-Wave: v0.2.1 honeycomb app icon, ready to merge
+Wave 6 step 2 in progress: A1, A1x, A2, A3, B1 done; next A4x
 Updated: 2026-11-23
 
 ## Done
@@ -42,14 +42,45 @@ Updated: 2026-11-23
   - feat(ui) short toolbar status: `ToolbarStatus(status:title:detail:compact:)` in StatusBadge.swift. Discovery and Drafting measure their width (content + inspector, `onGeometryChange` after `.inspector`) and pass `compact` below `ToolbarStatus.fullTextWidth` (660). Full and compact are separate `ToolbarItem`s (if/else) because NSToolbar never widens an item whose content grows; ViewThatFits does nothing in a toolbar (AppKit overflows by ideal width). Checked in the Debug app: full text + Draft Now + Inspector at 900 pt (inspector hidden) and 915 pt (shown); "Needs you" with all buttons at 860/760/655 pt; growing back works. A very long spec name in the subtitle can still push items into overflow.
   - fix(ui) sidebar arrows: the question card took focus on every appear, so after arrowing up to Discovery the next arrow went to the card. Now only a question that arrives while Discovery is open takes focus (`openedOn` in DiscoveryView). Checked with keys posted to the debug PID: REQUIREMENTS ↑ PRODUCT ↑ Discovery ↓ PRODUCT ↓ REQUIREMENTS ↑ ↑ Discovery ↓ PRODUCT. Trade-off: opening Discovery from the sidebar no longer puts focus in the card; Tab or a click does. Not unit-testable (focus); no new test.
 
-- feat(ui) honeycomb app icon (v0.2.1), rebased on origin/main (8321421), full test green: ready to merge.
+- feat(ui) honeycomb app icon (v0.2.1) merged to main; shipped in v0.2.1 (build 264).
   - AppIcon.appiconset PNGs rendered from the SVGs in `docs/design/v2/Mel-Logo.dc.html` (scratchpad Swift script: NSImage loads the SVG, draws into an sRGB CGContext; raw pixels check out at Honey #D97F00, Core #2A2A2E). Contents.json unchanged (already lists all 10 slots).
   - 128 pt and up: the 1024 master (sheen, 0.08 hairline). 32@1x and 32@2x use the file's own 32/64 px variants (no sheen; hairline 0.1 at 32 px, 0.08 at 64 px). 16@1x/@2x: small mark (0.14 hairline).
   - Full-bleed like the design (squircle fills the 100 grid, no macOS margin); macOS 26 shows it at the same size as the other Dock icons. Checked in the Debug app (com.kaanf.mel.debug) after `lsregister -f` + Dock restart; before that the Dock showed a cached generic icon.
 
+- Wave 6 Theme (orchestrator-approved before core's stubs): `Mel/Views/Theme.swift`, full test green (132).
+  - `Theme.Colors` (semantic, sRGB hex), `Theme.Text` (`TextStyle` size/weight/lineHeight/design/tracking, applied with `.textStyle(_:)`; exact line height via macOS 26 `.lineHeight(.exact(points:))`, `ThemeTests` renders single lines and checks the height), `Theme.Space` (named by value, x1…x72), `Theme.Size` (sidebar 232, toolbar 52, control heights, switch, radio), `Theme.Radius` (3…16; pills use `Capsule()`), `Theme.Elevation` (ring 0.5 outset/inset + one drop or inner shadow) applied with `.surface(fill, elevation, in: shape)`, `Theme.LogoShadow`.
+  - No values rounded or merged unless identical and used for the same thing (e.g. four separator opacities stay separate).
+  - Light mode: `NSRequiresAquaSystemAppearance` in Info.plist. Checked: Debug app renders Aqua while the system is in Dark mode.
+  - Left out on purpose: mock chrome (#DFE0E5 page, traffic lights, window shadow, C4 grey dot), the C2 dialog 4-layer shadow (system sheet), logo colors (the logo is an image). Glass tokens (sidebar, toolbar groups) are kept as reference only, since macOS 26 draws that glass itself.
+  - Note: the app target defaults to MainActor isolation, so tokens are MainActor (fine for views; test arguments can't use them).
+
+- Wave 6 step 1, rebased on origin/main, full test green (148):
+  - Sidebar = variant (b) as drawn on B5–C3 (orchestrator 2026-11-23), rows drawn by hand: inset panel 232 pt (8 pt from the window, #F6F6F8 = the design's 0.86 alpha over white), 28 pt rows, grey 0.08 selection with medium weight, 26 pt file indent, ↑/↓ via onKeyPress, rows are buttons with `.isSelected`, label "name, status".
+  - Status scheme. Drawn in (b): Approved green dot, Review and Edited black ring, Locked dashed grey, Out of date #B25000, n issues #C93400, Rerun #B25000. **Not drawn, same scheme (for the user to confirm):** Drafting = purple pulsing dot (from B3), Stopped = #C93400 dot, Queued (during intake) = Locked's dashed dot with "Queued", Analyze Running = purple dot, Passed = green dot, Discovery during intake = black ring (needs you), after = green dot.
+  - **Choices for the user:** project row shows the project name + "Ready" / "No context" (C3's drawing) on every screen, not B5–C1's "Project context" label, because the library can hold several projects; the "New Spec" footer (C3, B2–B4) stays on every screen although C1 omits it; B5's sidebar is drawn wider only because its labels lack `min-width: 0` (a mock artifact), we keep 232 pt and truncate like C1.
+  - Text: `.lineHeight(.exact)` puts the extra leading below the glyphs, CSS splits it; `textStyle` offsets by a per-size measured height (residual ≤ 0.125 pt vs WebKit for all 35 styles).
+  - Locked dot dash pattern matched to WebKit's rendering (two 4.5 pt dashes). Design icons (house, chevron, plus, alert) drawn from their SVG paths.
+  - Status pill: `StatusPill(indicator:text:count:progress:maxWidth:)`, max width per screen (360/340/320/300 as drawn).
+  - Comparison tooling (scratchpad, not in repo): WKWebView renderer for `.dc.html` with the canvas's dc-runtime.js as support.js; Debug app `-screen <name>` opens a fixture state at 1280 × 800. Mocks place the traffic lights at 30 pt; the system places them by toolbar height (system chrome, left as is).
+
+- Wave 6 step 2 (screens), rebased on origin/main, last full test green (208 tests, at A3):
+  - Done and pixel-compared at 1280 × 800: A1 Welcome, A1x No agent, A2 Pick a project, A3 Project context (commits "feat(ui): A1…", "A2…", "A3…").
+  - Lane A runs in the main window: `Views/Setup/SetupFlow.swift` (steps welcome → pickProject → projectSetup(Project) → firstSpec), shown by MainView while `!didShowWelcome || state.projects.isEmpty`. The old separate "Welcome" Window scene is gone. Setup screens draw their own title bar via `setupChrome(title:stepLabel:barHeight:labelTrailing:)`: 44 pt with a centered title (A2, A3, A4x), 52 pt with the "Setup" label (A1 trailing 12, A1x trailing 20). The system toolbar is kept but empty, so the traffic lights stay.
+  - Shared parts: `DesignButtonStyle` (role, height, leading/trailing, keyHint, text, elevation override), `DesignLinkStyle`, `SegmentedPicker`, `AgentTile`, `SetupAgentRow`, `DesignIcon` (now parses the design's SVG `d` strings via `SVGPathShape`; glyphs house, chevronDown, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp), Logo image asset (Assets.xcassets/Logo, the 1024 icon).
+  - Contract additions used (all on main): FoundRepository (A2 meta "Kotlin · edited today"), ProjectSetup.branch/fileCount, ProjectContext.read/sources (A3).
+
+- B1 New Spec (`Views/NewSpec/NewSpecView.swift`, replaces NewSpecSheet), rebased on origin/main (048f078, core W7), on the v2 API `specFolder(name:size:project:parent:)` / `createSpec(…, parent:)`; v1 no longer used by ui (core may remove it). Full test green.
+  - MainView shows it full-window while `isShowingNewSpec`; Esc cancels; Add Project… → A2 and Read Repo → A3 run SetupFlow from MainView (`setupStep`) and return to B1; A2 Back returns to B1 when a library exists.
+  - Parts: `FlowLayout` (wrapping chips), `DesignSwitchStyle`; B1 tokens in Theme.Size; `TextStyle.naturalHeight`. Debug screens `newSpec`, `newSpecNoContext`, `newSpecQuickFix`, `newSpecProduct`, `newSpecEmpty`; previews for the same five states.
+  - Decisions (tell the user): Quick fix fields go into the idea as "Happens now: …" lines (no separate session fields); Paste Log is a small sheet with a text editor (views can't read NSPasteboard); empty name → "Untitled Spec" (no name suggestion yet); "Save to" button chooses the parent (Product) or adds another project folder (Feature/Quick fix); project branch shows only when A3 ran this launch (no persisted branch; ask core if wanted); Link Issue hidden (V2 §2).
+  - Compared at 1280 × 800 against the mock (top 800 pt): within ~1 px after fixes. Known deviations: SwiftUI line breaking avoids one-word last lines ("new screens", "· TASKS" wrap one word earlier than WebKit; no API); SF Mono 10 pt ~3 % wider than WebKit; mock wraps "Save to" onto two lines (mock artifact, no min-width), we keep one line. NOT compared yet: settings box and footer below the fold (scroll events posted to the PID don't reach the background window; next try: a taller crop via a debug window size or reading the rows' frames).
+  - Idea text area is a TextEditor (multi-line TextField ignores line height); it creates an off-screen 500 × 500 window, so the scratchpad `winid` now picks on-screen windows only.
+
 ## Next
-- Orchestrator: merge the honeycomb icon, then cut v0.2.1. Don't start the v2 redesign until asked.
-- Stand by for the orchestrator. GUI: AX actions and PID-targeted events only, no System Events keystrokes.
+- Compare B1's lower part (settings box, footer, Quick fix and Product states).
+- A4x (`Native-E4-FirstSpec.dc.html`, own view from B1's parts: centered "New Spec" 44 pt bar, sizes Product/Feature/Quick fix with "Needs a project · Add One", "Not sure how to start? Try one" examples), then B2–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
+- Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh`, `sbs`, `crop`, `winid`); lost on reboot, rebuild from the notes below if needed: WKWebView renderer of `.dc.html` with the canvas artifact's `artifact-type/dc-runtime.js` saved as `support.js` next to the mocks (Artifact read of https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd), Debug app `-screen <name>`, crop the mock render at (80, 80, 2560 × 1600) px. App captures are Display P3 encoded, compare positions, not raw colors.
+- GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
 - Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.

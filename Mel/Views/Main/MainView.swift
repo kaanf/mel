@@ -1,20 +1,54 @@
 import SwiftUI
 import MelSpec
 
-/// Main window: library sidebar, the selected stage, its inspector, and the New Spec sheet.
+/// Main window: library sidebar, the selected stage and its inspector; B1 New Spec and Lane A take the whole window.
 struct MainView: View {
     @Environment(AppState.self) private var state
-    @Environment(\.openWindow) private var openWindow
     @AppStorage("didShowWelcome") private var didShowWelcome = false
     @Binding var isShowingNewSpec: Bool
     @State private var item: SidebarItem?
     @State private var showInspector = true
+    /// B1's Add Project… (A2) or Read Repo (A3); back to B1 when done.
+    @State private var setupStep: SetupFlow.Step?
 
     var body: some View {
+        if let setupStep {
+            SetupFlow(step: setupStep) { newSpec in
+                self.setupStep = nil
+                isShowingNewSpec = newSpec
+            }
+        } else if !didShowWelcome || state.projects.isEmpty {
+            SetupFlow(step: initialSetupStep) { newSpec in
+                isShowingNewSpec = newSpec
+            }
+        } else if isShowingNewSpec {
+            NewSpecView(draft: initialDraft, onAddProject: { setupStep = .pickProject }, onReadRepo: { setupStep = .projectSetup($0) }) {
+                isShowingNewSpec = false
+            }
+        } else {
+            library
+        }
+    }
+
+    private var initialDraft: NewSpecView.Draft {
+        #if DEBUG
+        if let draft = DebugScreen.current?.newSpecDraft { return draft }
+        #endif
+        return NewSpecView.Draft()
+    }
+
+    private var initialSetupStep: SetupFlow.Step {
+        #if DEBUG
+        if let step = DebugScreen.current?.setupStep { return step }
+        #endif
+        return didShowWelcome ? .pickProject : .welcome
+    }
+
+    private var library: some View {
         NavigationSplitView {
             SidebarView(selection: $item) { isShowingNewSpec = true }
         } detail: {
-            if let item, state.specs.contains(where: { $0.id == item.specID }) {
+            if let item, item.specID.map({ id in state.specs.contains { $0.id == id } }) ?? true {
                 detail(item).id(item)
             } else if state.specs.isEmpty {
                 EmptyLibraryView { isShowingNewSpec = true }
@@ -22,12 +56,8 @@ struct MainView: View {
                 ContentUnavailableView("No Spec Selected", systemImage: "doc.text", description: Text("Choose a spec in the sidebar."))
             }
         }
-        .sheet(isPresented: $isShowingNewSpec) {
-            NewSpecSheet()
-        }
         .onAppear {
             item = state.selection.flatMap { id in state.specs.first { $0.id == id } }.map(SidebarItem.current)
-            if !didShowWelcome { openWindow(id: "welcome") }
         }
         .onChange(of: item) { _, item in
             state.selection = item?.specID
@@ -40,19 +70,25 @@ struct MainView: View {
 
     @ViewBuilder
     private func detail(_ item: SidebarItem) -> some View {
-        let session = state.session(for: item.specID)
         switch item {
-        case .discovery:
-            DiscoveryView(session: session, showInspector: $showInspector)
-        case .doc(_, let kind):
+        case .project:
+            // A3 Project context: Wave 6 screen, not built yet.
+            ContentUnavailableView("Project Context", systemImage: "house")
+        case .discovery(let id):
+            DiscoveryView(session: state.session(for: id), showInspector: $showInspector)
+        case .doc(let id, let kind):
+            let session = state.session(for: id)
             switch session.spec.docs[kind] ?? .locked {
             case .writing, .stopped:
                 DraftingView(session: session, kind: kind, showInspector: $showInspector)
             case .review, .approved, .edited, .stale:
                 ReviewView(session: session, kind: kind)
             case .locked:
-                LockedDocView(kind: kind)
+                LockedDocView(kind: kind, size: session.spec.size)
             }
+        case .analyze:
+            // B6 Analyze: Wave 6 screen, not built yet.
+            ContentUnavailableView("Analyze", systemImage: "checklist")
         }
     }
 }
@@ -75,6 +111,7 @@ struct EmptyLibraryView: View {
 
 struct LockedDocView: View {
     let kind: DocKind
+    let size: SpecSize
 
     var body: some View {
         ContentUnavailableView {
@@ -86,9 +123,9 @@ struct LockedDocView: View {
     }
 
     private var previous: DocKind? {
-        let all = DocKind.allCases
-        let index = all.firstIndex(of: kind)!
-        return index > 0 ? all[index - 1] : nil
+        let files = size.files
+        guard let index = files.firstIndex(of: kind), index > 0 else { return nil }
+        return files[index - 1]
     }
 }
 
@@ -107,6 +144,6 @@ struct LockedDocView: View {
 }
 
 #Preview("Locked file") {
-    LockedDocView(kind: .architecture)
+    LockedDocView(kind: .architecture, size: .product)
         .frame(width: 600, height: 400)
 }
