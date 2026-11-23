@@ -11,7 +11,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var coverage: [CoverageItem]
     public var sessionID: String?
 
-    public init(id: UUID = UUID(), name: String, idea: String, folder: URL, stage: Stage, docs: [DocKind: DocStatus], questions: [Question], coverage: [CoverageItem], sessionID: String? = nil) {
+    /// A new spec starts in Discovery with every file locked.
+    public init(id: UUID = UUID(), name: String, idea: String, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus] = DocKind.allLocked, questions: [Question] = [], coverage: [CoverageItem] = [], sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -24,11 +25,20 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
-public enum DocKind: String, Codable, CaseIterable, Hashable, Sendable {
+public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hashable, Sendable {
     case product, requirements, design, tasks
 
     public var fileName: String { rawValue.uppercased() + ".md" }
     public var title: String { rawValue.capitalized }
+
+    /// The file drafted after this one, or nil for TASKS.md.
+    public var next: DocKind? {
+        let all = Self.allCases
+        let i = all.firstIndex(of: self)! + 1
+        return i < all.count ? all[i] : nil
+    }
+
+    public static let allLocked = Dictionary(uniqueKeysWithValues: allCases.map { ($0, DocStatus.locked) })
 }
 
 public enum Stage: Codable, Hashable, Sendable {
