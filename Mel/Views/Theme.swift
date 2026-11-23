@@ -41,8 +41,8 @@ enum Theme {
         static let selectionFill = Color.black.opacity(0.08)
         /// rgba(0,0,0,0.12) · switch track off (B1, B7, C4).
         static let switchOffFill = Color.black.opacity(0.12)
-        /// rgba(245,245,247,0.86) · sidebar glass panel (B2–C2). macOS 26 draws the sidebar; reference value.
-        static let sidebarGlass = Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255, opacity: 0.86)
+        /// #F6F6F8 · sidebar panel (B2–C3): the design's rgba(245,245,247,0.86) over the white window, as WebKit draws it.
+        static let sidebarPanel = Color(hex: 0xF6F6F8)
         /// rgba(255,255,255,0.8) · toolbar glass groups (B1–B5). macOS 26 draws toolbar glass; reference value.
         static let toolbarGlass = Color(hex: 0xFFFFFF, opacity: 0.8)
         /// rgba(255,255,255,0.22) · ⌘↩ / ↩ key hint on accent buttons (A1, A3, B1, B4).
@@ -122,6 +122,25 @@ enum Theme {
         var tracking: CGFloat = 0
 
         var font: Font { .system(size: size, weight: weight, design: design) }
+
+        /// How far to move the glyphs down so they sit in the line box like CSS (half the extra
+        /// leading above, half below). `.lineHeight(.exact)` puts all of it below.
+        var glyphShift: CGFloat {
+            guard let lineHeight, let height = Self.measuredHeight[Key(size: size, mono: design == .monospaced)] else { return 0 }
+            return (lineHeight - height) / 2
+        }
+
+        struct Key: Hashable { let size: CGFloat; let mono: Bool }
+
+        /// Per font size: the line height at which SwiftUI and WebKit place the glyphs alike.
+        /// Measured at 8× against the `.dc.html` renderer (WebKit); weight changes it by under 0.07 pt.
+        static let measuredHeight: [Key: CGFloat] = [
+            Key(size: 10, mono: false): 12.125, Key(size: 11, mono: false): 13.5, Key(size: 12, mono: false): 14.75,
+            Key(size: 13, mono: false): 15.875, Key(size: 14, mono: false): 17.125, Key(size: 15, mono: false): 18.25,
+            Key(size: 17, mono: false): 20.875, Key(size: 22, mono: false): 27.125, Key(size: 26, mono: false): 32.25,
+            Key(size: 28, mono: false): 34.875, Key(size: 30, mono: false): 37.375,
+            Key(size: 10, mono: true): 13.125, Key(size: 11, mono: true): 14.625, Key(size: 12, mono: true): 15.75,
+        ]
     }
 
     enum Text {
@@ -259,6 +278,9 @@ enum Theme {
 
     /// Fixed dimensions of shared parts and controls.
     enum Size {
+        /// 1280 × 800 · window size every screen is drawn at (default size of the main window).
+        static let windowWidth: CGFloat = 1280
+        static let windowHeight: CGFloat = 800
         /// 232 · sidebar width (B2–C2).
         static let sidebarWidth: CGFloat = 232
         /// 28 · sidebar row and segmented button height.
@@ -267,12 +289,33 @@ enum Theme {
         static let statusDot: CGFloat = 8
         /// 1.5 · ring width of hollow status dots (Review, Edited, Locked).
         static let statusDotStroke: CGFloat = 1.5
+        /// Dash pattern of the Locked dot: CSS `1.5px dashed` as WebKit draws it on an 8 pt circle,
+        /// two 4.5 pt dashes (lower left and top) over the 20.42 pt turn; the phase starts the first at 95°.
+        static let statusDotDash: [CGFloat] = [4.5, 3.1, 4.5, 8.32]
+        static let statusDotDashPhase: CGFloat = -5.44
         /// 52 · toolbar height (B2–C2).
         static let toolbar: CGFloat = 52
         /// 130 · minimum width of the toolbar title column.
         static let toolbarTitleMinWidth: CGFloat = 130
-        /// 300 · maximum width of the toolbar status pill.
-        static let statusPillMaxWidth: CGFloat = 300
+        /// Maximum width of the toolbar status pill; the design sets one per screen.
+        /// 360 · B2 Intake.
+        static let statusPillIntake: CGFloat = 360
+        /// 340 · B3 Drafting.
+        static let statusPillDrafting: CGFloat = 340
+        /// 320 · B5 Review EXPERIENCE.md.
+        static let statusPillExperience: CGFloat = 320
+        /// 300 · B4 Review.
+        static let statusPillReview: CGFloat = 300
+        /// 44 · sidebar top row that holds the traffic lights.
+        static let sidebarTitleBar: CGFloat = 44
+        /// 15 · Project context house icon; 12 · spec row chevron; 14 · New Spec plus.
+        static let projectIcon: CGFloat = 15
+        static let chevron: CGFloat = 12
+        static let plusIcon: CGFloat = 14
+        /// 14 · "Needs you" alert icon in the toolbar pill (B2).
+        static let alertIcon: CGFloat = 14
+        /// 2 · progress bar along the bottom of the toolbar pill (B3).
+        static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
         static let articleMaxWidth: CGFloat = 620
         /// 0.5 · separators and hairline rings.
@@ -374,7 +417,7 @@ enum Theme {
         static let toolbarControl = Elevation(ring: .black.opacity(0.18), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
         /// Toolbar glass group (B1–B5). macOS 26 draws toolbar glass; reference value.
         static let toolbarGroup = Elevation(ring: .black.opacity(0.1), drop: Drop(y: 1, blur: 4, color: .black.opacity(0.08)))
-        /// Sidebar glass panel (B2–C2). macOS 26 draws the sidebar; reference value.
+        /// Sidebar panel (B2–C3).
         static let sidebar = Elevation(ring: .black.opacity(0.08), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.05)))
         /// Selected segment: A3 mode control, B4 inspector tab.
         static let segmentSelected = Elevation(ring: .black.opacity(0.06), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.1)))
@@ -430,11 +473,12 @@ enum Theme {
 }
 
 extension View {
-    /// Font, tracking and exact line height of a design text style.
+    /// Font, tracking and exact line height of a design text style, glyphs placed like CSS.
     func textStyle(_ style: Theme.TextStyle) -> some View {
         font(style.font)
             .tracking(style.tracking)
             .lineHeight(style.lineHeight.map { .exact(points: $0) })
+            .offset(y: style.glyphShift)
     }
 
     /// Background of a box: fill, hairline ring and shadow (CSS `background` + `box-shadow`). Shadows assume an opaque fill.
