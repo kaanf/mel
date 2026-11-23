@@ -86,9 +86,8 @@ struct MainView: View {
             case .locked:
                 LockedDocView(kind: kind, size: session.spec.size)
             }
-        case .analyze:
-            // B6 Analyze: Wave 6 screen, not built yet.
-            ContentUnavailableView("Analyze", systemImage: "checklist")
+        case .analyze(let id):
+            AnalyzeView(session: state.session(for: id))
         }
     }
 }

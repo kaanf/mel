@@ -124,7 +124,41 @@ enum PreviewData {
     )
     static let crashed = spec(.stopped(.architecture, .crashed("claude exited with status 1")), usageLimit.docs)
     static let review = spec(.review(.requirements), docs(.approved, .review))
-    static let analyzeIssues = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .issues(4))
+    static let analyzeIssues: Spec = {
+        var result = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .issues(4))
+        result.analysis = analysis
+        return result
+    }()
+    static let analyzeRunning = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .running)
+    /// B6 as drawn.
+    static let analysis = AnalyzeResult(
+        stats: [
+            .init(value: "14 of 15", label: "requirements have a task"), .init(value: "7 of 7", label: "screens trace to a requirement"),
+            .init(value: "2 of 3", label: "quality requirements are covered"), .init(value: "1", label: "contradiction between files"),
+        ],
+        issues: [
+            .init(id: "i1", kind: .contradiction, location: "REQUIREMENTS 1.3 · EXPERIENCE › Confirm booking",
+                  text: "Requirement 1.3 returns the credit up to 12 hours before class, but the screen copy says “Free cancellation up to 24 hours”.",
+                  actions: [.init(label: "Use 24 Hours", fix: "", files: [.requirements]), .init(label: "Use 12 Hours", fix: "", files: [.experience])]),
+            .init(id: "i2", kind: .noTask, location: "REQUIREMENTS 2.2",
+                  text: "When the studio cancels a class, members get their credit back. No task builds this and no test checks it.",
+                  actions: [.init(label: "Move to Later", fix: "", files: [.requirements]), .init(label: "Add Task", fix: "", files: [.tasks])]),
+            .init(id: "i3", kind: .qualityNotCovered, location: "REQUIREMENTS Q3",
+                  text: "The schedule should be readable offline. ARCHITECTURE.md has no local cache and TASKS.md has no task for it.",
+                  actions: [.init(label: "Drop Requirement", fix: "", files: [.requirements]), .init(label: "Add Task", fix: "", files: [.architecture, .tasks])]),
+            .init(id: "i4", kind: .scopeCreep, location: "TASKS 9", text: "Task 9 “Notification settings screen” traces to no requirement.",
+                  actions: [.init(label: "Remove Task", fix: "", files: [.tasks]), .init(label: "Link to Requirement", fix: "", files: [.tasks])]),
+        ],
+        coverage: [
+            ("1.1", "Book a class with free spots", ["c", "c", "c", "c"]), ("1.2", "Join the waitlist when full", ["c", "c", "c", "c"]),
+            ("1.3", "Cancel 12h before, credit returned", ["x", "c", "c", "c"]), ("2.1", "Pay, get credits and a receipt", ["c", "c", "c", "c"]),
+            ("2.2", "Studio cancels, credit returned", ["c", "c", "m", "m"]), ("Q1", "Schedule opens in under 1 second", ["c", "c", "c", "c"]),
+            ("Q2", "Payment data never stored on device", ["c", "c", "c", "c"]), ("Q3", "Schedule readable offline", ["c", "m", "m", "m"]),
+        ].map { id, text, m in
+            let mark = { (s: String) -> AnalyzeResult.Mark in s == "c" ? .covered : s == "m" ? .missing : .conflict }
+            return AnalyzeResult.CoverageRow(id: id, text: text, screen: mark(m[0]), architecture: mark(m[1]), task: mark(m[2]), test: mark(m[3]))
+        }
+    )
     static let edited = spec(.review(.requirements), docs(.approved, .edited, .stale, .stale, .stale), analyze: .stale)
     static let done = spec(.done, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
 

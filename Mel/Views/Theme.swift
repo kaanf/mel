@@ -401,6 +401,11 @@ enum Theme {
         static let branchIndent: CGFloat = 112
         static let screenColumn: CGFloat = 130
         static let criteriaColumn: CGFloat = 64
+        /// B6: content max 900; stat tiles min 190; coverage columns 52 (ID) and 84 (each mark).
+        static let analyzeMaxWidth: CGFloat = 900
+        static let statTileMin: CGFloat = 190
+        static let coverageID: CGFloat = 52
+        static let coverageCell: CGFloat = 84
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
