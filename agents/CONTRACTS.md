@@ -9,6 +9,8 @@ Only the orchestrator changes this file. Need a change? Write a request in your 
 - Xcode project `Mel.xcodeproj`, scheme `Mel`, app target `Mel`, test target `MelTests` (Swift Testing).
 - Both targets use **synchronized folders** (`PBXFileSystemSynchronizedRootGroup`): every file under `Mel/` and `MelTests/` is included automatically. Adding a file never changes `project.pbxproj`.
 - macOS 26.0, Swift 6, Xcode's new-app defaults: **default actor isolation `MainActor`**, approachable concurrency. Work that must leave the main actor goes into an `actor` or a `nonisolated`/`@concurrent` function.
+- Because the default is `MainActor`, every type below except `AppState`, `SpecSession` and views is declared **`nonisolated`** (and `Sendable` where it crosses actors): the `Spec/` value types, `MarkdownParser`, `AgentTypes`, the `AgentRunning`/`AgentAdapter` protocols, `ClaudeCode`, `ShellPath`, `Git`. New off-main types follow the same rule.
+- Don't add `.gitkeep` files. Each existing one needs a pbxproj exception (otherwise "Multiple commands produce .gitkeep"), and a new folder shows up with its first real file anyway.
 - Bundle identifier `com.kaanf.mel`. Hardened Runtime on. **No App Sandbox.**
 - No third-party dependencies.
 
