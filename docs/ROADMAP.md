@@ -110,7 +110,8 @@ Gate G5: a local Release build updates itself from a localhost feed to a higher 
 - On `main` since v0.1: toolbar status text + padding (ui), Debug bundle id `com.kaanf.mel.debug` (core).
 - Agents must never touch `/Applications/Mel.app` or the `com.kaanf.mel` defaults.
 - Wave 4 merged (core 5b9883b, ui ad7c055, platform 8f251a8); ui toolbar check waits for the user to quit /Applications/Mel.app.
-- Next: Wave 5 (Sparkle), then v0.2.
+- Wave 5 merged except platform's local update test (core f66608a + 95146bf, platform 0ebf1ba, ui 4e37bc9). Toolbar check done, no change.
+- Next: v0.2. Then v0.2.1 = first in-app update: ui fixes sidebar ↑ from PRODUCT.md to Discovery and keeps a short "Needs you" status below ~860 pt (user approved 2026-11-23).
 
 ## Risks
 
