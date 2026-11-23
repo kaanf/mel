@@ -6,7 +6,7 @@ Updated: 2026-11-23
 ## Done
 - Wave 0 components (merged): StatusBadge, StageStepper, RadioRow, CalloutView, KeyHint, ProgressStrip.
 - Wave 1, rebased on origin/main (7becaf0), `xcodebuild test` green, no warnings from App/ or Views/:
-  - 0.2 `App/MelApp.swift` + `App/MelCommands.swift`: WindowGroup → MainView (NavigationSplitView, inspector per screen), `Window("Welcome", id: "welcome")`, Settings (General / Agents / Specs / Advanced), commands ⌘N New Spec…, ⌘↩ Approve (Spec menu), ⌥⌘I Show/Hide Inspector. AppState(adapter:makeRunner:) wiring kept as core wrote it.
+  - 0.2 `App/MelApp.swift` + `App/MelCommands.swift`: WindowGroup → MainView (NavigationSplitView, inspector per screen), `Window("Welcome", id: "welcome")`, Settings (single Agents pane), commands ⌘N New Spec…, ⌘↩ Approve (Spec menu), ⌥⌘I Show/Hide Inspector. AppState(adapter:makeRunner:) wiring kept as core wrote it.
   - 3.1–3.10 in `Views/`: Welcome, Settings › Agents, Sidebar, New Spec sheet, Discovery (+ inspector), MarkdownBlocksView (LazyVStack, EARS keywords bold), Drafting (running/stopped + live preview inspector), Review (Preview / Edit Markdown, Before you approve, Approve disabled while assumptions remain), Failure sheet, Spec ready sheet. Plus EmptyLibraryView, LockedDocView, AgentRow/AgentStatusBadge.
   - `#Preview`s for every component and screen state, data in `Views/Preview/PreviewData.swift`.
 
@@ -23,7 +23,7 @@ Updated: 2026-11-23
 - Previews compile with the build; I did not open them in Xcode's canvas, so visual rendering is unchecked.
 - Approve is a FocusedValue (`\.approve`, plain FocusedValueKey; `@Entry` warns for closures). A ternary producing `approve : nil` crashed the compiler; use if/guard.
 - Spec ready sheet opens when stage changes to `.done` while Review is shown; "Start Building…" in the Review toolbar reopens it.
-- @AppStorage keys: `didShowWelcome` (ui), `scanOnLaunch` (Settings toggle, default true; core should read it at launch).
+- @AppStorage key: `didShowWelcome` (ui). Settings is a single Agents pane (no TabView, no scan-on-launch toggle).
 - Commit-to-Git checkbox defaults to off.
 
 ## Blocked
@@ -38,4 +38,4 @@ Updated: 2026-11-23
 - core (nice to have): total count for "Writing story 3 of 5"; Drafting step list is built from activity lines for now.
 
 ## Questions for the user
-- Settings General / Specs / Advanced are placeholders ("No Settings Yet"). Build the proposal in docs/UI.md › Settings, or leave them out of the MVP?
+- (none)

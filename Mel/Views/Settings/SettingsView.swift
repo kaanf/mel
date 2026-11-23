@@ -2,29 +2,9 @@ import SwiftUI
 import MelSpec
 import UniformTypeIdentifiers
 
+/// Settings is Agents only in the MVP (docs/UI.md › Settings › Agents).
 struct SettingsView: View {
-    var body: some View {
-        TabView {
-            Tab("General", systemImage: "gearshape") { NotDesignedYet() }
-            Tab("Agents", systemImage: "terminal") { AgentsSettingsView() }
-            Tab("Specs", systemImage: "folder") { NotDesignedYet() }
-            Tab("Advanced", systemImage: "gearshape.2") { NotDesignedYet() }
-        }
-        .frame(width: 560)
-    }
-}
-
-/// General, Specs and Advanced wait for a design decision (docs/UI.md › Settings).
-private struct NotDesignedYet: View {
-    var body: some View {
-        ContentUnavailableView("No Settings Yet", systemImage: "gearshape")
-            .frame(height: 240)
-    }
-}
-
-struct AgentsSettingsView: View {
     @Environment(AppState.self) private var state
-    @AppStorage("scanOnLaunch") private var scanOnLaunch = true
     @State private var picking: Pick?
 
     private enum Pick { case executable, folder }
@@ -53,7 +33,6 @@ struct AgentsSettingsView: View {
                 }
             }
             Section {
-                Toggle("Look for the agent when the app opens", isOn: $scanOnLaunch)
                 LabeledContent("Search paths") {
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("Your login shell's PATH")
@@ -81,6 +60,8 @@ struct AgentsSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .frame(width: 560)
+        .fixedSize(horizontal: false, vertical: true)
         .fileImporter(
             isPresented: Binding(get: { picking != nil }, set: { if !$0 { picking = nil } }),
             allowedContentTypes: picking == .folder ? [.folder] : [.unixExecutable]
@@ -106,11 +87,9 @@ struct AgentsSettingsView: View {
 }
 
 #Preview("Not signed in") {
-    AgentsSettingsView().environment(PreviewData.appState(agent: PreviewData.notSignedIn))
-        .frame(width: 560, height: 520)
+    SettingsView().environment(PreviewData.appState(agent: PreviewData.notSignedIn))
 }
 
 #Preview("Not found") {
-    AgentsSettingsView().environment(PreviewData.appState(agent: .missing))
-        .frame(width: 560, height: 520)
+    SettingsView().environment(PreviewData.appState(agent: .missing))
 }
