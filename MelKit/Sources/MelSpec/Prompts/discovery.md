@@ -18,13 +18,13 @@ Name: {{name}}
 
 ## Phases
 
-Work phase by phase in file order: `product`, `requirements`, `design`, `tasks`. Every coverage topic belongs to one phase.
+Work phase by phase in file order: `product`, `requirements`, `experience`, `tasks`. Every coverage topic belongs to one phase.
 
 - Finish every topic of a phase before you ask about the next phase.
-- Open each phase with an open question: a broad question the user answers in their own words, with `options` empty. For example, for `design`: "What do you have in mind for the design? Screens, style, apps you like…". An answer of "You decide" means the user skipped it.
+- Open each phase with an open question: a broad question the user answers in their own words, with `options` empty. For example, for `experience`: "What do you have in mind for the design? Screens, style, apps you like…". An answer of "You decide" means the user skipped it.
 - Then sharpen that answer with option questions.
 - A new topic may go only into the current phase or a later one, never an earlier one.
-- If the app has a user interface, the `design` phase covers the user experience: main screens and navigation, visual style and tone, and reference apps.
+- If the app has a user interface, the `experience` phase covers the user experience: main screens and navigation, visual style and tone, and reference apps.
 
 ## How to ask
 
@@ -32,7 +32,7 @@ Work phase by phase in file order: `product`, `requirements`, `design`, `tasks`.
 - Ask only questions whose answer changes the spec. Skip anything the idea or earlier answers already settle.
 - Combine related points into one question.
 - An option question gives 2 to 4 options. Each has a short label and a one-line note. Mark exactly one option as suggested, and say in its note why it fits this idea. Do not add a "You decide" option; the app adds it.
-- `shapes` is the file the answer mostly affects: `product`, `requirements`, `design` or `tasks`.
+- `shapes` is the file the answer mostly affects: `product`, `requirements`, `experience` or `tasks`.
 - `id` is a short, stable slug for the topic, such as `payments`.
 - For an answer of "You decide", choose the best option yourself; it becomes an assumption in the spec. Mark that topic covered.
 
@@ -46,10 +46,10 @@ Reply with one JSON object only: no prose, no Markdown, no code fence.
 
 An option question:
 
-{"coverage":[{"label":"Problem","phase":"product","state":"covered"},{"label":"Payments","phase":"requirements","state":"asking"},{"label":"Cancellations","phase":"requirements","state":"notYet"},{"label":"User experience","phase":"design","state":"notYet"}],"next":{"id":"payments","title":"How do members pay?","why":"Decides whether the spec covers checkout, refunds and receipts.","shapes":"requirements","options":[{"label":"Class packs bought in the app","note":"You mentioned buying class packs in your idea","suggested":true},{"label":"Paid at the desk, app only books","note":"No checkout in the app; staff adds credits","suggested":false}]},"done":false}
+{"coverage":[{"label":"Problem","phase":"product","state":"covered"},{"label":"Payments","phase":"requirements","state":"asking"},{"label":"Cancellations","phase":"requirements","state":"notYet"},{"label":"User experience","phase":"experience","state":"notYet"}],"next":{"id":"payments","title":"How do members pay?","why":"Decides whether the spec covers checkout, refunds and receipts.","shapes":"requirements","options":[{"label":"Class packs bought in the app","note":"You mentioned buying class packs in your idea","suggested":true},{"label":"Paid at the desk, app only books","note":"No checkout in the app; staff adds credits","suggested":false}]},"done":false}
 
 An open question (`next` only; coverage as above):
 
-"next":{"id":"design-ideas","title":"What do you have in mind for the design? Screens, style, apps you like…","why":"Shapes the User experience section of DESIGN.md.","shapes":"design","options":[]}
+"next":{"id":"design-ideas","title":"What do you have in mind for the design? Screens, style, apps you like…","why":"Shapes the User experience section of EXPERIENCE.md.","shapes":"experience","options":[]}
 
 When every topic is covered, reply with the final coverage list, no `next`, and `"done":true`.

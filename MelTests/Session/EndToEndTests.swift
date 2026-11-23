@@ -86,7 +86,8 @@ final class EndToEndTests {
             ("e2e/draft-product.jsonl", []),
             ("e2e/draft-requirements-partial.jsonl", ["hang"]),
             ("e2e/draft-requirements-rest.jsonl", []),
-            ("e2e/draft-design.jsonl", []),
+            ("e2e/draft-design.jsonl", []),   // EXPERIENCE.md
+            ("e2e/draft-design.jsonl", []),   // ARCHITECTURE.md
             ("e2e/draft-tasks.jsonl", []),
         ])
         let session = try newSpec(app)
@@ -137,10 +138,13 @@ final class EndToEndTests {
         #expect(session.spec.stage == .review(.requirements))
         session.confirmAssumption(index: 0, in: .requirements)
         await session.approve(.requirements)
-        #expect(session.spec.stage == .review(.design))
+        #expect(session.spec.stage == .review(.experience))
         #expect(script.requests[5].prompt.contains("### REQUIREMENTS.md"))
 
-        await session.approve(.design)
+        await session.approve(.experience)
+        #expect(session.spec.stage == .review(.architecture))
+
+        await session.approve(.architecture)
         #expect(session.spec.stage == .review(.tasks))
         #expect(session.summary(.tasks).tasks == 2)
         #expect(session.summary(.tasks).uncoveredCriteria.isEmpty)
@@ -148,12 +152,12 @@ final class EndToEndTests {
         await session.approve(.tasks)
         #expect(session.spec.stage == .done)
         await session.flush()
-        for kind in DocKind.allCases {
+        for kind in session.spec.size.files {
             #expect(try text(session, kind) == session.documents[kind])
             #expect(!(try text(session, kind)).contains("[!ASSUMPTION]"))
         }
         #expect(try SpecStore.loadState(in: session.spec.folder).stage == .done)
-        #expect(script.requests.count == 7)
+        #expect(script.requests.count == 8)
         #expect(script.requests.allSatisfy { $0.workingDirectory == session.spec.folder.deletingLastPathComponent() })
     }
 

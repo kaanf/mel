@@ -113,7 +113,7 @@ struct MarkdownParserTests {
 
     @Test func designHasSevenNumberedSectionsInSpecFormatSample() {
         let text = (1...7).map { "## \($0). Section" }.joined(separator: "\n\n")
-        #expect(MarkdownParser.summary("# Design\n\n" + text, kind: .design).sections == 7)
+        #expect(MarkdownParser.summary("# Design\n\n" + text, kind: .architecture).sections == 7)
     }
 
     @Test func repoTasksCoverEveryRepoCriterion() throws {

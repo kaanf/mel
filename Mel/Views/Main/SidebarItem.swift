@@ -16,7 +16,7 @@ enum SidebarItem: Hashable {
         switch spec.stage {
         case .discovery: .discovery(spec.id)
         case .drafting(let kind), .review(let kind), .stopped(let kind, _): .doc(spec.id, kind)
-        case .done: .doc(spec.id, .tasks)
+        case .analyze, .done: .doc(spec.id, spec.size.files.last!)
         }
     }
 }

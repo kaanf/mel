@@ -34,11 +34,11 @@ final class SpecStoreTests {
     @Test func existingFilesAreDetectedAndNotOverwrittenByCreate() throws {
         let folder = SpecStore.specsFolder(name: "Old", parent: parent)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        try "mine".write(to: folder.appending(path: "DESIGN.md"), atomically: true, encoding: .utf8)
-        #expect(SpecStore.existingFiles(in: folder) == [.design])
+        try "mine".write(to: folder.appending(path: "ARCHITECTURE.md"), atomically: true, encoding: .utf8)
+        #expect(SpecStore.existingFiles(in: folder) == [.architecture])
 
         try SpecStore.create(Spec(name: "Old", idea: "x", folder: folder))
-        #expect(try String(contentsOf: folder.appending(path: "DESIGN.md"), encoding: .utf8) == "mine")
+        #expect(try String(contentsOf: folder.appending(path: "ARCHITECTURE.md"), encoding: .utf8) == "mine")
     }
 
     @Test func writeAndRead() async throws {

@@ -13,6 +13,14 @@ import MelSystem
     private(set) var isRunning: Bool
     private(set) var lastError: String?
     private(set) var conflict: DocKind?
+    /// B3: the step the draft has reached (`<!-- mel:step N -->`), 0 before the first marker.
+    private(set) var draftStep = 0
+    /// C1 "What this affects", once the impact run is back.
+    private(set) var impact: ImpactResult?
+    /// Text of each file at approval (`.mel/approved/`), for C1's diff and Undo.
+    private(set) var snapshots: [DocKind: String] = [:]
+    /// DECISIONS.md, newest first.
+    private(set) var decisions: [Decision] = []
 
     @ObservationIgnored private weak var app: AppState?
     @ObservationIgnored private let store: SpecStore?
@@ -53,7 +61,11 @@ import MelSystem
         }
     }
 
-    private init(spec: Spec, documents: [DocKind: String], liveText: String, activity: [ActivityLine], isRunning: Bool, lastError: String?, conflict: DocKind?) {
+    private init(spec: Spec, documents: [DocKind: String], liveText: String, activity: [ActivityLine], isRunning: Bool, lastError: String?, conflict: DocKind?, draftStep: Int, impact: ImpactResult?, snapshots: [DocKind: String], decisions: [Decision]) {
+        self.draftStep = draftStep
+        self.impact = impact
+        self.snapshots = snapshots
+        self.decisions = decisions
         self.spec = spec
         self.documents = documents
         self.liveText = liveText
@@ -64,8 +76,15 @@ import MelSystem
         self.store = nil
     }
 
-    var currentQuestion: Question? { spec.questions.first { $0.answer == nil } }
-    var answeredQuestions: [Question] { spec.questions.filter { $0.answer != nil } }
+    var currentQuestion: Question? { spec.questions.first { $0.round == .intake && $0.answer == nil } }
+    var answeredQuestions: [Question] { spec.questions.filter { $0.round == .intake && $0.answer != nil } }
+
+    /// B4 "Before you approve": round-2 questions from `kind`'s draft, then its open-question callouts.
+    func followUpQuestions(for kind: DocKind) -> [Question] { spec.questions.filter { $0.round == .draft && $0.shapes == kind && $0.answer == nil } }
+    func openQuestions(in kind: DocKind) -> [OpenQuestion] { OpenQuestion.parse(documents[kind] ?? "", kind: kind) }
+
+    /// B7's task list.
+    var tasks: [SpecTask] { SpecTask.parse(documents[.tasks] ?? "") }
 
     func summary(_ kind: DocKind) -> DocSummary {
         var summary = MarkdownParser.summary(documents[kind] ?? "", kind: kind)
@@ -227,7 +246,7 @@ import MelSystem
     }
 
     private func approvedText(before kind: DocKind) -> String {
-        DocKind.allCases.prefix { $0 != kind }
+        spec.size.files.prefix { $0 != kind }
             .filter { spec.docs[$0] == .approved }
             .map { "### \($0.fileName)\n\n\(documents[$0] ?? "")" }
             .joined(separator: "\n\n")
@@ -368,6 +387,45 @@ import MelSystem
         }
     }
 
+    // MARK: - v2: attachments, round 2, analyze, refine, handoff
+
+    /// B1 Add Files / drop.
+    func attach(_ files: [URL]) async throws { fatalError("stub") }
+    /// B1 Paste Log.
+    func attachLog(_ text: String) async throws { fatalError("stub") }
+    func removeAttachment(_ attachment: Attachment) async throws { fatalError("stub") }
+
+    /// Answers a round-2 question and revises its file (B3, then B4 again).
+    func answerFollowUp(questionID: String, _ answer: Answer) async { fatalError("stub") }
+    /// Answers an `[!OPEN QUESTION]` and revises its file.
+    func answerOpenQuestion(_ question: OpenQuestion, _ answer: String) async { fatalError("stub") }
+
+    /// B6: one read-only run over the approved files.
+    func analyze() async { fatalError("stub") }
+    /// "Fix n Issues": each issue's primary action, revised file by file in file order, then Analyze again.
+    func fixIssues() async { fatalError("stub") }
+    /// One issue's action button.
+    func apply(_ action: AnalyzeResult.Action) async { fatalError("stub") }
+    /// "Hand Off Anyway": to B7 with issues left.
+    func handOffAnyway() { fatalError("stub") }
+
+    /// C1 "Why did this change?": saved as a decision that replaces the older one about the same criteria.
+    func saveDecision(title: String, reason: String, for kind: DocKind) async throws { fatalError("stub") }
+    /// C1 Undo: restores the approved snapshot and clears `edited`/`stale`.
+    func undoEdit(_ kind: DocKind) async { fatalError("stub") }
+    /// C1 "Refine n Files": revises each stale file in order.
+    func refine() async { fatalError("stub") }
+    /// C1 "Keep Them as They Are": clears `stale`.
+    func keepAsIs() { fatalError("stub") }
+
+    /// C2 "Resume Later": resumes when the usage limit resets, with a notification.
+    func resumeLater() { fatalError("stub") }
+
+    /// B7: writes `prompts/task-NN.md`.
+    func writeTaskPrompts() async throws -> [URL] { fatalError("stub") }
+    /// B7 "Write AGENTS.md": adds or updates Mel's marked block only.
+    func writeAgentsMD() throws { fatalError("stub") }
+
     // MARK: - Handoff and system actions
 
     var startCommand: String { #"claude "Read specs/ and implement TASKS.md, task 1""# }
@@ -421,7 +479,7 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil) -> SpecSession {
-        SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict)
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, draftStep: Int = 0, impact: ImpactResult? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = []) -> SpecSession {
+        SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, draftStep: draftStep, impact: impact, snapshots: snapshots, decisions: decisions)
     }
 }

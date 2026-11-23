@@ -48,7 +48,7 @@ struct MainView: View {
             switch session.spec.docs[kind] ?? .locked {
             case .writing, .stopped:
                 DraftingView(session: session, kind: kind, showInspector: $showInspector)
-            case .review, .approved:
+            case .review, .approved, .edited, .stale:
                 ReviewView(session: session, kind: kind)
             case .locked:
                 LockedDocView(kind: kind)
@@ -107,6 +107,6 @@ struct LockedDocView: View {
 }
 
 #Preview("Locked file") {
-    LockedDocView(kind: .design)
+    LockedDocView(kind: .architecture)
         .frame(width: 600, height: 400)
 }

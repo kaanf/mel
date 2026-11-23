@@ -51,14 +51,14 @@ struct DiscoveryTests {
     }
 
     @Test func coverageCarriesItsPhaseAndMissingPhaseIsProduct() throws {
-        let turn = try DiscoveryTurn.decode(#"{"coverage":[{"label":"Problem","state":"covered"},{"label":"Screens","phase":"design","state":"notYet"}],"done":true}"#)
-        #expect(turn.coverage == [CoverageItem(label: "Problem", phase: .product, state: .covered), CoverageItem(label: "Screens", phase: .design, state: .notYet)])
+        let turn = try DiscoveryTurn.decode(#"{"coverage":[{"label":"Problem","state":"covered"},{"label":"Screens","phase":"architecture","state":"notYet"}],"done":true}"#)
+        #expect(turn.coverage == [CoverageItem(label: "Problem", phase: .product, state: .covered), CoverageItem(label: "Screens", phase: .architecture, state: .notYet)])
     }
 
     @Test func emptyOrMissingOptionsIsAnOpenQuestion() throws {
-        let empty = try DiscoveryTurn.decode(#"{"coverage":[],"next":{"id":"design-ideas","title":"What do you have in mind for the design?","shapes":"design","options":[]},"done":false}"#)
+        let empty = try DiscoveryTurn.decode(#"{"coverage":[],"next":{"id":"design-ideas","title":"What do you have in mind for the design?","shapes":"architecture","options":[]},"done":false}"#)
         #expect(empty.next?.options == [])
-        #expect(empty.next?.shapes == .design)
+        #expect(empty.next?.shapes == .architecture)
         #expect(!empty.done)
         let missing = try DiscoveryTurn.decode(#"{"coverage":[],"next":{"id":"idea","title":"Tell me more.","shapes":"product"}}"#)
         #expect(missing.next?.options == [])
@@ -66,7 +66,7 @@ struct DiscoveryTests {
 
     @Test func freeTextAnswersKeepTheirLinesInTheList() {
         var spec = Spec(name: "Yoga", idea: "Book classes", folder: URL(filePath: "/tmp/yoga/specs"))
-        spec.questions = [Question(id: "design-ideas", title: "What do you have in mind for the design?", why: "", shapes: .design, options: [], answer: .text("Calm, like Things.\nTwo tabs."))]
+        spec.questions = [Question(id: "design-ideas", title: "What do you have in mind for the design?", why: "", shapes: .architecture, options: [], answer: .text("Calm, like Things.\nTwo tabs."))]
         #expect(spec.answersText == "- What do you have in mind for the design? Calm, like Things.\n  Two tabs.")
         #expect(spec.decideText == "(nothing)")
     }

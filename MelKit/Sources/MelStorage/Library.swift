@@ -1,6 +1,6 @@
 import Foundation
 
-/// The spec folders in sidebar order, kept in `UserDefaults` as bookmarks so they follow
+/// The project folders (v1: spec folders) in sidebar order, kept in `UserDefaults` as bookmarks so they follow
 /// the folder when it's moved. A folder that's gone (or in the Trash) comes back as missing.
 public struct Library {
     public struct Item: Hashable, Sendable {
