@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+import MelAgent
+import MelSpec
+import MelSystem
 
 @Observable final class AppState {
     var agent: AgentStatus = .checking
@@ -7,6 +10,16 @@ import Observation
     var specs: [Spec] = []
     var selection: Spec.ID?
     var runningSpecID: Spec.ID?
+
+    @ObservationIgnored private let adapter: any AgentAdapter
+    @ObservationIgnored private let makeRunner: @Sendable (URL) -> any AgentRunning
+
+    /// Composition root passes `ClaudeCode()` and `{ AgentRunner(adapter: ClaudeCode(), executable: $0) }`;
+    /// tests and previews pass fakes.
+    init(adapter: any AgentAdapter, makeRunner: @escaping @Sendable (URL) -> any AgentRunning) {
+        self.adapter = adapter
+        self.makeRunner = makeRunner
+    }
 
     func scanForAgent() async { fatalError("stub") }
 
@@ -18,11 +31,29 @@ import Observation
     func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession { fatalError("stub") }
     func removeFromLibrary(_ id: Spec.ID) { fatalError("stub") }
 
+    // System actions for views (views never import MelSystem)
+    func signIn() { fatalError("stub") }
+    func copy(_ text: String) { SystemActions.copy(text) }
+
     static func preview(_ specs: [Spec], agent: AgentStatus) -> AppState {
-        let state = AppState()
+        let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() })
         state.specs = specs
         state.agent = agent
         state.selection = specs.first?.id
         return state
     }
+}
+
+/// Does nothing; backs `AppState.preview`.
+private struct InertAdapter: AgentAdapter {
+    func detect(extraPaths: [String]) async -> AgentStatus { .missing }
+    func loginCommand(executable: URL) -> String { "" }
+    func arguments(for request: AgentRequest) -> [String] { [] }
+    func environment(path: String) -> [String: String] { [:] }
+    func parse(line: Substring) -> [AgentEvent] { [] }
+}
+
+private struct InertRunner: AgentRunning {
+    func run(_ request: AgentRequest) -> AsyncThrowingStream<AgentEvent, Error> { AsyncThrowingStream { $0.finish() } }
+    func stop() async {}
 }

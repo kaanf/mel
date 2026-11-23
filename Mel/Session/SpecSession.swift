@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import MelSpec
 
 @Observable final class SpecSession {
     private(set) var spec: Spec
@@ -41,6 +42,12 @@ import Observation
     func confirmAssumption(index: Int, in kind: DocKind) { fatalError("stub") }
     func changeAssumption(index: Int, to text: String, in kind: DocKind) { fatalError("stub") }
     func approve(_ kind: DocKind) async { fatalError("stub") }
+
+    // Handoff / system actions for views
+    var startCommand: String { #"claude "Read specs/ and implement TASKS.md, task 1""# }
+    func showInFinder() { fatalError("stub") }
+    func openStartCommandInTerminal() { fatalError("stub") }
+    func finish(commitToGit: Bool) throws { fatalError("stub") }
 
     static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false) -> SpecSession {
         SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning)

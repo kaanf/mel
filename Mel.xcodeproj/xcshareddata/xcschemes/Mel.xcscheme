@@ -39,6 +39,50 @@
                ReferencedContainer = "container:Mel.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MelSpecTests"
+               BuildableName = "MelSpecTests"
+               BlueprintName = "MelSpecTests"
+               ReferencedContainer = "container:MelKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MelStorageTests"
+               BuildableName = "MelStorageTests"
+               BlueprintName = "MelStorageTests"
+               ReferencedContainer = "container:MelKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MelAgentTests"
+               BuildableName = "MelAgentTests"
+               BlueprintName = "MelAgentTests"
+               ReferencedContainer = "container:MelKit">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "MelSystemTests"
+               BuildableName = "MelSystemTests"
+               BlueprintName = "MelSystemTests"
+               ReferencedContainer = "container:MelKit">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
