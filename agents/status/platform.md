@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 3 ready to merge (notarized DMG built and verified)
+Wave: 4 done, ready to merge (discovery-open fixture + parse test, rebased on main 5b9883b)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -36,8 +36,12 @@ Updated: 2026-11-23
 ## In progress
 - (nothing)
 
+## Done (Wave 4)
+- `claude-2.1.311-discovery-open.jsonl`: first Discovery turn with the real discovery.md prompt and SpecSession's exact arguments/environment, recorded in a `mktemp -d` folder under /tmp; no secrets (`apiKeySource: none`, cwd under /tmp). Noted in CLAUDE-CODE-CLI.md › Fixtures.
+- `discoveryFirstTurnIsOpenProductQuestion`: session first, deltas == result, decodes with `DiscoveryTurn.decode`, next question open (`options` empty) and `shapes == .product`, coverage covers all four phases.
+
 ## Next
-- User runs `docs/research/CLEAN-INSTALL.md` on a clean account with the DMG above (5.4); record results there.
+- Wait for the orchestrator's next wave.
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -54,4 +58,4 @@ Updated: 2026-11-23
 - (none; Notifier gaps handed to core)
 
 ## Questions for the user
-- Run the clean-install checklist (docs/research/CLEAN-INSTALL.md) with `.build/release/Mel-0.1.dmg` from the platform worktree.
+- (none)
