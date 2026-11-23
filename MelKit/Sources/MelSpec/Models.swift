@@ -25,7 +25,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
-public enum DocKind: String, Codable, CaseIterable, Hashable, Sendable {
+public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hashable, Sendable {
     case product, requirements, design, tasks
 
     public var fileName: String { rawValue.uppercased() + ".md" }
