@@ -82,7 +82,7 @@ Updated: 2026-11-23
 - B2 Intake (`Views/Discovery/DiscoveryView.swift` rewritten in v2 style), debug screen `intake` now uses `PreviewData.intake` (the mock's content). Compared at 1280 × 800: content column and inspector within ~1 px.
   - Shared parts restyled to v2: `StageStepper` (check / filled dot / ring, 16 pt lines; used by B2, B3), `RadioRow` (B2 option row; C2 FailureSheet uses it too, C2 not redone yet). New glyphs chevronRight, arrowRight, draftNow, inspector. Toolbar status is now `StatusPill` in `.principal` with `sharedBackgroundVisibility(.hidden)` (no system glass around it).
   - Behavior: no "You decide" option any more (not drawn); Decide Later answers `.agentDecides` (shown "Later · the agent decides" in Answered). Digits 1…N. Open questions (no options, not drawn) keep a 3-line answer field in the note field's look.
-  - Deviations: Draft Now and the inspector toggle sit at the window's trailing edge above the inspector (system toolbar; mock puts them left of the inspector; `.primaryAction` didn't change it). "About 2 min left" hidden (V2 §2). Coverage has no Round 2 state in the model, so later items show "Not yet". Understanding counts covered items (mock shows 4 of 10 with 3 covered). Long coverage labels truncate (mock wraps them out of their 28 pt rows). Note placeholder is "Note for the agent" (mock's is example text). Mock's B2 sidebar is the older wider variant; ours is variant (b).
+  - Deviations: Draft Now and the inspector toggle sit at the window's trailing edge above the inspector (system toolbar; mock puts them left of the inspector). Timeboxed try 2026-11-23: the content `.toolbar` is already applied before `.inspector`; `.primaryAction` no change; a `ToolbarSpacer(.flexible)` in the inspector's toolbar moved them ~155 pt left but left the toggle straddling the inspector edge; an empty item there moved them back. Left at the trailing edge (orchestrator: leave it). "About 2 min left" hidden (V2 §2). Coverage has no Round 2 state in the model, so later items show "Not yet". Understanding counts covered items (mock shows 4 of 10 with 3 covered). Long coverage labels truncate (mock wraps them out of their 28 pt rows). Note placeholder is "Note for the agent" (mock's is example text). Mock's B2 sidebar is the older wider variant; ours is variant (b).
 
 ## Next
 - B3 Drafting next, then B4–B7, C1–C4 per FLOW.md, each with a `#Preview` per drawn state and a side-by-side compare before "ready to merge".
@@ -90,6 +90,7 @@ Updated: 2026-11-23
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
+- Workflow (user, 2026-11-23): build B3, B4, B5, B6, C1–C4 back to back; incremental builds only to look at a screen; one compare pass per screen, no rounds for 1 px residuals; commit as I go, no per-screen merge requests; full `xcodebuild test` once at the end, then one ready-to-merge message.
 - Small fixes: batch them with the next screen, no separate merge request (orchestrator, 2026-11-23).
 - Before saying ready to merge: squash temp/wip commits (orchestrator, 2026-11-23).
 - Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.

@@ -64,7 +64,7 @@ struct DiscoveryView: View {
                 ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
             }
             if spec.stage == .discovery {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem {
                     Button { Task { await session.draftNow() } } label: {
                         HStack(spacing: Theme.Space.x6) {
                             DesignIcon(glyph: .draftNow, size: Theme.Size.alertIcon)
@@ -77,7 +77,7 @@ struct DiscoveryView: View {
                     .disabled(session.isRunning)
                 }
             }
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem {
                 Button { showInspector.toggle() } label: {
                     DesignIcon(glyph: .inspector, size: Theme.Size.settingsIcon).foregroundStyle(Theme.Colors.label)
                 }
