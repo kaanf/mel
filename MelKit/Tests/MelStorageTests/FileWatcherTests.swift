@@ -51,6 +51,37 @@ final class FileWatcherTests {
         watcher.noteWritten("# Product\nMine\n", for: .product)
         try "# Product\nMine\n".write(to: url(.product), atomically: true, encoding: .utf8)
         #expect(await reported(1, within: 1).isEmpty)
+        withExtendedLifetime(watcher) {}
+    }
+
+    @Test func checkBeforeOwnWriteLandsReportsNothing() throws {
+        let watcher = watch()
+        watcher.noteWritten("# Product\nMine\n", for: .product)
+        watcher.check()                                   // file still has the old text
+        try "# Product\nMine\n".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.check()
+        #expect(changes.list.withLock { $0 }.isEmpty)
+
+        try "# Product\nTheirs\n".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.check()
+        #expect(changes.list.withLock { $0 } == ["product: # Product\nTheirs\n"])
+    }
+
+    @Test func rapidOwnWritesAreSkipped() throws {
+        let watcher = watch()
+        watcher.noteWritten("one", for: .product)
+        try "one".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.noteWritten("two", for: .product)
+        watcher.check()                                   // sees the older own write
+        watcher.noteWritten("three", for: .product)
+        try "three".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.check()                                   // "two" never landed
+        #expect(changes.list.withLock { $0 }.isEmpty)
+
+        // An external edit back to a text Mel wrote earlier is still reported.
+        try "two".write(to: url(.product), atomically: true, encoding: .utf8)
+        watcher.check()
+        #expect(changes.list.withLock { $0 } == ["product: two"])
     }
 
     @Test func otherFilesAreIgnored() async throws {

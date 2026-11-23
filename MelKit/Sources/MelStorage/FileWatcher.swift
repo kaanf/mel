@@ -13,8 +13,15 @@ public final class FileWatcher: Sendable {
         case conflict(fileText: String)
     }
 
+    /// `known`: file text as last seen on disk. `ownWrites`: texts Mel announced via `noteWritten`
+    /// that haven't been seen on disk yet, oldest first.
+    private struct State {
+        var known: [DocKind: String]
+        var ownWrites: [DocKind: [String]] = [:]
+    }
+
     private let folder: URL
-    private let known: Mutex<[DocKind: String]>
+    private let state: Mutex<State>
     private let onChange: @Sendable (DocKind, String) -> Void
     private let queue = DispatchQueue(label: "mel.filewatcher")
     nonisolated(unsafe) private var stream: FSEventStreamRef?
@@ -22,7 +29,7 @@ public final class FileWatcher: Sendable {
     public init(folder: URL, onChange: @escaping @Sendable (DocKind, String) -> Void) {
         self.folder = folder
         self.onChange = onChange
-        known = Mutex(Self.readFiles(in: folder))
+        state = Mutex(State(known: Self.readFiles(in: folder)))
 
         var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
         let callback: FSEventStreamCallback = { _, info, _, _, _, _ in
@@ -49,7 +56,7 @@ public final class FileWatcher: Sendable {
 
     /// Call before Mel writes `text` to the file, so the write isn't reported as external.
     public func noteWritten(_ text: String, for kind: DocKind) {
-        known.withLock { $0[kind] = text }
+        state.withLock { $0.ownWrites[kind, default: []].append(text) }
     }
 
     /// Reload when the editor has nothing unsaved; otherwise the user picks a version.
@@ -57,11 +64,20 @@ public final class FileWatcher: Sendable {
         editorText == savedText ? .reload(fileText) : .conflict(fileText: fileText)
     }
 
-    private func check() {
-        let current = Self.readFiles(in: folder)
-        let changed = known.withLock { known in
-            let changed = current.filter { known[$0.key] != $0.value }
-            known.merge(changed) { $1 }
+    /// Re-reads the files and reports text that is neither what was last seen nor one of Mel's
+    /// own pending writes. Reading inside the lock keeps concurrent checks consistent.
+    func check() {
+        let changed = state.withLock { state in
+            var changed: [DocKind: String] = [:]
+            for (kind, text) in Self.readFiles(in: folder) where state.known[kind] != text {
+                state.known[kind] = text
+                if let own = state.ownWrites[kind], let i = own.firstIndex(of: text) {
+                    // Our write landed; it and any older write it replaced are done.
+                    state.ownWrites[kind]!.removeFirst(i + 1)
+                } else {
+                    changed[kind] = text
+                }
+            }
             return changed
         }
         for kind in DocKind.allCases {
