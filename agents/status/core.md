@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 done, ready to merge
+Wave: 7 follow-up ready to merge
 Updated: 2026-11-23
 
 ## Done
@@ -44,11 +44,13 @@ Updated: 2026-11-23
 - W7 tests: `SpecSessionTests` (16, FakeRunner), `EndToEndTests` (Quick fix, Feature with the real project-context recording + attachment + Draft Now + fenced analyze + hand off + task prompts + AGENTS.md, Product with Stop/resume, round 2, analyze fix, impact and refine; one run at a time; unknown resume), `AppStateTests` (findRepositories, createSpec without project). v1 e2e fixtures removed; `e2e/README.md` describes `v2/`. Full suite green 3 runs (184 tests).
 - Found by the W7 tests: (1) DECISIONS.md was loaded in an init Task that could overwrite decisions recorded right after `start()`; now read synchronously in init, snapshots merged. (2) `MarkdownParser` dropped `Covers:` when it followed `Priority:` (the v2 task format) and dropped `Q1` IDs, so B5 showed covered criteria as uncovered.
 
+- W7 follow-up: removed v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)`. New `AppState.branches: [Project.ID: String]` (read from `.git/HEAD` when a project loads, refreshed by A3, cleared on remove; `preview(…, branches:)`). Full suite green 2 runs (186 tests).
+
 ## In progress
 - (nothing)
 
 ## Next
-- Wait for the orchestrator. Remove v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)` once ui's NewSpecSheet stops using them.
+- Stand by for the next wave.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -67,11 +69,9 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge** (agent/core W7, full suite green, no warnings). Rebase on main needed at merge (main has two docs commits).
-
-- I touched one ui file: `Mel/Views/SpecReady/SpecReadySheet.swift` calls `finish` in a `Task` because `finish(commitToGit:)` is now async. Nothing else under Views.
-- For **ui**: `NewSpecSheet` still uses v1 `specFolder(name:parent:)` / `createSpec(name:idea:parentFolder:)`; switch to `specFolder(name:size:project:parent:)` and `createSpec(name:idea:size:project:parent:…)`, then I remove the v1 pair.
-- CONTRACTS change: `SpecSession.finish(commitToGit:) async throws` (was sync; git runs off the main actor).
+**Ready to merge** (W7 follow-up, rebased on 3bb09f8, full suite green, no warnings).
+- For **ui**: B1 can show the branch on any launch with `state.branches[project.id]` (NewSpecView line 285 reads `projectSetup?.branch` today).
+- CONTRACTS: add `AppState.branches: [Project.ID: String]` and `preview(…, branches:)`; drop the v1 `specFolder(name:parent:)` / `createSpec(name:idea:parentFolder:)`.
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.

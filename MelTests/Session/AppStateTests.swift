@@ -49,4 +49,15 @@ struct AppStateTests {
         let second = try app.createSpec(name: "Yoga Studio", idea: "Again.", size: .feature, project: app.projects[0])
         #expect(second.spec.folder.lastPathComponent == "yoga-studio-2")
     }
+
+    @Test func addedProjectKnowsItsBranch() throws {
+        let git = folder.appending(path: "yoga/.git", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: git, withIntermediateDirectories: true)
+        try "ref: refs/heads/waitlist\n".write(to: git.appending(path: "HEAD"), atomically: true, encoding: .utf8)
+        let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!)
+        let project = try app.addProject(git.deletingLastPathComponent())
+        #expect(app.branches[project.id] == "waitlist")
+        app.removeProject(project)
+        #expect(app.branches.isEmpty)
+    }
 }

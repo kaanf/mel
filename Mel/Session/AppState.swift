@@ -16,6 +16,8 @@ import MelSystem
     var missingFolders: [URL] = []
     var projects: [Project] = []
     private(set) var contexts: [Project.ID: ProjectContext] = [:]
+    /// Each project's current git branch, read from `.git/HEAD` at load and by A3.
+    private(set) var branches: [Project.ID: String] = [:]
     /// A2: git repos one level under `~/Developer`.
     private(set) var foundRepositories: [FoundRepository] = []
     /// A3: the project-context run, while it's on screen.
@@ -103,6 +105,7 @@ import MelSystem
         if let selection, !specs.contains(where: { $0.id == selection }) { self.selection = nil }
         projects.removeAll { $0.id == project.id }
         contexts[project.id] = nil
+        branches[project.id] = nil
         saveLibrary()
     }
 
@@ -113,6 +116,7 @@ import MelSystem
         let folder = project.folder
         let (branch, fileCount) = await Task.detached { (Git.branch(at: folder), Git.fileCount(at: folder)) }.value
         projectSetup?.branch = branch
+        branches[project.id] = branch
         projectSetup?.fileCount = fileCount
         func fail(_ message: String) {
             projectSetup?.isRunning = false
@@ -191,11 +195,6 @@ import MelSystem
         return session
     }
 
-    /// v1 New Spec: a Product spec in a new project `<parentFolder>/<slug>/`.
-    func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession {
-        try createSpec(name: name, idea: idea, size: .product, project: createProject(name: name, parent: parentFolder))
-    }
-
     /// Hides the spec until the next launch; its files stay.
     func removeFromLibrary(_ id: Spec.ID) {
         specs.removeAll { $0.id == id }
@@ -220,12 +219,6 @@ import MelSystem
     func specFolder(name: String, size: SpecSize, project: Project?, parent: URL) -> URL {
         let slug = SpecStore.slug(name)
         return SpecStore.specFolder(slug: slug, project: project?.folder ?? parent.appending(path: slug, directoryHint: .isDirectory))
-    }
-
-    /// v1: where New Spec will put a spec named `name` in a new project under `parent`. Goes once ui uses the one above.
-    func specFolder(name: String, parent: URL) -> URL {
-        let slug = SpecStore.slug(name)
-        return SpecStore.specFolder(slug: slug, project: parent.appending(path: slug, directoryHint: .isDirectory))
     }
 
     // System actions for views (views never import MelSystem)
@@ -278,6 +271,7 @@ import MelSystem
         let project = Project(folder: folder, hasContext: context != nil)
         projects.append(project)
         contexts[project.id] = context
+        branches[project.id] = Git.branch(at: folder)
         for var spec in SpecStore.scan(project: project.folder) where !specs.contains(where: { $0.id == spec.id }) {
             if case .drafting = spec.stage { spec.apply(.draftStopped(.crashed("Mel quit while this file was being written."))) }
             if spec.stage == .analyze, spec.analyze == .running { spec.apply(.analyzeFailed) }
@@ -291,7 +285,7 @@ import MelSystem
         library.save(projects.map(\.folder) + missingFolders)
     }
 
-    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil) -> AppState {
+    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:]) -> AppState {
         let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() }, defaults: UserDefaults(suiteName: "preview")!)
         state.isPreview = true
         state.specs = specs
@@ -300,6 +294,7 @@ import MelSystem
         state.contexts = contexts
         state.foundRepositories = foundRepositories
         state.projectSetup = projectSetup
+        state.branches = branches
         state.selection = specs.first?.id
         return state
     }
