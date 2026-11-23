@@ -25,6 +25,7 @@ struct SidebarView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        .accessibilityElement(children: .combine)
                         .tag(SidebarItem.doc(spec.id, kind))
                     }
                 } header: {
@@ -76,7 +77,7 @@ struct SidebarView: View {
             .buttonStyle(.borderless)
             .menuIndicator(.hidden)
             .fixedSize()
-            .accessibilityLabel("Actions")
+            .accessibilityLabel("Actions for \(folder.deletingLastPathComponent().lastPathComponent)")
         }
         .help("Moved or deleted: \(folder.path(percentEncoded: false))")
         .contextMenu {

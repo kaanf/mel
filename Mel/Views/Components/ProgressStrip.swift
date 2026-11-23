@@ -12,12 +12,17 @@ struct ProgressStrip: View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Rectangle().fill(.quaternary)
-                Rectangle()
+                let bar = Rectangle()
                     .fill(isRunning ? AnyShapeStyle(.purple) : AnyShapeStyle(.gray))
                     .frame(width: proxy.size.width * min(max(value ?? 1, 0), 1))
-                    .phaseAnimator([false, true]) { bar, phase in
-                        bar.opacity(value == nil && isRunning && !reduceMotion && phase ? 0.3 : 1)
+                // Pulse only while indeterminate and running; otherwise nothing animates.
+                if value == nil && isRunning && !reduceMotion {
+                    bar.phaseAnimator([false, true]) { bar, phase in
+                        bar.opacity(phase ? 0.3 : 1)
                     } animation: { _ in .easeInOut(duration: 0.9) }
+                } else {
+                    bar
+                }
             }
         }
         .frame(height: 3)

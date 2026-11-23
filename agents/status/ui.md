@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 2
+Wave: 3
 Updated: 2026-11-23
 
 ## Done
@@ -23,11 +23,17 @@ Updated: 2026-11-23
 
 - Conflict preview: ReviewView "Changed in another app" (edit mode, `conflict: .requirements`) via `PreviewData.session(conflict:)`. Rebased on d4bc101, full test green (119 passed). merged to main (81ea2b7). Wave 2 done.
 
+- Wave 3 · 5.2 accessibility pass, rebased on a65a608, full test green (119 passed), no warnings from App/ or Views/. **5.2 ready to merge** (icon not done, see Questions):
+  - Reduce Motion: ProgressStrip only runs its phase animator while indeterminate and running (before, it animated forever, even with the pulse off). StatusBadge pulse already respected it.
+  - Increase Contrast: selected RadioRow gets a tint border (its fill is `.quinary`).
+  - VoiceOver: RadioRow hint is "Shortcut N" (Suggested is already in the label); question card is one container labeled "Question N"; sidebar file rows read as one element (name + status); missing row menu is "Actions for <project>".
+  - Audit, no change needed: semantic colors and SF Symbols only, decorative images hidden, headers marked, status never color-only (always text), every sheet has a ↩ default action and Cancel/Esc where cancelling makes sense, menus and context menus are reachable with VoiceOver.
+
 ## In progress
-- (nothing)
+- App icon: waiting for the user's choice (Questions) and the build setting (Requests).
 
 ## Next
-- Wave 3 (5.2 accessibility pass, app icon).
+- After the icon decision: add `Mel/AppIcon.icon` (Icon Composer bundle: icon.json + SVG layers, system glyph style, no hex from the canvas), build, push.
 
 ## Notes
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
@@ -43,8 +49,13 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
+- project settings (not mine): set `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` on the Mel target so `Mel/AppIcon.icon` is used. There's no asset catalog or icon setting yet.
 - (none; Wave 1 requests are in CONTRACTS 884c099. "Story 3 of 5" is cut, step list stays.)
 - core: ui calls `scanForAgent()` at launch, so AppState.init should not scan too.
 
 ## Questions for the user
-- (none)
+- App icon look (Liquid Glass layers, built in Icon Composer style):
+  1. Page with a sparkle: one white document glyph with text lines and a small sparkle, on a purple background (purple is Mel's "running" color). Says "idea becomes a document".
+  2. Four stacked pages: four slightly fanned pages for the four spec files, on a graphite/gray background. Calm, neutral, "spec set".
+  3. Lightbulb to page: a lightbulb whose lower half is a page with lines, on blue. Says "idea to spec" literally, busier at small sizes.
+  Recommendation: 1 (reads clearly at 16 px, ties to the app's accent).

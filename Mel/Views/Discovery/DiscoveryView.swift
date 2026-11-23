@@ -242,6 +242,8 @@ private struct QuestionCard: View {
             .padding(4)
         }
         // Digits pick an option unless the note field is taking text; ↩ is Continue (default action).
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Question \(number)")
         .focusable()
         .focusEffectDisabled()
         .focused($cardFocused)
