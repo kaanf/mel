@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 0 (done)
+Wave: 0 (done, merged to main)
 Updated: 2026-11-23
 
 ## Done
@@ -15,7 +15,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Wave 1 (wait for orchestrator): move fixtures to `MelTests/Fixtures/`, ShellPath tests, then 1.3 ClaudeCode, 1.4 AgentRunner.
+- Wave 1 (wait for orchestrator's Wave 1 message): first `git fetch origin && git rebase origin/main`. Code moves to `MelKit/Sources/MelAgent` and `MelSystem`, tests to `MelKit/Tests/...` (core does the move in 0.1b); follow CONTRACTS.md "Layers and dependencies": MelAgent imports only MelSpec, MelSystem imports nothing, `AgentStatus` lives in MelSpec. Then move fixtures to `MelTests/Fixtures/`, ShellPath tests, then 1.3 ClaudeCode, 1.4 AgentRunner.
 
 ## Notes
 - ShellPath timeout: kill the shell, then drain the pipe non-blocking. A child left by a login script can hold stdout open, so `readDataToEndOfFile` would wait past 5 s (seen with a hanging test shell). Wave 1 test: `SHELL` pointing to a script that sleeps must return "" in about 5 s.
@@ -27,7 +27,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- `docs/AGENT-INTEGRATION.md` (not mine) still says "to verify" for auth status, the login command, `--include-partial-messages` and `--append-system-prompt`. All verified now: use `claude auth status` (read `loggedIn`; `authMethod` must be `claude.ai`), login with `claude auth login`, partial messages on (text from `text_delta` only, tool calls from `assistant` blocks), stage contract via `--append-system-prompt`.
+- Done by orchestrator: `docs/AGENT-INTEGRATION.md` updated. (Was: it still said "to verify" for auth status, the login command, `--include-partial-messages` and `--append-system-prompt`. All verified now: use `claude auth status` (read `loggedIn`; `authMethod` must be `claude.ai`), login with `claude auth login`, partial messages on (text from `text_delta` only, tool calls from `assistant` blocks), stage contract via `--append-system-prompt`.)
 
 ## Questions for the user
 - (none)
