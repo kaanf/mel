@@ -1,6 +1,0 @@
-{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-0000000000c1","tools":["Glob","Grep","Read"],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"# Design\n\n## Stack\n\nSwif"}},"session_id":"e2e00000-0000-4000-8000-0000000000c1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"tUI app with a small ser"}},"session_id":"e2e00000-0000-4000-8000-0000000000c1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ver.\n\n## Data model\n\nCla"}},"session_id":"e2e00000-0000-4000-8000-0000000000c1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ss, Booking, Member.\n"}},"session_id":"e2e00000-0000-4000-8000-0000000000c1"}
-{"type":"result","subtype":"success","is_error":false,"result":"# Design\n\n## Stack\n\nSwiftUI app with a small server.\n\n## Data model\n\nClass, Booking, Member.\n","session_id":"e2e00000-0000-4000-8000-0000000000c1"}

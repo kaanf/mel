@@ -1,7 +1,0 @@
-{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-0000000000b1","tools":["Glob","Grep","Read"],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"2 stories\n\n# Requirements\n\n## 1. Book a class\n\nA"}},"session_id":"e2e00000-0000-4000-8000-0000000000b1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"s a member, I want to book a class, so that I ha"}},"session_id":"e2e00000-0000-4000-8000-0000000000b1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ve a spot.\n\n- 1.1 WHEN a member taps Book, THE A"}},"session_id":"e2e00000-0000-4000-8000-0000000000b1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"PP SHALL reserve a spot.\n\n## 2. Cancel a booking"}},"session_id":"e2e00000-0000-4000-8000-0000000000b1"}
-{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"\n\nAs a mem"}},"session_id":"e2e00000-0000-4000-8000-0000000000b1"}
-{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_e2e","name":"Read","input":{"file_path":"/tmp/yoga/specs/PRODUCT.md"}}]},"session_id":"e2e00000-0000-4000-8000-0000000000b1"}

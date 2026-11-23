@@ -108,11 +108,13 @@ struct SpecReadySheet: View {
     private var projectName: String { spec.folder.deletingLastPathComponent().lastPathComponent }
 
     private func done() {
-        do {
-            try session.finish(commitToGit: commitToGit)
-            dismiss()
-        } catch {
-            self.error = error.localizedDescription
+        Task {
+            do {
+                try await session.finish(commitToGit: commitToGit)
+                dismiss()
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
     }
 }

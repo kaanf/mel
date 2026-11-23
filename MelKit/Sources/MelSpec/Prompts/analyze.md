@@ -1,6 +1,6 @@
 You are checking the approved spec files below against each other before they go to a coding agent. Do not judge style; find what would make the build go wrong.
 
-You may read files in the current folder (Read, Glob, Grep). Never write files.
+Everything you need is below. Do not read any files.
 
 ## The work
 

@@ -81,18 +81,8 @@ extension Spec {
     /// One line per answered question; "You decide" answers say so.
     public var answersText: String {
         let lines = questions.compactMap { q -> String? in
-            switch q.answer {
-            case nil:
-                return nil
-            case .agentDecides:
-                return "- \(q.title) You decide: choose the best option and mark it as an assumption."
-            case .option(let i, let note):
-                let option = q.options.indices.contains(i) ? q.options[i].label : "?"
-                let extra = note.map { " (\($0))" } ?? ""
-                return "- \(q.title) \(option)\(extra)"
-            case .text(let text):
-                return "- \(q.title) \(text.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n  "))"
-            }
+            guard let answer = q.answerText else { return nil }
+            return "- \(q.title) \(answer.split(separator: "\n", omittingEmptySubsequences: false).joined(separator: "\n  "))"
         }
         return lines.isEmpty ? "(none yet)" : lines.joined(separator: "\n")
     }
@@ -108,5 +98,17 @@ extension Spec {
         let open = coverage.filter { $0.state != .covered }.map(\.label)
         let lines = (decided + open).map { "- \($0)" }
         return lines.isEmpty ? "(nothing)" : lines.joined(separator: "\n")
+    }
+}
+
+extension Question {
+    /// The answer as prompt text, or nil while unanswered.
+    public var answerText: String? {
+        switch answer {
+        case nil: nil
+        case .agentDecides: "You decide: choose the best option and mark it as an assumption."
+        case .option(let i, let note): (options.indices.contains(i) ? options[i].label : "?") + (note.map { " (\($0))" } ?? "")
+        case .text(let text): text
+        }
     }
 }

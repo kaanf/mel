@@ -1,0 +1,2 @@
+{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-000000000019","tools":["Glob","Grep","Read"],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
+{"type":"result","subtype":"success","is_error":false,"result":"{\"items\": [{\"kind\": \"experience\", \"what\": \"Confirm booking copy\", \"count\": \"1 place\"}, {\"kind\": \"tasks\", \"what\": \"Task 1 verify\", \"count\": \"1 task\"}]}","session_id":"e2e00000-0000-4000-8000-000000000019"}

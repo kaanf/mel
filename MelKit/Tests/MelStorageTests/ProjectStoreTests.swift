@@ -13,7 +13,8 @@ final class ProjectStoreTests {
         #expect(project.lastPathComponent == "yoga-studio")
         #expect(ProjectStore.readContext(project: project) == nil)
 
-        let context = ProjectContext(product: "# Product\n", tech: "# Tech\n", structure: "# Structure\n", principles: "# Principles\n\n- Small PRs\n")
+        let context = ProjectContext(product: "# Product\n", tech: "# Tech\n", structure: "# Structure\n", principles: "# Principles\n\n- Small PRs\n",
+                                     read: [ReadItem(label: "README.md", source: "Product summary")], sources: ["product.md": "From README"])
         try ProjectStore.writeContext(context, project: project)
         #expect(ProjectStore.readContext(project: project) == context)
 

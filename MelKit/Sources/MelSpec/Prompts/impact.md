@@ -1,6 +1,6 @@
 The user edited {{file}}, an approved spec file. Find what in the later files no longer matches.
 
-You may read files in the current folder (Read, Glob, Grep). Never write files.
+Everything you need is below. Do not read any files.
 
 ## The change
 

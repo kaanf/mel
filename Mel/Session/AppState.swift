@@ -10,7 +10,9 @@ import MelSystem
     var extraSearchPaths: [String] {
         didSet { defaults.set(extraSearchPaths, forKey: Self.searchPathsKey) }
     }
+    /// Every spec of every project, found by scanning `specs/*/.mel/state.json`.
     var specs: [Spec] = []
+    /// Library projects whose folder is gone; row title = folder name.
     var missingFolders: [URL] = []
     var projects: [Project] = []
     private(set) var contexts: [Project.ID: ProjectContext] = [:]
@@ -25,6 +27,8 @@ import MelSystem
     @ObservationIgnored var notify: (_ title: String, _ body: String, _ at: Date?) -> Void = { Notifier.post(title: $0, body: $1, at: $2) }
     @ObservationIgnored var authorizeNotifications: () async -> Void = { await Notifier.requestAuthorization() }
     @ObservationIgnored private var askedForNotifications = false
+    /// A2's scan folder and the parent of a project made from an idea; tests replace it.
+    @ObservationIgnored var developerFolder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer", directoryHint: .isDirectory)
 
     @ObservationIgnored private let adapter: any AgentAdapter
     @ObservationIgnored private let makeRunner: @Sendable (URL) -> any AgentRunning
@@ -36,18 +40,18 @@ import MelSystem
     private static let searchPathsKey = "extraSearchPaths"
 
     /// Composition root passes `ClaudeCode()` and `{ AgentRunner(adapter: ClaudeCode(), executable: $0) }`;
-    /// tests and previews pass fakes. Restores the library.
+    /// tests and previews pass fakes. Restores the project library and scans each project's specs.
     init(adapter: any AgentAdapter, makeRunner: @escaping @Sendable (URL) -> any AgentRunning, defaults: UserDefaults = .standard) {
         self.adapter = adapter
         self.makeRunner = makeRunner
         self.defaults = defaults
-        library = Library(defaults: defaults)
+        library = Library(defaults: defaults, key: "projects")
         extraSearchPaths = defaults.stringArray(forKey: Self.searchPathsKey) ?? []
         for item in library.load() {
-            if !item.isMissing, let spec = Self.loadSpec(in: item.folder) {
-                specs.append(spec)
-            } else {
+            if item.isMissing {
                 missingFolders.append(item.folder)
+            } else {
+                load(item.folder)
             }
         }
     }
@@ -65,33 +69,146 @@ import MelSystem
         return session
     }
 
-    /// Creates the folder and the spec; the caller then calls `start()` on the session.
-    func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession {
-        let spec = Spec(name: name, idea: idea, folder: specFolder(name: name, parent: parentFolder))
-        try SpecStore.create(spec)
-        specs.append(spec)
-        saveLibrary()
-        selection = spec.id
-        return session(for: spec.id)
+    // MARK: - Projects
+
+    func specs(in project: Project) -> [Spec] { specs.filter { $0.project == project.folder } }
+
+    /// A2: git repos in `~/Developer`, read off the main actor.
+    func findRepositories() async {
+        let folder = developerFolder
+        let found = await Task.detached { Git.repositories(in: folder) }.value
+        foundRepositories = found.map { FoundRepository(url: $0.url, language: $0.language, modified: $0.modified) }
     }
 
+    /// A2 "Choose Folder" or a found repo. Adds it to the library and scans its specs.
+    @discardableResult
+    func addProject(_ folder: URL) throws -> Project {
+        let project = Project(folder: folder)
+        if let existing = projects.first(where: { $0.id == project.id }) { return existing }
+        guard FileManager.default.fileExists(atPath: project.folder.path) else { throw CocoaError(.fileNoSuchFile) }
+        let added = load(project.folder)
+        saveLibrary()
+        return added
+    }
+
+    /// Start from an Idea: creates `<parent>/<slug>/` as a new project.
+    @discardableResult
+    func createProject(name: String, parent: URL) throws -> Project {
+        try addProject(ProjectStore.createProject(name: name, parent: parent))
+    }
+
+    func removeProject(_ project: Project) {
+        for spec in specs(in: project) { sessions[spec.id] = nil }
+        specs.removeAll { $0.project == project.folder }
+        if let selection, !specs.contains(where: { $0.id == selection }) { self.selection = nil }
+        projects.removeAll { $0.id == project.id }
+        contexts[project.id] = nil
+        saveLibrary()
+    }
+
+    /// A3: one read-only run over the repo; Mel writes the four files.
+    func setUpProject(_ project: Project) async {
+        let isNew = ProjectStore.isEmpty(project: project.folder)
+        projectSetup = ProjectSetup(project: project, isNewProject: isNew, isRunning: true, activity: [], context: nil, lastError: nil)
+        let folder = project.folder
+        let (branch, fileCount) = await Task.detached { (Git.branch(at: folder), Git.fileCount(at: folder)) }.value
+        projectSetup?.branch = branch
+        projectSetup?.fileCount = fileCount
+        func fail(_ message: String) {
+            projectSetup?.isRunning = false
+            projectSetup?.lastError = message
+        }
+        guard runningSpecID == nil, let runner = agentRunner() else { return fail("Claude Code isn't ready, or a spec is running.") }
+        let mode = isNew
+            ? "The folder `\(project.name)` is a new project with no code yet. Write short starting files from its name; the user will fill them in."
+            : "Read the code in this folder first: the README, the build files and the main source folders."
+        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false)
+        var result: String?
+        do {
+            loop: for try await event in runner.run(request) {
+                switch event {
+                case .step(let step): projectSetup?.activity.append(ActivityLine(at: .now, text: step))
+                case .done(let text): result = text; break loop
+                case .failed: break loop
+                default: break
+                }
+            }
+        } catch {}
+        guard let result, let context = try? ProjectContext.decode(result) else { return fail("Claude Code's reply couldn't be read.") }
+        do {
+            try await Task.detached { try ProjectStore.writeContext(context, project: folder) }.value
+        } catch {
+            return fail(error.localizedDescription)
+        }
+        contexts[project.id] = context
+        if let i = projects.firstIndex(where: { $0.id == project.id }) { projects[i].hasContext = true }
+        projectSetup?.context = context
+        projectSetup?.isRunning = false
+    }
+
+    /// A3 "Add Rule".
+    func addRule(_ rule: String, to project: Project) throws {
+        try ProjectStore.addRule(rule, project: project.folder)
+        let context = ProjectStore.readContext(project: project.folder)
+        contexts[project.id] = context
+        if projectSetup?.project.id == project.id, let context {
+            projectSetup?.context?.principles = context.principles
+        }
+    }
+
+    /// A3 "Edit Files": opens `.mel/project/` in Finder.
+    func showContext(of project: Project) {
+        SystemActions.showInFinder(ProjectStore.contextFolder(project: project.folder))
+    }
+
+    // MARK: - Specs
+
+    /// B1. Creates `specs/<slug>/` in `project` and copies attachments, then selects the spec; the
+    /// caller then calls `start()` on the session. Without a project (A4x, Product only) the
+    /// project folder is made under `~/Developer` (or the home folder).
+    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, parent: URL? = nil, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession {
+        let parent = parent ?? (FileManager.default.fileExists(atPath: developerFolder.path) ? developerFolder : developerFolder.deletingLastPathComponent())
+        let project = try project ?? createProject(name: name, parent: parent)
+        var slug = SpecStore.slug(name)
+        var n = 1
+        while FileManager.default.fileExists(atPath: SpecStore.specFolder(slug: slug, project: project.folder).path) {
+            n += 1
+            slug = SpecStore.slug(name) + "-\(n)"
+        }
+        let spec = Spec(name: name, idea: idea, size: size, folder: SpecStore.specFolder(slug: slug, project: project.folder), buildsOn: buildsOn, fillGaps: fillGaps)
+        try SpecStore.create(spec)
+        specs.append(spec)
+        selection = spec.id
+        let session = session(for: spec.id)
+        if !files.isEmpty || !logs.isEmpty {
+            Task {
+                do {
+                    try await session.attach(files)
+                    for log in logs { try await session.attachLog(log) }
+                } catch {}
+            }
+        }
+        return session
+    }
+
+    /// v1 New Spec: a Product spec in a new project `<parentFolder>/<slug>/`.
+    func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession {
+        try createSpec(name: name, idea: idea, size: .product, project: createProject(name: name, parent: parentFolder))
+    }
+
+    /// Hides the spec until the next launch; its files stay.
     func removeFromLibrary(_ id: Spec.ID) {
         specs.removeAll { $0.id == id }
         sessions[id] = nil
         if selection == id { selection = nil }
-        saveLibrary()
     }
 
-    /// "Locate…": `folder` is the moved project folder or its `specs` folder.
+    /// "Locate…": `folder` is the moved project.
     func locate(_ missing: URL, at folder: URL) throws {
-        let specsFolder = FileManager.default.fileExists(atPath: folder.appending(path: ".mel").path) ? folder : folder.appending(path: "specs")
-        var spec = try SpecStore.loadState(in: specsFolder)
-        spec.folder = specsFolder
         missingFolders.removeAll { $0 == missing }
-        specs.removeAll { $0.id == spec.id }
-        specs.append(spec)
+        let project = try addProject(folder)
         saveLibrary()
-        selection = spec.id
+        selection = specs(in: project).first?.id ?? selection
     }
 
     func removeMissing(_ missing: URL) {
@@ -99,36 +216,17 @@ import MelSystem
         saveLibrary()
     }
 
-    func specFolder(name: String, parent: URL) -> URL { SpecStore.specsFolder(name: name, parent: parent) }
+    /// B1 "Save to": `<project>/specs/<slug>/`, or with no project (Product) `<parent>/<slug>/specs/<slug>/`.
+    func specFolder(name: String, size: SpecSize, project: Project?, parent: URL) -> URL {
+        let slug = SpecStore.slug(name)
+        return SpecStore.specFolder(slug: slug, project: project?.folder ?? parent.appending(path: slug, directoryHint: .isDirectory))
+    }
 
-    // MARK: - Projects (v2)
-
-    func specs(in project: Project) -> [Spec] { specs.filter { $0.project == project.folder } }
-
-    func findRepositories() async { fatalError("stub") }
-
-    /// A2 "Choose Folder" or a found repo. Adds it to the library and scans its specs.
-    @discardableResult
-    func addProject(_ folder: URL) throws -> Project { fatalError("stub") }
-
-    /// Start from an Idea: creates `<parent>/<slug>/` as a new project.
-    @discardableResult
-    func createProject(name: String, parent: URL) throws -> Project { fatalError("stub") }
-
-    func removeProject(_ project: Project) { fatalError("stub") }
-
-    /// A3: one read-only run over the repo; Mel writes the four files.
-    func setUpProject(_ project: Project) async { fatalError("stub") }
-
-    /// A3 "Add Rule".
-    func addRule(_ rule: String, to project: Project) throws { fatalError("stub") }
-
-    /// A3 "Edit Files": opens `.mel/project/` in Finder.
-    func showContext(of project: Project) { fatalError("stub") }
-
-    /// B1. Creates `specs/<slug>/` in `project` (nil: Product from an idea, A4x), copies attachments
-    /// and selects the spec; the caller then calls `start()` on the session.
-    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession { fatalError("stub") }
+    /// v1: where New Spec will put a spec named `name` in a new project under `parent`. Goes once ui uses the one above.
+    func specFolder(name: String, parent: URL) -> URL {
+        let slug = SpecStore.slug(name)
+        return SpecStore.specFolder(slug: slug, project: parent.appending(path: slug, directoryHint: .isDirectory))
+    }
 
     // System actions for views (views never import MelSystem)
     func signIn() {
@@ -144,6 +242,9 @@ import MelSystem
 
     // MARK: - For SpecSession
 
+    /// One agent run at a time across the app: a spec's, or A3's.
+    var isAgentBusy: Bool { runningSpecID != nil || projectSetup?.isRunning == true }
+
     /// Asks once per launch, without waiting: macOS drops posts until the user allows them.
     func requestNotificationsOnce() {
         guard !askedForNotifications else { return }
@@ -152,7 +253,7 @@ import MelSystem
     }
 
     /// The runner for the detected executable, or nil while Claude Code isn't ready. One per
-    /// executable: it reads the login PATH once, and `runningSpecID` keeps runs from overlapping.
+    /// executable: it reads the login PATH once.
     func agentRunner() -> (any AgentRunning)? {
         guard case .ready(let executable, _) = agent else { return nil }
         if let runner, runner.executable == executable { return runner.runner }
@@ -169,18 +270,25 @@ import MelSystem
 
     // MARK: - Library
 
-    private func saveLibrary() {
-        guard !isPreview else { return }
-        library.save(specs.map(\.folder) + missingFolders)
+    /// Adds the project with its context and specs. A file that was being written when Mel quit
+    /// becomes stopped, and an analyze run that was going shows Rerun.
+    @discardableResult
+    private func load(_ folder: URL) -> Project {
+        let context = ProjectStore.readContext(project: folder)
+        let project = Project(folder: folder, hasContext: context != nil)
+        projects.append(project)
+        contexts[project.id] = context
+        for var spec in SpecStore.scan(project: project.folder) where !specs.contains(where: { $0.id == spec.id }) {
+            if case .drafting = spec.stage { spec.apply(.draftStopped(.crashed("Mel quit while this file was being written."))) }
+            if spec.stage == .analyze, spec.analyze == .running { spec.apply(.analyzeFailed) }
+            specs.append(spec)
+        }
+        return project
     }
 
-    /// The saved spec, with `folder` where it is now. A file that was being written when
-    /// Mel quit becomes stopped, so the user can resume it.
-    private static func loadSpec(in folder: URL) -> Spec? {
-        guard var spec = try? SpecStore.loadState(in: folder) else { return nil }
-        spec.folder = folder
-        if case .drafting = spec.stage { spec.apply(.draftStopped(.crashed("Mel quit while this file was being written."))) }
-        return spec
+    private func saveLibrary() {
+        guard !isPreview else { return }
+        library.save(projects.map(\.folder) + missingFolders)
     }
 
     static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil) -> AppState {

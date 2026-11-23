@@ -21,6 +21,8 @@ import MelSystem
     private(set) var snapshots: [DocKind: String] = [:]
     /// DECISIONS.md, newest first.
     private(set) var decisions: [Decision] = []
+    /// False → commit asks before `git init`. Checked off the main actor.
+    private(set) var isGitRepository = false
 
     @ObservationIgnored private weak var app: AppState?
     @ObservationIgnored private let store: SpecStore?
@@ -41,11 +43,11 @@ import MelSystem
 
     private enum RunEnd { case done(String), stopped(StopReason), refused }
 
-    /// A session on disk. Reads the four files once; they are small.
+    /// A session on disk. Reads the spec's files once; they are small.
     init(spec: Spec, app: AppState) {
         let store = SpecStore(folder: spec.folder)
         var documents: [DocKind: String] = [:]
-        for kind in DocKind.allCases {
+        for kind in spec.size.files {
             documents[kind] = try? String(contentsOf: store.url(kind), encoding: .utf8)
         }
         self.spec = spec
@@ -56,8 +58,18 @@ import MelSystem
         self.app = app
         self.store = store
         self.saved = documents
+        self.decisions = (try? String(contentsOf: spec.folder.appending(path: "DECISIONS.md"), encoding: .utf8)).map(Decision.parse) ?? []
         watcher = FileWatcher(folder: spec.folder) { [weak self] kind, text in
             Task { @MainActor in self?.fileChanged(kind, text) }
+        }
+        let files = spec.size.files
+        let project = spec.project
+        Task {
+            var snapshots: [DocKind: String] = [:]
+            for kind in files { snapshots[kind] = await store.snapshot(kind) }
+            // An approval made meanwhile wins.
+            self.snapshots = snapshots.merging(self.snapshots) { _, new in new }
+            isGitRepository = await Task.detached { Git.isRepository(project) }.value
         }
     }
 
@@ -94,63 +106,24 @@ import MelSystem
         return summary
     }
 
-    // MARK: - Discovery
+    // MARK: - Intake
 
+    /// One run returns every round-1 question at once (V2.md §5 Intake).
     func start() async {
-        guard spec.stage == .discovery, currentQuestion == nil else { return }
-        await discoveryTurn()
-    }
-
-    func answer(_ answer: Answer) async {
-        guard let i = spec.questions.firstIndex(where: { $0.answer == nil }) else { return }
-        spec.questions[i].answer = answer
-        persist()
-        await discoveryTurn()
-    }
-
-    /// Records the new answer; the next turn sees it.
-    func changeAnswer(questionID: String, to answer: Answer) async {
-        guard let i = spec.questions.firstIndex(where: { $0.id == questionID }) else { return }
-        spec.questions[i].answer = answer
-        persist()
-    }
-
-    /// Ends Discovery: the open question and uncovered topics become assumptions.
-    func draftNow() async {
-        guard spec.stage == .discovery else { return }
-        await stop()
-        if let i = spec.questions.firstIndex(where: { $0.answer == nil }) { spec.questions[i].answer = .agentDecides }
+        guard spec.stage == .discovery, !spec.questions.contains(where: { $0.round == .intake }) else { return }
         lastError = nil
-        await finishDiscovery()
-    }
-
-    func retry() async {
-        guard spec.stage == .discovery, !isRunning else { return }
-        await discoveryTurn()
-    }
-
-    private func discoveryTurn() async {
-        lastError = nil
-        let prompt = Prompt.discovery.build(["name": spec.name, "idea": spec.idea, "answers": spec.answersText, "coverage": spec.coverageText])
-        let end = await run(prompt, resume: nil, persist: false)
+        let end = await run(intakePrompt, resume: nil, persist: false)
         guard spec.stage == .discovery else { return }
         switch end {
         case .done(let reply):
-            guard let turn = try? DiscoveryTurn.decode(reply) else {
+            guard let intake = try? Intake.decode(reply, size: spec.size) else {
                 lastError = "Claude Code's reply couldn't be read."
                 return
             }
-            spec.coverage = turn.coverage
-            if var next = turn.next, !turn.done {
-                // Question IDs must stay unique; the agent may reuse a topic slug.
-                if spec.questions.contains(where: { $0.id == next.id }) {
-                    next = Question(id: "\(next.id)-\(spec.questions.count)", title: next.title, why: next.why, shapes: next.shapes, options: next.options)
-                }
-                spec.questions.append(next)
-                persist()
-            } else {
-                await finishDiscovery()
-            }
+            spec.coverage = intake.coverage
+            spec.questions = Self.unique(intake.questions, after: [])
+            persist()
+            if currentQuestion == nil { await finishIntake() }
         case .stopped(.user), .refused:
             break
         case .stopped(let reason):
@@ -159,13 +132,61 @@ import MelSystem
         }
     }
 
-    private func finishDiscovery() async {
-        guard spec.apply(.discoveryFinished) else { return }
+    func answer(_ answer: Answer) async {
+        guard spec.stage == .discovery, let i = spec.questions.firstIndex(where: { $0.round == .intake && $0.answer == nil }) else { return }
+        spec.questions[i].answer = answer
         persist()
-        await draft(.product)
+        if currentQuestion == nil { await finishIntake() }
     }
 
-    // MARK: - Drafting and recovery
+    func changeAnswer(questionID: String, to answer: Answer) async {
+        guard let i = spec.questions.firstIndex(where: { $0.id == questionID }) else { return }
+        spec.questions[i].answer = answer
+        persist()
+    }
+
+    /// Skips the rest: unanswered questions become assumptions.
+    func draftNow() async {
+        guard spec.stage == .discovery else { return }
+        await stop()
+        for i in spec.questions.indices where spec.questions[i].round == .intake && spec.questions[i].answer == nil {
+            spec.questions[i].answer = .agentDecides
+        }
+        lastError = nil
+        await finishIntake()
+    }
+
+    func retry() async {
+        guard !isRunning else { return }
+        lastError = nil
+        switch spec.stage {
+        case .discovery: await start()
+        default: await advance()
+        }
+    }
+
+    private func finishIntake() async {
+        guard spec.apply(.discoveryFinished) else { return }
+        for (n, q) in spec.questions.enumerated() where q.answer != nil && q.answer != .agentDecides {
+            addDecision(title: q.title, reason: q.answerText ?? "", source: "Intake Q\(n + 1)")
+        }
+        persist()
+        await advance()
+    }
+
+    // MARK: - Drafting, revising and recovery
+
+    /// Runs whatever the stage asks for next: a draft, a revise, or the analyze run.
+    private func advance() async {
+        switch spec.stage {
+        case .drafting(let kind):
+            if let instruction = spec.instructions[kind] { await revise(kind, instruction) } else { await draft(kind) }
+        case .analyze where spec.analyze == .running:
+            await runAnalyze()
+        default:
+            break
+        }
+    }
 
     func stop() async {
         guard let runner else { return }
@@ -186,22 +207,39 @@ import MelSystem
         spec.apply(.resume)
         documents[kind] = partial
         write(partial, for: kind)
-        await draft(kind, from: partial)
+        await write(kind, prompt: Prompt.continue.build(["file": kind.fileName, "partial": partial]), from: partial)
+    }
+
+    /// C2 "Resume Later": `resume()` waits for the reset and notifies.
+    func resumeLater() {
+        Task { await resume() }
     }
 
     func finishByHand() {
-        guard spec.apply(.finishByHand) else { return }
+        guard case .stopped(let kind, _) = spec.stage, spec.apply(.finishByHand) else { return }
+        spec.instructions[kind] = nil
         persist()
     }
 
-    /// Writes `kind`: fresh, or continuing `partial` in the stored Claude Code session.
-    private func draft(_ kind: DocKind, from partial: String = "") async {
-        let prompt = partial.isEmpty
-            ? Prompt(drafting: kind).build(["name": spec.name, "idea": spec.idea, "files": spec.size.filesText, "project": "(none)", "buildsOn": "(nothing named)", "attachments": "(none)", "answers": spec.answersText, "decide": spec.decideText, "approved": approvedText(before: kind), "steps": kind.stepsText], fillGaps: spec.fillGaps)
-            : Prompt.continue.build(["file": kind.fileName, "partial": partial])
+    private func draft(_ kind: DocKind) async {
+        await write(kind, prompt: Prompt(drafting: kind).build(promptValues(drafting: kind), fillGaps: spec.fillGaps))
+    }
+
+    private func revise(_ kind: DocKind, _ instruction: String) async {
+        var values = promptValues(drafting: kind)
+        values["file"] = kind.fileName
+        values["instruction"] = instruction
+        values["current"] = documents[kind] ?? ""
+        values["approved"] = approvedText(except: kind)
+        await write(kind, prompt: Prompt.revise.build(values, fillGaps: spec.fillGaps))
+    }
+
+    /// Streams `kind` into its file: fresh, or continuing `partial` in the stored Claude Code session.
+    private func write(_ kind: DocKind, prompt: String, from partial: String = "") async {
         draftKind = kind
         reply = partial
         liveText = partial
+        draftStep = 0
         activity = []
         persist()
         let end = await run(prompt, resume: partial.isEmpty ? nil : spec.sessionID, persist: true)
@@ -210,12 +248,16 @@ import MelSystem
         switch end {
         case .stopped(.sessionNotFound):
             // The stored session is gone: write the file again from the start.
-            return await draft(kind)
+            return await advanceFresh(kind)
         case .done(let result):
-            let text = DraftText.file(fromReply: reply.isEmpty ? result : reply, kind: kind)
-            let final = text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+            let full = reply.isEmpty ? result : reply
+            let final = DraftText.file(fromReply: full, kind: kind).trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
             documents[kind] = final
             write(final, for: kind)
+            let asked = DraftText.questions(in: full, kind: kind)
+            spec.questions.removeAll { $0.round == .draft && $0.shapes == kind && $0.answer == nil }
+            spec.questions += Self.unique(asked.map { $0.with(id: "\(kind.rawValue)-\($0.id)") }, after: spec.questions)
+            spec.instructions[kind] = nil
             spec.apply(.draftFinished)
             app?.notify("\(kind.fileName) is ready for review", spec.name, nil)
         case .stopped(let reason):
@@ -230,6 +272,11 @@ import MelSystem
         persist()
     }
 
+    /// After a lost session: the stage is still `.drafting(kind)`, so start that file over.
+    private func advanceFresh(_ kind: DocKind) async {
+        if let instruction = spec.instructions[kind] { await revise(kind, instruction) } else { await draft(kind) }
+    }
+
     /// A text delta while drafting: the preview updates at most 10 times a second, the file every 500 ms.
     private func received(_ text: String) {
         guard let kind = draftKind else { return }
@@ -238,6 +285,7 @@ import MelSystem
         if now - shownAt >= .milliseconds(100) {
             shownAt = now
             liveText = DraftText.file(fromReply: reply, kind: kind)
+            draftStep = DraftText.step(in: reply)
         }
         if now - wroteAt >= .milliseconds(500) {
             wroteAt = now
@@ -245,17 +293,12 @@ import MelSystem
         }
     }
 
-    private func approvedText(before kind: DocKind) -> String {
-        spec.size.files.prefix { $0 != kind }
-            .filter { spec.docs[$0] == .approved }
-            .map { "### \($0.fileName)\n\n\(documents[$0] ?? "")" }
-            .joined(separator: "\n\n")
-    }
+    // MARK: - Agent runs
 
-    /// One agent run. Only one spec runs at a time (`AppState.runningSpecID`).
-    private func run(_ prompt: String, resume: String?, persist persistSession: Bool) async -> RunEnd {
+    /// One agent run. Only one runs at a time across the app (`AppState.isAgentBusy`).
+    private func run(_ prompt: String, resume: String?, persist persistSession: Bool, tools: Bool = true) async -> RunEnd {
         guard let app else { return .refused }
-        guard app.runningSpecID == nil else {
+        guard !app.isAgentBusy else {
             lastError = "Another spec is running. Wait for it to finish or stop it."
             return .refused
         }
@@ -264,7 +307,7 @@ import MelSystem
             return .refused
         }
         app.requestNotificationsOnce()
-        let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession)
+        let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools)
         app.runningSpecID = spec.id
         self.runner = runner
         isRunning = true
@@ -319,7 +362,7 @@ import MelSystem
     func save(_ text: String, for kind: DocKind) {
         guard documents[kind] != text else { return }
         documents[kind] = text
-        if spec.apply(.edited(kind)) { persist() }
+        markEdited(kind)
         pendingSaves[kind]?.cancel()
         pendingSaves[kind] = Task {
             try? await Task.sleep(for: .milliseconds(500))
@@ -332,25 +375,31 @@ import MelSystem
                 return
             }
             write(text, for: kind)
+            if spec.docs[kind] == .edited { await runImpact() }
         }
     }
 
+    /// Confirm keeps the text and records it in DECISIONS.md.
     func confirmAssumption(index: Int, in kind: DocKind) {
         guard let text = documents[kind], let edited = DraftText.confirmAssumption(index, in: text) else { return }
+        if let assumption = assumption(index, in: text) { addDecision(title: Self.title(assumption), reason: assumption, source: "Confirmed in review") }
         saveNow(edited, for: kind)
     }
 
     func changeAssumption(index: Int, to text: String, in kind: DocKind) {
         guard let current = documents[kind], let edited = DraftText.changeAssumption(index, to: text, in: current) else { return }
+        addDecision(title: Self.title(text), reason: text, source: "Changed in review")
         saveNow(edited, for: kind)
     }
 
-    /// Approves `kind` (assumptions and open questions may remain) and starts the next file.
+    /// Approves `kind` (assumptions and open questions may remain), saves its snapshot and
+    /// starts what comes next.
     func approve(_ kind: DocKind) async {
         if pendingSaves[kind] != nil { saveNow(documents[kind] ?? "", for: kind) }
         guard spec.apply(.approve(kind)) else { return }
+        saveSnapshot(kind)
         persist()
-        if case .drafting(let next) = spec.stage { await draft(next) }
+        await advance()
     }
 
     /// Keep Mine writes the editor text; Use File takes the text on disk.
@@ -363,14 +412,14 @@ import MelSystem
             pendingSaves.removeValue(forKey: kind)?.cancel()
             documents[kind] = conflictText
             saved[kind] = conflictText
-            if spec.apply(.edited(kind)) { persist() }
+            markEdited(kind)
         }
     }
 
     private func saveNow(_ text: String, for kind: DocKind) {
         pendingSaves.removeValue(forKey: kind)?.cancel()
         documents[kind] = text
-        if spec.apply(.edited(kind)) { persist() }
+        markEdited(kind)
         write(text, for: kind)
     }
 
@@ -380,78 +429,331 @@ import MelSystem
         case .reload(let text):
             documents[kind] = text
             saved[kind] = text
-            if spec.apply(.edited(kind)) { persist() }
+            markEdited(kind)
+            if spec.docs[kind] == .edited { Task { await runImpact() } }
         case .conflict(let fileText):
             conflictText = fileText
             conflict = kind
         }
     }
 
-    // MARK: - v2: attachments, round 2, analyze, refine, handoff
+    /// An approved file the user changed becomes `edited`; later files go stale (C1).
+    private func markEdited(_ kind: DocKind) {
+        if spec.apply(.edited(kind)) { persist() }
+    }
 
-    /// B1 Add Files / drop.
-    func attach(_ files: [URL]) async throws { fatalError("stub") }
-    /// B1 Paste Log.
-    func attachLog(_ text: String) async throws { fatalError("stub") }
-    func removeAttachment(_ attachment: Attachment) async throws { fatalError("stub") }
+    // MARK: - Round 2 and open questions
 
     /// Answers a round-2 question and revises its file (B3, then B4 again).
-    func answerFollowUp(questionID: String, _ answer: Answer) async { fatalError("stub") }
+    func answerFollowUp(questionID: String, _ answer: Answer) async {
+        guard let i = spec.questions.firstIndex(where: { $0.id == questionID && $0.round == .draft }) else { return }
+        spec.questions[i].answer = answer
+        let q = spec.questions[i]
+        addDecision(title: q.title, reason: q.answerText ?? "", source: "Review")
+        await revise([q.shapes: "Answer to “\(q.title)”: \(q.answerText ?? "")"])
+    }
+
     /// Answers an `[!OPEN QUESTION]` and revises its file.
-    func answerOpenQuestion(_ question: OpenQuestion, _ answer: String) async { fatalError("stub") }
+    func answerOpenQuestion(_ question: OpenQuestion, _ answer: String) async {
+        addDecision(title: question.text, reason: answer, source: "Review")
+        await revise([question.kind: "Open question “\(question.text)”: \(answer)"])
+    }
 
-    /// B6: one read-only run over the approved files.
-    func analyze() async { fatalError("stub") }
-    /// "Fix n Issues": each issue's primary action, revised file by file in file order, then Analyze again.
-    func fixIssues() async { fatalError("stub") }
+    /// Starts revise runs for `instructions`' files, in file order.
+    private func revise(_ instructions: [DocKind: String]) async {
+        let kinds = spec.size.files.filter { instructions[$0] != nil }
+        guard spec.apply(.revise(kinds)) else {
+            persist()
+            return
+        }
+        spec.instructions.merge(instructions) { old, new in old + "\n" + new }
+        persist()
+        await advance()
+    }
+
+    // MARK: - Analyze
+
+    /// B6 Rerun.
+    func analyze() async {
+        if spec.stage == .analyze, spec.analyze == .running, !isRunning { return await runAnalyze() }
+        guard spec.apply(.rerunAnalyze) else { return }
+        persist()
+        await runAnalyze()
+    }
+
+    private func runAnalyze() async {
+        lastError = nil
+        let values = ["name": spec.name, "approved": approvedText(except: nil), "kinds": spec.size.kindsText,
+                      "screen": spec.size.files.contains(.experience) ? "" : "This spec has no EXPERIENCE.md: `screen` is null in every row."]
+        let end = await run(Prompt.analyze.build(values), resume: nil, persist: false, tools: false)
+        guard spec.stage == .analyze else { return }
+        switch end {
+        case .done(let reply):
+            if let result = try? AnalyzeResult.decode(reply) {
+                spec.apply(.analyzeFinished(result))
+            } else {
+                spec.apply(.analyzeFailed)
+                lastError = "Claude Code's reply couldn't be read."
+            }
+        case .stopped(let reason):
+            spec.apply(.analyzeFailed)
+            if reason != .user { lastError = Self.message(reason) }
+        case .refused:
+            spec.apply(.analyzeFailed)
+        }
+        persist()
+    }
+
+    /// "Fix n Issues": each issue's primary action, then Analyze again.
+    func fixIssues() async {
+        guard let issues = spec.analysis?.issues else { return }
+        await revise(Self.instructions(issues.compactMap(\.actions.last)))
+    }
+
     /// One issue's action button.
-    func apply(_ action: AnalyzeResult.Action) async { fatalError("stub") }
-    /// "Hand Off Anyway": to B7 with issues left.
-    func handOffAnyway() { fatalError("stub") }
+    func apply(_ action: AnalyzeResult.Action) async {
+        await revise(Self.instructions([action]))
+    }
 
-    /// C1 "Why did this change?": saved as a decision that replaces the older one about the same criteria.
-    func saveDecision(title: String, reason: String, for kind: DocKind) async throws { fatalError("stub") }
-    /// C1 Undo: restores the approved snapshot and clears `edited`/`stale`.
-    func undoEdit(_ kind: DocKind) async { fatalError("stub") }
-    /// C1 "Refine n Files": revises each stale file in order.
-    func refine() async { fatalError("stub") }
-    /// C1 "Keep Them as They Are": clears `stale`.
-    func keepAsIs() { fatalError("stub") }
+    /// "Hand Off Anyway", or Passed → B7.
+    func handOffAnyway() {
+        if spec.apply(.handOff) { persist() }
+    }
 
-    /// C2 "Resume Later": resumes when the usage limit resets, with a notification.
-    func resumeLater() { fatalError("stub") }
+    private static func instructions(_ actions: [AnalyzeResult.Action]) -> [DocKind: String] {
+        var result: [DocKind: String] = [:]
+        for action in actions {
+            for kind in action.files { result[kind] = result[kind].map { $0 + "\n" + action.fix } ?? action.fix }
+        }
+        return result
+    }
 
-    /// B7: writes `prompts/task-NN.md`.
-    func writeTaskPrompts() async throws -> [URL] { fatalError("stub") }
-    /// B7 "Write AGENTS.md": adds or updates Mel's marked block only.
-    func writeAgentsMD() throws { fatalError("stub") }
+    // MARK: - Refine (C1)
+
+    /// "Why did this change?": criteria whose text changed are what it affects; it replaces the
+    /// latest decision about one of them.
+    func saveDecision(title: String, reason: String, for kind: DocKind) async throws {
+        let before = Self.criteria(snapshots[kind] ?? "")
+        let after = Self.criteria(documents[kind] ?? "")
+        let changed = Set(before.keys).union(after.keys).filter { before[$0] != after[$0] }.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        let replaced = decisions.first { d in d.replacedBy(in: decisions) == nil && !Set(d.affects).isDisjoint(with: changed) }
+        addDecision(title: title, reason: reason, source: "You", replaces: replaced?.id, affects: changed)
+        await io?.value
+    }
+
+    /// Undo: the snapshot goes back on disk.
+    func undoEdit(_ kind: DocKind) async {
+        guard let text = snapshots[kind], spec.apply(.undo(kind)) else { return }
+        documents[kind] = text
+        write(text, for: kind)
+        if !spec.docs.values.contains(.edited) { impact = nil }
+        persist()
+    }
+
+    /// "Refine n Files": revises each stale file with what the edit affects there.
+    func refine() async {
+        let edited = spec.size.files.filter { spec.docs[$0] == .edited }
+        let stale = spec.size.files.filter { spec.docs[$0] == .stale }
+        let reason = decisions.first?.reason
+        var instructions: [DocKind: String] = [:]
+        for kind in stale {
+            let what = impact?.items.first { $0.kind == kind }?.what ?? "every part that depends on the change"
+            let changed = edited.map(\.fileName).joined(separator: ", ")
+            instructions[kind] = "The user edited \(changed) (see Approved files)." + (reason.map { " Reason: \($0)" } ?? "") + " Update what this affects here: \(what)."
+        }
+        guard spec.apply(.refine) else { return }
+        edited.forEach(saveSnapshot)
+        impact = nil
+        spec.instructions.merge(instructions) { _, new in new }
+        persist()
+        await advance()
+    }
+
+    /// "Keep Them as They Are": the edits become the approved text.
+    func keepAsIs() {
+        let edited = spec.size.files.filter { spec.docs[$0] == .edited }
+        guard spec.apply(.keepAsIs) else { return }
+        edited.forEach(saveSnapshot)
+        impact = nil
+        persist()
+    }
+
+    /// C1's impact run for the first edited file. Skipped while another run is going.
+    private func runImpact() async {
+        guard let kind = spec.size.files.first(where: { spec.docs[$0] == .edited }), app?.isAgentBusy == false else { return }
+        let later = spec.size.files.drop { $0 != kind }.dropFirst().filter { spec.docs[$0] != .locked }
+        guard !later.isEmpty else { impact = ImpactResult(items: []); return }
+        let values = ["file": kind.fileName, "before": snapshots[kind] ?? "", "after": documents[kind] ?? "",
+                      "later": later.map { "### \($0.fileName)\n\n\(documents[$0] ?? "")" }.joined(separator: "\n\n"),
+                      "kinds": later.map { "`\($0.rawValue)`" }.joined(separator: ", ")]
+        if case .done(let reply) = await run(Prompt.impact.build(values), resume: nil, persist: false, tools: false) {
+            impact = try? ImpactResult.decode(reply)
+        }
+    }
+
+    private static func criteria(_ text: String) -> [String: String] {
+        var result: [String: String] = [:]
+        for case .criterion(let id, let text) in MarkdownParser.blocks(text) { result[id] = text }
+        return result
+    }
+
+    // MARK: - Attachments
+
+    func attach(_ files: [URL]) async throws {
+        guard let store else { return }
+        for file in files { spec.attachments.append(try await store.attach(copying: file)) }
+        persist()
+    }
+
+    func attachLog(_ text: String) async throws {
+        guard let store else { return }
+        spec.attachments.append(try await store.attachLog(text))
+        persist()
+    }
+
+    func removeAttachment(_ attachment: Attachment) async throws {
+        try await store?.remove(attachment)
+        spec.attachments.removeAll { $0 == attachment }
+        persist()
+    }
 
     // MARK: - Handoff and system actions
 
-    var startCommand: String { #"claude "Read specs/ and implement TASKS.md, task 1""# }
+    private var slug: String { spec.folder.lastPathComponent }
+
+    var startCommand: String {
+        spec.size == .quickFix
+            ? #"claude "Read specs/\#(slug)/SPEC.md and fix it""#
+            : #"claude "Read specs/\#(slug)/prompts/task-01.md and do it""#
+    }
+
     func showInFinder() { SystemActions.showInFinder(spec.folder) }
 
     func openStartCommandInTerminal() {
         do { try SystemActions.openInTerminal(command: startCommand, in: projectFolder) } catch { lastError = error.localizedDescription }
     }
 
-    func finish(commitToGit: Bool) throws {
+    /// B7: writes `prompts/task-NN.md`.
+    func writeTaskPrompts() async throws -> [URL] {
+        guard let store, spec.size.files.contains(.tasks) else { return [] }
+        return try await store.writeTaskPrompts(tasks, requirements: documents[.requirements] ?? "")
+    }
+
+    /// B7 "Write AGENTS.md": adds or updates Mel's marked block only.
+    func writeAgentsMD() throws {
+        let url = projectFolder.appending(path: "AGENTS.md")
+        let existing = try? String(contentsOf: url, encoding: .utf8)
+        let files = spec.size.files.map(\.fileName).joined(separator: ", ")
+        let block = """
+        ## Spec: \(spec.name)
+
+        The spec is in `specs/\(slug)/` (\(files), DECISIONS.md). \(spec.size == .quickFix ? "" : "Work one task at a time from `specs/\(slug)/prompts/`. ")Read DECISIONS.md before changing behavior. Mel writes these files; propose changes instead of editing them.
+        """
+        try Data(AgentsFile.merge(existing: existing, block: block).utf8).write(to: url, options: .atomic)
+    }
+
+    /// Writes the task prompts, then commits `specs/<slug>/` (minus `.mel/`) and `.mel/project/`.
+    func finish(commitToGit: Bool) async throws {
+        _ = try await writeTaskPrompts()
         guard commitToGit else { return }
-        if !isGitRepository { try Git.initRepository(projectFolder) }
-        try Git.commit(paths: Git.specPaths, message: "Add spec for \(spec.name)", in: projectFolder)
+        let (project, slug, message) = (projectFolder, slug, "Add spec for \(spec.name)")
+        try await Task.detached {
+            if !Git.isRepository(project) { try Git.initRepository(project) }
+            try Git.commit(paths: Git.specPaths(slug: slug, project: project), message: message, in: project)
+        }.value
+        isGitRepository = true
     }
 
     var canCommit: Bool { Git.isAvailable }
-    var isGitRepository: Bool { Git.isRepository(projectFolder) }
 
     func updateIdea(_ idea: String) {
         spec.idea = idea
         persist()
     }
 
+    // MARK: - Prompt text
+
+    private var intakePrompt: String {
+        var values = promptValues(drafting: spec.size.files[0])
+        values["size"] = ["Quick fix", "Feature", "Product"][SpecSize.allCases.firstIndex(of: spec.size)!]
+        values["topics"] = spec.size.topics.map { "- \($0)" }.joined(separator: "\n")
+        values["count"] = String(spec.size.intakeQuestions)
+        values["kinds"] = spec.size.kindsText
+        return Prompt.intake.build(values)
+    }
+
+    private func promptValues(drafting kind: DocKind) -> [String: String] {
+        let project = app?.contexts[Project(folder: spec.project).id]?.promptText
+        let attachments = spec.attachments.map { "- specs/\(slug)/.mel/attachments/\($0.fileName)" }
+        return ["name": spec.name, "idea": spec.idea, "files": spec.size.filesText,
+                "project": project ?? "(no project context yet)",
+                "buildsOn": spec.buildsOn.isEmpty ? "(nothing named)" : spec.buildsOn.joined(separator: ", "),
+                "attachments": attachments.isEmpty ? "(none)" : attachments.joined(separator: "\n"),
+                "answers": spec.answersText, "decide": spec.decideText,
+                "approved": approvedText(before: kind), "steps": kind.stepsText]
+    }
+
+    private func approvedText(before kind: DocKind) -> String {
+        text(of: spec.size.files.prefix { $0 != kind }.filter { spec.docs[$0] == .approved })
+    }
+
+    /// Every approved file but `kind`.
+    private func approvedText(except kind: DocKind?) -> String {
+        text(of: spec.size.files.filter { $0 != kind && spec.docs[$0] == .approved })
+    }
+
+    private func text(of kinds: [DocKind]) -> String {
+        let text = kinds.map { "### \($0.fileName)\n\n\(documents[$0] ?? "")" }.joined(separator: "\n\n")
+        return text.isEmpty ? "(none yet)" : text
+    }
+
+    // MARK: - Decisions
+
+    private func addDecision(title: String, reason: String, source: String, replaces: String? = nil, affects: [String] = []) {
+        decisions.insert(Decision(id: Decision.nextID(after: decisions), title: title, reason: reason, source: source, date: .now, replaces: replaces, affects: affects), at: 0)
+        guard let store else { return }
+        let decisions = decisions
+        io = Task { [io] in
+            await io?.value
+            do { try await store.writeDecisions(decisions) } catch { lastError = error.localizedDescription }
+        }
+    }
+
+    /// The first sentence, at most 60 characters.
+    private static func title(_ text: String) -> String {
+        let sentence = text.split(separator: "\n").first.map { $0.split(separator: ". ").first.map(String.init) ?? String($0) } ?? text
+        let trimmed = sentence.trimmingCharacters(in: .whitespacesAndNewlines.union(["."]))
+        return trimmed.count > 60 ? String(trimmed.prefix(59)) + "…" : trimmed
+    }
+
+    private func assumption(_ index: Int, in text: String) -> String? {
+        for case .assumption(let i, let text) in MarkdownParser.blocks(text) where i == index { return text }
+        return nil
+    }
+
+    /// Question IDs must stay unique; the agent may reuse a slug.
+    private static func unique(_ questions: [Question], after existing: [Question]) -> [Question] {
+        var taken = Set(existing.map(\.id))
+        return questions.map { q in
+            let q = taken.contains(q.id) ? q.with(id: "\(q.id)-\(taken.count)") : q
+            taken.insert(q.id)
+            return q
+        }
+    }
+
     // MARK: - Disk
 
-    private var projectFolder: URL { spec.folder.deletingLastPathComponent() }
+    private var projectFolder: URL { spec.project }
+
+    private func saveSnapshot(_ kind: DocKind) {
+        let text = documents[kind] ?? ""
+        snapshots[kind] = text
+        guard let store else { return }
+        io = Task { [io] in
+            await io?.value
+            do { try await store.saveSnapshot(text, for: kind) } catch { lastError = error.localizedDescription }
+        }
+    }
 
     private func write(_ text: String, for kind: DocKind) {
         guard let store else { return }
@@ -481,5 +783,11 @@ import MelSystem
 
     static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, draftStep: Int = 0, impact: ImpactResult? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = []) -> SpecSession {
         SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, draftStep: draftStep, impact: impact, snapshots: snapshots, decisions: decisions)
+    }
+}
+
+private extension Question {
+    func with(id: String) -> Question {
+        Question(id: id, title: title, why: why, shapes: shapes, round: round, options: options, answer: answer)
     }
 }

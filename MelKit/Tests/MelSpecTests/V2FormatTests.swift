@@ -36,6 +36,16 @@ struct V2FormatTests {
         #expect(result.coverage[0].task == .missing)
     }
 
+    @Test func analyzeInAJSONFenceDecodes() throws {
+        let reply = "Here is the check.\n\n```json\n{\"stats\":[],\"issues\":[],\"coverage\":[]}\n```\n"
+        #expect(try AnalyzeResult.decode(reply) == AnalyzeResult(stats: [], issues: [], coverage: []))
+    }
+
+    @Test func moduleNotesInParenthesesAreDropped() {
+        let context = ProjectContext(product: "", tech: "", structure: "## Modules\n\n- FocusTimer (executable CLI) — Sources/FocusTimer\n- Core — Sources/Core", principles: "")
+        #expect(context.modules.map(\.name) == ["FocusTimer", "Core"])
+    }
+
     @Test func impactAndProjectContextDecode() throws {
         let impact = try ImpactResult.decode(#"{"items":[{"kind":"tasks","what":"Task 4","count":"1 task"}]}"#)
         #expect(impact.items == [.init(kind: .tasks, what: "Task 4", count: "1 task")])

@@ -7,14 +7,16 @@ public struct AgentRequest: Sendable {
     public var resumeSessionID: String?
     public var persistSession: Bool          // false → --no-session-persistence
     public var systemPrompt: String?         // stage contract → --append-system-prompt
+    public var allowsTools: Bool             // false: files are inline (analyze, impact), no Read/Glob/Grep
 
     public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool,
-                systemPrompt: String? = nil) {
+                systemPrompt: String? = nil, allowsTools: Bool = true) {
         self.prompt = prompt
         self.workingDirectory = workingDirectory
         self.resumeSessionID = resumeSessionID
         self.persistSession = persistSession
         self.systemPrompt = systemPrompt
+        self.allowsTools = allowsTools
     }
 }
 

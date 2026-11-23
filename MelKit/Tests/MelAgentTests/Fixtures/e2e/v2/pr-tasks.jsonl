@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-000000000015","tools":["Glob","Grep","Read"],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"<!-- mel:step 1 -->\n# Tasks\n\n- [ ] 1. Booking store\n  - Prio"}},"session_id":"e2e00000-0000-4000-8000-000000000015"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"rity: P1\n  - Covers: 1.1, Q1\n  - Reads: ARCHITECTURE › Data\n"}},"session_id":"e2e00000-0000-4000-8000-000000000015"}
+{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"  - Verify: `swift test --filter Booking`\n"}},"session_id":"e2e00000-0000-4000-8000-000000000015"}
+{"type":"result","subtype":"success","is_error":false,"result":"<!-- mel:step 1 -->\n# Tasks\n\n- [ ] 1. Booking store\n  - Priority: P1\n  - Covers: 1.1, Q1\n  - Reads: ARCHITECTURE › Data\n  - Verify: `swift test --filter Booking`\n","session_id":"e2e00000-0000-4000-8000-000000000015"}

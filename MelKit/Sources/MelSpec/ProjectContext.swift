@@ -6,9 +6,9 @@ public struct ProjectContext: Codable, Hashable, Sendable {
     public var tech: String
     public var structure: String
     public var principles: String
-    /// A3 "What Mel read": the run's reading list. Not stored in `.mel/project/`.
+    /// A3 "What Mel read": the run's reading list, kept in `.mel/project/context.json`.
     public var read: [ReadItem]
-    /// A3 card state words per file ("product.md": "From README"). Not stored in `.mel/project/`.
+    /// A3 card state words per file ("product.md": "From README"), kept in `.mel/project/context.json`.
     public var sources: [String: String]
 
     public init(product: String, tech: String, structure: String, principles: String, read: [ReadItem] = [], sources: [String: String] = [:]) {
@@ -41,7 +41,10 @@ public struct ProjectContext: Codable, Hashable, Sendable {
             if line.hasPrefix("## ") {
                 inModules = line.dropFirst(3).trimming(while: \.isWhitespace) == "Modules"
             } else if inModules, line.hasPrefix("- "), let dash = line.range(of: " — ") {
-                modules.append(Module(name: String(line[line.index(line.startIndex, offsetBy: 2)..<dash.lowerBound]),
+                var name = line[line.index(line.startIndex, offsetBy: 2)..<dash.lowerBound].trimming(while: \.isWhitespace)
+                // "FocusTimer (executable CLI)" → "FocusTimer".
+                if name.hasSuffix(")"), let open = name.lastIndex(of: "(") { name = name[..<open].trimming(while: \.isWhitespace) }
+                modules.append(Module(name: String(name),
                                       path: String(line[dash.upperBound...].trimming(while: { $0.isWhitespace || $0 == "`" }))))
             }
         }
