@@ -48,7 +48,7 @@ Updated: 2026-11-23
 - Older fixtures contain `/Users/kaan/JojoDisposable/...` probe paths: a username, not a secret.
 
 ## Blocked
-- HOLD while the user runs the install test (until the orchestrator says it's over): don't launch Mel, don't touch com.kaanf.mel defaults, don't run `xcodebuild test` (MelTests are hosted by Mel.app, same bundle id). Only `cd MelKit && swift test`.
+- Install test still running: don't touch com.kaanf.mel defaults or /Applications/Mel.app. `xcodebuild test` is fine again (Debug builds are com.kaanf.mel.debug since 64efe09).
 
 ## Requests to orchestrator
 - (none; Notifier gaps handed to core)
