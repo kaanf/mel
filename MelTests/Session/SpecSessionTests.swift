@@ -54,11 +54,15 @@ final class SpecSessionTests {
     let parent = FileManager.default.temporaryDirectory.appending(path: "mel-session-\(UUID().uuidString)", directoryHint: .isDirectory)
     /// Sessions hold their AppState weakly; the test keeps it alive like MelApp does.
     private var app: AppState?
+    private var notifications: [(title: String, at: Date?)] = []
+    private var authorizations = 0
 
     private func makeSession(_ replies: [[AgentEvent]]) throws -> (SpecSession, FakeRunner, AppState) {
         let runner = FakeRunner(replies)
         let app = AppState(adapter: FakeAdapter(), makeRunner: { _ in runner }, defaults: UserDefaults(suiteName: "mel-tests-\(UUID().uuidString)")!)
         app.agent = .ready(executable: URL(filePath: "/usr/bin/true"), version: "test")
+        app.notify = { [unowned self] title, _, at in notifications.append((title, at)) }
+        app.authorizeNotifications = { [unowned self] in authorizations += 1 }
         let session = try app.createSpec(name: "Yoga Studio", idea: "Members book yoga classes.", parentFolder: parent)
         self.app = app
         return (session, runner, app)
@@ -100,6 +104,7 @@ final class SpecSessionTests {
         #expect(session.spec.stage == .review(.product))
         #expect(session.documents[.product] == "# Product\n\n## Problem\n\nPeople can't book.\n")
         #expect(session.spec.sessionID == "s1")
+        #expect(notifications.map(\.title) == ["PRODUCT.md is ready for review"])
         #expect(runner.requests[2].persistSession)
 
         // Approve → REQUIREMENTS.md starts; stop it mid-section.
@@ -110,6 +115,7 @@ final class SpecSessionTests {
         await session.stop()
         await approving.value
         #expect(session.spec.stage == .stopped(.requirements, .user))
+        #expect(notifications.count == 1)   // the user's own Stop isn't announced
         #expect(session.documents[.requirements]?.hasPrefix("# Requirements\n") == true)
         #expect(session.activity.map(\.text) == ["read specs/PRODUCT.md"])
         #expect(app.runningSpecID == nil)
@@ -151,6 +157,7 @@ final class SpecSessionTests {
         }
         #expect(try SpecStore.loadState(in: session.spec.folder).stage == .done)
         #expect(app.specs.first?.stage == .done)
+        #expect(authorizations == 1)
     }
 
     @Test func unreadableDiscoveryReplyCanBeRetried() async throws {
@@ -179,13 +186,13 @@ final class SpecSessionTests {
             [.session("s1"), .text("# Product\n\n## Problem\n\nPeople can't book.\n\n## Users"), .failed(.usageLimit(resetsAt: resetsAt))],
             [.text("## Users and roles\n\nMembers.\n"), .done(result: "")],
         ])
-        var notified: Date?
-        session.notify = { _, _, at in notified = at }
         await session.start()
         #expect(session.spec.stage == .stopped(.product, .usageLimit(resetsAt: resetsAt)))
+        #expect(notifications.map(\.title) == ["Yoga Studio stopped"])
 
         await session.resume()
-        #expect(notified == resetsAt)
+        #expect(notifications.map(\.title) == ["Yoga Studio stopped", "Yoga Studio can continue", "PRODUCT.md is ready for review"])
+        #expect(notifications[1].at == resetsAt)
         #expect(Date.now >= resetsAt)
         #expect(runner.requests[2].resumeSessionID == "s1")
         #expect(session.documents[.product] == "# Product\n\n## Problem\n\nPeople can't book.\n\n## Users and roles\n\nMembers.\n")

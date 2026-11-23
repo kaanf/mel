@@ -15,6 +15,11 @@ import MelSystem
     var selection: Spec.ID?
     var runningSpecID: Spec.ID?
 
+    /// Notifications; tests replace both.
+    @ObservationIgnored var notify: (_ title: String, _ body: String, _ at: Date?) -> Void = { Notifier.post(title: $0, body: $1, at: $2) }
+    @ObservationIgnored var authorizeNotifications: () async -> Void = { await Notifier.requestAuthorization() }
+    @ObservationIgnored private var askedForNotifications = false
+
     @ObservationIgnored private let adapter: any AgentAdapter
     @ObservationIgnored private let makeRunner: @Sendable (URL) -> any AgentRunning
     @ObservationIgnored private let defaults: UserDefaults
@@ -102,6 +107,13 @@ import MelSystem
     func copy(_ text: String) { SystemActions.copy(text) }
 
     // MARK: - For SpecSession
+
+    /// Asks once per launch, without waiting: macOS drops posts until the user allows them.
+    func requestNotificationsOnce() {
+        guard !askedForNotifications else { return }
+        askedForNotifications = true
+        Task { await authorizeNotifications() }
+    }
 
     /// A runner for the detected executable, or nil while Claude Code isn't ready.
     func makeAgentRunner() -> (any AgentRunning)? {
