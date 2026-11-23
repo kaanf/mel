@@ -1,6 +1,6 @@
 # ui status
 
-Wave 6: Theme.swift pushed (ready to merge with Wave 6); waiting for core's contract stubs
+Wave 6: step 1 done (sidebar + status pill pushed); next the screens A1–C4
 Updated: 2026-11-23
 
 ## Done
@@ -54,13 +54,17 @@ Updated: 2026-11-23
   - Left out on purpose: mock chrome (#DFE0E5 page, traffic lights, window shadow, C4 grey dot), the C2 dialog 4-layer shadow (system sheet), logo colors (the logo is an image). Glass tokens (sidebar, toolbar groups) are kept as reference only, since macOS 26 draws that glass itself.
   - Note: the app target defaults to MainActor isolation, so tokens are MainActor (fine for views; test arguments can't use them).
 
+- Wave 6 step 1, rebased on origin/main, full test green (148):
+  - Sidebar = variant (b) as drawn on B5–C3 (orchestrator 2026-11-23), rows drawn by hand: inset panel 232 pt (8 pt from the window, #F6F6F8 = the design's 0.86 alpha over white), 28 pt rows, grey 0.08 selection with medium weight, 26 pt file indent, ↑/↓ via onKeyPress, rows are buttons with `.isSelected`, label "name, status".
+  - Status scheme. Drawn in (b): Approved green dot, Review and Edited black ring, Locked dashed grey, Out of date #B25000, n issues #C93400, Rerun #B25000. **Not drawn, same scheme (for the user to confirm):** Drafting = purple pulsing dot (from B3), Stopped = #C93400 dot, Queued (during intake) = Locked's dashed dot with "Queued", Analyze Running = purple dot, Passed = green dot, Discovery during intake = black ring (needs you), after = green dot.
+  - **Choices for the user:** project row shows the project name + "Ready" / "No context" (C3's drawing) on every screen, not B5–C1's "Project context" label, because the library can hold several projects; the "New Spec" footer (C3, B2–B4) stays on every screen although C1 omits it; B5's sidebar is drawn wider only because its labels lack `min-width: 0` (a mock artifact), we keep 232 pt and truncate like C1.
+  - Text: `.lineHeight(.exact)` puts the extra leading below the glyphs, CSS splits it; `textStyle` offsets by a per-size measured height (residual ≤ 0.125 pt vs WebKit for all 35 styles).
+  - Locked dot dash pattern matched to WebKit's rendering (two 4.5 pt dashes). Design icons (house, chevron, plus, alert) drawn from their SVG paths.
+  - Status pill: `StatusPill(indicator:text:count:progress:maxWidth:)`, max width per screen (360/340/320/300 as drawn).
+  - Comparison tooling (scratchpad, not in repo): WKWebView renderer for `.dc.html` with the canvas's dc-runtime.js as support.js; Debug app `-screen <name>` opens a fixture state at 1280 × 800. Mocks place the traffic lights at 30 pt; the system places them by toolbar height (system chrome, left as is).
+
 ## Next
-- Wait for Wave 6: the orchestrator merges core's contract stubs and tells me to rebase. No v2 views before that.
-- Next in Wave 6, after core's stubs: sidebar (v2 statuses) and toolbar status pill, then screens.
-- Prep done (2026-11-23): read docs/V2.md, design/v2/FLOW.md and the MEL SCREEN header of all 16 screens (A1, A1x, A2, A3, A4x, B1–B7, C1–C4).
-  - Build-once parts: sidebar (project row, spec, file rows with v2 statuses, Analyze row), toolbar status pill ("n of m"), Theme.swift tokens. Review inspector and suggestion Accept/Reject are hidden in v0.3 (V2 §2); C1's Decisions column stays.
-  - Token inventory from the inline styles: about 30 hex colors (main ones #1D1D1F, #6E6E73, #F5F5F7, #007AFF, #0066D6, #248A3D, #C93400, #D97F00), font sizes 10/11/12/13/14/15/17/22/26/28/30, radii 3–17. Plus rgba values. Skip the mock's chrome: #DFE0E5 page, traffic-light colors.
-  - Light mode only (force Aqua). Views use only Theme tokens, never literals.
+- Wave 6 step 2: screens A1–C4 minus V2 §2, each with a `#Preview` per drawn state, compared side by side with its `.dc.html` at 1280 × 800 before "ready to merge". MarkdownBlocksView: new Block cases (priority badge, Source, EARS, MVP line, open question, table) per B4/B5. B1 waits for nothing now (fillGaps, topics real; BugReport.ideaText and AgentsFile.merge still fatalError, keep them out of previews).
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
