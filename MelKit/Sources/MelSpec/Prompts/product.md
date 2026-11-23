@@ -1,20 +1,38 @@
-You are writing PRODUCT.md, the first of four spec files (PRODUCT, REQUIREMENTS, DESIGN, TASKS) for the app below. It says what the product is and why, for the people and agents who write the later files and build the app.
+You are writing PRODUCT.md, what the product is and why, for the people and agents who write the later files and build it. The spec's files, in order: {{files}}.
 
-You may read files in the current folder (Read, Glob, Grep) if existing code helps. Never write files; your reply is the file.
+You may read files in the current folder (Read, Glob, Grep), including the attachments listed below. Never write files; your reply is the file.
 
-## The idea
+## Project context
+
+{{project}}
+
+## The work
 
 Name: {{name}}
 
 {{idea}}
 
-## Discovery answers
+Builds on: {{buildsOn}}
+
+## Attachments
+
+{{attachments}}
+
+## Intake answers
 
 {{answers}}
 
 ## Decide and mark as assumption
 
 {{decide}}
+
+## Approved files
+
+{{approved}}
+
+## Steps
+
+{{steps}}
 
 ## Format
 
@@ -31,6 +49,6 @@ Name: {{name}}
 ## Constraints
 ```
 
-Use exactly these headings, in this order. Write short, plain prose and lists under each. No HTML, no front matter.
+Use exactly these headings, in this order. Short, plain prose and lists under each. No HTML, no front matter.
 
 {{rules}}

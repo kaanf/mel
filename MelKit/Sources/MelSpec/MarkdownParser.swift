@@ -12,7 +12,7 @@ public enum Block: Hashable, Sendable {
     case priority(String, mvp: Bool)                 // story tag line `P1 · MVP`
     case source(String)                              // `Source: …`
     case covers([String])                            // flow `Covers: 1.1, 1.2`
-    case mvpLine                                     // `MVP line` marker in REQUIREMENTS
+    case mvpLine                                     // `<!-- MVP line -->` in REQUIREMENTS
     case table(header: [String], rows: [[String]])
     case code(String)
 }
@@ -131,7 +131,11 @@ public enum MarkdownParser {
             if trimmed.isEmpty {
                 flushParagraph()
             } else if trimmed.hasPrefix("<!--"), trimmed.hasSuffix("-->") {
-                continue                                    // mel markers and other comments
+                // The MVP line is a comment so it stays invisible elsewhere; other comments are skipped.
+                if trimmed.dropFirst(4).dropLast(3).trimming(while: \.isWhitespace).lowercased() == "mvp line" {
+                    flushParagraph()
+                    blocks.append(.mvpLine)
+                }
             } else if trimmed.hasPrefix("```") {
                 flushParagraph()
                 code = []
@@ -241,7 +245,6 @@ public enum MarkdownParser {
     private static func lineBlock(_ line: Substring) -> Block? {
         if line.hasPrefix("Source:") { return .source(String(line.dropFirst("Source:".count).trimming(while: \.isWhitespace))) }
         if line.hasPrefix("Covers:"), let ids = coversList(line) { return .covers(ids) }
-        if line.lowercased().hasPrefix("mvp line") { return .mvpLine }
         // `P1` or `P1 · MVP`.
         let parts = line.split(separator: "·").map { $0.trimming(while: \.isWhitespace) }
         guard let p = parts.first, p.count == 2, p.first == "P", p.last?.isNumber == true,

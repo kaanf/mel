@@ -8,13 +8,22 @@ struct PromptTests {
         Set(Prompt.load(prompt.rawValue).matches(of: /\{\{(\w+)\}\}/).map { String($0.1) })
     }
 
+    /// The sample reply line a prompt shows the agent (the first line starting with `start`).
+    private func sample(_ text: String, startingWith start: String) throws -> String {
+        try #require(text.split(separator: "\n").first { $0.hasPrefix(start) }).description
+    }
+
+    private static let drafting: Set<String> = ["project", "name", "idea", "files", "buildsOn", "attachments", "answers", "decide", "approved", "steps", "rules"]
+
     @Test func placeholdersPerPrompt() {
-        #expect(placeholders(.discovery) == ["name", "idea", "answers", "coverage"])
-        #expect(placeholders(.product) == ["name", "idea", "answers", "decide", "rules"])
-        #expect(placeholders(.requirements) == ["name", "idea", "answers", "decide", "approved", "rules"])
-        #expect(placeholders(.design) == ["name", "idea", "answers", "decide", "approved", "rules"])
-        #expect(placeholders(.tasks) == ["name", "idea", "decide", "approved", "rules"])
+        for kind in DocKind.allCases { #expect(placeholders(Prompt(drafting: kind)) == Self.drafting) }
+        #expect(placeholders(.project) == ["mode"])
+        #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
+        #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
+        #expect(placeholders(.analyze) == ["name", "approved", "kinds", "screen"])
+        #expect(placeholders(.impact) == ["file", "before", "after", "later", "kinds"])
         #expect(placeholders(.continue) == ["file", "partial"])
+        #expect(placeholders(.discovery) == ["name", "idea", "answers", "coverage"])
     }
 
     @Test(arguments: Prompt.allCases)
@@ -25,51 +34,67 @@ struct PromptTests {
         #expect(values.keys.filter { $0 != "rules" }.allSatisfy { text.contains("<\($0)>") })
     }
 
-    @Test(arguments: [DocKind.product, .requirements, .tasks])  // v1 templates; v2 prompts come next
-    func draftingPromptsCarryTheCompletenessRule(_ kind: DocKind) {
+    @Test(arguments: DocKind.allCases)
+    func draftingPromptsAskForStepsAndShowTheFormat(_ kind: DocKind) {
         let text = Prompt(drafting: kind).build([:])
-        #expect(text.contains("Never write open questions, TBD, TODO or placeholders."))
-        #expect(text.contains("> [!ASSUMPTION]"))
-        #expect(text.contains("# \(kind.title)"))
+        #expect(text.contains("You are writing \(kind.fileName)"))
+        #expect(text.contains("# \(kind.title)\n"))
+        #expect(text.contains("write `<!-- mel:step N -->` on its own line"))
+        #expect(text.contains("Never write TBD, TODO or placeholders."))
     }
 
-    @Test func planLineOnlyForRequirementsAndTasks() {
-        #expect(Prompt.requirements.build([:]).contains("`5 stories`"))
-        #expect(Prompt.tasks.build([:]).contains("`11 tasks`"))
-        #expect(!Prompt.product.build([:]).contains("plan line giving"))
-        #expect(!Prompt.design.build([:]).contains("plan line giving"))
+    @Test func fillGapsPicksTheRules() {
+        let on = Prompt.requirements.build([:])
+        let off = Prompt.requirements.build([:], fillGaps: false)
+        #expect(on.contains("wrap that decision in a `> [!ASSUMPTION]` callout"))
+        #expect(off.contains("Do not make assumptions."))
+        #expect(!off.contains("[!ASSUMPTION]"))
     }
 
-    @Test func discoveryAsksForJSONWithoutAQuestionLimit() {
-        let text = Prompt.discovery.build([:])
-        #expect(text.contains("There is no limit on the number of questions."))
-        #expect(text.contains("Reply with one JSON object only"))
+    @Test(arguments: [true, false])
+    func trailerSampleDecodes(_ fillGaps: Bool) {
+        let text = Prompt.tasks.build([:], fillGaps: fillGaps)
+        let start = text.range(of: "<!-- mel:questions")!.lowerBound
+        let end = text.range(of: "-->", range: start..<text.endIndex)!.upperBound
+        let questions = DraftText.questions(in: String(text[start..<end]), kind: .tasks)
+        #expect(questions.count == 1)
+        #expect(questions.first?.options.first?.suggested == true)
     }
 
-    @Test func discoveryRunsPhaseByPhaseWithAnOpenQuestionFirst() throws {
-        let text = Prompt.discovery.build([:])
-        #expect(text.contains("Work phase by phase in file order: `product`, `requirements`, `experience`, `tasks`."))
-        #expect(text.contains("Open each phase with an open question"))
-        #expect(text.contains("only into the current phase or a later one"))
-        #expect(text.contains("main screens and navigation, visual style and tone, and reference apps"))
-        // The sample reply must decode, so the agent copies a shape Mel can read.
-        let sample = try #require(text.split(separator: "\n").first { $0.hasPrefix(#"{"coverage""#) })
-        let turn = try DiscoveryTurn.decode(String(sample))
+    @Test func intakeSampleDecodes() throws {
+        let line = try sample(Prompt.intake.build([:]), startingWith: #"{"coverage""#)
+        let intake = try Intake.decode(line, size: .product)
+        #expect(intake.questions.first?.shapes == .requirements)
+        #expect(intake.questions.first?.options.count == 2)
+        #expect(intake.coverage.map(\.state) == [.covered, .notYet])
+    }
+
+    @Test func analyzeImpactAndProjectSamplesDecode() throws {
+        let analyze = try AnalyzeResult.decode(sample(Prompt.analyze.build([:]), startingWith: #"{"stats""#))
+        #expect(analyze.issues.first?.actions.count == 2)
+        #expect(analyze.coverage.first?.screen == .conflict)
+        let impact = try ImpactResult.decode(sample(Prompt.impact.build([:]), startingWith: #"{"items""#))
+        #expect(impact.items.map(\.kind) == [.experience, .tasks])
+        let context = try ProjectContext.decode(sample(Prompt.project.build([:]), startingWith: #"{"product""#))
+        #expect(context.modules == [Module(name: "Booking", path: "Sources/Booking")])
+    }
+
+    @Test func stepsAndFilesText() {
+        #expect(DocKind.spec.stepsText.hasPrefix("1. Read the report and the code it touches\n2. "))
+        #expect(SpecSize.feature.filesText == "REQUIREMENTS.md, ARCHITECTURE.md, TASKS.md")
+        #expect(SpecSize.quickFix.kindsText == "`spec`")
+    }
+
+    @Test func discoveryV1SampleStillDecodes() throws {
+        let line = try sample(Prompt.discovery.build([:]), startingWith: #"{"coverage""#)
+        let turn = try DiscoveryTurn.decode(line)
         #expect(turn.coverage.map(\.phase) == [.product, .requirements, .requirements, .experience])
-        #expect(turn.next?.options.count == 2)
-    }
-
-    @Test func designStartsWithUserExperienceInSevenSections() {
-        let text = Prompt.design.build([:])
-        #expect(text.contains("# Design\n\n## 1. User experience\n## 2. Architecture"))
-        #expect(text.contains("## 7. Testing strategy"))
-        #expect(text.contains("Use exactly these seven sections"))
     }
 
     @Test func valuesAreNotExpandedTwice() {
-        let text = Prompt.continue.build(["file": "DESIGN.md", "partial": "Uses {{file}} literally"])
+        let text = Prompt.continue.build(["file": "TASKS.md", "partial": "Uses {{file}} literally"])
         #expect(text.contains("Uses {{file}} literally"))
-        #expect(text.contains("writing DESIGN.md was cut off"))
+        #expect(text.contains("writing TASKS.md was cut off"))
     }
 
     @Test func unknownKeysStay() {

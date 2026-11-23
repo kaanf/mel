@@ -2,12 +2,59 @@ import Foundation
 
 /// Text edits Mel makes to the spec files while drafting and reviewing.
 public enum DraftText {
-    /// The file text for a drafting reply. REQUIREMENTS and TASKS start with a plan line
-    /// (`5 stories`) that isn't part of the file; until that line is complete there is no file text.
+    /// The file text for a drafting reply: without step markers, the question trailer and a
+    /// marker still being streamed. v1 replies to REQUIREMENTS and TASKS start with a plan line
+    /// (`5 stories`), dropped too (the v1 e2e fixtures have one); every v2 file starts with `#`.
     public static func file(fromReply reply: String, kind: DocKind) -> String {
-        guard kind == .requirements || kind == .tasks, reply.first?.isNumber == true else { return reply }
-        guard let newline = reply.firstIndex(where: \.isNewline) else { return "" }
-        return String(reply[newline...].drop(while: \.isNewline))
+        let text = strippingMarkers(reply)
+        guard kind == .requirements || kind == .tasks, text.first?.isNumber == true else { return text }
+        guard let newline = text.firstIndex(where: \.isNewline) else { return "" }
+        return String(text[newline...].drop(while: \.isNewline))
+    }
+
+    /// The highest complete `<!-- mel:step N -->` so far, or 0 before the first.
+    public static func step(in reply: String) -> Int {
+        var step = 0
+        var rest = reply[...]
+        while let marker = rest.range(of: "<!-- mel:step ") {
+            let digits = rest[marker.upperBound...].prefix(while: \.isNumber)
+            // Only a complete marker counts: "1" may still become "12".
+            if let n = Int(digits), rest[digits.endIndex...].hasPrefix(" -->") { step = max(step, n) }
+            rest = rest[marker.upperBound...]
+        }
+        return step
+    }
+
+    /// `text` without step-marker lines, the `<!-- mel:questions … -->` trailer, and a
+    /// comment still being streamed at the end.
+    public static func strippingMarkers(_ text: String) -> String {
+        var body = text[...]
+        if let trailer = body.range(of: "<!-- mel:questions", options: .backwards) { body = body[..<trailer.lowerBound] }
+        if let open = body.range(of: "<!--", options: .backwards), body[open.upperBound...].range(of: "-->") == nil {
+            body = body[..<open.lowerBound]
+        }
+        // Drop marker lines and the blank lines they leave: none at the start, never two in a row.
+        var lines: [Substring] = []
+        for line in body.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline) {
+            let t = line.trimming(while: \.isWhitespace)
+            if t.hasPrefix("<!-- mel:step "), t.hasSuffix("-->") { continue }
+            if t.isEmpty, lines.last?.trimming(while: \.isWhitespace).isEmpty ?? true { continue }
+            lines.append(line)
+        }
+        var result = lines.joined(separator: "\n")
+        if text.range(of: "<!-- mel:questions") != nil {
+            while result.last?.isWhitespace == true { result.removeLast() }
+            result += "\n"
+        }
+        return result
+    }
+
+    /// Up to 3 round-2 questions from the draft's trailer: `<!-- mel:questions [ … ] -->`.
+    public static func questions(in reply: String, kind: DocKind) -> [Question] {
+        guard let start = reply.range(of: "<!-- mel:questions", options: .backwards),
+              let data = try? jsonObject(in: String(reply[start.upperBound...]), open: "[", close: "]"),
+              let wire = try? JSONDecoder().decode([WireQuestion].self, from: data) else { return [] }
+        return wire.prefix(3).map { $0.question(round: .draft, shapes: kind) }
     }
 
     /// Cuts `text` before its last `##` heading: that section may be incomplete. Ends with a

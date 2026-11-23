@@ -1,42 +1,62 @@
 # Spec format
 
-> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
-
-The Markdown contract for the files Mel generates. Agents are prompted with this contract, and the app parses it to drive the review UI (counts, assumptions, links between tasks and criteria). Keep files readable in any Markdown viewer.
+The Markdown contract for the files Mel generates (V2.md §3, §4, §6). Agents are prompted with it (`MelKit/Sources/MelSpec/Prompts/`), and `MarkdownParser` parses it to drive the review screens. Each prompt's sample reply is checked against Mel's parser in `PromptTests`. Files stay readable in any Markdown viewer.
 
 ## Folder layout
 
 ```
 <project>/
+├── AGENTS.md                         optional; Mel owns only its <!-- mel:begin --> … <!-- mel:end --> block
+├── .mel/project/                     project context, written once (A3), committed
+│   ├── product.md  tech.md  structure.md  principles.md
 └── specs/
-    ├── PRODUCT.md
-    ├── REQUIREMENTS.md
-    ├── DESIGN.md
-    ├── TASKS.md
-    └── .mel/
-        └── state.json         pipeline state, questions/answers, session id
+    └── <spec-slug>/
+        ├── PRODUCT.md …              the size's files, below
+        ├── DECISIONS.md
+        ├── prompts/task-01.md …      written at handoff
+        └── .mel/                     app state, never committed
+            ├── state.json
+            ├── approved/<FILE>.md    snapshot at approval (C1 diff, Undo)
+            └── attachments/          B1 files and pasted logs
 ```
 
-Deleting `.mel/` loses the pipeline state and history, never the spec itself.
+Deleting `.mel/` loses the pipeline state, never the spec itself.
 
-The spec folder defaults to `<chosen folder>/<project-slug>/specs`, for example `~/Developer/yoga-studio-booking/specs`.
+| Size | Files, in order |
+|---|---|
+| Quick fix | SPEC.md |
+| Feature | REQUIREMENTS, ARCHITECTURE, TASKS |
+| Product | PRODUCT, REQUIREMENTS, EXPERIENCE, ARCHITECTURE, TASKS |
 
 ## Shared conventions
 
-- One `#` heading per file: `# Product`, `# Requirements`, `# Design`, `# Tasks`.
-- Sections use `##`. Numbered sections (`## 1. Book a class`) are stable IDs.
-- Assumptions use GitHub alert syntax with a custom type:
+- One `#` heading per file (`# Requirements`). Sections use `##`. Numbered sections (`## 1. Book a class`) and IDs (`1.1`, `Q1`, task `3`, `D-07`) are stable.
+- Callouts use GitHub alert syntax with custom types. GitHub renders them as plain quotes.
 
 ```markdown
 > [!ASSUMPTION]
 > The waitlist is first come, first served.
+
+> [!OPEN QUESTION]
+> What happens to unused credits when a pack expires?
 ```
 
-  GitHub renders the unknown alert type as a plain block quote, which is acceptable. An assumption is a full decision the agent made (because the user chose "You decide", clicked Draft Now, or drafting met an uncovered gap), flagged for confirmation. A file can only be approved once every assumption is confirmed or changed, so approved files contain no `[!ASSUMPTION]` callouts. Confirm removes the callout wrapper and keeps the text; "Change…" replaces the text and removes the wrapper.
+  An **assumption** is a decision the agent made, written as a statement; Confirm removes the wrapper and keeps the text, Change replaces it. An **open question** is a gap the agent could not decide. Both may remain when the user approves (OQ #18). With "Let Mel fill small gaps" off, the agent makes no assumptions and every gap is an open question.
+- No TBD, TODO or placeholders. No front matter.
+- HTML comments are hidden by the parser. The only one kept in a file is `<!-- MVP line -->`.
 
-- **No open questions.** The files never contain `[!OPEN QUESTION]`, "TBD", "TODO" or placeholders. Every point is decided, either by the user or as an assumption.
+## Draft stream markers
 
-- No HTML, no front matter in the four files. Everything the next agent needs is in the prose and callouts.
+Mel strips these from the reply before it writes the file:
+
+- `<!-- mel:step N -->` on its own line when the agent reaches step N of the file's fixed checklist (`DocKind.draftSteps`, shown in B3). Markers can arrive split across text deltas and back to back. Mel counts only complete markers and shows the highest N.
+- An optional trailer at the very end, up to 3 round-2 questions (shown in B4 "Before you approve"):
+
+```
+<!-- mel:questions
+[{"id":"q1","title":"Should a waitlist spot expire?","why":"Sets criterion 1.2.","options":[{"label":"After 2 hours","note":"Frees the spot","suggested":true},{"label":"Never","note":"Simplest"}]}]
+-->
+```
 
 ## PRODUCT.md
 
@@ -55,77 +75,147 @@ The spec folder defaults to `<chosen folder>/<project-slug>/specs`, for example 
 
 ## REQUIREMENTS.md
 
-User stories with EARS acceptance criteria. IDs are `<story>.<criterion>`.
-
 ```markdown
 # Requirements
 
 ## 1. Book a class
 
+P1 · MVP
+Source: your idea, Question 4 (cancellations)
+
 As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
 
-- 1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot, deduct one credit and show it under Upcoming.
+- 1.1 WHEN a member books a class with free spots,
+  THE APP SHALL reserve one spot and deduct one credit.
 - 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.
 
-> [!ASSUMPTION]
-> The waitlist is first come, first served.
+<!-- MVP line -->
+
+## 2. Gift cards
+
+P2
+Source: Question 2 (payments)
+
+As a member, I want to buy a gift card, so that I can give classes to a friend.
+
+- 2.1 WHEN a member completes payment, THE APP SHALL email the gift card.
+
+## Quality requirements
+
+Source: Intake (privacy, speed, offline) and project principles
+
+- Q1 THE APP SHALL open the weekly schedule in under 1 second on a mid-range phone.
+
+## Edge cases
+
+- Two members book the last spot at the same moment: one gets it, the other is offered the waitlist.
 ```
 
-Parsing rules:
+- Each story is a numbered `##` section with a tag line (`P1 · MVP`, `P1`, `P2`, `P3`), a `Source:` line, the "As a …" paragraph and EARS criteria `- <story>.<n> … THE APP SHALL …`. A criterion may wrap onto indented lines.
+- `<!-- MVP line -->` follows the last MVP story.
+- Quality requirements are `- Q<n> …`; edge cases are a plain list.
 
-- Story: `## <n>. <title>` followed by a paragraph starting `As a`.
-- Criterion: list item starting `<n>.<m> ` containing `SHALL`.
-- The review UI renders `WHEN`, `WHILE`, `IF`, `WHERE`, `THE APP SHALL` in bold small caps.
-
-The canvas shows a "Source: your idea, Question 4" line per story. Not in the MVP: it needs per-story metadata for little value.
-
-While drafting, the agent's first line is a plan (`5 stories`, `11 tasks`) that Mel strips from the file and uses for progress ("story 3 of 5").
-
-## DESIGN.md
-
-Seven sections, in order (the failure screen refers to "section 3 of 7"):
+## EXPERIENCE.md
 
 ```markdown
-# Design
+# Experience
 
-## 1. User experience
-## 2. Architecture
-## 3. Data model
-## 4. Key flows
-## 5. Interfaces
-## 6. Security and privacy
-## 7. Testing strategy
+## Flow 1 · Book a class
+
+Covers: 1.1, 1.2, 1.3
+
+1. Schedule (1.1)
+2. Class detail (1.1, 1.2)
+3. Confirm booking (1.1)
+
+- Class is full: Waitlist sheet (1.2)
+
+## Screens and states
+
+| Screen | States | Criteria |
+|---|---|---|
+| Schedule | Default, Empty week, Loading, Offline, Error | 1.1 |
+| Class detail | Default, Full, Loading, !Error | 1.1, 1.2 |
+
+## Visual direction
+
+Calm and light, one accent color, large tap targets.
 ```
 
-`1. User experience`: main screens and navigation, visual style and tone, reference apps, from the Design phase of Discovery. For a product without a user interface it says so in one line.
+A state prefixed `!` is missing (B5 flags it).
+
+## ARCHITECTURE.md
+
+```markdown
+# Architecture
+
+## Modules
+## Data
+## API
+## Decisions
+```
 
 ## TASKS.md
 
 ```markdown
 # Tasks
 
-- [ ] 1. Set up project skeleton
-  - Covers: —
-- [ ] 2. Weekly schedule screen
+- [ ] 1. Booking data model and local store
+  - Priority: P1
   - Covers: 1.1, 1.2
+  - Reads: ARCHITECTURE › Data
+  - Verify: `swift test --filter Booking`
+- [ ] 2. Schedule screen
+  - Priority: P1
+  - Covers: 1.1, Q1
+  - Reads: EXPERIENCE › Schedule
+  - Verify: `swift test --filter Schedule`
+  - Parallel with: 3
 ```
 
-Every task lists `Covers:` with criterion IDs, or `—` for pure setup tasks. The app warns before approval if a criterion is not covered by any task.
+At handoff Mel writes `prompts/task-NN.md` per task: the task, the full text of each criterion it covers, what it reads, and the verify command.
 
-## Suggestions (Later, not in the first version)
+## SPEC.md (Quick fix)
 
-During review the agent never writes the file. When "Ask for changes" is added, it returns:
+```markdown
+# Spec
 
-```json
-{
-  "reply": "I added criterion 1.3 for cancellations.",
-  "suggestions": [
-    {
-      "find": "- 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.",
-      "replace": "- 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.\n- 1.3 WHEN a member cancels at least 12 hours before class, THE APP SHALL return the credit."
-    }
-  ]
-}
+## What breaks
+## Expected behavior
+## How to verify
+## Code it touches
+## Out of scope
 ```
 
-`find` must be an exact substring of the current file. Accept = replace the first occurrence. Reject = drop it. If `find` is no longer in the file, the suggestion shows as outdated. Suggestions are kept in memory only; they don't survive a relaunch.
+Expected behavior uses EARS criteria (`- 1.1 WHEN …, THE APP SHALL …`).
+
+## DECISIONS.md
+
+Written by Mel only, newest first. A decision that replaces another names it; the older one shows "Replaced by" in C1.
+
+```markdown
+# Decisions
+
+## D-07 · Cancellation window 24 hours
+
+Studio policy changed. Teachers need a full day to offer freed spots to the waitlist.
+
+- Source: You · 2026-11-23
+- Replaces: D-03
+- Affects: 1.3
+```
+
+## Project context (`.mel/project/`)
+
+`product.md`, `tech.md`, `structure.md`, `principles.md`. `structure.md` has a `## Modules` list of `- Name — path` lines: B1's "Builds on" chips. "Add Rule" appends `- <rule>` to `principles.md`.
+
+## Agent JSON replies
+
+| Run | Shape |
+|---|---|
+| Project context (A3) | `{"product","tech","structure","principles"}`, each a Markdown file |
+| Intake (B2) | `{"coverage":[{"label","state"}],"questions":[{"id","title","why","shapes","options":[{"label","note","suggested"}]}]}` |
+| Analyze (B6) | `{"stats":[{"value","label"}],"issues":[{"id","kind","location","text","actions":[{"label","fix","files"}]}],"coverage":[{"id","text","screen","architecture","task","test"}]}`; `kind` is `contradiction`, `noTask`, `qualityNotCovered` or `scopeCreep`; marks are `covered`, `missing` or `conflict`; `screen` is null without EXPERIENCE.md |
+| Impact (C1) | `{"items":[{"kind","what","count"}]}` |
+
+Text around the JSON (a code fence) is ignored.
