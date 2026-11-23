@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case welcome, noAgent, pickProject, projectSetup, firstSpec, newSpec, newSpecNoContext, newSpecQuickFix, newSpecProduct, newSpecEmpty, intake, drafting, review, edited, analyze, stopped, home
+    case welcome, noAgent, pickProject, projectSetup, firstSpec, newSpec, newSpecNoContext, newSpecQuickFix, newSpecProduct, newSpecEmpty, intake, drafting, review, experience, edited, analyze, ready, stopped, failure, settings, home
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
@@ -42,12 +42,14 @@ enum DebugScreen: String, CaseIterable {
         case .projectSetup: PreviewData.appState([], projects: [], projectSetup: PreviewData.projectSetup)
         case .newSpec, .newSpecNoContext, .newSpecQuickFix, .newSpecProduct, .newSpecEmpty: PreviewData.newSpecState
         case .intake: PreviewData.appState([PreviewData.intake])
-        case .drafting: PreviewData.appState([PreviewData.drafting])
-        case .review: PreviewData.appState([PreviewData.review])
-        case .edited: PreviewData.appState([PreviewData.edited])
+        case .drafting: PreviewData.appState([PreviewData.drafting], sessions: [PreviewData.draftingSession])
+        case .review: PreviewData.appState([PreviewData.reviewRoundTwo], sessions: [PreviewData.reviewSession])
+        case .experience: PreviewData.appState([PreviewData.reviewExperience], sessions: [PreviewData.experienceSession])
+        case .edited: PreviewData.appState([PreviewData.edited], sessions: [PreviewData.editedSession])
         case .analyze: PreviewData.appState([PreviewData.analyzeIssues])
-        case .stopped: PreviewData.appState([PreviewData.usageLimit])
-        case .home: PreviewData.appState([])
+        case .ready: PreviewData.appState([PreviewData.done], sessions: [PreviewData.doneSession])
+        case .stopped, .failure: PreviewData.appState([PreviewData.usageLimit], sessions: [PreviewData.stoppedSession])
+        case .home, .settings: PreviewData.appState([])
         }
     }
 }

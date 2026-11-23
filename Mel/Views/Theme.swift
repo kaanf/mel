@@ -309,6 +309,8 @@ enum Theme {
         static let statusPillExperience: CGFloat = 320
         /// 300 · B4 Review.
         static let statusPillReview: CGFloat = 300
+        /// 160 · the pill with its short text ("Needs you", "Running") in a narrow window; not drawn.
+        static let statusPillCompact: CGFloat = 160
         /// 44 · title bar row: sidebar top (traffic lights), A2/A3/A4x bar with the centered title.
         static let titleBar: CGFloat = 44
         /// 15 · Project context house icon; 12 · spec row chevron; 14 · New Spec plus.
@@ -379,6 +381,63 @@ enum Theme {
         static let rowChevron: CGFloat = 10
         /// 3 lines · B2 answer field of an open question (not drawn; the note field's look, taller).
         static let openAnswerLines = 3
+        /// B3: live preview 300 wide; step rows min 36 with a 14 pt icon box (13 pt check); Up Next rows 40 with a 13 pt lock.
+        static let livePreviewWidth: CGFloat = 300
+        static let stepRow: CGFloat = 36
+        static let stepIcon: CGFloat = 14
+        static let stepCheck: CGFloat = 13
+        static let upNextRow: CGFloat = 40
+        /// 2 × 13 · B3 live preview caret.
+        static let caretWidth: CGFloat = 2
+        /// B4: criterion id column 24; "Before you approve" rows min 30 with 13 pt icons.
+        static let criterionID: CGFloat = 24
+        static let checklistRow: CGFloat = 30
+        static let checklistIcon: CGFloat = 13
+        /// B5: article max 640; flow node min 96 wide; flow arrow 18; branch rows indented 112 with a 16 pt glyph;
+        /// states table columns 130 (screen) and 64 (criteria); state chips 20 high.
+        static let experienceMaxWidth: CGFloat = 640
+        static let flowNodeMin: CGFloat = 96
+        static let flowArrow: CGFloat = 18
+        static let branchIndent: CGFloat = 112
+        static let screenColumn: CGFloat = 130
+        static let criteriaColumn: CGFloat = 64
+        /// B6: content max 900; stat tiles min 190; coverage columns 52 (ID) and 84 (each mark).
+        static let analyzeMaxWidth: CGFloat = 900
+        static let statTileMin: CGFloat = 190
+        static let coverageID: CGFloat = 52
+        static let coverageCell: CGFloat = 84
+        /// B7: column 760; file tiles min 140; task number column 22; ready icon 20; task priority badge 18 high.
+        static let specReadyWidth: CGFloat = 760
+        static let fileTileMin: CGFloat = 140
+        static let taskNumber: CGFloat = 22
+        static let readyIcon: CGFloat = 20
+        static let priorityBadge: CGFloat = 18
+        /// C1: column 640; banner icon 18; impact rows min 46; decisions column 288; "Why" field 2 lines.
+        static let refineMaxWidth: CGFloat = 640
+        static let bannerIcon: CGFloat = 18
+        static let impactRow: CGFloat = 46
+        static let decisionsWidth: CGFloat = 288
+        static let whyLines = 2
+        /// C2: dialog 520 wide; logo 52 with a 24 pt alert badge (white disc 22) at its lower right.
+        static let dialogWidth: CGFloat = 520
+        static let dialogLogo: CGFloat = 52
+        static let alertBadge: CGFloat = 24
+        /// C3: column 680, intro max 560; how-it-works tiles min 140; start cards min 190.
+        static let homeWidth: CGFloat = 680
+        static let homeTextWidth: CGFloat = 560
+        static let homeStepMin: CGFloat = 140
+        static let homeStartMin: CGFloat = 190
+        /// C4: window 640; agent row 48 with a 26 pt tile (radius 6, 14 pt glyph), detail rows 36 indented 48 with a 72 pt label;
+        /// search path rows 26, list footer 24 with 28 pt +/− buttons and 12 pt glyphs.
+        static let settingsWidth: CGFloat = 640
+        static let agentCardRow: CGFloat = 48
+        static let agentCardTile: CGFloat = 26
+        static let agentDetailRow: CGFloat = 36
+        static let agentDetailIndent: CGFloat = 48
+        static let agentDetailLabel: CGFloat = 72
+        static let pathRow: CGFloat = 26
+        static let pathFooter: CGFloat = 24
+        static let pathButton: CGFloat = 28
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).
