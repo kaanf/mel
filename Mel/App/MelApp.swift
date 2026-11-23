@@ -13,6 +13,7 @@ struct MelApp: App {
         WindowGroup {
             MainView(isShowingNewSpec: $isShowingNewSpec)
                 .environment(state)
+                .task { await state.scanForAgent() }
         }
         .commands {
             MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady)

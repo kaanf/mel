@@ -45,10 +45,7 @@ struct ReviewView: View {
                 let parsed = await parseDocument(text, kind: kind)
                 blocks = parsed.0
                 summary = parsed.1
-                guard text != session.documents[kind] else { return }
-                try? await Task.sleep(for: .milliseconds(500))
-                guard !Task.isCancelled else { return }
-                session.save(text, for: kind)
+                if text != session.documents[kind] { session.save(text, for: kind) }   // session debounces the write
             }
             .onChange(of: session.documents[kind]) { _, new in
                 if let new, new != text { text = new }
@@ -64,6 +61,12 @@ struct ReviewView: View {
                 }
             } message: {
                 Text("Say what should be true instead. The file is updated and the assumption counts as confirmed.")
+            }
+            .alert("\(kind.fileName) changed in another app", isPresented: Binding(get: { session.conflict == kind }, set: { _ in })) {
+                Button("Keep Mine") { session.resolveConflict(keepMine: true) }
+                Button("Use File") { session.resolveConflict(keepMine: false) }
+            } message: {
+                Text("You also have unsaved edits here. Keep Mine replaces the file with your edits. Use File loads the file and drops your edits.")
             }
             .sheet(isPresented: $showReady) {
                 SpecReadySheet(session: session)

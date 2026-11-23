@@ -10,16 +10,22 @@ Updated: 2026-11-23
   - 3.1–3.10 in `Views/`: Welcome, Settings › Agents, Sidebar, New Spec sheet, Discovery (+ inspector), MarkdownBlocksView (LazyVStack, EARS keywords bold), Drafting (running/stopped + live preview inspector), Review (Preview / Edit Markdown, Before you approve, Approve disabled while assumptions remain), Failure sheet, Spec ready sheet. Plus EmptyLibraryView, LockedDocView, AgentRow/AgentStatusBadge.
   - `#Preview`s for every component and screen state, data in `Views/Preview/PreviewData.swift`.
 
-- Wave 2 part 1, rebased on origin/main (884c099), green (94 tests):
+- Wave 2, rebased on origin/main (c5c1487), full `xcodebuild test` green (114 passed), no warnings from App/ or Views/. **wave 2 ready to merge**
   - Discovery keyboard: digits 1…N pick an option (ignored while the note field has focus), ↩ is Continue. Question card takes focus on appear.
-  - Existing bindings checked: ⌘N, ⌘↩ approve, ⌥⌘I, start() after createSpec, finishByHand() for Review What's Written / Open File, resume() for Resume Later (semantics confirmed by orchestrator).
+  - Keep Mine / Use File: alert in Review while `session.conflict == kind` → `resolveConflict(keepMine:)`. Review no longer debounces itself; it calls `save` on change and the session debounces the write.
+  - Missing rows: "Missing" section in the sidebar for `missingFolders` (title = project folder name), menu + context menu with Locate… (`fileImporter` → `locate(_:at:)`, error alert) and Remove from List (`removeMissing`).
+  - Your Idea › Edit…: sheet in Discovery → `updateIdea`, disabled while running.
+  - New Spec shows the resulting folder via `specFolder(name:parent:)` (parent path until a name is typed).
+  - Handoff: Git toggle hidden when `!canCommit`; Done with commit on a non-repo asks "Create Repository and Commit" first. Both values read once in `.task`.
+  - Previews added: Discovery Error, Edit Idea, Sidebar Missing folder. `PreviewData.session(lastError:)`, `PreviewData.appState(missing:)`.
+  - Launch: MelApp calls `scanForAgent()` once in the main window's `.task`.
+  - Kept core's `.sessionNotFound` in FailureSheet's `.user` case.
 
 ## In progress
 - (nothing)
 
 ## Next
-- When the orchestrator says core's stubs are on main: rebase, then wire Keep Mine / Use File (`conflict`, `resolveConflict`), missing-folder rows (`missingFolders`, `locate`, `removeMissing`), Your Idea › Edit… (`updateIdea`), resulting folder in New Spec (`specFolder`), Discovery error preview (`preview(lastError:)`), handoff checkbox via `canCommit` / `isGitRepository`.
-- Also then: call `scanForAgent()` once at launch from MelApp (not now: tests are hosted by the app and the stub fatalErrors).
+- Wait for Wave 3 (5.2 accessibility pass, app icon).
 
 ## Notes
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
@@ -37,6 +43,7 @@ Updated: 2026-11-23
 ## Requests to orchestrator
 - (none; Wave 1 requests are in CONTRACTS 884c099. "Story 3 of 5" is cut, step list stays.)
 - core: ui calls `scanForAgent()` at launch, so AppState.init should not scan too.
+- core (small): `SpecSession.preview(... conflict:)` so the Keep Mine / Use File alert gets a preview; no preview for it now.
 
 ## Questions for the user
 - (none)
