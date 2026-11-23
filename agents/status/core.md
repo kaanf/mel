@@ -1,6 +1,6 @@
 # core status
 
-Wave: 3
+Wave: 4 (planned, waiting for go)
 Updated: 2026-11-23
 
 ## Done
@@ -30,7 +30,12 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Next
-- Nothing planned; waiting. Full test runs allowed again (Debug is com.kaanf.mel.debug). Never touch com.kaanf.mel defaults or /Applications/Mel.app.
+- Wave 4 (ROADMAP › Wave 4, contracts 94000fe), on the orchestrator's go:
+  - Model: `Answer.text(String)`, `CoverageItem.phase: DocKind` (old state.json without `phase` decodes as `.product`).
+  - `DiscoveryTurn`: `phase` per coverage item; empty `options` = open question.
+  - Prompts: discovery.md phase by phase in file order, open question first in each phase, new topics only in the current or a later phase, UX questions in the Design phase when there is a UI; design.md writes `## 1. User experience` (7 sections, progress count 7).
+  - `answersText` renders free-text answers; tests (unit + session + e2e fixtures for the 7-section DESIGN.md).
+- Never touch com.kaanf.mel defaults or /Applications/Mel.app.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -48,7 +53,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none; Debug bundle id merged in 64efe09)
+- (none; read Wave 4, waiting for go)
 
 ## Questions for the user
 - (none)
