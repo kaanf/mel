@@ -11,15 +11,21 @@ struct DesignIcon: View {
         case plus
         /// "Needs you" in the toolbar pill (`circle r6.25`, `M8 4.75v3.75M8 11.1v.15`), stroke 1.7.
         case alert
+        /// Agent tile prompt (`M4 5l3 3-3 3M8.5 11.5H12`), stroke 1.6.
+        case terminal
+        /// Check mark (`M3.5 8.5l3 3 6-7`), stroke 2; the design also draws it at 2.2 and 2.4.
+        case check
     }
 
     let glyph: Glyph
     /// Drawn size in points (the SVG's width and height).
     let size: CGFloat
+    /// SVG stroke-width, when the design draws this glyph with another weight.
+    var weight: CGFloat?
 
     var body: some View {
         GlyphShape(glyph: glyph)
-            .stroke(style: StrokeStyle(lineWidth: lineWidth * size / 16, lineCap: .round, lineJoin: .round))
+            .stroke(style: StrokeStyle(lineWidth: (weight ?? lineWidth) * size / 16, lineCap: .round, lineJoin: .round))
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
@@ -30,6 +36,8 @@ struct DesignIcon: View {
         case .chevronDown: 2
         case .plus: 1.6
         case .alert: 1.7
+        case .terminal: 1.6
+        case .check: 2
         }
     }
 }
@@ -61,6 +69,16 @@ nonisolated private struct GlyphShape: Shape {
             path.addLine(to: p(8, 8.5))
             path.move(to: p(8, 11.1))
             path.addLine(to: p(8, 11.25))
+        case .terminal:
+            path.move(to: p(4, 5))
+            path.addLine(to: p(7, 8))
+            path.addLine(to: p(4, 11))
+            path.move(to: p(8.5, 11.5))
+            path.addLine(to: p(12, 11.5))
+        case .check:
+            path.move(to: p(3.5, 8.5))
+            path.addLine(to: p(6.5, 11.5))
+            path.addLine(to: p(12.5, 4.5))
         case .plus:
             path.move(to: p(8, 3))
             path.addLine(to: p(8, 13))
@@ -77,6 +95,8 @@ nonisolated private struct GlyphShape: Shape {
         DesignIcon(glyph: .chevronDown, size: 12)
         DesignIcon(glyph: .plus, size: 14)
         DesignIcon(glyph: .alert, size: 14).foregroundStyle(Theme.Colors.caution)
+        DesignIcon(glyph: .check, size: 14).foregroundStyle(Theme.Colors.success)
+        DesignIcon(glyph: .terminal, size: 16).foregroundStyle(.white).padding(7).background(Theme.Colors.label, in: RoundedRectangle(cornerRadius: Theme.Radius.field))
     }
     .foregroundStyle(Theme.Colors.secondaryLabel)
     .padding(Theme.Space.x20)

@@ -5,7 +5,7 @@ import MelSpec
 enum PreviewData {
     static let project = Project(folder: URL(filePath: "/Users/me/Developer/yoga-studio-booking"), hasContext: true)
     static let folder = project.folder.appending(path: "specs/yoga-studio-booking")
-    static let executable = URL(filePath: "/Users/me/.local/bin/claude")
+    static let executable = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".local/bin/claude")
     static let ready = AgentStatus.ready(executable: executable, version: "2.1.4")
     static let notSignedIn = AgentStatus.notSignedIn(executable: executable)
 

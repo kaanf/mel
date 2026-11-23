@@ -4,13 +4,22 @@ import MelSpec
 /// Main window: library sidebar, the selected stage, its inspector, and the New Spec sheet.
 struct MainView: View {
     @Environment(AppState.self) private var state
-    @Environment(\.openWindow) private var openWindow
     @AppStorage("didShowWelcome") private var didShowWelcome = false
     @Binding var isShowingNewSpec: Bool
     @State private var item: SidebarItem?
     @State private var showInspector = true
 
     var body: some View {
+        if !didShowWelcome || state.projects.isEmpty {
+            SetupFlow(step: didShowWelcome ? .pickProject : .welcome) { newSpec in
+                isShowingNewSpec = newSpec
+            }
+        } else {
+            library
+        }
+    }
+
+    private var library: some View {
         NavigationSplitView {
             SidebarView(selection: $item) { isShowingNewSpec = true }
         } detail: {
@@ -27,7 +36,6 @@ struct MainView: View {
         }
         .onAppear {
             item = state.selection.flatMap { id in state.specs.first { $0.id == id } }.map(SidebarItem.current)
-            if !didShowWelcome { openWindow(id: "welcome") }
         }
         .onChange(of: item) { _, item in
             state.selection = item?.specID

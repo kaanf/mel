@@ -314,6 +314,21 @@ enum Theme {
         static let plusIcon: CGFloat = 14
         /// 14 · "Needs you" alert icon in the toolbar pill (B2).
         static let alertIcon: CGFloat = 14
+        /// 96 · logo on A1 and A1x; 56 · its top on A1 (absolute, centered).
+        static let logoLarge: CGFloat = 96
+        static let welcomeLogoTop: CGFloat = 56
+        /// A1: content column 520 wide, 176 from the top; subtitle max 420.
+        static let welcomeWidth: CGFloat = 520
+        static let welcomeContentTop: CGFloat = 176
+        static let welcomeTextWidth: CGFloat = 420
+        /// A1x: column 540 wide; text max 440.
+        static let noAgentWidth: CGFloat = 540
+        static let noAgentTextWidth: CGFloat = 440
+        /// 52 · agent row (A1); 30 · its dark tile; 16 · terminal glyph; 14 · Ready check.
+        static let agentRow: CGFloat = 52
+        static let agentTile: CGFloat = 30
+        static let terminalIcon: CGFloat = 16
+        static let checkIcon: CGFloat = 14
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

@@ -23,12 +23,6 @@ struct MelApp: App {
             MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady, updater: updater)
         }
 
-        Window("Welcome", id: "welcome") {
-            WelcomeView()
-                .environment(state)
-        }
-        .windowResizability(.contentSize)
-        .windowStyle(.hiddenTitleBar)
 
         Settings {
             SettingsView(updates: UpdateSettings(
