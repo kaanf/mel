@@ -1,6 +1,6 @@
 # ui status
 
-Wave: v0.2.1 shipped (build 264, icon merged); waiting for Wave 6
+Wave 6: Theme.swift pushed (ready to merge with Wave 6); waiting for core's contract stubs
 Updated: 2026-11-23
 
 ## Done
@@ -47,8 +47,16 @@ Updated: 2026-11-23
   - 128 pt and up: the 1024 master (sheen, 0.08 hairline). 32@1x and 32@2x use the file's own 32/64 px variants (no sheen; hairline 0.1 at 32 px, 0.08 at 64 px). 16@1x/@2x: small mark (0.14 hairline).
   - Full-bleed like the design (squircle fills the 100 grid, no macOS margin); macOS 26 shows it at the same size as the other Dock icons. Checked in the Debug app (com.kaanf.mel.debug) after `lsregister -f` + Dock restart; before that the Dock showed a cached generic icon.
 
+- Wave 6 Theme (orchestrator-approved before core's stubs): `Mel/Views/Theme.swift`, full test green (132).
+  - `Theme.Colors` (semantic, sRGB hex), `Theme.Text` (`TextStyle` size/weight/lineHeight/design/tracking, applied with `.textStyle(_:)`; exact line height via macOS 26 `.lineHeight(.exact(points:))`, `ThemeTests` renders single lines and checks the height), `Theme.Space` (named by value, x1…x72), `Theme.Size` (sidebar 232, toolbar 52, control heights, switch, radio), `Theme.Radius` (3…16; pills use `Capsule()`), `Theme.Elevation` (ring 0.5 outset/inset + one drop or inner shadow) applied with `.surface(fill, elevation, in: shape)`, `Theme.LogoShadow`.
+  - No values rounded or merged unless identical and used for the same thing (e.g. four separator opacities stay separate).
+  - Light mode: `NSRequiresAquaSystemAppearance` in Info.plist. Checked: Debug app renders Aqua while the system is in Dark mode.
+  - Left out on purpose: mock chrome (#DFE0E5 page, traffic lights, window shadow, C4 grey dot), the C2 dialog 4-layer shadow (system sheet), logo colors (the logo is an image). Glass tokens (sidebar, toolbar groups) are kept as reference only, since macOS 26 draws that glass itself.
+  - Note: the app target defaults to MainActor isolation, so tokens are MainActor (fine for views; test arguments can't use them).
+
 ## Next
 - Wait for Wave 6: the orchestrator merges core's contract stubs and tells me to rebase. No v2 views before that.
+- Next in Wave 6, after core's stubs: sidebar (v2 statuses) and toolbar status pill, then screens.
 - Prep done (2026-11-23): read docs/V2.md, design/v2/FLOW.md and the MEL SCREEN header of all 16 screens (A1, A1x, A2, A3, A4x, B1–B7, C1–C4).
   - Build-once parts: sidebar (project row, spec, file rows with v2 statuses, Analyze row), toolbar status pill ("n of m"), Theme.swift tokens. Review inspector and suggestion Accept/Reject are hidden in v0.3 (V2 §2); C1's Decisions column stays.
   - Token inventory from the inline styles: about 30 hex colors (main ones #1D1D1F, #6E6E73, #F5F5F7, #007AFF, #0066D6, #248A3D, #C93400, #D97F00), font sizes 10/11/12/13/14/15/17/22/26/28/30, radii 3–17. Plus rgba values. Skip the mock's chrome: #DFE0E5 page, traffic-light colors.
