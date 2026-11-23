@@ -23,6 +23,12 @@ struct NewSpecSheet: View {
 
     private var folder: URL { parent ?? recentFolders.first ?? .homeDirectory }
 
+    /// Where the four files go; the parent until there is a name.
+    private var destination: URL {
+        let name = name.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? folder : state.specFolder(name: name, parent: folder)
+    }
+
     private var isValid: Bool {
         state.agent.isReady
             && !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -65,7 +71,7 @@ struct NewSpecSheet: View {
                             Button("Choose…") { choosingFolder = true }
                         }
                         .fixedSize()
-                        Text(folder.path(percentEncoded: false))
+                        Text(destination.path(percentEncoded: false))
                             .font(.caption.monospaced())
                             .foregroundStyle(.secondary)
                     }

@@ -10,6 +10,9 @@ struct SpecReadySheet: View {
     @State private var copied = false
     @State private var error: String?
     @State private var summaries: [DocKind: DocSummary] = [:]
+    @State private var canCommit = false
+    @State private var isGitRepository = true
+    @State private var confirmingInit = false
 
     private var spec: Spec { session.spec }
 
@@ -58,9 +61,11 @@ struct SpecReadySheet: View {
                 Button("Open in Terminal") { session.openStartCommandInTerminal() }
                     .buttonStyle(.link)
             }
-            Toggle(isOn: $commitToGit) {
-                Text("Commit the spec to Git")
-                Text("Creates one commit in \(spec.folder.deletingLastPathComponent().lastPathComponent) so the spec has history.")
+            if canCommit {
+                Toggle(isOn: $commitToGit) {
+                    Text("Commit the spec to Git")
+                    Text("Creates one commit in \(projectName) so the spec has history.")
+                }
             }
             if let error {
                 Text(error).foregroundStyle(.red)
@@ -73,7 +78,9 @@ struct SpecReadySheet: View {
                     .truncationMode(.middle)
                 Spacer()
                 Button("Show in Finder") { session.showInFinder() }
-                Button("Done", action: done)
+                Button("Done") {
+                    if commitToGit && !isGitRepository { confirmingInit = true } else { done() }
+                }
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -84,12 +91,21 @@ struct SpecReadySheet: View {
             try? await Task.sleep(for: .seconds(2))
             copied = false
         }
+        .confirmationDialog("\(projectName) is not a Git repository.", isPresented: $confirmingInit) {
+            Button("Create Repository and Commit", action: done)
+        } message: {
+            Text("Mel runs git init in the project folder, then commits the four spec files.")
+        }
         .task {
+            canCommit = session.canCommit
+            isGitRepository = session.isGitRepository
             for kind in DocKind.allCases {
                 summaries[kind] = await parseDocument(session.documents[kind] ?? "", kind: kind).1
             }
         }
     }
+
+    private var projectName: String { spec.folder.deletingLastPathComponent().lastPathComponent }
 
     private func done() {
         do {

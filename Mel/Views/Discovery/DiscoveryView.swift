@@ -5,6 +5,7 @@ import MelSpec
 struct DiscoveryView: View {
     let session: SpecSession
     @Binding var showInspector: Bool
+    @State private var editingIdea = false
 
     private var spec: Spec { session.spec }
 
@@ -12,10 +13,18 @@ struct DiscoveryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 StageStepper(current: 1)
-                GroupBox("Your Idea") {
+                GroupBox {
                     Text(spec.idea)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                } label: {
+                    HStack {
+                        Text("Your Idea")
+                        Spacer()
+                        Button("Edit…") { editingIdea = true }
+                            .buttonStyle(.link)
+                            .disabled(session.isRunning)
+                    }
                 }
                 if !session.answeredQuestions.isEmpty {
                     AnsweredList(session: session)
@@ -47,6 +56,9 @@ struct DiscoveryView: View {
                 .inspectorColumnWidth(min: 220, ideal: 260)
         }
         .focusedSceneValue(\.inspectorShown, $showInspector)
+        .sheet(isPresented: $editingIdea) {
+            IdeaEditor(idea: spec.idea) { session.updateIdea($0) }
+        }
     }
 
     @ViewBuilder
@@ -86,6 +98,37 @@ struct DiscoveryView: View {
         } else if session.isRunning {
             StatusBadge(status: .checking, title: "Running · Claude Code is thinking")
         }
+    }
+}
+
+/// "Your Idea › Edit…".
+private struct IdeaEditor: View {
+    @State var idea: String
+    let save: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var trimmed: String { idea.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Edit Your Idea").font(.headline)
+            TextEditor(text: $idea)
+                .font(.body)
+                .frame(height: 140)
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Save") {
+                    save(trimmed)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(trimmed.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 480)
     }
 }
 
@@ -143,6 +186,8 @@ private struct QuestionCard: View {
     let number: Int
     @State private var choice: Int?
     @State private var note = ""
+    @FocusState private var cardFocused: Bool
+    @FocusState private var noteFocused: Bool
 
     /// `question.options.count` stands for "You decide".
     init(session: SpecSession, question: Question, number: Int) {
@@ -183,6 +228,7 @@ private struct QuestionCard: View {
                     }
                 }
                 TextField("Note for the agent (optional)", text: $note)
+                    .focused($noteFocused)
                 HStack {
                     Text("Press 1 to \(question.options.count + 1) to choose. Answers can be changed later.")
                         .font(.callout)
@@ -194,6 +240,16 @@ private struct QuestionCard: View {
                 }
             }
             .padding(4)
+        }
+        // Digits pick an option unless the note field is taking text; ↩ is Continue (default action).
+        .focusable()
+        .focusEffectDisabled()
+        .focused($cardFocused)
+        .onAppear { cardFocused = true }
+        .onKeyPress(characters: .decimalDigits) { press in
+            guard !noteFocused, let digit = Int(press.characters), (1...question.options.count + 1).contains(digit) else { return .ignored }
+            choice = digit - 1
+            return .handled
         }
     }
 
@@ -246,10 +302,25 @@ private struct DiscoveryInspector: View {
     .frame(width: 1000, height: 800)
 }
 
+#Preview("Edit Idea") {
+    IdeaEditor(idea: PreviewData.idea) { _ in }
+}
+
 #Preview("Thinking") {
     @Previewable @State var showInspector = false
     NavigationStack {
         DiscoveryView(session: PreviewData.session(PreviewData.discoveryThinking, isRunning: true), showInspector: $showInspector)
+    }
+    .frame(width: 760, height: 600)
+}
+
+#Preview("Error") {
+    @Previewable @State var showInspector = false
+    NavigationStack {
+        DiscoveryView(
+            session: PreviewData.session(PreviewData.discoveryThinking, lastError: "Claude Code's answer could not be read as questions."),
+            showInspector: $showInspector
+        )
     }
     .frame(width: 760, height: 600)
 }

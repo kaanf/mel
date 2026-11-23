@@ -121,17 +121,20 @@ enum PreviewData {
         ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_090), text: "writing story 3 of 5"),
     ]
 
-    static func session(_ spec: Spec, isRunning: Bool = false) -> SpecSession {
+    static func session(_ spec: Spec, isRunning: Bool = false, lastError: String? = nil) -> SpecSession {
         SpecSession.preview(
             spec,
             documents: [.product: "# Product", .requirements: requirementsMarkdown],
             liveText: requirementsMarkdown,
             activity: activity,
-            isRunning: isRunning
+            isRunning: isRunning,
+            lastError: lastError
         )
     }
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready) -> AppState {
-        AppState.preview(specs, agent: agent)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent)
+        state.missingFolders = missing
+        return state
     }
 }
