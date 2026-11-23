@@ -7,6 +7,15 @@ struct DiscoveryView: View {
     @Binding var showInspector: Bool
     @State private var editingIdea = false
     @State private var width: CGFloat = .infinity
+    /// The question on screen when Discovery was opened. It doesn't take keyboard focus, so arrow keys
+    /// keep moving through the sidebar; questions that arrive later do (digits and ↩ work right away).
+    @State private var openedOn: String?
+
+    init(session: SpecSession, showInspector: Binding<Bool>) {
+        self.session = session
+        _showInspector = showInspector
+        _openedOn = State(initialValue: session.currentQuestion?.id)
+    }
 
     private var spec: Spec { session.spec }
 
@@ -71,7 +80,7 @@ struct DiscoveryView: View {
     @ViewBuilder
     private var current: some View {
         if let question = session.currentQuestion {
-            QuestionCard(session: session, question: question, number: session.answeredQuestions.count + 1)
+            QuestionCard(session: session, question: question, number: session.answeredQuestions.count + 1, takesFocus: question.id != openedOn)
                 .id(question.id)
         } else if let error = session.lastError {
             GroupBox {
@@ -252,6 +261,7 @@ private struct QuestionCard: View {
     let session: SpecSession
     let question: Question
     let number: Int
+    let takesFocus: Bool
     @State private var choice: Int?
     @State private var note = ""
     @State private var text = ""
@@ -259,10 +269,11 @@ private struct QuestionCard: View {
     @FocusState private var noteFocused: Bool
 
     /// `question.options.count` stands for "You decide".
-    init(session: SpecSession, question: Question, number: Int) {
+    init(session: SpecSession, question: Question, number: Int, takesFocus: Bool) {
         self.session = session
         self.question = question
         self.number = number
+        self.takesFocus = takesFocus
         _choice = State(initialValue: question.options.firstIndex(where: \.suggested))
     }
 
@@ -294,6 +305,7 @@ private struct QuestionCard: View {
         .focusEffectDisabled()
         .focused($cardFocused)
         .onAppear {
+            guard takesFocus else { return }
             if question.options.isEmpty { noteFocused = true } else { cardFocused = true }
         }
         // Digits pick an option unless a text field is taking text; ↩ is Continue (default action).
