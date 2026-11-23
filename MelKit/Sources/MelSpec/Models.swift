@@ -43,7 +43,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     }
 
     /// The project folder: `folder` is `<project>/specs/<slug>/`.
-    public var project: URL { folder.deletingLastPathComponent().deletingLastPathComponent() }
+    public var project: URL { folder.deletingLastPathComponent().deletingLastPathComponent().normalizedFolder }
 }
 
 /// V2.md §4. The size fixes the files and their order.

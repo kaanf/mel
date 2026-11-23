@@ -18,6 +18,22 @@ struct ModelsTests {
         #expect(Spec(name: "Fix", idea: "x", folder: URL(filePath: "/p/specs/fix/")).project.path == "/p")
     }
 
+    @Test func projectFoldersCompareEqualHoweverTheyAreWritten() throws {
+        let real = FileManager.default.temporaryDirectory.appending(path: "mel-norm-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: real, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: real) }
+        let link = real.deletingLastPathComponent().appending(path: "link-\(UUID().uuidString)")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: real)
+        defer { try? FileManager.default.removeItem(at: link) }
+
+        let noSlash = URL(filePath: String(real.path(percentEncoded: false).dropLast()))   // "…/mel-norm-…"
+        let spec = Spec(name: "S", idea: "x", folder: real.appending(path: "specs/s", directoryHint: .isDirectory))
+        #expect(spec.project == Project(folder: noSlash).folder)
+        #expect(Project(folder: real).id == Project(folder: noSlash).id)
+        #expect(Project(folder: link).id == Project(folder: real).id)
+        #expect(URL(filePath: "/tmp/x").normalizedFolder == URL(filePath: "/private/tmp/x/").normalizedFolder)
+    }
+
     @Test func v2SpecRoundTrips() throws {
         var spec = Spec(name: "Booking", idea: "x", size: .feature, folder: URL(filePath: "/p/specs/booking"), buildsOn: ["Booking"], attachments: [Attachment(fileName: "log-1.txt")], analyze: .issues(2))
         spec.docs[.architecture] = .stale
