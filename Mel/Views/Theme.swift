@@ -309,6 +309,8 @@ enum Theme {
         static let statusPillExperience: CGFloat = 320
         /// 300 · B4 Review.
         static let statusPillReview: CGFloat = 300
+        /// 160 · the pill with its short text ("Needs you", "Running") in a narrow window; not drawn.
+        static let statusPillCompact: CGFloat = 160
         /// 44 · title bar row: sidebar top (traffic lights), A2/A3/A4x bar with the centered title.
         static let titleBar: CGFloat = 44
         /// 15 · Project context house icon; 12 · spec row chevron; 14 · New Spec plus.
@@ -379,6 +381,14 @@ enum Theme {
         static let rowChevron: CGFloat = 10
         /// 3 lines · B2 answer field of an open question (not drawn; the note field's look, taller).
         static let openAnswerLines = 3
+        /// B3: live preview 300 wide; step rows min 36 with a 14 pt icon box (13 pt check); Up Next rows 40 with a 13 pt lock.
+        static let livePreviewWidth: CGFloat = 300
+        static let stepRow: CGFloat = 36
+        static let stepIcon: CGFloat = 14
+        static let stepCheck: CGFloat = 13
+        static let upNextRow: CGFloat = 40
+        /// 2 × 13 · B3 live preview caret.
+        static let caretWidth: CGFloat = 2
         /// 2 · progress bar along the bottom of the toolbar pill (B3).
         static let progressBar: CGFloat = 2
         /// 620 · maximum width of the review article (B4, B5).

@@ -18,7 +18,7 @@ struct StatusPill: View {
     let count: String
     /// B3: share of the file written, drawn as a 2 pt bar along the bottom (purple while running).
     var progress: Double?
-    /// The design sets one per screen: `Theme.Size.statusPill…`.
+    /// The design sets one per screen: `Theme.Size.statusPill…` (`statusPillCompact` in a narrow window).
     let maxWidth: CGFloat
 
     var body: some View {
@@ -40,16 +40,15 @@ struct StatusPill: View {
                 .fixedSize()
         }
         .padding(.horizontal, Theme.Space.x14)
-        .frame(maxWidth: maxWidth)
+        // A toolbar sizes items by their ideal width: the pill asks for its full width, as drawn.
+        .frame(idealWidth: maxWidth, maxWidth: maxWidth)
         .frame(height: Theme.Size.chip)
         .overlay(alignment: .bottomLeading) {
             if let progress {
-                GeometryReader { proxy in
-                    Rectangle()
-                        .fill(indicator == .running ? Theme.Colors.drafting : Theme.Colors.tertiary)
-                        .frame(width: proxy.size.width * min(max(progress, 0), 1), height: Theme.Size.progressBar)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                }
+                Rectangle()
+                    .fill(indicator == .running ? Theme.Colors.drafting : Theme.Colors.tertiary)
+                    .frame(height: Theme.Size.progressBar)
+                    .scaleEffect(x: min(max(progress, 0), 1), anchor: .leading)
             }
         }
         .surface(Theme.Colors.statusPillFill, .outlineFaint, in: Capsule())

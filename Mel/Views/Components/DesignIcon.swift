@@ -3,7 +3,7 @@ import SwiftUI
 /// Line icons drawn in design/v2 that have no matching SF Symbol, stroked from the design's own SVG path data.
 struct DesignIcon: View {
     nonisolated enum Glyph {
-        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector
+        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector, stop, lock, bell
 
         /// SVG `d` attribute, as written in the `.dc.html` (circles written as two arcs).
         var path: String {
@@ -12,6 +12,9 @@ struct DesignIcon: View {
             case .chevronDown: "M4 6l4 4 4-4"
             case .chevronRight: "M6 3l5 5-5 5"
             case .arrowRight: "M3 8h10M9 4l4 4-4 4"
+            case .stop: "M5.5 4H10.5A1.5 1.5 0 0 1 12 5.5V10.5A1.5 1.5 0 0 1 10.5 12H5.5A1.5 1.5 0 0 1 4 10.5V5.5A1.5 1.5 0 0 1 5.5 4Z"
+            case .lock: "M5 7H11A1.5 1.5 0 0 1 12.5 8.5V12.5A1.5 1.5 0 0 1 11 14H5A1.5 1.5 0 0 1 3.5 12.5V8.5A1.5 1.5 0 0 1 5 7ZM5.5 7V5a2.5 2.5 0 0 1 5 0v2"
+            case .bell: "M4 11V7a4 4 0 0 1 8 0v4l1.25 1.5H2.75zM6.5 14h3"
             case .draftNow: "M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"
             case .inspector: "M3.75 2.75H12.25A2 2 0 0 1 14.25 4.75V11.25A2 2 0 0 1 12.25 13.25H3.75A2 2 0 0 1 1.75 11.25V4.75A2 2 0 0 1 3.75 2.75ZM10 2.75V13.25"
             case .plus: "M8 3v10M3 8h10"
@@ -36,11 +39,11 @@ struct DesignIcon: View {
             case .house, .folder, .doc, .gear, .inspector: 1.4
             case .chevronDown, .check: 2
             case .chevronRight, .arrowRight: 2.2
-            case .plus, .terminal, .popUp: 1.6
+            case .plus, .terminal, .popUp, .stop, .lock: 1.6
             case .alert: 1.7
             case .folderPlus: 1
             case .close: 2.6
-            case .paperclip, .draftNow: 1.5
+            case .paperclip, .draftNow, .bell: 1.5
             }
         }
 

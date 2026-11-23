@@ -109,7 +109,7 @@ enum PreviewData {
         let coverage = [
             ("Goal and success metric", CoverageState.covered), ("Users and roles", .covered), ("Platforms", .covered), ("Payments", .asking),
             ("Scope and out of scope", .notYet), ("Constraints and existing code", .notYet), ("Privacy, speed, offline", .notYet),
-            ("Integrations", .notYet), ("Data the app keeps", .notYet), ("Edge cases", .notYet),
+            ("Integrations", .notYet), ("Data the app keeps", .later), ("Edge cases", .later),
         ].map { CoverageItem(label: $0, state: $1) }
         return Spec(name: "Yoga Studio Booking", idea: "An app for my yoga studio where members book classes, buy class packs and get reminders. Teachers should see who is coming to each class.",
                     folder: folder, stage: .discovery, docs: locked, questions: questions, coverage: coverage)
@@ -214,8 +214,8 @@ enum PreviewData {
     static let projectSetup = ProjectSetup(project: project, isNewProject: false, isRunning: false, activity: readLines, context: context, lastError: nil, branch: "main", fileCount: 214)
     static let projectSetupRunning = ProjectSetup(project: project, isNewProject: false, isRunning: true, activity: Array(readLines.prefix(2)), context: nil, lastError: nil, branch: "main", fileCount: 214)
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup, branches: branches)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup, branches: branches, sessions: sessions)
         state.missingFolders = missing
         return state
     }
@@ -235,5 +235,36 @@ enum PreviewData {
         shouldHappen: "One booking, one credit. The second tap does nothing.",
         location: "Class detail › Book button",
         files: [URL(filePath: "/tmp/crash-1123.log"), URL(filePath: "/tmp/double-tap.mov")]
+    )
+
+    // B3 Drafting as drawn: REQUIREMENTS.md at step 3, story 3 being written.
+    static let liveRequirements = """
+        # Requirements
+
+        ## 1. Book a class
+
+        As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
+
+        - 1.1 WHEN a member taps Book on a class with free spots, THE system SHALL reserve one spot.
+        - 1.2 IF the class is full, THEN THE system SHALL offer the waiting list.
+        - 1.3 WHEN a booking is made, THE system SHALL send a confirmation.
+
+        ## 2. Buy a class pack
+
+        As a member, I want to buy a pack of classes in the app, so that I can book without paying each time.
+
+        - 2.1 WHEN a member buys a pack, THE system SHALL add its credits to the account.
+        - 2.2 IF the payment fails, THEN THE system SHALL keep the credits unchanged.
+
+        ## 3. Cancel a booking
+
+        As a member, I want to cancel a booking I can’t make, so that
+        """
+    static let draftingActivity = [
+        "read specs/PRODUCT.md (approved)", "read 5 answers, 1 left open", "wrote story 1 “Book a class” (3 criteria)",
+        "wrote story 2 “Buy a class pack” (2 criteria)", "writing story 3 “Cancel a booking”",
+    ].enumerated().map { ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_000 + Double($0.offset * 20)), text: $0.element) }
+    static let draftingSession = SpecSession.preview(
+        drafting, documents: [.product: "# Product"], liveText: liveRequirements, activity: draftingActivity, isRunning: true, draftStep: 3
     )
 }

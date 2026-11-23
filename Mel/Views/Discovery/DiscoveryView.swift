@@ -148,11 +148,11 @@ struct DiscoveryView: View {
     @ViewBuilder
     private var status: some View {
         if session.currentQuestion != nil {
-            StatusPill(indicator: .needsYou, text: compact ? "Needs you" : "Needs you · Claude Code is waiting for an answer", count: progress ?? "", maxWidth: Theme.Size.statusPillIntake)
+            StatusPill(indicator: .needsYou, text: compact ? "Needs you" : "Needs you · Claude Code is waiting for an answer", count: progress ?? "", maxWidth: compact ? Theme.Size.statusPillCompact : Theme.Size.statusPillIntake)
         } else if session.lastError != nil {
-            StatusPill(indicator: .idle, text: "Stopped", count: "", maxWidth: Theme.Size.statusPillIntake)
+            StatusPill(indicator: .idle, text: "Stopped", count: "", maxWidth: compact ? Theme.Size.statusPillCompact : Theme.Size.statusPillIntake)
         } else if session.isRunning {
-            StatusPill(indicator: .running, text: compact ? "Running" : "Running · Claude Code is preparing the questions", count: "", maxWidth: Theme.Size.statusPillIntake)
+            StatusPill(indicator: .running, text: compact ? "Running" : "Running · Claude Code is preparing the questions", count: "", maxWidth: compact ? Theme.Size.statusPillCompact : Theme.Size.statusPillIntake)
         }
     }
 }
@@ -539,13 +539,22 @@ private struct DiscoveryInspector: View {
                 .foregroundStyle(Theme.Colors.label)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text(item.state == .covered ? "Covered" : item.state == .asking ? "Asking" : "Not yet")
+            Text(Self.word(item.state))
                 .textStyle(Theme.Text.caption)
                 .foregroundStyle(Theme.Colors.secondaryLabel)
         }
         .padding(.horizontal, Theme.Space.x12)
         .frame(height: Theme.Size.coverageRow)
         .accessibilityElement(children: .combine)
+    }
+
+    static func word(_ state: CoverageState) -> String {
+        switch state {
+        case .covered: "Covered"
+        case .asking: "Asking"
+        case .notYet: "Not yet"
+        case .later: "Round 2"
+        }
     }
 
     private func infoRow(_ label: String, value: String, mono: Bool) -> some View {
