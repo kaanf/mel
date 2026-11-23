@@ -6,30 +6,49 @@ Only the orchestrator changes this file. Need a change? Write a request in your 
 
 ## Project conventions
 
-- Xcode project `Mel.xcodeproj`, scheme `Mel`, app target `Mel`, test target `MelTests` (Swift Testing).
-- Both targets use **synchronized folders** (`PBXFileSystemSynchronizedRootGroup`): every file under `Mel/` and `MelTests/` is included automatically. Adding a file never changes `project.pbxproj`.
-- macOS 26.0, Swift 6, Xcode's new-app defaults: **default actor isolation `MainActor`**, approachable concurrency. Work that must leave the main actor goes into an `actor` or a `nonisolated`/`@concurrent` function.
-- Because the default is `MainActor`, every type below except `AppState`, `SpecSession` and views is declared **`nonisolated`** (and `Sendable` where it crosses actors): the `Spec/` value types, `MarkdownParser`, `AgentTypes`, the `AgentRunning`/`AgentAdapter` protocols, `ClaudeCode`, `ShellPath`, `Git`. New off-main types follow the same rule.
-- Don't add `.gitkeep` files. Each existing one needs a pbxproj exception (otherwise "Multiple commands produce .gitkeep"), and a new folder shows up with its first real file anyway.
+- Xcode project `Mel.xcodeproj`, shared scheme `Mel`. The app target `Mel` holds only `App/`, `Views/`, `Session/`; its test target `MelTests` holds `Session/` tests.
+- Everything below the UI lives in one local Swift package, **`MelKit/`** (`swift-tools-version: 6.2`, `.macOS(.v26)`), referenced by the project. Its library targets are the modules; its test targets are Swift Testing. No third-party dependencies.
+- The `Mel` scheme runs **all** tests (app + every MelKit test target), so the one `xcodebuild … test` command in CLAUDE.md stays the only command.
+- App targets use synchronized folders (`PBXFileSystemSynchronizedRootGroup`): adding a file never changes `project.pbxproj`. Don't add `.gitkeep` files (each needs a pbxproj exception, otherwise "Multiple commands produce .gitkeep"); a folder shows up with its first real file.
 - Bundle identifier `com.kaanf.mel`. Hardened Runtime on. **No App Sandbox.**
-- No third-party dependencies.
+
+### Isolation
+
+- App target: Xcode defaults, **default actor isolation `MainActor`**, approachable concurrency. `AppState`, `SpecSession` and views are main-actor.
+- MelKit targets: the package default (**nonisolated**), Swift 6 language mode. Types are plain values, actors or `Sendable`; no `nonisolated` markers needed. Nothing in MelKit is `@MainActor`.
+
+### Layers and dependencies
+
+Dependencies point one way, toward `MelSpec`. The compiler enforces it through the package's target dependencies; the import rule for app folders is checked at merge.
 
 ```
-Mel/
-├── App/          ui        MelApp.swift (scenes), commands
-├── Views/        ui        one folder per screen, Components/, Preview/ (preview data)
-├── Session/      core      AppState, SpecSession
-├── Spec/         core      Models, Reducer, MarkdownParser, Prompts/ (*.md resources)
-├── Storage/      core      SpecStore, Library, FileWatcher
-├── Agent/        platform  AgentTypes, ClaudeCode, AgentRunner, ShellPath
-└── System/       platform  SystemActions, Git, Notifier
-MelTests/
-├── Spec/ Storage/ Session/      core
-├── Agent/ System/               platform
-└── Fixtures/                    platform   (*.jsonl, fake-claude.sh)
+MelKit/                        (local package)
+├── Sources/
+│   ├── MelSpec/      core      domain: Models, Reducer, MarkdownParser, Prompts/ (*.md resources)  → Foundation only
+│   ├── MelStorage/   core      SpecStore, Library, FileWatcher                                     → MelSpec
+│   ├── MelAgent/     platform  AgentTypes, ClaudeCode, AgentRunner, ShellPath                      → MelSpec
+│   └── MelSystem/    platform  SystemActions, Git, Notifier                                        → (none)
+└── Tests/
+    ├── MelSpecTests/ MelStorageTests/        core
+    └── MelAgentTests/ (+ Fixtures/) MelSystemTests/   platform
+Mel/                           (app target)
+├── App/        ui     MelApp (composition root)  → may import everything
+├── Session/    core   AppState, SpecSession       → MelSpec, MelStorage, MelAgent, MelSystem
+└── Views/      ui     screens, Components/, Preview/  → SwiftUI, MelSpec only
+MelTests/Session/      core
 ```
 
-## Spec/Models.swift (core)
+Rules:
+
+1. **MelKit modules never import SwiftUI or AppKit**, except `MelSystem`, which may use AppKit for `NSWorkspace`/`NSPasteboard`. `MelSpec` does no I/O beyond reading its own bundled prompt resources.
+2. **Modules don't know each other sideways.** `MelStorage` and `MelAgent` only see `MelSpec`; `MelSystem` sees nothing.
+3. **Views import only `SwiftUI` and `MelSpec`.** Anything a view needs to do (copy, show in Finder, open Terminal, sign in) is a method on `AppState` or `SpecSession`. Views never touch `MelAgent`, `MelStorage` or `MelSystem`.
+4. **Session depends on abstractions for the runner.** `SpecSession` gets an `any AgentRunning`; it never names `AgentRunner` or `ClaudeCode`.
+5. **`MelApp` is the composition root**: it builds `ClaudeCode`, the `AgentRunner` factory and `AppState` (see `AppState.init`). Nothing else constructs `ClaudeCode` or `AgentRunner`.
+6. Only what another module uses is `public`. Public structs get an explicit `public init`.
+7. The app target turns on the `MemberImportVisibility` upcoming feature, so a file only sees members of modules it imports. Together with per-file imports, the only thing left to review for rule 3 is the import lines in `Mel/Views/`.
+
+## MelSpec/Models.swift (core)
 
 ```swift
 import Foundation
@@ -102,9 +121,18 @@ struct ActivityLine: Hashable, Identifiable {
     var at: Date
     var text: String                  // "read specs/PRODUCT.md"
 }
+
+/// Whether Claude Code can be used. Lives here (not in MelAgent) so views can show it.
+enum AgentStatus: Hashable {
+    case checking
+    case ready(executable: URL, version: String)
+    case notSignedIn(executable: URL)
+    case missing
+    case broken(String)
+}
 ```
 
-## Spec/MarkdownParser.swift (core)
+## MelSpec/MarkdownParser.swift (core)
 
 ```swift
 enum Block: Hashable {
@@ -132,18 +160,10 @@ enum MarkdownParser {
 }
 ```
 
-## Agent/AgentTypes.swift (platform)
+## MelAgent/AgentTypes.swift (platform)
 
 ```swift
 import Foundation
-
-enum AgentStatus: Hashable {
-    case checking
-    case ready(executable: URL, version: String)
-    case notSignedIn(executable: URL)
-    case missing
-    case broken(String)
-}
 
 struct AgentRequest: Sendable {
     var prompt: String                // sent on stdin
@@ -176,9 +196,9 @@ protocol AgentAdapter: Sendable {
 }
 ```
 
-`Agent/ClaudeCode.swift`: `struct ClaudeCode: AgentAdapter`. `Agent/AgentRunner.swift`: `actor AgentRunner: AgentRunning { init(adapter: any AgentAdapter, executable: URL, timeout: Duration = .seconds(120)) }`. `Agent/ShellPath.swift`: `enum ShellPath { static func loginPATH() async -> String; static func find(_ name: String, extraPaths: [String]) async -> URL? }`.
+`MelAgent/ClaudeCode.swift`: `struct ClaudeCode: AgentAdapter`. `MelAgent/AgentRunner.swift`: `actor AgentRunner: AgentRunning { init(adapter: any AgentAdapter, executable: URL, timeout: Duration = .seconds(120)) }`. `MelAgent/ShellPath.swift`: `enum ShellPath { static func loginPATH() async -> String; static func find(_ name: String, extraPaths: [String]) async -> URL? }`.
 
-## System/ (platform)
+## MelSystem/ (platform)
 
 ```swift
 enum SystemActions {
@@ -212,10 +232,18 @@ import Observation
     var selection: Spec.ID?
     var runningSpecID: Spec.ID?               // one agent run at a time across the app
 
+    /// Composition root passes `ClaudeCode()` and `{ AgentRunner(adapter: ClaudeCode(), executable: $0) }`;
+    /// tests and previews pass fakes.
+    init(adapter: any AgentAdapter, makeRunner: @escaping @Sendable (URL) -> any AgentRunning)
+
     func scanForAgent() async
     func session(for id: Spec.ID) -> SpecSession
     func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession
     func removeFromLibrary(_ id: Spec.ID)
+
+    // System actions for views (views never import MelSystem)
+    func signIn()                             // Terminal with the adapter's login command
+    func copy(_ text: String)
 
     static func preview(_ specs: [Spec], agent: AgentStatus) -> AppState
 }
@@ -249,6 +277,12 @@ import Observation
     func confirmAssumption(index: Int, in kind: DocKind)
     func changeAssumption(index: Int, to text: String, in kind: DocKind)
     func approve(_ kind: DocKind) async
+
+    // Handoff / system actions for views
+    var startCommand: String { get }                // claude "Read specs/ and implement TASKS.md, task 1"
+    func showInFinder()
+    func openStartCommandInTerminal()
+    func finish(commitToGit: Bool) throws
 
     static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false) -> SpecSession
 }

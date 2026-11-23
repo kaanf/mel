@@ -6,12 +6,12 @@ Read first: `CLAUDE.md`, `agents/README.md`, `agents/CONTRACTS.md`, `docs/DESIGN
 
 ## You own
 
-- `Mel.xcodeproj/` (only you change project settings)
-- `Mel/Spec/`, `Mel/Storage/`, `Mel/Session/`
-- `MelTests/Spec/`, `MelTests/Storage/`, `MelTests/Session/`
+- `Mel.xcodeproj/` and `MelKit/Package.swift` (only you change project or package settings)
+- `MelKit/Sources/MelSpec/`, `MelKit/Sources/MelStorage/`, `Mel/Session/`
+- `MelKit/Tests/MelSpecTests/`, `MelKit/Tests/MelStorageTests/`, `MelTests/Session/`
 - `agents/status/core.md`
 
-In Wave 0 only, you also create the contract stubs in `Mel/Agent/`, `Mel/System/` and a placeholder `Mel/App/MelApp.swift`. After G0 those belong to platform and ui; don't touch them again.
+In Wave 0 only, you also create the contract stubs in `MelKit/Sources/MelAgent/`, `MelKit/Sources/MelSystem/` and a placeholder `Mel/App/MelApp.swift`. After G0 those belong to platform and ui; don't touch them again.
 
 ## Wave 0 · Foundation
 
@@ -25,14 +25,24 @@ In Wave 0 only, you also create the contract stubs in `Mel/Agent/`, `Mel/System/
 
 Done when: `xcodebuild -project Mel.xcodeproj -scheme Mel -destination 'platform=macOS' -derivedDataPath .build/DerivedData test -quiet` passes. Commit, push, update status, stop. You are merged first; the others wait for you.
 
+## Wave 0b · Modules (0.1b)
+
+The user wants the layers enforced by the compiler. Do this on top of `origin/main` (core + platform merged):
+
+1. Create `MelKit/Package.swift` (`swift-tools-version: 6.2`, `.macOS(.v26)`, Swift 6 language mode, package default isolation, no dependencies) with library targets `MelSpec`, `MelStorage` (→ MelSpec), `MelAgent` (→ MelSpec), `MelSystem` (no deps) and test targets `MelSpecTests`, `MelStorageTests`, `MelAgentTests` (resources: `Fixtures/`), `MelSystemTests`.
+2. `git mv` the files: `Mel/Spec` → `MelKit/Sources/MelSpec`, `Mel/Storage` → `MelStorage`, `Mel/Agent` → `MelAgent` (keep platform's ShellPath), `Mel/System` → `MelSystem`, tests likewise. Prompts become a `MelSpec` resource (`Bundle.module`).
+3. Apply CONTRACTS.md › Layers and dependencies: `AgentStatus` moves into `MelSpec/Models.swift`; drop the `nonisolated` markers inside MelKit (package default); add `public` + explicit `public init` only where another module uses the type; add `AppState.init(adapter:makeRunner:)` and the new Session action stubs; `MelApp` becomes the composition root.
+4. Project: add `MelKit` as a local package, link the four libraries to `Mel`, turn on `MemberImportVisibility` for the app target, add every MelKit test target to the `Mel` scheme so the one `xcodebuild … test` command runs them all. Remove `.gitkeep` files and their pbxproj exceptions.
+5. Run `xcodebuild … test` (green, no warnings), push, update status, stop. ui rebases after your merge.
+
 ## Wave 1 · Parts
 
-- **2.1** `Spec/Models.swift` real implementations; `Spec/Reducer.swift`: the pipeline from DESIGN.md › Pipeline as a pure function, with unit tests for every transition (including: Approve blocked while assumptions remain, editing an approved file → review).
-- **2.2** `Spec/MarkdownParser.swift`: line-based parser for SPEC-FORMAT.md (headings, paragraphs, lists, criteria, tasks + `Covers:`, `[!ASSUMPTION]` callouts, fenced code) and `summary`. Tests with real-looking files (use `docs/*.md` in this repo as samples).
-- **2.3** `Storage/SpecStore.swift`: create `<parent>/<slug>/specs`, atomic writes, `.mel/state.json` (whole `Spec`, debounced), existing-file check.
-- **2.4** `Storage/FileWatcher.swift`: reload on external change; signal a conflict when the editor has unsaved text (UI shows Keep Mine / Use File).
-- **2.5** `Storage/Library.swift`: library as folder bookmarks in `UserDefaults`, missing-folder detection.
-- **4.1** `Spec/Prompts/*.md` (discovery, product, requirements, design, tasks, continue) + a builder with `{{placeholder}}` string replacement. Follow AGENT-INTEGRATION.md: no question limit, completeness rule, assumptions.
+- **2.1** `MelSpec/Models.swift` real implementations; `MelSpec/Reducer.swift`: the pipeline from DESIGN.md › Pipeline as a pure function, with unit tests for every transition (including: Approve blocked while assumptions remain, editing an approved file → review).
+- **2.2** `MelSpec/MarkdownParser.swift`: line-based parser for SPEC-FORMAT.md (headings, paragraphs, lists, criteria, tasks + `Covers:`, `[!ASSUMPTION]` callouts, fenced code) and `summary`. Tests with real-looking files (use `docs/*.md` in this repo as samples).
+- **2.3** `MelStorage/SpecStore.swift`: create `<parent>/<slug>/specs`, atomic writes, `.mel/state.json` (whole `Spec`, debounced), existing-file check.
+- **2.4** `MelStorage/FileWatcher.swift`: reload on external change; signal a conflict when the editor has unsaved text (UI shows Keep Mine / Use File).
+- **2.5** `MelStorage/Library.swift`: library as folder bookmarks in `UserDefaults`, missing-folder detection.
+- **4.1** `MelSpec/Prompts/*.md` (discovery, product, requirements, design, tasks, continue) + a builder with `{{placeholder}}` string replacement. Follow AGENT-INTEGRATION.md: no question limit, completeness rule, assumptions.
 
 Done when: all of the above have tests, everything is green, status updated.
 
@@ -50,10 +60,10 @@ Done when: a test drives idea → 4 approved files with a fake `AgentRunning`, i
 
 ## Wave 3 · Ship
 
-- **5.1** End-to-end tests with platform's `MelTests/Fixtures/fake-claude.sh` through the real `AgentRunner`.
+- **5.1** End-to-end tests with platform's `MelKit/Tests/MelAgentTests/Fixtures/fake-claude.sh` through the real `AgentRunner`.
 
 ## Don't
 
-- Don't edit `Mel/Agent/`, `Mel/System/`, `Mel/App/`, `Mel/Views/` after Wave 0.
+- Don't edit `MelKit/Sources/MelAgent/`, `MelKit/Sources/MelSystem/`, `Mel/App/`, `Mel/Views/` after Wave 0.
 - Don't add dependencies or extra targets.
-- Don't import SwiftUI in `Spec/` or `Storage/`; `Spec/` stays pure (no I/O).
+- Don't import SwiftUI in `MelSpec/` or `MelStorage/`; `MelSpec/` stays pure (no I/O).

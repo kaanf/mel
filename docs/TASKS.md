@@ -5,6 +5,7 @@ Ordered so that the riskiest part (driving the real CLI) is proven first, and ev
 ## M0 · Foundation
 
 - [ ] 0.1 Create Xcode project: one app target + one test target, macOS 26, Swift 6 strict concurrency, Hardened Runtime, no sandbox, folders as in DESIGN.md › Project layout.
+- [ ] 0.1b Move Spec, Storage, Agent, System into the local package `MelKit` (one module each, one Swift Testing target each); app target keeps App, Views, Session; enforce the dependency rules in CONTRACTS.md › Layers and dependencies.
   - Covers: —
 - [ ] 0.2 App shell: `NavigationSplitView` with sidebar, empty detail, inspector toggle, Settings scene with four tabs, Welcome window scene.
   - Covers: 9.4, 9.5

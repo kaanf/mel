@@ -8,6 +8,8 @@ Read first: `CLAUDE.md`, `agents/README.md`, `agents/CONTRACTS.md`, `docs/UI.md`
 
 - `Mel/App/` (from Wave 1; core leaves a placeholder in Wave 0)
 - `Mel/Views/` (all screens, `Components/`, `Preview/` preview data)
+
+Layer rule (CONTRACTS.md › Layers and dependencies): files in `Mel/Views/` import only `SwiftUI` and `MelSpec`. Every action a view triggers (copy, Show in Finder, Terminal, Sign In) is a method on `AppState`/`SpecSession`; never call `MelSystem`, `MelAgent` or `MelStorage` from a view. `MelApp` is the composition root.
 - Asset catalog (app icon, accent color)
 - `agents/status/ui.md`
 
@@ -49,6 +51,6 @@ Done when: every screen and state has a preview that renders, build green.
 
 ## Don't
 
-- Don't edit `Mel/Spec/`, `Mel/Storage/`, `Mel/Session/`, `Mel/Agent/`, `Mel/System/`, or project settings.
+- Don't edit `MelKit/Sources/MelSpec/`, `MelKit/Sources/MelStorage/`, `Mel/Session/`, `MelKit/Sources/MelAgent/`, `MelKit/Sources/MelSystem/`, or project settings.
 - No custom colors, fonts or shadows from the HTML canvas. No emoji.
 - No logic in views beyond presentation; ask core (via your status file) for anything missing on `SpecSession`.

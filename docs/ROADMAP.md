@@ -6,8 +6,8 @@ Mel is built by three Claude Code agents working in parallel git worktrees, coor
 
 | Agent | Owns | Worktree | Branch |
 |---|---|---|---|
-| **core** | Xcode project, `Mel/Spec/`, `Mel/Storage/`, `Mel/Session/` | `../mel-worktrees/core` | `agent/core` |
-| **platform** | `Mel/Agent/`, `Mel/System/`, fixtures, `scripts/`, `docs/research/` | `../mel-worktrees/platform` | `agent/platform` |
+| **core** | Xcode project, `MelKit/Package.swift`, `MelKit/Sources/MelSpec/`, `MelKit/Sources/MelStorage/`, `Mel/Session/` | `../mel-worktrees/core` | `agent/core` |
+| **platform** | `MelKit/Sources/MelAgent/`, `MelKit/Sources/MelSystem/`, fixtures, `scripts/`, `docs/research/` | `../mel-worktrees/platform` | `agent/platform` |
 | **ui** | `Mel/App/`, `Mel/Views/`, assets | `../mel-worktrees/ui` | `agent/ui` |
 | **orchestrator** | `docs/`, `agents/`, `CLAUDE.md`, `README.md`, merges to `main` | repo root | `main` |
 
@@ -19,7 +19,7 @@ Each wave ends at a gate. The orchestrator merges each finished branch into `mai
 Wave 0  Foundation        core: Xcode project + contract stubs
                           platform: CLI verification, PATH resolver
                           ui: shared components (no model dependency)
-   │ G0: main builds; contracts compile; empty test target passes
+   │ G0: main builds; contracts compile in their modules; test targets pass
    ▼
 Wave 1  Parts             core: models, reducer, parser, storage, prompts
                           platform: adapter, runner, system actions
@@ -48,6 +48,8 @@ Wave 3  Ship              core: end-to-end tests
 | ui | Shared components: status badge, stepper, grouped row, radio row, callout, key hint (type-checked with `swiftc`, no model types) | Components compile standalone |
 
 Merge order: core first (creates the project), then platform and ui rebase and merge.
+
+**0.1b Modules (core, after platform's merge, before ui's):** move everything below the UI into the local package `MelKit` (`MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`) per CONTRACTS.md › Layers and dependencies. Done when `main` builds and every test target runs from the `Mel` scheme. Then ui rebases and merges, and G0 is checked.
 
 ## Wave 1 · Parts
 

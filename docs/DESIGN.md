@@ -32,26 +32,27 @@ The app launches the user-installed `claude` CLI, which reads `~/.claude` and ne
 
 ### Project layout
 
-One app target, one test target. Folders, not modules. Split into a package only if build times or reuse demand it.
+Layers are modules: one app target for the UI and session objects, one local Swift package (`MelKit`) for everything below. The compiler enforces the dependency direction; no third-party code.
 
 ```
-Mel.xcodeproj            synchronized folders: adding files never edits the project
-├── Mel/
-│   ├── App/             MelApp, scenes, commands
-│   ├── Views/           one folder per screen, Components/, Preview/
-│   ├── Session/         AppState, SpecSession
-│   ├── Spec/            models, pipeline reducer, Markdown parser, Prompts/
-│   ├── Storage/         spec folder I/O, state.json, library, file watcher
-│   ├── Agent/           Claude Code adapter, AgentRunner, ShellPath
-│   └── System/          Terminal, Finder, pasteboard, Git, notifications
-├── MelTests/
-│   └── Fixtures/        recorded Claude Code NDJSON, fake-claude.sh
+Mel.xcodeproj
+├── Mel/                 app target (default isolation MainActor)
+│   ├── App/             MelApp: scenes, commands, composition root
+│   ├── Views/           one folder per screen, Components/, Preview/   → SwiftUI, MelSpec
+│   └── Session/         AppState, SpecSession                         → all MelKit modules
+├── MelTests/Session/
+├── MelKit/              local package (nonisolated by default)
+│   ├── Sources/MelSpec/     domain: models, pipeline reducer, Markdown parser, Prompts/
+│   ├── Sources/MelStorage/  spec folder I/O, state.json, library, file watcher   → MelSpec
+│   ├── Sources/MelAgent/    Claude Code adapter, AgentRunner, ShellPath           → MelSpec
+│   ├── Sources/MelSystem/   Terminal, Finder, pasteboard, Git, notifications
+│   └── Tests/               one Swift Testing target per module; MelAgentTests/Fixtures/
 └── scripts/release.sh
 ```
 
 Exact types and signatures: [agents/CONTRACTS.md](../agents/CONTRACTS.md).
 
-Rule: `Spec/` stays pure (no I/O, no SwiftUI) so the pipeline is unit-testable.
+Rule: `MelSpec` stays pure (no I/O, no SwiftUI) so the pipeline is unit-testable. Full dependency rules: CONTRACTS.md › Layers and dependencies.
 
 ### Runtime overview
 

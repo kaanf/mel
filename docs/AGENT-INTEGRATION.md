@@ -14,8 +14,8 @@ Run detection off the main actor; show "Checking" until it finishes. Re-run when
 ### Authentication check
 
 - Verified: when signed out, any `claude -p` run ends in ~50 ms at no cost with `result.is_error: true`, `terminal_reason: "api_error"`, `result: "Not logged in · Please run /login"`. Match on `is_error` + "Not logged in".
-- To verify: whether an `auth` status subcommand exists (cheaper than a probe when signed in). Otherwise probe with a minimal run and cache the result for the session.
-- Login command (opened in Terminal): `claude auth login` if it exists, otherwise `claude` then `/login`.
+- Verified (2.1.311): `claude auth status` prints JSON for free, exit 0 when signed in and 1 when signed out. Read `loggedIn`; `authMethod` must be `claude.ai` (subscription). Use it for detection instead of a probe run.
+- Login command (opened in Terminal): `claude auth login`.
 
 ## Running a stage
 
@@ -45,7 +45,10 @@ claude -p \
   [--no-session-persistence]        # for one-shot runs that will never be resumed
 ```
 
-To verify in M1 1.1: `--include-partial-messages` (text deltas for the live preview; without it text arrives as whole `assistant` messages) and `--append-system-prompt` (otherwise put the stage contract at the top of the stdin prompt).
+Also verified (2.1.311), and part of every stage run:
+
+- `--include-partial-messages`: emits `stream_event` records with `text_delta`. Whole `assistant` messages still arrive, so take text **only from the deltas**, and tool calls (activity steps) from the `assistant` blocks.
+- `--append-system-prompt <stage contract>`: works with the read-only vector above.
 
 Record mapping:
 
@@ -99,7 +102,7 @@ Used for drafting the four files. The agent outputs only the file's Markdown. Fo
 
 ## Prompts
 
-Prompts are Markdown files in the app bundle (`Mel/Spec/Prompts/`: `discovery.md`, `product.md`, `requirements.md`, `design.md`, `tasks.md`, `continue.md`) with `{{placeholders}}` filled by plain string replacement. Each embeds the relevant section of [SPEC-FORMAT.md](SPEC-FORMAT.md).
+Prompts are Markdown files in the app bundle (`MelKit/Sources/MelSpec/Prompts/`: `discovery.md`, `product.md`, `requirements.md`, `design.md`, `tasks.md`, `continue.md`) with `{{placeholders}}` filled by plain string replacement. Each embeds the relevant section of [SPEC-FORMAT.md](SPEC-FORMAT.md).
 
 Completeness rule, in every drafting prompt:
 

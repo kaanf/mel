@@ -33,7 +33,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 - Swift 6 with strict concurrency. SwiftUI first; AppKit only when SwiftUI can't do it.
 - `@Observable` for state, async/await for concurrency. No Combine, no architecture frameworks.
 - **No third-party dependencies.** Ask before adding one.
-- One app target, folders `App/ Views/ Session/ Spec/ Storage/ Agent/ System/` (see `agents/CONTRACTS.md`). `Spec/` stays pure (no I/O, no SwiftUI).
+- Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI + `MelSpec`. Rules: `agents/CONTRACTS.md` › Layers and dependencies. `MelSpec` stays pure (no I/O, no SwiftUI).
 - Keep the main actor free: process I/O, file writes and parsing run off it; throttle stream-driven UI updates.
 - Use system components, semantic colors and SF Symbols. Do not copy hex colors or shadows from the HTML canvas.
 - Every view has `#Preview`s for each state, built from fixtures.
@@ -44,7 +44,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 - Mel is the only writer of `PRODUCT.md`, `REQUIREMENTS.md`, `DESIGN.md`, `TASKS.md`. Claude Code runs without write or shell tools.
 - Never overwrite a user's edit; never change an approved file without a user action.
 - All file writes are atomic.
-- Agent CLI flags and output shapes are verified against fixtures in `MelTests/Fixtures/`; update fixtures when a CLI changes.
+- Agent CLI flags and output shapes are verified against fixtures in `MelKit/Tests/MelAgentTests/Fixtures/`; update fixtures when a CLI changes.
 
 ## Commits
 
