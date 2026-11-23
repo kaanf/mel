@@ -74,16 +74,16 @@ struct GitTests {
         try Git.initRepository(folder)
         try Git.run(["config", "user.name", "Mel Tests"], in: folder)
         try Git.run(["config", "user.email", "tests@example.com"], in: folder)
-        let state = folder.appendingPathComponent("specs/.mel")
+        let state = folder.appendingPathComponent("specs/timer/.mel")
         try FileManager.default.createDirectory(at: state, withIntermediateDirectories: true)
         try "{}".write(to: state.appendingPathComponent("state.json"), atomically: true, encoding: .utf8)
-        try "# Tasks\n".write(to: folder.appendingPathComponent("specs/TASKS.md"), atomically: true, encoding: .utf8)
+        try "# Tasks\n".write(to: folder.appendingPathComponent("specs/timer/TASKS.md"), atomically: true, encoding: .utf8)
 
-        try Git.commit(paths: Git.specPaths, message: "Add spec", in: folder)
-        try Git.commit(paths: Git.specPaths, message: "Again", in: folder)
+        try Git.commit(paths: Git.specPaths(slug: "timer", project: folder), message: "Add spec", in: folder)
+        try Git.commit(paths: Git.specPaths(slug: "timer", project: folder), message: "Again", in: folder)
 
         #expect(try Git.run(["log", "--format=%s"], in: folder) == "Add spec\n")
-        #expect(try Git.run(["ls-files"], in: folder) == "specs/TASKS.md\n")
+        #expect(try Git.run(["ls-files"], in: folder) == "specs/timer/TASKS.md\n")
     }
 
     func write(_ text: String, _ path: String) throws {

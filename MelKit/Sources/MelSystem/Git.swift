@@ -30,10 +30,6 @@ public enum Git {
         try run(["init", "--quiet"], in: url)
     }
 
-    /// What the handoff commits (REQ 8.3): the spec files, never Mel's state in `specs/.mel/`.
-    /// v1, until core wires `specPaths(slug:project:)`.
-    public static let specPaths = ["specs", ":(exclude)specs/.mel"]
-
     /// What the v2 handoff commits: `specs/<slug>/` without its `.mel/` state, plus `.mel/project/`
     /// when it exists (git fails the whole add on a pathspec that matches nothing).
     public static func specPaths(slug: String, project: URL) -> [String] {

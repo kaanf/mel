@@ -21,7 +21,7 @@ args = ["claude", "-p", "--output-format", "stream-json", "--verbose", "--input-
         "--permission-mode", "manual", "--permission-prompts", "none", "--disable-slash-commands", "--no-chrome",
         "--no-session-persistence"]
 env = {"HOME": os.environ["HOME"], "USER": os.environ["USER"], "PATH": os.environ["PATH"], "TERM": "dumb", "NO_COLOR": "1"}
-run = subprocess.run(args, input=prompt, capture_output=True, text=True, cwd=cwd, env=env)
+run = subprocess.run(args, input=prompt, capture_output=True, text=True, cwd=cwd, env=env, timeout=300)
 
 old = os.path.dirname(os.path.realpath(cwd))
 records = [json.loads(line) for line in run.stdout.splitlines()]
