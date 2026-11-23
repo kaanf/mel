@@ -48,6 +48,8 @@ Updated: 2026-11-23
 
 - `PromptTests.noToolsPromptsForbidReading`: analyze.md and impact.md must keep "Do not read any files." (platform finding: no-tools runs try to read otherwise).
 
+- ui request (B2): `CoverageState.later` (topic left to the draft, asked in round 2). intake.md: `notYet` = one of the intake questions asks it, else `later`; sample includes one. `decideText` lists `later` topics with the other uncovered ones. Compile fix in ui's DiscoveryView (`case .notYet, .later`). Full suite green 2 runs (190 tests).
+
 ## In progress
 - (nothing)
 
@@ -71,7 +73,9 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none) Follow-up merged; CONTRACTS updated. One small test commit on agent/core (prompt guard), merge whenever.
+**Ready to merge**: `CoverageState.later` (ui's B2 request) + the prompt-guard test. Rebased on 90c28df, full suite green.
+- CONTRACTS: `enum CoverageState { case covered, asking, notYet, later }`.
+- Touched ui's `Mel/Views/Discovery/DiscoveryView.swift` (one line, exhaustive switch). Platform may want to re-record intake against the updated intake.md (old fixtures still decode).
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.

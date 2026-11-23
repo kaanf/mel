@@ -66,7 +66,7 @@ struct PromptTests {
         let intake = try Intake.decode(line, size: .product)
         #expect(intake.questions.first?.shapes == .requirements)
         #expect(intake.questions.first?.options.count == 2)
-        #expect(intake.coverage.map(\.state) == [.covered, .notYet])
+        #expect(intake.coverage.map(\.state) == [.covered, .notYet, .later])
     }
 
     @Test func analyzeImpactAndProjectSamplesDecode() throws {

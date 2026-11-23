@@ -205,7 +205,8 @@ public struct CoverageItem: Codable, Hashable, Sendable {
     }
 }
 
-public enum CoverageState: String, Codable, Hashable, Sendable { case covered, asking, notYet }
+/// `later`: the intake leaves the topic to the draft, which asks it as a round-2 question.
+public enum CoverageState: String, Codable, Hashable, Sendable { case covered, asking, notYet, later }
 
 public enum StopReason: Codable, Hashable, Sendable {
     case user
