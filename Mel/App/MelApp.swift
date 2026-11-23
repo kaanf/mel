@@ -27,8 +27,17 @@ struct MelApp: App {
         .windowStyle(.hiddenTitleBar)
 
         Settings {
-            SettingsView()
+            // Placeholder until Sparkle is in the project; App/Updater.swift replaces it.
+            SettingsView(updates: UpdateSettings(version: Self.version, canCheck: false, automaticallyChecks: .constant(true), check: {}))
                 .environment(state)
         }
+    }
+
+    /// "0.2 (build 123)" from Info.plist.
+    private static var version: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        return "\(short) (build \(build))"
     }
 }

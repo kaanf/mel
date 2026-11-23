@@ -149,6 +149,10 @@ enum PreviewData {
         )
     }
 
+    static func updates(canCheck: Bool = true, automaticallyChecks: Bool = true) -> UpdateSettings {
+        UpdateSettings(version: "0.2 (build 123)", canCheck: canCheck, automaticallyChecks: .constant(automaticallyChecks), check: {})
+    }
+
     static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, missing: [URL] = []) -> AppState {
         let state = AppState.preview(specs, agent: agent)
         state.missingFolders = missing
