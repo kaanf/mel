@@ -1,6 +1,6 @@
 # core status
 
-Wave: 6 core row done, **ready to merge**
+Wave: 7 in progress (SpecSession/AppState v2 wiring)
 Updated: 2026-11-23
 
 ## Done
@@ -41,7 +41,13 @@ Updated: 2026-11-23
 - v0.2.1: `MARKETING_VERSION` 0.2.1 on all targets. Full suite green 2 runs.
 
 ## In progress
-- (nothing) Wave 6 core row is on agent/core, rebased on main, full suite green, no warnings.
+- W7: v2 bodies of SpecSession/AppState against `AgentRunning`; e2e tests (fake script) for Quick fix, Feature, Product.
+- Planned contract changes (preview factories unchanged):
+  - `Spec.instructions: [DocKind: String]`: the pending revise instruction per file (answer, analyze fix, refine), persisted so a queued revise survives a relaunch; cleared when that file's revise finishes.
+  - `SpecSession.finish(commitToGit:)` becomes `async throws` (git runs off the main actor). `isGitRepository` becomes a stored property, refreshed off the main actor; views read it the same way.
+  - `SpecSession.startCommand`: `claude "Read specs/<slug>/prompts/task-01.md and do it"` (Quick fix: `… specs/<slug>/SPEC.md and fix it`).
+  - `AppState.createSpec(project: nil)` (A4x, Product only) creates the project folder under `~/Developer` when it exists, else the home folder (no parent picker on A4x; see Questions).
+  - Decisions recorded automatically: intake and round-2 answers ("Intake Q2", "Review"), confirmed/changed assumptions ("Confirmed in review" / "Changed in review"), C1 "Why did this change?" (affects = criteria whose text changed vs the snapshot; replaces the latest decision about one of them).
 
 ## Next
 - Wave 7: wire SpecSession/AppState v2 end to end against AgentRunning (all `fatalError("stub")` bodies in Mel/Session), with e2e tests for Quick fix, Feature and Product (round 2, analyze fix, refine, stop + resume). Drop then: `Prompt.discovery`/discovery.md, `DiscoveryTurn`, the plan-line strip in `DraftText.file(fromReply:)`, `SpecStore.specsFolder(name:parent:)`, v1 `createSpec(name:idea:parentFolder:)`. Use `Git.specPaths(slug:project:)` and `Git.repositories(in:)` (platform). Never touch com.kaanf.mel defaults or /Applications/Mel.app.
@@ -93,4 +99,4 @@ extension SpecStore { nonisolated var decisionsURL: URL }
 ```
 
 ## Questions for the user
-- (none)
+- A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
