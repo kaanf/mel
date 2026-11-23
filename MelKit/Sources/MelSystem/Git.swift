@@ -31,7 +31,26 @@ public enum Git {
     }
 
     /// What the handoff commits (REQ 8.3): the spec files, never Mel's state in `specs/.mel/`.
+    /// v1, until core wires `specPaths(slug:project:)`.
     public static let specPaths = ["specs", ":(exclude)specs/.mel"]
+
+    /// What the v2 handoff commits: `specs/<slug>/` without its `.mel/` state, plus `.mel/project/`
+    /// when it exists (git fails the whole add on a pathspec that matches nothing).
+    public static func specPaths(slug: String, project: URL) -> [String] {
+        let paths = ["specs/\(slug)", ":(exclude)specs/\(slug)/.mel"]
+        let context = project.appending(path: ".mel/project")
+        return FileManager.default.fileExists(atPath: context.path) ? paths + [".mel/project"] : paths
+    }
+
+    /// A2: folders one level under `folder` that contain `.git` (a directory, or a file for worktrees), by name.
+    public static func repositories(in folder: URL) -> [URL] {
+        let children = (try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: [.isDirectoryKey], options: .skipsHiddenFiles)) ?? []
+        return children
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+            .filter { FileManager.default.fileExists(atPath: $0.appending(path: ".git").path) }
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+    }
 
     /// Commits exactly `paths` (relative to `directory`, pathspecs allowed), leaving anything else the user
     /// staged alone. No-op when they have no changes, so finishing a spec twice doesn't fail.

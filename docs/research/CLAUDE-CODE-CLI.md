@@ -106,6 +106,12 @@ Real recordings, safe to commit (no secrets; `cwd` paths point at disposable pro
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-partial-messages.jsonl` | Read-only run with `--include-partial-messages` and `--append-system-prompt`, text only (15 records) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-json.jsonl` | Read-only Discovery-style run with partial messages: `Read` tool call, then a JSON-only answer |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-open.jsonl` | First Discovery turn with the real `discovery.md` prompt and SpecSession's exact arguments (no answers yet): `DiscoveryTurn` JSON with an open Product question (`options: []`) and coverage items carrying `phase` (58 records, ~$0.03) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-project-context.jsonl` | v2 A3: reads a small repo, returns the four `.mel/project/` files as JSON |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-intake.jsonl` | v2 B2: one-shot intake, reads an attachment, returns coverage + 3 questions |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-draft-steps.jsonl` | v2 B3: REQUIREMENTS.md draft with `<!-- mel:step 1…7 -->` markers (split across deltas) and a `<!-- mel:questions … -->` trailer |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-analyze.jsonl` | v2 B6: `AnalyzeResult` JSON for a Feature spec, all four issue kinds |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-impact.jsonl` | v2 C1: `ImpactResult` JSON for an edited REQUIREMENTS.md |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-attachments.jsonl` | v2 B1: Read opens a `.log` and a `.png` in `specs/<slug>/.mel/attachments/` under the read-only flags |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-in.json` | `claude auth status` signed in (email/org replaced with placeholders) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-out.json` | `claude auth status` signed out (no `USER` in the environment) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-unknown-resume.jsonl` | `--resume` with an unknown session ID (1 record) |

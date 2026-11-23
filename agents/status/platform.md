@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 5 merged (main 0a47fe9); standing by while the orchestrator cuts v0.2
+Wave: 6, **ready to merge** (all five platform tasks done, full `xcodebuild … test` green)
 Updated: 2026-11-23
 
 ## Done (Wave 3)
@@ -36,6 +36,14 @@ Updated: 2026-11-23
 ## In progress
 - (nothing)
 
+## Done (Wave 6)
+- 1 Fixtures (real `claude` 2.1.311 runs, app's exact flags and env allowlist, paths rewritten to `/tmp/mel-probe`, no secrets): `project-context`, `intake`, `draft-steps`, `analyze`, `impact`, `attachments` (`.jsonl` in MelAgentTests/Fixtures). Recorded with **provisional prompts** in `docs/research/v2-prompts/` because core's v2 prompts don't exist yet; `record.py` there re-records. `V2FixtureTests` checks stream + JSON keys only (core's decoders are stubs).
+- 2 Attachments: Read opens `.log` (numbered text) and `.png` (`image` tool result, described correctly) in `specs/<slug>/.mel/attachments/` under the current read-only flags. Inside the cwd, so no `--add-dir`.
+- 3 `Git.repositories(in:)`: folders one level deep with `.git` (dir or worktree file), hidden skipped, sorted by name; missing folder → []. Test `repositoriesOneLevelDeep`.
+- 4 `Git.specPaths(slug:project:)` = `specs/<slug>`, `:(exclude)specs/<slug>/.mel`, plus `.mel/project` **only when it exists** (git fails the whole `add` on a pathspec matching nothing, checked). v1 `Git.specPaths` kept until core wires it (SpecSession.swift:441). Test `v2SpecCommitTakesOneSpecAndProjectContext`.
+- 5 AGENT-INTEGRATION.md: stage protocols (JSON runs table with shapes, fixtures, timings), streaming markers/trailer, attachments, prompts. Fixture rows added to research/CLAUDE-CODE-CLI.md.
+
+
 ## Done (Wave 4)
 - `claude-2.1.311-discovery-open.jsonl`: first Discovery turn with the real discovery.md prompt and SpecSession's exact arguments/environment, recorded in a `mktemp -d` folder under /tmp; no secrets (`apiKeySource: none`, cwd under /tmp). Noted in CLAUDE-CODE-CLI.md › Fixtures.
 - `discoveryFirstTurnIsOpenProductQuestion`: session first, deltas == result, decodes with `DiscoveryTurn.decode`, next question open (`options` empty) and `shapes == .product`, coverage covers all four phases.
@@ -48,7 +56,7 @@ Updated: 2026-11-23
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- Wait for the orchestrator's next wave.
+- Wait for merge. Re-record the five fixtures with core's final prompts when they land (`docs/research/v2-prompts/record.py`).
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
@@ -63,6 +71,13 @@ Updated: 2026-11-23
 
 ## Requests to orchestrator
 - (none; Notifier gaps handed to core)
+
+## For core (prompt coordination)
+- Provisional prompts + shapes: `docs/research/v2-prompts/*.md`, AGENT-INTEGRATION.md › Stage protocols. Adopt or replace; tell me and I re-record.
+- Proposed wire shapes: intake `{"coverage": [CoverageItem], "questions": [question]}` (question = v1 Discovery `WireQuestion`); draft trailer `<!-- mel:questions\n[question, …]\n-->` (JSON array, same question shape, so `DiscoveryTurn`'s wire decoder can be reused).
+- Parser facts from `draft-steps`: markers and trailer are split across text deltas (strip from accumulated text, hold back a partial `<!--` in the live preview); two markers can be back to back (steps 2 and 3), so move the checklist to the highest N seen.
+- Analyze/Impact pass files inline + "do not read other files": 1 turn, no tool calls (analyze ~56 s, impact ~4 s).
+- `Git.specPaths` v1 → `Git.specPaths(slug:project:)` at SpecSession.swift:441 when wiring; then I'll drop the v1 constant. `AppState.findRepositories` → `Git.repositories(in: ~/Developer)` off the main actor.
 
 ## Questions for the user
 - (none)
