@@ -229,7 +229,6 @@ B1 (requested by ui):
 // AppState (core)
 func specFolder(name: String, size: SpecSize, project: Project?, parent: URL) -> URL   // B1 "Save to"; project nil → <parent>/<slug>/specs/<slug>/
 func createSpec(name:, idea:, size:, project: Project?, parent: URL? = nil /* used when project is nil; default ~/Developer */, buildsOn:, files:, logs:, fillGaps:) throws -> SpecSession
-// v1 specFolder(name:parent:) and createSpec(name:idea:parentFolder:) go away once ui uses the new ones
 ```
 
 W7 (core, merged 2026-11-23):
@@ -237,6 +236,11 @@ W7 (core, merged 2026-11-23):
 ```swift
 // SpecSession: git runs off the main actor, so views call it in a Task
 func finish(commitToGit: Bool) async throws
+// AppState: branch per project, read from .git/HEAD on load (no process), refreshed by A3, cleared on removeProject
+private(set) var branches: [Project.ID: String]
+static func preview(…, branches: [Project.ID: String] = [:]) -> AppState
+// Removed: v1 specFolder(name:parent:), createSpec(name:idea:parentFolder:), Git.specPaths (use specPaths(slug:project:))
+// No-tools prompts (analyze, impact) must say "Do not read any files"; otherwise the model writes tool calls as text and never stops
 ```
 
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
@@ -543,11 +547,9 @@ import Observation
 
     func scanForAgent() async
     func session(for id: Spec.ID) -> SpecSession
-    func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession
     func removeFromLibrary(_ id: Spec.ID)
     func locate(_ missing: URL, at folder: URL) throws   // "Locate…": replaces the entry, loads the spec
     func removeMissing(_ missing: URL)                    // "Remove from list" on a missing row
-    func specFolder(name: String, parent: URL) -> URL   // shown in New Spec; SpecStore.specsFolder
 
     // System actions for views (views never import MelSystem)
     func signIn()                             // Terminal with the adapter's login command
