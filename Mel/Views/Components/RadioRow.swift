@@ -8,6 +8,7 @@ struct RadioRow: View {
     var keyHint: String?
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         Button(action: action) {
@@ -43,11 +44,16 @@ struct RadioRow: View {
                 isSelected ? AnyShapeStyle(.tint.quinary) : AnyShapeStyle(.clear),
                 in: .rect(cornerRadius: 8)
             )
+            .overlay {
+                if isSelected && contrast == .increased {
+                    RoundedRectangle(cornerRadius: 8).strokeBorder(.tint)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityHint(suggested ? "Suggested" : "")
+        .accessibilityHint(keyHint.map { "Shortcut \($0)" } ?? "")
     }
 }
 
