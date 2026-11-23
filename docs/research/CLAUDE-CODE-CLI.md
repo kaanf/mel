@@ -28,7 +28,7 @@ claude -p \
 - `--append-system-prompt "<text>"` works with this vector: the appended instruction was followed (fixture `claude-2.1.311-partial-messages.jsonl`). Use it for the stage contract instead of prefixing the stdin prompt.
 - `--include-partial-messages` adds `stream_event` records (see below) and works with this vector.
 - For a resumable session (Discovery chat, continuing a stopped draft) drop `--no-session-persistence` and add `--resume <session_id>` on the next run.
-- An unknown `--resume` session ends the run immediately with an error result and no model call; run fresh in that case.
+- An unknown `--resume` session ends the run immediately (exit 1, no model call, **no `init` record**) with a single `result`: `"subtype":"error_during_execution"`, `"is_error":true`, **no `result` field**, `"errors":["No conversation found with session ID: <id>"]`; the same text goes to stderr. Run fresh in that case.
 
 With write tools (for reference, Mel doesn't use this): `--tools Read,Edit,Write,Glob,Grep --permission-mode acceptEdits`. Edits inside the working directory are applied; writes outside it, to `.git/config`, and shell commands are refused.
 
@@ -89,9 +89,9 @@ Verified 2026-11-23. No model call, returns in well under a second.
 
 ## Structured output
 
-The read-only run in `fixtures/claude-2.1.311-read-only-run.jsonl` asked for JSON in the prompt only (no schema flag). The model returned a bare JSON object as the `result` text (`{"wrote_notes": false, "files_read": [...], "questions": [...]}`), which parsed directly.
+The read-only run in `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-read-only-run.jsonl` asked for JSON in the prompt only (no schema flag). The model returned a bare JSON object as the `result` text (`{"wrote_notes": false, "files_read": [...], "questions": [...]}`), which parsed directly.
 
-Re-verified 2026-11-23 with a Discovery-style prompt, `--tools Read,Glob,Grep`, `--append-system-prompt "…Reply with JSON only."` and partial messages (`fixtures/claude-2.1.311-discovery-json.jsonl`): one `Read` of a file in `cwd`, then `result.result` was a bare `{"questions":[{"id","text","options"}]}` object with no prose or code fence, which parsed directly. 2 turns, ~$0.02. No schema flag needed for Discovery.
+Re-verified 2026-11-23 with a Discovery-style prompt, `--tools Read,Glob,Grep`, `--append-system-prompt "…Reply with JSON only."` and partial messages (`../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-json.jsonl`): one `Read` of a file in `cwd`, then `result.result` was a bare `{"questions":[{"id","text","options"}]}` object with no prose or code fence, which parsed directly. 2 turns, ~$0.02. No schema flag needed for Discovery.
 
 ## Fixtures
 
@@ -99,13 +99,14 @@ Real recordings, safe to commit (no secrets; `cwd` paths point at disposable pro
 
 | File | What |
 |---|---|
-| `fixtures/claude-2.1.311-signed-out.jsonl` | Signed-out run (3 records) |
-| `fixtures/claude-2.1.311-read-only-run.jsonl` | Read-only run with `Read,Glob,Grep`, returns JSON questions (11 records) |
-| `fixtures/claude-2.1.311-edit-run-short.jsonl` | Write-enabled run, short (6 records) |
-| `fixtures/claude-2.1.311-edit-run-long.jsonl` | Write-enabled run with tool use and thinking tokens (24 records) |
-| `fixtures/claude-2.1.311-partial-messages.jsonl` | Read-only run with `--include-partial-messages` and `--append-system-prompt`, text only (15 records) |
-| `fixtures/claude-2.1.311-discovery-json.jsonl` | Read-only Discovery-style run with partial messages: `Read` tool call, then a JSON-only answer |
-| `fixtures/claude-2.1.311-auth-status-signed-in.json` | `claude auth status` signed in (email/org replaced with placeholders) |
-| `fixtures/claude-2.1.311-auth-status-signed-out.json` | `claude auth status` signed out (no `USER` in the environment) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-signed-out.jsonl` | Signed-out run (3 records) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-read-only-run.jsonl` | Read-only run with `Read,Glob,Grep`, returns JSON questions (11 records) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-edit-run-short.jsonl` | Write-enabled run, short (6 records) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-edit-run-long.jsonl` | Write-enabled run with tool use and thinking tokens (24 records) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-partial-messages.jsonl` | Read-only run with `--include-partial-messages` and `--append-system-prompt`, text only (15 records) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-discovery-json.jsonl` | Read-only Discovery-style run with partial messages: `Read` tool call, then a JSON-only answer |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-in.json` | `claude auth status` signed in (email/org replaced with placeholders) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-out.json` | `claude auth status` signed out (no `USER` in the environment) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-unknown-resume.jsonl` | `--resume` with an unknown session ID (1 record) |
 
-Move them to `MelTests/Fixtures/` when the Xcode project exists.
+They live in `MelKit/Tests/MelAgentTests/Fixtures/` and drive the adapter and runner tests.
