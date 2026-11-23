@@ -24,17 +24,13 @@ Updated: 2026-11-23
 - 5.1 `MelTests/Session/EndToEndTests.swift`: the real `AgentRunner` + `ClaudeCode.parse` + disk, with `fake-claude.sh` replaying scripted fixtures in `MelKit/Tests/MelAgentTests/Fixtures/e2e/` (README there). It covers idea → 4 approved files with a real Stop (SIGINT to the `hang` process) and `--resume` with the right session id, one run at a time across two specs, and the recorded unknown-resume run → fresh redraft with no notification. About 0.1 s per test after the runner's one login-shell PATH read.
 - Found by 5.1: `AppState` built a new `AgentRunner` per run, so every Discovery turn and draft re-ran `$SHELL -l -i`. It now keeps one runner per executable.
 
+- Debug bundle id `com.kaanf.mel.debug` (5cdeebf), Release unchanged; test-host change skipped as decided. Verified with `xcodebuild build` only (built Info.plist shows the debug id); the test run waits for the end of the install test.
+
 ## In progress
 - (nothing)
 
 ## Next
-- Waiting: don't start the proposal below until the orchestrator says the install test is over.
-
-## Proposal: test host and Debug builds keep away from the user's state (not started)
-1. **Debug bundle id (core, project only).** Set `PRODUCT_BUNDLE_IDENTIFIER = com.kaanf.mel.debug` in the Mel target's Debug configuration; Release stays `com.kaanf.mel`. `xcodebuild test` builds Debug, so the test host and Xcode runs get their own defaults domain (library, `extraSearchPaths`), their own notification permission and their own app identity. They can run next to `/Applications/Mel.app` without sharing anything. `TEST_HOST` is a path, so MelTests needs no change. Cost: two lines in pbxproj. Notification permission is asked once more for the Debug app.
-2. **Optional (ui owns `MelApp`).** When running as a test host (`ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil`), build `AppState.preview([], agent: .missing)` and skip `scanForAgent()`. This only saves the host a login-shell scan and window setup per run; once step 1 is in, it no longer protects user state. I'd skip it unless test runs feel slow.
-
-Recommendation: step 1 alone.
+- Nothing planned. Run the full `xcodebuild … test` once the orchestrator says the install test is over.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -52,7 +48,7 @@ Recommendation: step 1 alone.
 - (nothing)
 
 ## Requests to orchestrator
-- Ready to merge: b54d893 sets ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon (Mel, Debug and Release). Builds and tests green without ui's asset catalog, so merge order doesn't matter.
+- Ready to merge: 5cdeebf (Debug bundle id). Build only; tests not run yet, at your request.
 
 ## Questions for the user
 - (none)
