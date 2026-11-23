@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 follow-up ready to merge
+Wave: 7 merged (90c28df), standing by for ui requests
 Updated: 2026-11-23
 
 ## Done
@@ -46,11 +46,13 @@ Updated: 2026-11-23
 
 - W7 follow-up: removed v1 `specFolder(name:parent:)` and `createSpec(name:idea:parentFolder:)`. New `AppState.branches: [Project.ID: String]` (read from `.git/HEAD` when a project loads, refreshed by A3, cleared on remove; `preview(…, branches:)`). Full suite green 2 runs (186 tests).
 
+- `PromptTests.noToolsPromptsForbidReading`: analyze.md and impact.md must keep "Do not read any files." (platform finding: no-tools runs try to read otherwise).
+
 ## In progress
 - (nothing)
 
 ## Next
-- Stand by for the next wave.
+- Stand by for ui requests while ui builds the remaining screens.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -69,9 +71,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge** (W7 follow-up, rebased on 3bb09f8, full suite green, no warnings).
-- For **ui**: B1 can show the branch on any launch with `state.branches[project.id]` (NewSpecView line 285 reads `projectSetup?.branch` today).
-- CONTRACTS: add `AppState.branches: [Project.ID: String]` and `preview(…, branches:)`; drop the v1 `specFolder(name:parent:)` / `createSpec(name:idea:parentFolder:)`.
+- (none) Follow-up merged; CONTRACTS updated. One small test commit on agent/core (prompt guard), merge whenever.
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
