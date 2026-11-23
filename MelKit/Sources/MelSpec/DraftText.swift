@@ -2,12 +2,14 @@ import Foundation
 
 /// Text edits Mel makes to the spec files while drafting and reviewing.
 public enum DraftText {
-    /// The file text for a drafting reply. REQUIREMENTS and TASKS start with a plan line
-    /// (`5 stories`) that isn't part of the file; until that line is complete there is no file text.
+    /// The file text for a drafting reply: without step markers, the question trailer and a
+    /// marker still being streamed. v1 replies to REQUIREMENTS and TASKS start with a plan line
+    /// (`5 stories`), dropped too (the v1 e2e fixtures have one); every v2 file starts with `#`.
     public static func file(fromReply reply: String, kind: DocKind) -> String {
-        guard kind == .requirements || kind == .tasks, reply.first?.isNumber == true else { return reply }
-        guard let newline = reply.firstIndex(where: \.isNewline) else { return "" }
-        return String(reply[newline...].drop(while: \.isNewline))
+        let text = strippingMarkers(reply)
+        guard kind == .requirements || kind == .tasks, text.first?.isNumber == true else { return text }
+        guard let newline = text.firstIndex(where: \.isNewline) else { return "" }
+        return String(text[newline...].drop(while: \.isNewline))
     }
 
     /// The last `<!-- mel:step N -->` the agent reached, or 0 before the first.

@@ -1,24 +1,23 @@
 import Foundation
 
 /// Prompt templates bundled from `Prompts/*.md`, filled by plain `{{placeholder}}` replacement.
-/// Drafting prompts share `rules.md` through `{{rules}}`, which `build` fills itself.
+/// Drafting and revise prompts share the rules through `{{rules}}`, which `build` fills itself:
+/// `rules.md`, or `rules-no-gaps.md` when the user turned "Let Mel fill small gaps" off.
 public enum Prompt: String, CaseIterable, Sendable {
-    case discovery, product, requirements, design, tasks
+    case project, intake
+    case discovery                  // v1, until SpecSession runs the intake (Wave 7)
+    case product, requirements, experience, architecture, tasks, spec
+    case revise, analyze, impact
     case `continue`
 
-    // v1 templates until the v2 prompts land: EXPERIENCE and ARCHITECTURE use design.md, SPEC uses requirements.md.
     public init(drafting kind: DocKind) {
-        switch kind {
-        case .experience, .architecture: self = .design
-        case .spec: self = .requirements
-        default: self = Prompt(rawValue: kind.rawValue)!
-        }
+        self = Prompt(rawValue: kind.rawValue)!
     }
 
     /// The template with each `{{key}}` replaced by `values[key]` in one pass, so values that
     /// contain `{{…}}` themselves are left alone. Unknown keys stay as written.
-    public func build(_ values: [String: String]) -> String {
-        let values = values.merging(["rules": Self.load("rules")]) { mine, _ in mine }
+    public func build(_ values: [String: String], fillGaps: Bool = true) -> String {
+        let values = values.merging(["rules": Self.load(fillGaps ? "rules" : "rules-no-gaps")]) { mine, _ in mine }
         var output = ""
         var rest = Self.load(rawValue)[...]
         while let open = rest.range(of: "{{"), let close = rest[open.upperBound...].range(of: "}}") {
@@ -33,4 +32,20 @@ public enum Prompt: String, CaseIterable, Sendable {
         let url = Bundle.module.url(forResource: name, withExtension: "md")!
         return try! String(contentsOf: url, encoding: .utf8)
     }
+}
+
+// Prompt text for `{{steps}}`, `{{files}}` and `{{kinds}}`.
+extension DocKind {
+    /// B3's steps as a numbered list; the agent marks each with `<!-- mel:step N -->`.
+    public var stepsText: String {
+        draftSteps.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+    }
+}
+
+extension SpecSize {
+    /// "REQUIREMENTS.md, ARCHITECTURE.md, TASKS.md".
+    public var filesText: String { files.map(\.fileName).joined(separator: ", ") }
+
+    /// "`requirements`, `architecture`, `tasks`": the JSON values a reply may use for a file.
+    public var kindsText: String { files.map { "`\($0.rawValue)`" }.joined(separator: ", ") }
 }

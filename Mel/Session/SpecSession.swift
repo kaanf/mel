@@ -197,7 +197,7 @@ import MelSystem
     /// Writes `kind`: fresh, or continuing `partial` in the stored Claude Code session.
     private func draft(_ kind: DocKind, from partial: String = "") async {
         let prompt = partial.isEmpty
-            ? Prompt(drafting: kind).build(["name": spec.name, "idea": spec.idea, "answers": spec.answersText, "decide": spec.decideText, "approved": approvedText(before: kind)])
+            ? Prompt(drafting: kind).build(["name": spec.name, "idea": spec.idea, "files": spec.size.filesText, "project": "(none)", "buildsOn": "(nothing named)", "attachments": "(none)", "answers": spec.answersText, "decide": spec.decideText, "approved": approvedText(before: kind), "steps": kind.stepsText], fillGaps: spec.fillGaps)
             : Prompt.continue.build(["file": kind.fileName, "partial": partial])
         draftKind = kind
         reply = partial
