@@ -1,6 +1,6 @@
 # ui status
 
-Wave: v0.2.1 honeycomb app icon, ready to merge
+Wave: v0.2.1 shipped (build 264, icon merged); waiting for Wave 6
 Updated: 2026-11-23
 
 ## Done
@@ -42,14 +42,18 @@ Updated: 2026-11-23
   - feat(ui) short toolbar status: `ToolbarStatus(status:title:detail:compact:)` in StatusBadge.swift. Discovery and Drafting measure their width (content + inspector, `onGeometryChange` after `.inspector`) and pass `compact` below `ToolbarStatus.fullTextWidth` (660). Full and compact are separate `ToolbarItem`s (if/else) because NSToolbar never widens an item whose content grows; ViewThatFits does nothing in a toolbar (AppKit overflows by ideal width). Checked in the Debug app: full text + Draft Now + Inspector at 900 pt (inspector hidden) and 915 pt (shown); "Needs you" with all buttons at 860/760/655 pt; growing back works. A very long spec name in the subtitle can still push items into overflow.
   - fix(ui) sidebar arrows: the question card took focus on every appear, so after arrowing up to Discovery the next arrow went to the card. Now only a question that arrives while Discovery is open takes focus (`openedOn` in DiscoveryView). Checked with keys posted to the debug PID: REQUIREMENTS ↑ PRODUCT ↑ Discovery ↓ PRODUCT ↓ REQUIREMENTS ↑ ↑ Discovery ↓ PRODUCT. Trade-off: opening Discovery from the sidebar no longer puts focus in the card; Tab or a click does. Not unit-testable (focus); no new test.
 
-- feat(ui) honeycomb app icon (v0.2.1), rebased on origin/main (8321421), full test green: ready to merge.
+- feat(ui) honeycomb app icon (v0.2.1) merged to main; shipped in v0.2.1 (build 264).
   - AppIcon.appiconset PNGs rendered from the SVGs in `docs/design/v2/Mel-Logo.dc.html` (scratchpad Swift script: NSImage loads the SVG, draws into an sRGB CGContext; raw pixels check out at Honey #D97F00, Core #2A2A2E). Contents.json unchanged (already lists all 10 slots).
   - 128 pt and up: the 1024 master (sheen, 0.08 hairline). 32@1x and 32@2x use the file's own 32/64 px variants (no sheen; hairline 0.1 at 32 px, 0.08 at 64 px). 16@1x/@2x: small mark (0.14 hairline).
   - Full-bleed like the design (squircle fills the 100 grid, no macOS margin); macOS 26 shows it at the same size as the other Dock icons. Checked in the Debug app (com.kaanf.mel.debug) after `lsregister -f` + Dock restart; before that the Dock showed a cached generic icon.
 
 ## Next
-- Orchestrator: merge the honeycomb icon, then cut v0.2.1. Don't start the v2 redesign until asked.
-- Stand by for the orchestrator. GUI: AX actions and PID-targeted events only, no System Events keystrokes.
+- Wait for Wave 6: the orchestrator merges core's contract stubs and tells me to rebase. No v2 views before that.
+- Prep done (2026-11-23): read docs/V2.md, design/v2/FLOW.md and the MEL SCREEN header of all 16 screens (A1, A1x, A2, A3, A4x, B1–B7, C1–C4).
+  - Build-once parts: sidebar (project row, spec, file rows with v2 statuses, Analyze row), toolbar status pill ("n of m"), Theme.swift tokens. Review inspector and suggestion Accept/Reject are hidden in v0.3 (V2 §2); C1's Decisions column stays.
+  - Token inventory from the inline styles: about 30 hex colors (main ones #1D1D1F, #6E6E73, #F5F5F7, #007AFF, #0066D6, #248A3D, #C93400, #D97F00), font sizes 10/11/12/13/14/15/17/22/26/28/30, radii 3–17. Plus rgba values. Skip the mock's chrome: #DFE0E5 page, traffic-light colors.
+  - Light mode only (force Aqua). Views use only Theme tokens, never literals.
+- GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
 ## Notes
 - Keys: never System Events `key code`/`keystroke` while the user works; they go to the frontmost app (was Safari). Post keys to the debug PID with `CGEvent.postToPid` (scratchpad keypid). Launch with `open -g` (background), AX actions (AXSelected, AXPress, set size) work without focus.
