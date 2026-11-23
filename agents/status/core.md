@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 merged (90c28df), standing by for ui requests
+Wave: 7 merged (incl. CoverageState.later), standing by
 Updated: 2026-11-23
 
 ## Done
@@ -73,9 +73,7 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge**: `CoverageState.later` (ui's B2 request) + the prompt-guard test. Rebased on 90c28df, full suite green.
-- CONTRACTS: `enum CoverageState { case covered, asking, notYet, later }`.
-- Touched ui's `Mel/Views/Discovery/DiscoveryView.swift` (one line, exhaustive switch). Platform may want to re-record intake against the updated intake.md (old fixtures still decode).
+- (none) CoverageState.later merged; platform is re-recording intake.
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
