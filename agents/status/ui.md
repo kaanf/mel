@@ -31,6 +31,8 @@ Updated: 2026-11-23
 
 - App icon (5.2): `Mel/Assets.xcassets` (root Contents.json) with the user's `AppIcon.appiconset` copied unchanged from mel-icon-kit. Rebased on aa80cfd, full test green (122 passed), no warnings without the icon build setting. **ready to merge**
 
+- fix(ui) status text in toolbar (3.5): StatusBadge is an HStack (Image + Text, lineLimit 1, tail truncation, image hidden for VoiceOver, combined element) instead of a Label, because toolbars draw Labels icon-only. Checked in the running debug app with fixture specs (launch-argument `-library`): Discovery shows "Needs you · Claude Code is waiting for an answer", Drafting shows "Stopped". Not checked: "Running · …" (needs a live agent run) and truncation in a narrow window (the app quit during that check, no crash report; the user was testing at the same time). Rebased on 25a5d7c, full test green (122). **ready to merge**
+
 ## In progress
 - (nothing)
 
@@ -38,6 +40,7 @@ Updated: 2026-11-23
 - Wait. Later, by hand/when asked: Icon Composer `.icon` (step 2 of the kit), MelMark image sets and brand colors (skipped for the MVP).
 
 ## Notes
+- Running the debug app touches the real `com.kaanf.mel` defaults (same bundle id). Pass fixtures as launch arguments (`--args -library '<hex>' -didShowWelcome YES`); `CFFIXED_USER_HOME` does NOT isolate `defaults write`.
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
 - Parsing runs off main via `parseDocument(_:kind:)` (@concurrent) in `.task(id: text)`; Review saves edits after 500 ms debounce via `session.save`.
 - MarkdownParser is still a stub, so ReviewView/LivePreview previews render empty bodies until core 2.2; `ReviewDocument` and `MarkdownBlocksView` previews use block fixtures and show the real look.
