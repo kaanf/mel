@@ -42,7 +42,7 @@ Done when: every screen and state has a preview that renders, build green.
 - Bind all screens to the live `AppState` / `SpecSession` (core makes them real in this wave).
 - Keyboard: 1–4 and ↩ in Discovery, ⌘↩ approve, ⌘N, ⌥⌘I.
 - Keep Mine / Use File prompt on external edits; missing-folder rows with Locate… / Remove from list.
-- Handoff sheet actions call platform's `SystemActions` / `Git`.
+- Handoff sheet actions call `SpecSession` (`openStartCommandInTerminal`, `showInFinder`, `finish(commitToGit:)`); core wires them to platform's `SystemActions` / `Git`. Views never import MelSystem.
 
 ## Wave 3 · Ship
 

@@ -291,8 +291,9 @@ import Observation
 
 @Observable final class AppState {
     var agent: AgentStatus = .checking
-    var extraSearchPaths: [String]
+    var extraSearchPaths: [String]            // persisted in UserDefaults; ui appends a chosen executable's folder, then scanForAgent()
     var specs: [Spec]                         // library, sidebar order
+    var missingFolders: [URL]                 // library entries whose folder is gone (REQ 9.3); row title = parent folder name
     var selection: Spec.ID?
     var runningSpecID: Spec.ID?               // one agent run at a time across the app
 
@@ -304,6 +305,8 @@ import Observation
     func session(for id: Spec.ID) -> SpecSession
     func createSpec(name: String, idea: String, parentFolder: URL) throws -> SpecSession
     func removeFromLibrary(_ id: Spec.ID)
+    func locate(_ missing: URL, at folder: URL) throws   // "Locate…": replaces the entry, loads the spec
+    func removeMissing(_ missing: URL)                    // "Remove from list" on a missing row
     func specFolder(name: String, parent: URL) -> URL   // shown in New Spec; SpecStore.specsFolder
 
     // System actions for views (views never import MelSystem)
@@ -342,6 +345,8 @@ import Observation
     func confirmAssumption(index: Int, in kind: DocKind)
     func changeAssumption(index: Int, to text: String, in kind: DocKind)
     func approve(_ kind: DocKind) async
+    private(set) var conflict: DocKind?             // file changed on disk while the editor has unsaved text
+    func resolveConflict(keepMine: Bool)            // Keep Mine → write editor text; Use File → reload
 
     // Handoff / system actions for views
     var startCommand: String { get }                // claude "Read specs/ and implement TASKS.md, task 1"
