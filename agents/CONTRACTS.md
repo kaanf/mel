@@ -276,6 +276,7 @@ enum Git {
     static func isRepository(_ url: URL) -> Bool
     static func initRepository(_ url: URL) throws
     static func commit(paths: [String], message: String, in directory: URL) throws
+    static let specPaths: [String]            // specs/ minus specs/.mel/ (pathspec)
 }
 
 enum Notifier {

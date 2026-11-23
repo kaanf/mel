@@ -41,7 +41,7 @@ Rebase on `main` first (the project exists now).
 
 - **4.7** `MelSystem/Notifier.swift`: authorization, immediate and scheduled notifications.
 - Agent detection inside `AppState.scanForAgent()`: you provide what core calls; coordinate the call site through the orchestrator if the contract needs to change.
-- **4.6** handoff building blocks (command string for "Start building", Git commit of `specs/` with `.mel/` in `.gitignore`).
+- **4.6** handoff building blocks (command string for "Start building", Git commit of `specs/` excluding `.mel/` by pathspec).
 - First draft of `scripts/release.sh` (archive → export → notarize → staple → DMG → notarize → staple), runnable up to the signing step without credentials.
 
 ## Wave 3 · Ship

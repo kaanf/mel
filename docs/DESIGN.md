@@ -188,7 +188,7 @@ System integration:
 - Mel itself makes no network calls and has no telemetry.
 - Claude Code runs with write and shell tools disabled, working directory = the project folder.
 - Prompts and history stay in the spec folder.
-- `.mel/` is added to `.gitignore` when committing (setting).
+- `.mel/` is never committed: the spec commit excludes it by pathspec; `.gitignore` is left alone.
 - A user-chosen executable must exist, be executable and answer `--version`.
 
 ## 7. Testing
