@@ -120,8 +120,64 @@ struct GitTests {
         try FileManager.default.createDirectory(at: folder.appending(path: ".hidden/.git"), withIntermediateDirectories: true)
         try write("", "file.txt")
 
-        #expect(Git.repositories(in: folder).map(\.lastPathComponent) == ["a-worktree", "b-app"])
+        #expect(Git.repositories(in: folder).map(\.url.lastPathComponent) == ["a-worktree", "b-app"])
         #expect(Git.repositories(in: folder.appending(path: "missing")).isEmpty)
+    }
+
+    @Test func repositoryLanguageAndModified() throws {
+        defer { cleanUp() }
+        try write("ref: refs/heads/main\n", "web/.git/HEAD")
+        try write("{}", "web/package.json")
+        try write("{}", "web/tsconfig.json")
+        try write("", "web/src/main.swift")          // below the root: ignored
+        let head = folder.appending(path: "web/.git/HEAD")
+        let then = Date(timeIntervalSince1970: 1_790_000_000)
+        try FileManager.default.setAttributes([.modificationDate: then], ofItemAtPath: head.path)
+        try FileManager.default.createDirectory(at: folder.appending(path: "plain/.git"), withIntermediateDirectories: true)
+        try write("", "plain/notes.md")
+
+        let repos = Git.repositories(in: folder)
+        #expect(repos.map(\.language) == [nil, "TypeScript"])
+        #expect(repos.map(\.modified) == [nil, then])
+
+        try write("", "web/.git/index")             // index wins over HEAD
+        #expect(try #require(Git.repositories(in: folder).last?.modified) > then)
+    }
+
+    @Test func branchAndFileCount() throws {
+        defer { cleanUp() }
+        #expect(Git.branch(at: folder) == nil)
+        #expect(Git.fileCount(at: folder) == nil)
+        try Git.run(["init", "--quiet", "--initial-branch", "feature/a3"], in: folder)
+        #expect(Git.branch(at: folder) == "feature/a3")
+        #expect(Git.fileCount(at: folder) == 0)
+
+        try write("a", "one.txt")
+        try write("b", "dir/two words.txt")
+        try write("c", "untracked.txt")
+        try Git.run(["add", "one.txt", "dir"], in: folder)
+        #expect(Git.fileCount(at: folder) == 2)
+
+        try Git.run(["config", "user.name", "Mel Tests"], in: folder)
+        try Git.run(["config", "user.email", "tests@example.com"], in: folder)
+        try Git.run(["commit", "--quiet", "-m", "x"], in: folder)
+        try Git.run(["checkout", "--quiet", "--detach"], in: folder)
+        #expect(Git.branch(at: folder) == nil)
+
+        // A worktree's .git is a file pointing at its git dir.
+        let worktree = folder.appending(path: "wt")
+        try Git.run(["worktree", "add", "--quiet", "-b", "side", worktree.path], in: folder)
+        #expect(Git.branch(at: worktree) == "side")
+        #expect(Git.repositories(in: folder).first { $0.url.lastPathComponent == "wt" }?.modified != nil)
+    }
+
+    @Test(arguments: [
+        (["Mel.xcodeproj", "README.md"], "Swift"), (["Package.swift"], "Swift"), (["build.gradle.kts"], "Kotlin"),
+        (["package.json"], "JavaScript"), (["Cargo.toml"], "Rust"), (["go.mod"], "Go"),
+        (["requirements.txt"], "Python"), (["pyproject.toml"], "Python"), (["Gemfile"], "Ruby"), (["README.md"], nil),
+    ] as [([String], String?)])
+    func languageFromRootFiles(_ files: [String], _ language: String?) {
+        #expect(Git.language(rootFiles: Set(files)) == language)
     }
 
     @Test func failureCarriesGitOutput() throws {

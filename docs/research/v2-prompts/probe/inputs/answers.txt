@@ -1,0 +1,2 @@
+- How should a break start after a focus session, and how should the app know when a long break is due? Automatic, counted per day (long break every 4th focus session)
+- Where does the daily goal (and the break lengths, if they can be set) come from? You decide: choose the best option and mark it as an assumption.

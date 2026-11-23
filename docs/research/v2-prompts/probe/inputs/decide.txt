@@ -1,0 +1,3 @@
+- Where does the daily goal (and the break lengths, if they can be set) come from?
+- Should breaks be saved and shown in `focus log`, and how should goal progress look?
+- Milestones

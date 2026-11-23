@@ -1,0 +1,1 @@
+Add short and long breaks after focus sessions, and a daily goal (number of focus sessions) that `focus log` shows progress against.

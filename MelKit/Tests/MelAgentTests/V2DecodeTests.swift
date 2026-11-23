@@ -9,7 +9,8 @@ struct V2DecodeTests {
 
     @Test func projectContextDecodes() throws {
         let context = try ProjectContext.decode(fixtures.result("project-context"))
-        #expect(context.modules.map(\.name).prefix(2) == ["FocusTimer", "TimerCore"])
+        #expect(context.modules.map(\.path).prefix(2) == ["Sources/FocusTimer", "Sources/TimerCore"])
+        #expect(context.modules.map(\.name).prefix(2) == ["FocusTimer (executable CLI)", "TimerCore"])  // see platform status › For core
     }
 
     @Test func intakeDecodes() throws {
@@ -51,6 +52,6 @@ struct V2DecodeTests {
         #expect(Set(analysis.issues.map(\.kind)) == [.contradiction, .noTask, .qualityNotCovered, .scopeCreep])
         #expect(analysis.coverage.allSatisfy { $0.screen == nil })
         let impact = try ImpactResult.decode(fixtures.result("impact"))
-        #expect(impact.items.map(\.kind) == [.architecture, .tasks])
+        #expect(impact.items.map(\.kind) == [.tasks])
     }
 }
