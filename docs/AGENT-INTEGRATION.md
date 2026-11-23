@@ -1,6 +1,6 @@
 # Agent integration
 
-How Keel finds, runs and recovers Claude Code. The MVP supports Claude Code only; Codex comes later as a second `AgentAdapter` (notes at the end). This is the riskiest part of the product: the CLI changes often. Flags marked verified were observed on Claude Code 2.1.311 (see [research/CLAUDE-CODE-CLI.md](research/CLAUDE-CODE-CLI.md), with real recorded fixtures). Anything else must be verified in task M1 1.1.
+How Mel finds, runs and recovers Claude Code. The MVP supports Claude Code only; Codex comes later as a second `AgentAdapter` (notes at the end). This is the riskiest part of the product: the CLI changes often. Flags marked verified were observed on Claude Code 2.1.311 (see [research/CLAUDE-CODE-CLI.md](research/CLAUDE-CODE-CLI.md), with real recorded fixtures). Anything else must be verified in task M1 1.1.
 
 ## Detection
 
@@ -94,11 +94,11 @@ Later, ask-for-changes response: `{ "reply": "â€¦", "suggestions": [{ "find": "â
 
 ### Streaming Markdown stages
 
-Used for drafting the four files. The agent outputs only the file's Markdown. For REQUIREMENTS.md and TASKS.md the first line is a plan (`5 stories`, `11 tasks`) that Keel strips. Progress = `##` sections written vs. planned (DESIGN.md is always 6). The current step label is the last `##` heading ("Writing story 3 of 5: Cancel a booking"). No other markers.
+Used for drafting the four files. The agent outputs only the file's Markdown. For REQUIREMENTS.md and TASKS.md the first line is a plan (`5 stories`, `11 tasks`) that Mel strips. Progress = `##` sections written vs. planned (DESIGN.md is always 6). The current step label is the last `##` heading ("Writing story 3 of 5: Cancel a booking"). No other markers.
 
 ## Prompts
 
-Prompts are Markdown files in the app bundle (`Keel/Spec/Prompts/`: `discovery.md`, `product.md`, `requirements.md`, `design.md`, `tasks.md`, `continue.md`) with `{{placeholders}}` filled by plain string replacement. Each embeds the relevant section of [SPEC-FORMAT.md](SPEC-FORMAT.md).
+Prompts are Markdown files in the app bundle (`Mel/Spec/Prompts/`: `discovery.md`, `product.md`, `requirements.md`, `design.md`, `tasks.md`, `continue.md`) with `{{placeholders}}` filled by plain string replacement. Each embeds the relevant section of [SPEC-FORMAT.md](SPEC-FORMAT.md).
 
 Fill-gaps policy text:
 

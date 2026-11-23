@@ -1,6 +1,6 @@
 # Spec format
 
-The Markdown contract for the files Keel generates. Agents are prompted with this contract, and the app parses it to drive the review UI (counts, assumptions, open questions, links between tasks and criteria). Keep files readable in any Markdown viewer.
+The Markdown contract for the files Mel generates. Agents are prompted with this contract, and the app parses it to drive the review UI (counts, assumptions, open questions, links between tasks and criteria). Keep files readable in any Markdown viewer.
 
 ## Folder layout
 
@@ -11,11 +11,11 @@ The Markdown contract for the files Keel generates. Agents are prompted with thi
     ├── REQUIREMENTS.md
     ├── DESIGN.md
     ├── TASKS.md
-    └── .keel/
+    └── .mel/
         └── state.json         pipeline state, questions/answers, session id
 ```
 
-Deleting `.keel/` loses the pipeline state and history, never the spec itself.
+Deleting `.mel/` loses the pipeline state and history, never the spec itself.
 
 The spec folder defaults to `<chosen folder>/<project-slug>/specs`, for example `~/Developer/yoga-studio-booking/specs`.
 
@@ -78,7 +78,7 @@ Parsing rules:
 
 The canvas shows a "Source: your idea, Question 4" line per story. Not in the MVP: it needs per-story metadata for little value.
 
-While drafting, the agent's first line is a plan (`5 stories`, `11 tasks`) that Keel strips from the file and uses for progress ("story 3 of 5").
+While drafting, the agent's first line is a plan (`5 stories`, `11 tasks`) that Mel strips from the file and uses for progress ("story 3 of 5").
 
 ## DESIGN.md
 

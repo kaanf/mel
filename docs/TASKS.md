@@ -11,7 +11,7 @@ Ordered so that the riskiest part (driving the real CLI) is proven first, and ev
 
 ## M1 · Agent spike (de-risk)
 
-- [ ] 1.1 Verify what docs/research/CLAUDE-CODE-CLI.md leaves open (auth status subcommand, `--include-partial-messages`, `--append-system-prompt`, usage-limit records) against the installed Claude Code; move fixtures to `KeelTests/Fixtures/` and add new ones.
+- [ ] 1.1 Verify what docs/research/CLAUDE-CODE-CLI.md leaves open (auth status subcommand, `--include-partial-messages`, `--append-system-prompt`, usage-limit records) against the installed Claude Code; move fixtures to `MelTests/Fixtures/` and add new ones.
   - Covers: —
 - [ ] 1.2 Login-shell PATH resolver and executable search with extra paths.
   - Covers: 1.2, 2.4

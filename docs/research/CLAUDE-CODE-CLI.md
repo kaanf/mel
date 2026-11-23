@@ -4,7 +4,7 @@ Carried over from the previous project in this repository (Jojo), which drove Cl
 
 The old implementation lives in git history (`crates/jojo-domain/src/claude.rs`, `crates/jojo-domain/tests/m1_claude.rs`, `m2_planner.rs`), if a detail is missing here.
 
-## Read-only invocation (what Keel needs)
+## Read-only invocation (what Mel needs)
 
 Verified argument vector for a fresh, read-only, non-interactive run. The prompt goes on stdin.
 
@@ -28,7 +28,7 @@ claude -p \
 - For a resumable session (Discovery chat, continuing a stopped draft) drop `--no-session-persistence` and add `--resume <session_id>` on the next run.
 - An unknown `--resume` session ends the run immediately with an error result and no model call; run fresh in that case.
 
-With write tools (for reference, Keel doesn't use this): `--tools Read,Edit,Write,Glob,Grep --permission-mode acceptEdits`. Edits inside the working directory are applied; writes outside it, to `.git/config`, and shell commands are refused.
+With write tools (for reference, Mel doesn't use this): `--tools Read,Edit,Write,Glob,Grep --permission-mode acceptEdits`. Edits inside the working directory are applied; writes outside it, to `.git/config`, and shell commands are refused.
 
 ## Environment
 
@@ -40,7 +40,7 @@ With write tools (for reference, Keel doesn't use this): `--tools Read,Edit,Writ
 
 One JSON object per line. Records seen with the flags above (no `--include-partial-messages`):
 
-| `type` / `subtype` | Use in Keel |
+| `type` / `subtype` | Use in Mel |
 |---|---|
 | `system` / `init` | `session_id`, `tools`, `permissionMode`, `model`, `claude_code_version`, `cwd` |
 | `system` / `thinking_tokens` | ignore |
@@ -78,4 +78,4 @@ Real recordings, safe to commit (no secrets; `cwd` paths point at disposable pro
 | `fixtures/claude-2.1.311-edit-run-short.jsonl` | Write-enabled run, short (6 records) |
 | `fixtures/claude-2.1.311-edit-run-long.jsonl` | Write-enabled run with tool use and thinking tokens (24 records) |
 
-Move them to `KeelTests/Fixtures/` when the Xcode project exists.
+Move them to `MelTests/Fixtures/` when the Xcode project exists.

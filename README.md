@@ -1,4 +1,4 @@
-# Keel
+# Mel
 
 A native macOS app that turns a plain-language idea into a build-ready spec, written by the coding agent already installed on the user's Mac (Claude Code in the MVP) on the user's own account.
 
@@ -18,7 +18,7 @@ Any coding agent can then build from `specs/`.
 
 Pre-development. Documents only, no Xcode project yet.
 
-This repository previously held Jojo (Rust helper + SwiftUI shell). It was removed in favor of Keel; the Claude Code knowledge it verified was kept in `docs/research/`. The old code is in git history.
+This repository previously held Jojo (Rust helper + SwiftUI shell). It was removed in favor of Mel; the Claude Code knowledge it verified was kept in `docs/research/`. The old code is in git history.
 
 ## Documents
 

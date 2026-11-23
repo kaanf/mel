@@ -4,7 +4,7 @@ Guidance for coding agents working in this repo.
 
 ## Project
 
-Keel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea into a four-file Markdown spec using the user's installed Claude Code. Codex is post-MVP; keep the `AgentAdapter` protocol but don't build Codex UI. Read `README.md`, then the doc for your task:
+Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea into a four-file Markdown spec using the user's installed Claude Code. Codex is post-MVP; keep the `AgentAdapter` protocol but don't build Codex UI. Read `README.md`, then the doc for your task:
 
 - What and why: `docs/PRODUCT.md`, `docs/REQUIREMENTS.md`
 - Screens: `docs/UI.md`
@@ -31,7 +31,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 
 ## Invariants
 
-- Keel is the only writer of `PRODUCT.md`, `REQUIREMENTS.md`, `DESIGN.md`, `TASKS.md`. Claude Code runs without write or shell tools.
+- Mel is the only writer of `PRODUCT.md`, `REQUIREMENTS.md`, `DESIGN.md`, `TASKS.md`. Claude Code runs without write or shell tools.
 - Never overwrite a user's edit; never change an approved file without a user action.
 - All file writes are atomic.
 - Agent CLI flags and output shapes are verified against fixtures in `Tests/Fixtures/`; update fixtures when a CLI changes.

@@ -153,7 +153,7 @@ Artboard `Native-Settings-Agents`. `Settings { TabView }` with tabs General, Age
 Undesigned tabs (proposal, confirm before building):
 
 - General: notifications on/off, open Welcome again.
-- Specs: default parent folder, slug style, keep `.keel/` in Git (on/off), commit after handoff default.
+- Specs: default parent folder, slug style, keep `.mel/` in Git (on/off), commit after handoff default.
 - Advanced: agent timeout, extra CLI arguments per agent, show raw logs, reset app.
 
 ## Copy and tone

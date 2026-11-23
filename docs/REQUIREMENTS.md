@@ -1,6 +1,6 @@
 # Requirements
 
-EARS acceptance criteria, same format Keel generates (see [SPEC-FORMAT.md](SPEC-FORMAT.md)). "THE APP" means Keel. Screens are named as in [UI.md](UI.md).
+EARS acceptance criteria, same format Mel generates (see [SPEC-FORMAT.md](SPEC-FORMAT.md)). "THE APP" means Mel. Screens are named as in [UI.md](UI.md).
 
 ## 1. Detect the coding agent
 
@@ -100,7 +100,7 @@ As a user, I want to start building from the finished spec, so that the spec tur
 - 8.1 WHEN all four files are approved, THE APP SHALL show the Spec ready sheet with each file and its summary (for example "5 stories, 14 criteria").
 - 8.2 THE APP SHALL show remaining open questions with "Answer Now…".
 - 8.3 THE APP SHALL show a Claude Code build command with Copy and "Open in Terminal" (in the project folder).
-- 8.4 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (excluding `.keel/` per settings), initializing a repository only after asking.
+- 8.4 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (excluding `.mel/` per settings), initializing a repository only after asking.
 - 8.5 THE APP SHALL offer "Show in Finder".
 
 ## 9. Library and app shell

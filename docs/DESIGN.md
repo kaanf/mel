@@ -15,7 +15,7 @@ Deferred to a later version (see REQUIREMENTS.md › Later): Pause/Resume, "Ask 
 | State | Observation (`@Observable`) |
 | Concurrency | async/await, `AsyncStream`, `Task` cancellation |
 | Processes | Foundation `Process` + `Pipe` |
-| Persistence | One Codable JSON file per spec (`specs/.keel/state.json`) + `UserDefaults` for app settings and the library |
+| Persistence | One Codable JSON file per spec (`specs/.mel/state.json`) + `UserDefaults` for app settings and the library |
 | Markdown | Own small line-based parser for our fixed format; `AttributedString(markdown:)` for inline styling. **No dependencies.** |
 | Notifications | `UserNotifications` |
 | Logging | `os.Logger` |
@@ -35,14 +35,14 @@ The app launches the user-installed `claude` CLI, which reads `~/.claude` and ne
 One app target, one test target. Folders, not modules. Split into a package only if build times or reuse demand it.
 
 ```
-Keel.xcodeproj
-├── Keel/
-│   ├── App/            KeelApp, scenes, AppState
+Mel.xcodeproj
+├── Mel/
+│   ├── App/            MelApp, scenes, AppState
 │   ├── Agent/          ClaudeCode (detect, run, parse), AgentRunner
 │   ├── Spec/           models, pipeline reducer, Markdown parser, prompts
 │   ├── Storage/        spec folder I/O, state.json, library, Git
 │   └── Views/          one folder per screen
-├── KeelTests/
+├── MelTests/
 │   └── Fixtures/       recorded Claude Code NDJSON output
 └── scripts/release.sh
 ```
@@ -61,7 +61,7 @@ SwiftUI views ──observe──▶ SpecSession (@Observable, @MainActor), one 
                      SpecFile: append to buffer → write file (debounced)
 ```
 
-**Keel is the only writer of the spec files.** Claude Code runs without write/shell tools and streams plain Markdown on stdout; Keel appends it to the file. No output parsing is needed for drafting; JSON is used only for Discovery questions.
+**Mel is the only writer of the spec files.** Claude Code runs without write/shell tools and streams plain Markdown on stdout; Mel appends it to the file. No output parsing is needed for drafting; JSON is used only for Discovery questions.
 
 `AgentAdapter` is a small protocol with one implementation (`ClaudeCode`) so Codex can be added later. No other abstraction for it now.
 
@@ -99,7 +99,7 @@ enum CoverageState: String, Codable { case covered, asking, notYet, leftOpen }
 enum StopReason: Codable { case user, usageLimit(resetsAt: Date?), signedOut, crashed(String), timeout }
 ```
 
-The whole `Spec` is saved to `specs/.keel/state.json` on every change (debounced, atomic). It's small; no database. The library is an array of folder bookmarks in `UserDefaults`.
+The whole `Spec` is saved to `specs/.mel/state.json` on every change (debounced, atomic). It's small; no database. The library is an array of folder bookmarks in `UserDefaults`.
 
 ## 3. Key flows
 
@@ -126,7 +126,7 @@ review(d) ──Approve──▶ drafting(next d) | done
 ### Stop and resume
 
 - **Stop**: `SIGINT`, then `SIGTERM` after 3 s. The partial file is already on disk.
-- **Resume after stop**: new run with `--resume <sessionID>` and "continue from the first incomplete section"; Keel truncates the file to the last complete `##` section, then appends.
+- **Resume after stop**: new run with `--resume <sessionID>` and "continue from the first incomplete section"; Mel truncates the file to the last complete `##` section, then appends.
 - **Usage limit**: notification at `resetsAt` if known; the user taps Resume. No automatic scheduled runs.
 
 ### Review
@@ -134,7 +134,7 @@ review(d) ──Approve──▶ drafting(next d) | done
 - Preview = parsed Markdown rendered with SwiftUI. Edit = `TextEditor` on the raw text (switch to `NSTextView` only if large files feel slow).
 - In-app edits save on change (debounced, atomic).
 - External edits: watch the file (`DispatchSource`). If the in-app editor has no unsaved changes → reload. If it does → ask "Keep Mine / Use File". No merge algorithm.
-- Assumptions and open questions are plain callouts in the file; Confirm / Change / Answer Now are small text edits Keel applies to the file.
+- Assumptions and open questions are plain callouts in the file; Confirm / Change / Answer Now are small text edits Mel applies to the file.
 - The activity log during drafting lives in memory only (not persisted).
 - Approve: status → approved. Editing an approved file sets it back to review; nothing else cascades.
 
@@ -181,10 +181,10 @@ System integration:
 
 ## 6. Security and privacy
 
-- Keel itself makes no network calls and has no telemetry.
+- Mel itself makes no network calls and has no telemetry.
 - Claude Code runs with write and shell tools disabled, working directory = the project folder.
 - Prompts and history stay in the spec folder.
-- `.keel/` is added to `.gitignore` when committing (setting).
+- `.mel/` is added to `.gitignore` when committing (setting).
 - A user-chosen executable must exist, be executable and answer `--version`.
 
 ## 7. Testing

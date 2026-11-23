@@ -60,7 +60,7 @@ Out (not MVP):
 - Our own LLM backend, API keys, accounts, sync, collaboration.
 - Agents other than Claude Code: Codex first, later others. The agent layer is built behind an adapter protocol so they can be added without touching the UI. Until then the canvas's "Continue with Codex", "Use Codex Instead" and default-agent picker are left out.
 - Templates, custom file sets, extra spec files.
-- Building the app from the spec inside Keel (we hand off to the agent).
+- Building the app from the spec inside Mel (we hand off to the agent).
 - iOS / iPadOS.
 - Mac App Store distribution. The app ships as a DMG (see [DESIGN.md › Distribution](DESIGN.md#distribution)).
 
