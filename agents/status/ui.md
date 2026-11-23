@@ -1,6 +1,6 @@
 # ui status
 
-Wave: 5 (Settings views done; App/ wiring waits for core's Sparkle merge). Wave 4 toolbar check still open
+Wave: 5 (ready to merge)
 Updated: 2026-11-23
 
 ## Done
@@ -37,17 +37,19 @@ Updated: 2026-11-23
 - Wave 4 merged to main (ad7c055), full test green (130): open question card (multi-line field, Continue ↩ → `.text`, Skip → `.agentDecides`, digits only for option questions), answered open questions edited in a popover (empty = Skip, shown as "Skipped · the agent decides"), inspector coverage grouped by phase with "n of m", previews "Open Question" and "Inspector".
 
 ## In progress
-- Wave 5 (ROADMAP › Wave 5, UI.md › Settings › Updates group), rebased on 5b72f39:
-  - Done (686a440): `UpdateSettings` (version string, canCheck, automaticallyChecks Binding, check closure) passed to `SettingsView(updates:)`. Updates section after Scan Now: "Version 0.2 (build N)", switch, "Check for Updates…" disabled while `!canCheck`. Previews: all three agent states plus "Checking for Updates". `PreviewData.updates(...)`.
-  - Placeholder in MelApp: `canCheck: false`, constant binding, no-op check. Version is read from Info.plist (`MelApp.version`).
-- Toolbar padding/truncation (8dddc94) not verified yet: waiting for the orchestrator to say /Applications/Mel.app is closed.
+- Wave 5, rebased on 95146bf, full test green (131 passed, 0 failed), no warnings from App/ or Views/. **ready to merge**
+  - 3706daf Settings › Updates group: `SettingsView(updates: UpdateSettings)` (version string, canCheck, automaticallyChecks Binding, check closure), previews incl. "Checking for Updates".
+  - 8950309 `App/Updater.swift` (@MainActor @Observable around `SPUStandardUpdaterController(startingUpdater: true)`; `canCheckForUpdates` from KVO with `MainActor.assumeIsolated`; `automaticallyChecksForUpdates` mirrored with didSet; `checkForUpdates()`), "Check for Updates…" in `CommandGroup(after: .appInfo)`, MelApp wiring.
+  - Checked in the Debug app: app menu reads About Mel | Check for Updates… | Settings…; Settings shows "Version 0.2 (build 1)", switch off (Debug auto checks NO), button enabled. Did not run a real check.
+- Toolbar check (8dddc94) done in the Debug app: at >= 860 pt the status capsule shows the full "Needs you · Claude Code is waiting for an answer" with 10 pt insets. Narrower, AppKit moves the whole status item (and Draft Now, Inspector) into the » overflow; it never truncates or goes icon-only, so no `.fixedSize()` needed. No change.
 
 ## Next
-- After core merges Sparkle: rebase, write `App/Updater.swift` (@Observable around `SPUStandardUpdaterController`, `canCheckForUpdates`, `automaticallyChecksForUpdates`, `checkForUpdates()`), replace the MelApp placeholder, add "Check for Updates…" in `CommandGroup(after: .appInfo)`. Full test, then "ready to merge".
-- Toolbar check once /Applications/Mel.app is closed. If the text drops: `.fixedSize()` before the padding. Any fix goes out as a small follow-up merge.
+- Wait for the orchestrator.
+- Possible follow-ups (not done, ask first): the status disappears into » overflow below ~860 pt (a shorter "Needs you" variant via ViewThatFits could keep it visible); in the sidebar, Up arrow from PRODUCT.md never selects the Discovery row (keyboard reachability).
 
 ## Notes
-- GUI checks: System Events can't tell two "Mel" processes apart (`first process whose unix id is …` + `window 1` still hit /Applications/Mel.app on 2026-11-23). Rule (orchestrator): no System Events / GUI scripting at all while /Applications/Mel.app is running, debug pid or not. Screenshots come from the orchestrator/user. Earlier toolbar screenshots after 15:55 were of the user's app, not the debug build.
+- GUI checks (2026-11-23, worked): select sidebar rows with `set value of attribute "AXSelected" of row N of outline` (outline = UI element 1 of UI element 1 of UI element 1 of UI element 1 of UI element 1 of window 1); System Events `click at` and CGEvent clicks do not select rows. Launch with `-ApplePersistenceIgnoreState YES`. Another agent's `xcodebuild test` starts a test-host Mel with the same debug bundle id and can quit the debug app: check `pgrep -x Mel` count == 1 before each step. Screens: CGWindowList by PID + `screencapture -l`.
+- Earlier: System Events can't tell two "Mel" processes apart (`first process whose unix id is …` + `window 1` still hit /Applications/Mel.app on 2026-11-23). Rule (orchestrator): no System Events / GUI scripting at all while /Applications/Mel.app is running, debug pid or not. Screenshots come from the orchestrator/user. Earlier toolbar screenshots after 15:55 were of the user's app, not the debug build.
 - While the user runs an install test of /Applications/Mel.app: don't launch the debug app, don't touch com.kaanf.mel defaults, and don't run the full xcodebuild test (MelTests are hosted by Mel.app, same bundle id). Only `cd MelKit && swift test`. Wait for the orchestrator to say the test is over.
 - Debug builds use `com.kaanf.mel.debug` (core, 5cdeebf); never touch /Applications/Mel.app or `com.kaanf.mel` defaults. Earlier note: running the debug app touched the real `com.kaanf.mel` defaults. Pass fixtures as launch arguments (`--args -library '<hex>' -didShowWelcome YES`); `CFFIXED_USER_HOME` does NOT isolate `defaults write`.
 - Views import only SwiftUI, MelSpec, UniformTypeIdentifiers (fileImporter). Sparkle only in App/. File pickers are `fileImporter`; chosen URLs go to AppState/SpecSession.
