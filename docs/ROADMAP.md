@@ -144,6 +144,8 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - Saved before shutdown: core cd39ee9 (WIP, MelTests session tests not yet v2, do not merge), ui a9d89e6 (next B1, A4x), platform 379ac91 (WIP: `--tools ""` analyze ran >400 s without finishing; check before mapping allowsTools).
 - Wave 7 core merged (d62dad7, 184 tests green); CONTRACTS: finish async. ui moves B1 to v2 signatures, then core drops the v1 ones.
 - W7 merged: core v1 API dropped + AppState.branches (6d4ca6e), ui B1 bottom pass (321dbef), platform allowsTools → `--tools ""` + no-tools re-recordings (a34c1db). User confirmed: sidebar project name + status; Quick fix fields go into the idea text; Paste Log sheet; empty name → "Untitled Spec".
+- Wave 6 ui screens merged (dd2d320): B3–B7, C1–C4. G6 met except the side-by-side check (one pixel pass per screen done by ui). User decisions 2026-11-23: system toolbar placement kept (buttons over the inspector, inspector headers below the toolbar); B7 AGENTS.md switch on, written on Done; C1 decision title from the impact run; B6 shows analysis time. Workflow: agents test once per batch, one merge request.
+- Wave 7: core adds writeAgentsFile / analyzedAt / ImpactResult.title; ui wires every screen + shortcuts; platform real run after.
 - Waiting on the user: v0.2.1 in-app update test.
 
 ## Risks
