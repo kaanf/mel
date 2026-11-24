@@ -35,7 +35,7 @@ struct FirstSpecView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
                 VStack(alignment: .leading, spacing: Theme.Space.x2) {
-                    Text("Untitled Spec")
+                    Text(Spec.untitledName)
                         .textStyle(Theme.Text.largeTitle)
                         .foregroundStyle(Theme.Colors.tertiary)
                     Text("Mel suggests a name once you describe your idea.")
@@ -147,7 +147,7 @@ struct FirstSpecView: View {
     private func start() {
         guard hasIdea, state.agent.isReady else { return }
         do {
-            let session = try state.createSpec(name: "Untitled Spec", idea: trimmedIdea, size: .product, project: nil, files: files)
+            let session = try state.createSpec(name: Spec.untitledName, idea: trimmedIdea, size: .product, project: nil, files: files)
             onStart()
             Task { await session.start() }
         } catch {

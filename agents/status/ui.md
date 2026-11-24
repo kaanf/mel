@@ -1,6 +1,6 @@
 # ui status
 
-Wave 7 real-run bugs (1, 4–8, 10, 11) done, full test green (227); ready to merge
+v0.3 published (build 389); standing by for the user's problem reports
 Updated: 2026-11-24
 
 ## Done
@@ -136,7 +136,8 @@ Updated: 2026-11-24
   - Core's spec-name field (bug 2) not on main yet; wire it when it lands.
 
 ## Next
-- Waiting for core's spec-name field (bug 2), then wire it. Otherwise ready to merge.
+- Bug 2: core renames the spec in place (`spec.name`/`spec.folder` update), nothing to wire. B1/A4x use `Spec.untitledName` (committed, build only; not tested yet).
+- v0.3 published (build 389). xcodebuild and the Debug app are allowed again. Stand by for the user's problem reports; d10d7e4 (`Spec.untitledName`) goes in with the next batch and gets tested with it.
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
