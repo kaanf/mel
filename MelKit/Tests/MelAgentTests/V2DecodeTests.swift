@@ -57,5 +57,6 @@ struct V2DecodeTests {
         #expect(analysis.coverage.allSatisfy { $0.screen == nil })
         let impact = try ImpactResult.decode(fixtures.result("impact"))
         #expect(impact.items.map(\.kind) == [.tasks])
+        #expect(!impact.title.isEmpty)
     }
 }
