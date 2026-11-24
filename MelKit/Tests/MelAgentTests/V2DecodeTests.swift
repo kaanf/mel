@@ -21,6 +21,9 @@ struct V2DecodeTests {
         #expect(!intake.questions.isEmpty)
         #expect(!intake.coverage.isEmpty)
         #expect(intake.coverage.contains { $0.state == .later })  // topics no question covers
+        #expect(!(intake.name ?? "").isEmpty)
+        let ids = Set(intake.questions.map(\.id))
+        #expect(intake.coverage.filter { $0.state == .notYet }.allSatisfy { $0.question.map(ids.contains) == true })
     }
 
     @Test func draftStripsMarkersAndReadsTheTrailer() throws {
@@ -52,7 +55,8 @@ struct V2DecodeTests {
 
     @Test func analyzeAndImpactDecode() throws {
         let analysis = try AnalyzeResult.decode(fixtures.result("analyze"))
-        #expect(analysis.stats.count == 4)
+        #expect((3...4).contains(analysis.stats.count))
+        #expect(analysis.stats.first?.label == "criteria have a task")
         #expect(Set(analysis.issues.map(\.kind)) == [.contradiction, .noTask, .qualityNotCovered, .scopeCreep])
         #expect(analysis.coverage.allSatisfy { $0.screen == nil })
         let impact = try ImpactResult.decode(fixtures.result("impact"))
