@@ -24,7 +24,7 @@ struct MarkdownBlocksView: View {
         case criteria([(id: String, text: String)])
         case bullets([String])
         case ordered([(number: Int, text: String)])
-        case tasks([(id: String, text: String, done: Bool, covers: [String])])
+        case tasks([(id: String, text: String, done: Bool, covers: [String], details: [String])])
         case assumption(index: Int, text: String)
         case openQuestion(index: Int, text: String)
         case covers([String])
@@ -60,9 +60,13 @@ struct MarkdownBlocksView: View {
             case (.orderedItem(let n, let text), _):
                 items.append(.ordered([(n, text)]))
             case (.task(let id, let text, let done, let covers), .tasks(let list)?):
-                items[items.count - 1] = .tasks(list + [(id, text, done, covers)])
+                items[items.count - 1] = .tasks(list + [(id, text, done, covers, [])])
             case (.task(let id, let text, let done, let covers), _):
-                items.append(.tasks([(id, text, done, covers)]))
+                items.append(.tasks([(id, text, done, covers, [])]))
+            // A task's sub-items (`Priority:`, `Reads:`, `Verify:`) sit under its title.
+            case (.listItem(let text), .tasks(var list)?):
+                list[list.count - 1].details.append(text)
+                items[items.count - 1] = .tasks(list)
             // A story's `P1 · MVP` line becomes a badge after its heading.
             case (.priority(let priority, let mvp), .heading(let level, let text, nil)?):
                 items[items.count - 1] = .heading(level: level, text: text, priority: mvp ? "\(priority) · MVP" : priority)
@@ -167,6 +171,11 @@ struct MarkdownBlocksView: View {
                                     .textStyle(Theme.Text.caption)
                                     .foregroundStyle(Theme.Colors.secondaryLabel)
                             }
+                            ForEach(task.details.indices, id: \.self) { d in
+                                Text(inline(task.details[d]))
+                                    .textStyle(Theme.Text.caption)
+                                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                            }
                         }
                     }
                     .accessibilityElement(children: .combine)
@@ -221,7 +230,11 @@ struct MarkdownBlocksView: View {
             FlowLayout(spacing: Theme.Space.x6) {
                 ForEach(steps.indices, id: \.self) { i in
                     let step = Self.split(steps[i])
+                    // The arrow leads its node, so a wrapped row starts with one instead of ending on one.
                     HStack(spacing: Theme.Space.x6) {
+                        if i > 0 {
+                            DesignIcon(glyph: .flowArrow, size: Theme.Size.flowArrow).foregroundStyle(Theme.Colors.secondaryLabel)
+                        }
                         VStack(alignment: .leading, spacing: Theme.Space.x2) {
                             Text(step.name).textStyle(Theme.Text.calloutBold)
                             if let ids = step.ids {
@@ -232,9 +245,6 @@ struct MarkdownBlocksView: View {
                         .padding(.horizontal, Theme.Space.x10)
                         .frame(minWidth: Theme.Size.flowNodeMin, alignment: .leading)
                         .surface(Theme.Colors.fill, .outlineLight, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
-                        if i < steps.count - 1 {
-                            DesignIcon(glyph: .flowArrow, size: Theme.Size.flowArrow).foregroundStyle(Theme.Colors.secondaryLabel)
-                        }
                     }
                 }
             }
@@ -378,7 +388,10 @@ struct MarkdownBlocksView: View {
         .surface(.clear, .outlineStrong, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
 
-    private func inline(_ text: String) -> AttributedString {
+    private func inline(_ text: String) -> AttributedString { Self.inline(text) }
+
+    /// Bold, italic, `code` and links in one line of spec text (Review, Live Preview, B7).
+    static func inline(_ text: String) -> AttributedString {
         // Inline only: block syntax is already parsed, and "1. Book a class" must keep its number.
         (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
     }
