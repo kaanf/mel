@@ -71,7 +71,7 @@ struct NewSpecView: View {
 
     private var name: String {
         let name = draft.name.trimmingCharacters(in: .whitespaces)
-        return name.isEmpty ? "Untitled Spec" : name
+        return name.isEmpty ? Spec.untitledName : name
     }
 
     /// `<project>/specs/<slug>/`, or `<parent>/<slug>/specs/<slug>/` for a Product without a project.
@@ -300,7 +300,7 @@ struct NewSpecView: View {
 
     private var nameField: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x2) {
-            TextField("Spec name", text: $draft.name, prompt: Text("Untitled Spec").foregroundStyle(Theme.Colors.tertiary))
+            TextField("Spec name", text: $draft.name, prompt: Text(Spec.untitledName).foregroundStyle(Theme.Colors.tertiary))
                 .textFieldStyle(.plain)
                 // A single-line field ignores `.lineHeight`; centered in the 36 pt line box like CSS.
                 .font(Theme.Text.largeTitle.font)
