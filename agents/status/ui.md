@@ -137,7 +137,8 @@ Updated: 2026-11-24
 
 ## Next
 - Bug 2: core renames the spec in place (`spec.name`/`spec.folder` update), nothing to wire. B1/A4x use `Spec.untitledName` (committed, build only; not tested yet).
-- v0.3 published (build 389). xcodebuild and the Debug app are allowed again. Stand by for the user's problem reports; d10d7e4 (`Spec.untitledName`) goes in with the next batch and gets tested with it.
+- v0.3 published (build 389); `Spec.untitledName` merged. Stand by for the user's problem reports.
+- Next batch (no separate merge): accessibility labels on B1's name field and intake's note / open-answer fields, committed and checked in the AX tree (AXDescription "Spec name", "Note for the agent, optional"); full test not run yet.
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
