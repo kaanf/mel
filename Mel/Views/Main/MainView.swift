@@ -35,15 +35,14 @@ struct MainView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let setupStep {
-            SetupFlow(step: setupStep) { newSpec in
-                self.setupStep = nil
+        // One SetupFlow for first run and for B1's Add Project… / Read Repo. `setupStep` latches it, so
+        // adding the project (A2 → A3) doesn't swap it for the library before A3 reads the repo.
+        if let step = setupStep ?? (needsSetup ? initialSetupStep : nil) {
+            SetupFlow(step: step) { newSpec in
+                setupStep = nil
                 isShowingNewSpec = newSpec
             }
-        } else if !didShowWelcome || (state.projects.isEmpty && state.missingFolders.isEmpty) {
-            SetupFlow(step: initialSetupStep) { newSpec in
-                isShowingNewSpec = newSpec
-            }
+            .onAppear { setupStep = step }
         } else if isShowingNewSpec {
             NewSpecView(draft: initialDraft, onAddProject: { setupStep = .pickProject }, onReadRepo: { setupStep = .projectSetup($0) }) {
                 isShowingNewSpec = false
@@ -52,6 +51,10 @@ struct MainView: View {
         } else {
             library
         }
+    }
+
+    private var needsSetup: Bool {
+        !didShowWelcome || (state.projects.isEmpty && state.missingFolders.isEmpty)
     }
 
     private var initialDraft: NewSpecView.Draft {

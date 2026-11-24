@@ -1,6 +1,6 @@
 # ui status
 
-Wave 7 wiring done, rebased on origin/main (4778c39), full test green (227); ready to merge
+Wave 7 real-run bugs (1, 4–8, 10, 11) done, full test green (227); ready to merge
 Updated: 2026-11-24
 
 ## Done
@@ -125,8 +125,18 @@ Updated: 2026-11-24
   - Previews: A3 Failed / Sidebar saved context / Sidebar not read yet; Sidebar Missing project.
   - Not run: a real Claude Code run through the Debug app (platform's real-run check).
 
+- Wave 7 real-run bugs (docs/research/W7-REAL-RUN.md), full test green (227 passed, 0 failed):
+  - 1: MainView shows one SetupFlow for first run and B1's Add Project/Read Repo; `setupStep` latches on appear, so `addProject` no longer swaps A2→A3 for the library.
+  - 4/5: Live Preview uses `session.documents[kind]` when stopped; lines render through `MarkdownBlocksView.inline` (now static, shared).
+  - 6: B7 title + "Builds … · reads …" inline Markdown; Verify only strips backticks (inline Markdown italicised `*Booking*` globs).
+  - 7: list items after a task attach to it (`details`) and render as caption lines under the title. A non-indented list right after tasks would attach too (the parser drops indentation); not seen in TASKS.md.
+  - 8: Review for `.stale`: banner (not drawn, B3 stopped-banner look) with Keep as It Is → `keepAsIs`, Refine n Files → `refine`; pill "Out of date · <edited file> changed"; Approve only for `.review`. B7 intro counts approved / edited / out of date / "Analyze needs a rerun" and points at the edited file. No core change needed (spec.docs has it). Preview "Out of date".
+  - 10: B5 has the Preview/Edit and Finder/Share buttons; flow arrows lead their node.
+  - 11: no change. AX audit of all 17 debug screens (scratchpad `axbuttons`, PID-targeted AX reads): every app button has a label in AXDescription (AXTitle stays empty, as SwiftUI does for custom labels): sidebar rows "PRODUCT.md, Approved", B1/Home cards, A3, C1 Keep/Refine/Undo. Only window traffic lights and scrollbar parts are unlabeled. SwiftUI builds the AX tree lazily: the first query of a fresh window returns empty groups, a second one is full.
+  - Core's spec-name field (bug 2) not on main yet; wire it when it lands.
+
 ## Next
-- Waiting for the orchestrator to merge Wave 7; platform can run the real Feature/Product check on the Debug app.
+- Waiting for core's spec-name field (bug 2), then wire it. Otherwise ready to merge.
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
