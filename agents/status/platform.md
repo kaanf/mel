@@ -1,7 +1,7 @@
 # platform status
 
-Wave: 7, merged (main 90c28df); standing by
-Updated: 2026-11-23
+Wave: 7, impact re-record with title ready for merge; standing by
+Updated: 2026-11-24
 
 ## Done (Wave 7)
 - `ClaudeCode.arguments` maps core's `AgentRequest.allowsTools` (on main): false → `--tools ""` (init lists `tools: []`). Test `noToolsPassesEmptyToolList`.
@@ -9,6 +9,8 @@ Updated: 2026-11-23
 - Re-recorded `analyze`, `impact` (`--no-tools`) and `project-context` (main's project.md: `read` + `sources`, module names now plain "FocusTimer"). Tests: `analyzeAndImpactRunWithoutTools`, V2DecodeTests checks `read`/`sources`. `inputs/context.json` left as is (the other fixtures were recorded with it).
 - v1 `Git.specPaths` removed (SpecSession uses `specPaths(slug:project:)`); the repeat-commit test now uses the v2 paths. `record.py` has a 300 s timeout.
 - Full `xcodebuild … test` green.
+- Impact re-recorded with core's titled impact.md (main 4778c39): title "Long break every 3rd focus session of the day", 1 turn, `tools: []`. V2DecodeTests checks the title isn't empty. Full suite green.
+- Intake re-recorded for coverage state `later` (4 of 8 topics `later`); decode test expects one. Core keeps its hand-written e2e/v2 intake fixtures as they are.
 
 ## Done (Wave 3)
 - fix: `fake-claude.sh` hang mode is `exec tail -n +1 -f` (plain `tail -f` started at the last 10 lines and lost `init`). `hangingRun` now pads with 10 unmapped records, so the hang tests fail without the fix (checked). Full `xcodebuild … test` green 3× in a row. Commit 2718415.
