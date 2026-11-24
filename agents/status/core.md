@@ -1,6 +1,6 @@
 # core status
 
-Wave: 7 user-decision items ready to merge
+Wave: 7 merged (incl. user-decision items), standing by for ui's Wave 7 requests
 Updated: 2026-11-24
 
 ## Done
@@ -56,7 +56,7 @@ Updated: 2026-11-24
 - (nothing)
 
 ## Next
-- Stand by for ui requests while ui builds the remaining screens.
+- Stand by for ui's Wave 7 requests.
 
 ## Notes
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
@@ -75,10 +75,7 @@ Updated: 2026-11-24
 - (nothing)
 
 ## Requests to orchestrator
-**Ready to merge** (user-decision items 1–3), rebased on ed41bc2.
-- CONTRACTS: `SpecSession.finish(commitToGit: Bool, writeAgentsFile: Bool) async throws`; `writeAgentsMD()` removed from the API; `SpecSession.saveDecision(reason: String, for: DocKind) async throws` (no `title:`); `AnalyzeResult.analyzedAt: Date` (init param defaults to now); `ImpactResult.title: String` (`init(title: String = "", items:)`).
-- Touched ui files: SpecReadyView (switch no longer writes; Commit passes `writeAgentsFile: writesAgents`), RefineView (saveDecision call). ui still needs to call `finish(commitToGit: false, writeAgentsFile: writesAgents)` on Done.
-- Platform: re-record impact against the new impact.md (`title`).
+- (none) User-decision items merged; CONTRACTS updated. Platform asked to re-record impact.
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
