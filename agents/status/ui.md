@@ -1,6 +1,6 @@
 # ui status
 
-Wave 7 wiring done, rebased on origin/main (4778c39), full test green (227); ready to merge
+Wave 7 wiring merged to main; standing by for bug reports from platform's real run
 Updated: 2026-11-24
 
 ## Done
@@ -126,7 +126,7 @@ Updated: 2026-11-24
   - Not run: a real Claude Code run through the Debug app (platform's real-run check).
 
 ## Next
-- Waiting for the orchestrator to merge Wave 7; platform can run the real Feature/Product check on the Debug app.
+- Wave 7 merged. Stand by for bug reports from platform's real-run check. Until the orchestrator says so: no full xcodebuild test, no Debug app launch.
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
