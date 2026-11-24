@@ -69,3 +69,25 @@ Total agent time ~28 min; wall clock ~38 min. Stop/Resume, round 2, the Analyze 
 
 - Driving the app needs the Debug window on the active Space. Earlier today it kept vanishing while another app was frontmost in a different Space; once it shared the active Space it stayed put. Not a Mel bug.
 - `com.kaanf.mel.debug` is shared with the test host, so test runs and real runs share defaults (the stray `/Users/kaan/untitled-spec` "Missing" project at the start likely came from an earlier idea run). Real runs should start with `defaults delete com.kaanf.mel.debug`.
+
+## Re-run after the fixes (partial, 2026-11-24)
+
+Debug build of main 72aec85, `defaults delete com.kaanf.mel.debug` first. Stopped at EXPERIENCE.md review when the user cancelled the re-run, so Analyze → Fix → re-Analyze, the outside edit → Refine and the out-of-date banner, pill and B7 summary are **not checked**.
+
+| Check | Result |
+|---|---|
+| First-run Read This Repo → A3 | Fixed: A3 opens and the repo read finishes in 24 s |
+| Spec gets a name | Fixed: intake named it "Bouldering Slot Booking" (16 s); sidebar and window title use it |
+| Folder `~/Developer/<slug>` | Fixed: created as `~/Developer/untitled-spec` at Start, renamed to `~/Developer/bouldering-slot-booking` once intake named it |
+| Discovery count moves | Fixed: 0 of 9 → 5 of 9 after the 5 intake answers |
+| Agent times | PRODUCT 19 s, REQUIREMENTS 117 s, EXPERIENCE 87 s |
+
+Accessibility, read through the AX API (`AXDescription`, queried twice per window, same result both times): Setup 0 of 1 unlabeled, Pick project 0 of 4, A3 0 of 7, A4x 0 of 7, B1 1 of 17, intake 1 of 20. ui bug 11 above was mostly my mistake: System Events returns the role description ("button") instead of `AXDescription`, so labels looked missing. What's left:
+
+### ui
+
+1. **Two text fields have no label**: B1's spec-name field and intake's "Note for the agent" field (`AXDescription` empty, no `AXTitle`).
+
+### platform (me)
+
+- Fixtures re-recorded before the cancel (5f04191): intake now has `name` and a `question` per `notYet` topic, analyze is recorded with `{{earlier}}` ("(none: this is the first check)") and its first stat is "criteria have a task". `build.py` passes `earlier` and uses the app's exact `screen` text.
