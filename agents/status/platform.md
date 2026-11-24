@@ -1,9 +1,10 @@
 # platform status
 
-Wave: 7, impact re-record with title ready for merge; standing by
+Wave: 7, real-run check done (docs/research/W7-REAL-RUN.md); standing by
 Updated: 2026-11-24
 
 ## Done (Wave 7)
+- Real-run check on main f67c61f, Debug app driven via AX: Feature on focus-timer B1→B7 (~4.6 min agent) and Product A4x→B7 with Stop+Resume, round 2, Fix all, outside edit → C1 Refine (~28 min agent). All flows work. Notes, timings, 11 ui + 5 core bugs with repro, screenshots in `docs/research/W7-REAL-RUN.md` + `w7-real-run/`. Real runs start with `defaults delete com.kaanf.mel.debug`; the idea flow leaves `~/untitled-spec`.
 - `ClaudeCode.arguments` maps core's `AgentRequest.allowsTools` (on main): false → `--tools ""` (init lists `tools: []`). Test `noToolsPassesEmptyToolList`.
 - The "--tools \"\" hang" was not the CLI: the old analyze prompt said "You may read files", so with no tools the model wrote tool calls as plain text and never finished. Core's W7 prompts say "Do not read any files"; with those, analyze is 1 turn/~77 s, impact ~4 s, no tools. Noted in AGENT-INTEGRATION.md.
 - Re-recorded `analyze`, `impact` (`--no-tools`) and `project-context` (main's project.md: `read` + `sources`, module names now plain "FocusTimer"). Tests: `analyzeAndImpactRunWithoutTools`, V2DecodeTests checks `read`/`sources`. `inputs/context.json` left as is (the other fixtures were recorded with it).
