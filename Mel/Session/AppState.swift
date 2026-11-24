@@ -39,6 +39,8 @@ import MelSystem
     @ObservationIgnored private var sessions: [Spec.ID: SpecSession] = [:]
     @ObservationIgnored private var runner: (executable: URL, runner: any AgentRunning)?
     @ObservationIgnored private var isPreview = false
+    /// Projects made by `createSpec` this launch; intake's name renames their folder.
+    @ObservationIgnored private var ideaProjects: Set<Project.ID> = []
     private static let searchPathsKey = "extraSearchPaths"
 
     /// Composition root passes `ClaudeCode()` and `{ AgentRunner(adapter: ClaudeCode(), executable: $0) }`;
@@ -168,18 +170,15 @@ import MelSystem
     // MARK: - Specs
 
     /// B1. Creates `specs/<slug>/` in `project` and copies attachments, then selects the spec; the
-    /// caller then calls `start()` on the session. Without a project (A4x, Product only) the
-    /// project folder is made under `~/Developer` (or the home folder).
+    /// caller then calls `start()` on the session. Without a project (A4x, Product only) a new
+    /// project folder is made under `parent`, by default `~/Developer` (created if missing).
+    /// Name it `Spec.untitledName` to let intake name it.
     func createSpec(name: String, idea: String, size: SpecSize, project: Project?, parent: URL? = nil, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession {
-        let parent = parent ?? (FileManager.default.fileExists(atPath: developerFolder.path) ? developerFolder : developerFolder.deletingLastPathComponent())
-        let project = try project ?? createProject(name: name, parent: parent)
-        var slug = SpecStore.slug(name)
-        var n = 1
-        while FileManager.default.fileExists(atPath: SpecStore.specFolder(slug: slug, project: project.folder).path) {
-            n += 1
-            slug = SpecStore.slug(name) + "-\(n)"
-        }
-        let spec = Spec(name: name, idea: idea, size: size, folder: SpecStore.specFolder(slug: slug, project: project.folder), buildsOn: buildsOn, fillGaps: fillGaps)
+        let isNew = project == nil
+        let project = try project ?? createProject(name: name, parent: parent ?? developerFolder)
+        if isNew { ideaProjects.insert(project.id) }
+        let folder = SpecStore.freeFolder(name: name, in: project.folder.appending(path: "specs", directoryHint: .isDirectory))
+        let spec = Spec(name: name, idea: idea, size: size, folder: folder, buildsOn: buildsOn, fillGaps: fillGaps)
         try SpecStore.create(spec)
         specs.append(spec)
         selection = spec.id
@@ -193,6 +192,31 @@ import MelSystem
             }
         }
         return session
+    }
+
+    /// Intake's name for an untitled spec: renames its folder, and the project folder too when
+    /// it was made for this spec this launch. Returns the spec's new folder.
+    func rename(_ id: Spec.ID, to name: String) throws -> URL {
+        guard let i = specs.firstIndex(where: { $0.id == id }) else { throw CocoaError(.fileNoSuchFile) }
+        let old = Project(folder: specs[i].project)
+        var project = old
+        if ideaProjects.contains(old.id), specs(in: old).count == 1, let p = projects.firstIndex(where: { $0.id == old.id }) {
+            let folder = SpecStore.freeFolder(name: name, in: old.folder.deletingLastPathComponent())
+            try FileManager.default.moveItem(at: old.folder, to: folder)
+            projects[p].folder = folder.normalizedFolder
+            project = projects[p]
+            ideaProjects.remove(old.id)
+            ideaProjects.insert(project.id)
+            contexts[project.id] = contexts.removeValue(forKey: old.id)
+            branches[project.id] = branches.removeValue(forKey: old.id)
+            saveLibrary()
+        }
+        let current = SpecStore.specFolder(slug: specs[i].folder.lastPathComponent, project: project.folder)
+        let folder = SpecStore.freeFolder(name: name, in: current.deletingLastPathComponent())
+        try FileManager.default.moveItem(at: current, to: folder)
+        specs[i].name = name
+        specs[i].folder = folder
+        return folder
     }
 
     /// Hides the spec until the next launch; its files stay.

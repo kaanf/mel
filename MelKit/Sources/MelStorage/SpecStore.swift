@@ -23,6 +23,18 @@ public actor SpecStore {
         return words.isEmpty ? "spec" : words.joined(separator: "-")
     }
 
+    /// `<parent>/<slug of name>/`, or `-2`, `-3`… after it when that is taken: never an existing folder.
+    public static func freeFolder(name: String, in parent: URL) -> URL {
+        let slug = slug(name)
+        var folder = parent.appending(path: slug, directoryHint: .isDirectory)
+        var n = 1
+        while FileManager.default.fileExists(atPath: folder.path) {
+            n += 1
+            folder = parent.appending(path: "\(slug)-\(n)", directoryHint: .isDirectory)
+        }
+        return folder
+    }
+
     /// `<project>/specs/<slug>/`.
     public static func specFolder(slug: String, project: URL) -> URL {
         project.appending(path: "specs", directoryHint: .isDirectory).appending(path: slug, directoryHint: .isDirectory)

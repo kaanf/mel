@@ -30,4 +30,10 @@ final class ProjectStoreTests {
         try "x".write(to: project.appending(path: "main.swift"), atomically: true, encoding: .utf8)
         #expect(!ProjectStore.isEmpty(project: project))
     }
+
+    @Test func newProjectNeverReusesAFolder() throws {
+        let first = try ProjectStore.createProject(name: "Climbing Gym", parent: parent)
+        let second = try ProjectStore.createProject(name: "Climbing Gym", parent: parent)
+        #expect([first, second].map(\.lastPathComponent) == ["climbing-gym", "climbing-gym-2"])
+    }
 }

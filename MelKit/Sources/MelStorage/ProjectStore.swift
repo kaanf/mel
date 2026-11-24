@@ -52,9 +52,9 @@ public enum ProjectStore {
         return items.allSatisfy { $0.hasPrefix(".") }
     }
 
-    /// Start from an Idea: creates `<parent>/<slug>/` and returns it.
+    /// Start from an Idea: creates `<parent>/<slug>/` (`<slug>-2`… if taken) and returns it.
     public static func createProject(name: String, parent: URL) throws -> URL {
-        let folder = parent.appending(path: SpecStore.slug(name), directoryHint: .isDirectory)
+        let folder = SpecStore.freeFolder(name: name, in: parent)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.normalizedFolder
     }
