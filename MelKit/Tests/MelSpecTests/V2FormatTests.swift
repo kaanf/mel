@@ -23,6 +23,12 @@ struct V2FormatTests {
     @Test func intakeTopicLeftToTheDraftDecodesAsLater() throws {
         let intake = try Intake.decode(#"{"coverage":[{"label":"Edge cases","state":"later"}],"questions":[]}"#, size: .feature)
         #expect(intake.coverage.map(\.state) == [.later])
+        #expect(intake.name == nil)
+    }
+
+    @Test func intakeNameIsTrimmedAndBlankIsNone() throws {
+        #expect(try Intake.decode(#"{"name":" Climb Slots ","coverage":[],"questions":[]}"#, size: .product).name == "Climb Slots")
+        #expect(try Intake.decode(#"{"name":"  ","coverage":[],"questions":[]}"#, size: .product).name == nil)
     }
 
     @Test func analyzeDecodes() throws {

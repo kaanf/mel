@@ -30,7 +30,8 @@ Name: {{name}}
 
 ## How to revise
 
-- Change only what "What to change" needs, plus whatever follows from it in this file. Keep everything else word for word, including IDs and numbering.
+- Change only the passages "What to change" names, plus whatever follows from it in this file. Keep everything else word for word, including IDs and numbering.
+- Add nothing it doesn't call for: no new criteria, screens, fields, tasks or sections, and no rewording elsewhere.
 - Keep the format of the file now.
 - Remove an `[!OPEN QUESTION]` or `[!ASSUMPTION]` callout once "What to change" answers it.
 

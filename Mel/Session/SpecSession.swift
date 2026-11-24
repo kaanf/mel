@@ -25,7 +25,7 @@ import MelSystem
     private(set) var isGitRepository = false
 
     @ObservationIgnored private weak var app: AppState?
-    @ObservationIgnored private let store: SpecStore?
+    @ObservationIgnored private var store: SpecStore?
     @ObservationIgnored private var watcher: FileWatcher?
     /// File writes and state saves, in order.
     @ObservationIgnored private var io: Task<Void, Never>?
@@ -59,9 +59,7 @@ import MelSystem
         self.store = store
         self.saved = documents
         self.decisions = (try? String(contentsOf: spec.folder.appending(path: "DECISIONS.md"), encoding: .utf8)).map(Decision.parse) ?? []
-        watcher = FileWatcher(folder: spec.folder) { [weak self] kind, text in
-            Task { @MainActor in self?.fileChanged(kind, text) }
-        }
+        watch()
         let files = spec.size.files
         let project = spec.project
         Task {
@@ -120,6 +118,7 @@ import MelSystem
                 lastError = "Claude Code's reply couldn't be read."
                 return
             }
+            if let name = intake.name, spec.name == Spec.untitledName { await rename(to: name) }
             spec.coverage = intake.coverage
             spec.questions = Self.unique(intake.questions, after: [])
             persist()
@@ -135,6 +134,7 @@ import MelSystem
     func answer(_ answer: Answer) async {
         guard spec.stage == .discovery, let i = spec.questions.firstIndex(where: { $0.round == .intake && $0.answer == nil }) else { return }
         spec.questions[i].answer = answer
+        cover(spec.questions[i])
         persist()
         if currentQuestion == nil { await finishIntake() }
     }
@@ -142,7 +142,32 @@ import MelSystem
     func changeAnswer(questionID: String, to answer: Answer) async {
         guard let i = spec.questions.firstIndex(where: { $0.id == questionID }) else { return }
         spec.questions[i].answer = answer
+        cover(spec.questions[i])
         persist()
+    }
+
+    /// The Discovery count: a topic is covered once the user answers its question.
+    private func cover(_ question: Question) {
+        guard question.answer != nil, question.answer != .agentDecides else { return }
+        for i in spec.coverage.indices where spec.coverage[i].question == question.id { spec.coverage[i].state = .covered }
+    }
+
+    /// Intake named an untitled spec: before any file is written, its folder takes the name.
+    private func rename(to name: String) async {
+        await flush()
+        watcher = nil
+        if let folder = try? app?.rename(spec.id, to: name) {
+            spec.folder = folder
+            store = SpecStore(folder: folder)
+        }
+        spec.name = name
+        watch()
+    }
+
+    private func watch() {
+        watcher = FileWatcher(folder: spec.folder) { [weak self] kind, text in
+            Task { @MainActor in self?.fileChanged(kind, text) }
+        }
     }
 
     /// Skips the rest: unanswered questions become assumptions.
@@ -484,7 +509,9 @@ import MelSystem
 
     private func runAnalyze() async {
         lastError = nil
+        let earlier = spec.analysis?.issues.map { "- \($0.id) (\($0.kind.rawValue), \($0.location)): \($0.text)" } ?? []
         let values = ["name": spec.name, "approved": approvedText(except: nil), "kinds": spec.size.kindsText,
+                      "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n"),
                       "screen": spec.size.files.contains(.experience) ? "" : "This spec has no EXPERIENCE.md: `screen` is null in every row."]
         let end = await run(Prompt.analyze.build(values), resume: nil, persist: false, tools: false)
         guard spec.stage == .analyze else { return }
@@ -646,10 +673,12 @@ import MelSystem
         let url = projectFolder.appending(path: "AGENTS.md")
         let existing = try? String(contentsOf: url, encoding: .utf8)
         let files = spec.size.files.map(\.fileName).joined(separator: ", ")
+        let context = FileManager.default.fileExists(atPath: ProjectStore.contextFolder(project: projectFolder).path)
+            ? "Read the project context in `.mel/project/` (product, tech, structure, principles) first. " : ""
         let block = """
         ## Spec: \(spec.name)
 
-        The spec is in `specs/\(slug)/` (\(files), DECISIONS.md). \(spec.size == .quickFix ? "" : "Work one task at a time from `specs/\(slug)/prompts/`. ")Read DECISIONS.md before changing behavior. Mel writes these files; propose changes instead of editing them.
+        \(context)The spec is in `specs/\(slug)/` (\(files), DECISIONS.md). \(spec.size == .quickFix ? "" : "Work one task at a time from `specs/\(slug)/prompts/`. ")Read DECISIONS.md before changing behavior. Mel writes these files; propose changes instead of editing them.
         """
         try Data(AgentsFile.merge(existing: existing, block: block).utf8).write(to: url, options: .atomic)
     }

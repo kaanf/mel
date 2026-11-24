@@ -29,20 +29,25 @@ public struct DiscoveryTurn: Hashable, Sendable {
 
 /// The one-shot intake reply (V2.md §5 Intake): every round-1 question and the coverage list.
 public struct Intake: Hashable, Sendable {
+    /// A short Title Case name for the spec, used when the user typed none.
+    public var name: String?
     public var coverage: [CoverageItem]
     public var questions: [Question]
 
-    public init(coverage: [CoverageItem], questions: [Question]) {
+    public init(name: String? = nil, coverage: [CoverageItem], questions: [Question]) {
+        self.name = name
         self.coverage = coverage
         self.questions = questions
     }
 
     public static func decode(_ reply: String, size: SpecSize) throws -> Intake {
         let wire = try JSONDecoder().decode(Wire.self, from: jsonObject(in: reply))
-        return Intake(coverage: wire.coverage, questions: wire.questions.map { $0.question(round: .intake, shapes: size.files[0]) })
+        let name = wire.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return Intake(name: name?.isEmpty == false ? name : nil, coverage: wire.coverage, questions: wire.questions.map { $0.question(round: .intake, shapes: size.files[0]) })
     }
 
     private struct Wire: Decodable {
+        var name: String?
         var coverage: [CoverageItem]
         var questions: [WireQuestion]
     }

@@ -20,7 +20,7 @@ struct PromptTests {
         #expect(placeholders(.project) == ["mode"])
         #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
         #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
-        #expect(placeholders(.analyze) == ["name", "approved", "kinds", "screen"])
+        #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds", "screen"])
         #expect(placeholders(.impact) == ["file", "before", "after", "later", "kinds"])
         #expect(placeholders(.continue) == ["file", "partial"])
         #expect(placeholders(.discovery) == ["name", "idea", "answers", "coverage"])
@@ -62,8 +62,10 @@ struct PromptTests {
     }
 
     @Test func intakeSampleDecodes() throws {
-        let line = try sample(Prompt.intake.build([:]), startingWith: #"{"coverage""#)
+        let line = try sample(Prompt.intake.build([:]), startingWith: #"{"name""#)
         let intake = try Intake.decode(line, size: .product)
+        #expect(intake.name == "Class Pack Booking")
+        #expect(intake.coverage[1].question == intake.questions.first?.id)
         #expect(intake.questions.first?.shapes == .requirements)
         #expect(intake.questions.first?.options.count == 2)
         #expect(intake.coverage.map(\.state) == [.covered, .notYet, .later])

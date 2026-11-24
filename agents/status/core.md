@@ -52,15 +52,17 @@ Updated: 2026-11-24
 
 - User decisions (2026-11-24): (1) AGENTS.md only on Done/Commit: `finish(commitToGit:writeAgentsFile:)`, `writeAgentsMD` private, commit includes AGENTS.md when written; SpecReadyView's switch no longer writes. (2) `AnalyzeResult.analyzedAt` (Mel's clock: a reply has none, decoding stamps now; persisted in state.json). (3) impact.md returns `title`; `ImpactResult.title` (empty if missing); `saveDecision(reason:for:)` titles the decision with it, else "Changed <File>". Scripted `pr-impact.jsonl` has a title. Full suite green (190).
 
+- W7 real-run batch (docs/research/W7-REAL-RUN.md): (1) intake returns `name`; a spec named `Spec.untitledName` takes it before any file is written: `AppState.rename(_:to:)` moves `specs/<slug>/` and, for a project `createSpec` made this launch, the project folder. (2) No project → `~/Developer` (created), `SpecStore.freeFolder` never reuses a folder. (3) analyze.md gets `{{earlier}}` (last result's issues: re-report with the same id only if still there, new ones only for real build breaks); revise.md changes only the named passages and adds nothing else. (4) tasks.md: numbering without gaps, references and callouts use the task's own number. (5) First stat counted in criteria. (6) `test` is missing only when `task` is, and every missing task is in a `noTask` issue. (7) AGENTS.md points at `.mel/project/` when it exists. (8) `Spec.outOfDate`. (9) `CoverageItem.question`; answering covers the topic. Full suite green (194).
+
 ## In progress
 - (nothing)
 
 ## Next
-- Stand by for ui's Wave 7 requests.
+- Stand by. Platform re-records intake/analyze.
 
 ## Notes
 - `SpecSession.run` clears `lastError` after the refusal guards (ui's Wave 7 merge, accepted).
-- Don't run the full `xcodebuild … test` while platform runs the Debug app (the test host shares the debug bundle id); wait for the orchestrator. `swift test` in MelKit is fine.
+- B1/A4x pass `Spec.untitledName` ("Untitled Spec") when the user types no name; intake renames only then. The folder rename is skipped (name still changes) if the move fails; after a relaunch mid-intake the project folder keeps its untitled name (only the spec folder moves).
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
 - `changeAnswer` only records the new answer; it does not drop later questions. The next turn sees it.
 - A run refused because another spec is running (or Claude Code isn't ready) sets `lastError`; during drafting the file goes to `stopped(kind, .user)` so Continue Drafting works.
@@ -77,7 +79,7 @@ Updated: 2026-11-24
 - (nothing)
 
 ## Requests to orchestrator
-- (none) User-decision items merged; CONTRACTS updated. Platform asked to re-record impact.
+- Contract changes for the real-run batch: `Intake.name: String?`; `CoverageItem.question: String?` (init param, default nil); `Spec.untitledName`; `Spec.outOfDate: [DocKind]`; `AppState.rename(_:to:) throws -> URL`; `createSpec` parent defaults to `~/Developer`; `SpecStore.freeFolder(name:in:)`; analyze.md placeholder `earlier`.
 
 ## Questions for the user
-- A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
+- (none) A4x folder settled: `~/Developer/<slug>/` (created if missing), per CONTRACTS.
