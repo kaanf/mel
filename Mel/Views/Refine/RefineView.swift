@@ -170,7 +170,7 @@ struct RefineView: View {
         let reason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
             if !reason.isEmpty {
-                do { try await session.saveDecision(title: "Changed \(kind.title)", reason: reason, for: kind) } catch { self.error = error.localizedDescription; return }
+                do { try await session.saveDecision(reason: reason, for: kind) } catch { self.error = error.localizedDescription; return }
             }
             await action()
         }

@@ -170,12 +170,14 @@ final class EndToEndTests {
         #expect(script.requests[5].allowsTools == false)
         #expect(session.spec.analyze == .passed)
         #expect(session.spec.analysis?.coverage.first?.id == "1.1")
+        #expect(try #require(session.spec.analysis?.analyzedAt).timeIntervalSinceNow > -60)
         session.handOffAnyway()
         #expect(session.spec.stage == .done)
 
-        try await session.finish(commitToGit: false)
+        let agents = project.folder.appending(path: "AGENTS.md")
+        #expect(!FileManager.default.fileExists(atPath: agents.path))
+        try await session.finish(commitToGit: false, writeAgentsFile: true)
         #expect(try text(session, "prompts/task-01.md").contains("Waitlist store"))
-        try session.writeAgentsMD()
         #expect(try String(contentsOf: project.folder.appending(path: "AGENTS.md"), encoding: .utf8).contains("## Spec: Waitlist"))
         #expect(session.decisions.map(\.title) == ["Should the schedule work offline?"])
         try await expectOnDisk(session)
@@ -257,7 +259,9 @@ final class EndToEndTests {
         try await wait("the impact run") { session.impact != nil }
         #expect(script.requests[11].allowsTools == false)
         #expect(session.impact?.items.map(\.kind) == [.experience, .tasks])
-        try await session.saveDecision(title: "Two spots per booking", reason: "Members bring a friend.", for: .requirements)
+        #expect(session.impact?.title == "Two spots per booking")
+        try await session.saveDecision(reason: "Members bring a friend.", for: .requirements)
+        #expect(session.decisions.first?.title == "Two spots per booking")
         #expect(session.decisions.first?.affects == ["1.1"])
 
         await session.refine()

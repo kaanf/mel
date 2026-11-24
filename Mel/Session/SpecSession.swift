@@ -530,13 +530,14 @@ import MelSystem
 
     // MARK: - Refine (C1)
 
-    /// "Why did this change?": criteria whose text changed are what it affects; it replaces the
-    /// latest decision about one of them.
-    func saveDecision(title: String, reason: String, for kind: DocKind) async throws {
+    /// "Why did this change?": titled by the impact run's one-line summary. Criteria whose text
+    /// changed are what it affects; it replaces the latest decision about one of them.
+    func saveDecision(reason: String, for kind: DocKind) async throws {
         let before = Self.criteria(snapshots[kind] ?? "")
         let after = Self.criteria(documents[kind] ?? "")
         let changed = Set(before.keys).union(after.keys).filter { before[$0] != after[$0] }.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         let replaced = decisions.first { d in d.replacedBy(in: decisions) == nil && !Set(d.affects).isDisjoint(with: changed) }
+        let title = impact.map(\.title).flatMap { $0.isEmpty ? nil : $0 } ?? "Changed \(kind.title)"
         addDecision(title: title, reason: reason, source: "You", replaces: replaced?.id, affects: changed)
         await io?.value
     }
@@ -640,7 +641,7 @@ import MelSystem
     }
 
     /// B7 "Write AGENTS.md": adds or updates Mel's marked block only.
-    func writeAgentsMD() throws {
+    private func writeAgentsMD() throws {
         let url = projectFolder.appending(path: "AGENTS.md")
         let existing = try? String(contentsOf: url, encoding: .utf8)
         let files = spec.size.files.map(\.fileName).joined(separator: ", ")
@@ -652,14 +653,17 @@ import MelSystem
         try Data(AgentsFile.merge(existing: existing, block: block).utf8).write(to: url, options: .atomic)
     }
 
-    /// Writes the task prompts, then commits `specs/<slug>/` (minus `.mel/`) and `.mel/project/`.
-    func finish(commitToGit: Bool) async throws {
+    /// B7 Done or Commit: writes the task prompts and, if the switch is on, AGENTS.md; then commits
+    /// `specs/<slug>/` (minus `.mel/`), `.mel/project/` and AGENTS.md.
+    func finish(commitToGit: Bool, writeAgentsFile: Bool) async throws {
         _ = try await writeTaskPrompts()
+        if writeAgentsFile { try writeAgentsMD() }
         guard commitToGit else { return }
         let (project, slug, message) = (projectFolder, slug, "Add spec for \(spec.name)")
         try await Task.detached {
             if !Git.isRepository(project) { try Git.initRepository(project) }
-            try Git.commit(paths: Git.specPaths(slug: slug, project: project), message: message, in: project)
+            let agents = writeAgentsFile ? ["AGENTS.md"] : []
+            try Git.commit(paths: Git.specPaths(slug: slug, project: project) + agents, message: message, in: project)
         }.value
         isGitRepository = true
     }
