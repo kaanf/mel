@@ -1,9 +1,10 @@
 # platform status
 
-Wave: 7, real-run check done (docs/research/W7-REAL-RUN.md); standing by
+Wave: 7, re-run cancelled by the user; v0.3 published; standing by for the user's problem reports
 Updated: 2026-11-24
 
 ## Done (Wave 7)
+- Re-record before the cancel: intake (`name`, `question` per notYet topic) and analyze (`{{earlier}}`, criteria stat), decode tests updated (5f04191, only V2 tests run, not the full suite). Partial re-run appended to W7-REAL-RUN.md: first-run A3, spec name, ~/Developer/<slug>, Discovery count all fixed; a11y labels are there (System Events misled me), only 2 text fields unlabeled. Fix/Refine convergence and the out-of-date UI were not checked.
 - Real-run check on main f67c61f, Debug app driven via AX: Feature on focus-timer B1→B7 (~4.6 min agent) and Product A4x→B7 with Stop+Resume, round 2, Fix all, outside edit → C1 Refine (~28 min agent). All flows work. Notes, timings, 11 ui + 5 core bugs with repro, screenshots in `docs/research/W7-REAL-RUN.md` + `w7-real-run/`. Real runs start with `defaults delete com.kaanf.mel.debug`; the idea flow leaves `~/untitled-spec`.
 - `ClaudeCode.arguments` maps core's `AgentRequest.allowsTools` (on main): false → `--tools ""` (init lists `tools: []`). Test `noToolsPassesEmptyToolList`.
 - The "--tools \"\" hang" was not the CLI: the old analyze prompt said "You may read files", so with no tools the model wrote tool calls as plain text and never finished. Core's W7 prompts say "Do not read any files"; with those, analyze is 1 turn/~77 s, impact ~4 s, no tools. Noted in AGENT-INTEGRATION.md.
@@ -70,8 +71,9 @@ Updated: 2026-11-24
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- Stand by. Wave 7 real-run check starts when the orchestrator says ui has wired the screens: Feature on an existing repo + Product from an idea, Debug build only, never /Applications/Mel.app.
-- Scratchpad probe copies are gone after a session ends; recreate from `docs/research/v2-prompts/probe/` per its README.
+- Stand by for the user's problem reports. Don't touch scripts/ or the build unless the orchestrator says so.
+- Not done yet (cancelled): Product re-run through Analyze → Fix → re-Analyze and outside edit → Refine → re-Analyze; full `xcodebuild test` after the re-record.
+- Don't delete `~/untitled-spec` or `~/Developer/bouldering-slot-booking` (left from runs; the user decides).
 
 ## Notes
 - Running only MelKit is faster: `cd MelKit && swift test`.
