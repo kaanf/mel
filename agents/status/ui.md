@@ -1,7 +1,7 @@
 # ui status
 
-Wave 6 step 2 in progress: A1, A1x, A2, A3, B1, A4x, B2, B3, B4, B5, B6, B7, all Wave 6 screens done (A1–A4x, B1–B7, C1–C4); ready to merge
-Updated: 2026-11-23
+Wave 7 wiring done, rebased on origin/main (4778c39), full test green (227); ready to merge
+Updated: 2026-11-24
 
 ## Done
 - Wave 0 components (merged): StatusBadge, StageStepper, RadioRow, CalloutView, KeyHint, ProgressStrip.
@@ -114,9 +114,19 @@ Updated: 2026-11-23
 
 - C4 Settings › Agents (`Views/Settings/SettingsView.swift` rewritten): Claude Code card (tile, status, Location + Change…, Account + Open Terminal…), Detection (search path list with selectable rows, +/−, footnote), Updates group (not drawn; same look), Scan Now. Hidden: General/Specs/Advanced tabs, Codex card, per-agent switch (V2 §2), scan-on-launch switch (earlier decision: always scans). Debug screen `settings` draws the pane in the window. One compare pass: matches.
 
+- Wave 7 (wiring), rebased on 4778c39 (core's writeAgentsFile / analyzedAt / impact title), full test green (227 passed, 0 failed):
+  - Sidebar project row → A3 (`ProjectSetupView(readsOnAppear: false)`): saved context from `state.contexts` without a new run; no context → "Mel hasn’t read this repo yet." + Read Repo (disabled while the agent is busy). A3 failed read → row with Try Again (was silent). Change… → A2, Save and Start a Spec → B1.
+  - Missing project folders (`missingFolders`, dropped with the v2 sidebar) are back as rows under the projects: click or Locate… → `fileImporter` → `locate`, Remove from List → `removeMissing`. Not drawn; project row look, secondary color. MainView keeps the library when only missing projects remain.
+  - MainView follows the pipeline (FLOW.md "Approve → B3 drafts the next file"): when the shown spec's current row changes, the detail follows if the old current row was open or a run just started (drafting / analyze running).
+  - B3 stopped banner shows `session.lastError` (a refused run: another spec running, Claude Code not ready). Core file: `SpecSession.run` clears `lastError` when a run starts (separate commit, tell core).
+  - B7: switch starts on; Done = the screen disappears (library navigation or the Quick fix sheet's Done) → `finish(commitToGit: false, writeAgentsFile:)` unless Commit already ran. Quitting the app on B7 skips it.
+  - B6 subtitle "· <analyzedAt time>". C1 title: core already moved `saveDecision(reason:for:)`.
+  - Keys: all drawn shortcuts were already bound (↩ Welcome/Continue, digits in Discovery, ⌘↩ A3/B1/A4x buttons + Approve menu, ⌘N). Window key equivalents run before the menu bar, so the disabled Approve item doesn't take ⌘↩ from B1/A3/A4x. ⌘N is now off during Lane A (no projects).
+  - Previews: A3 Failed / Sidebar saved context / Sidebar not read yet; Sidebar Missing project.
+  - Not run: a real Claude Code run through the Debug app (platform's real-run check).
+
 ## Next
-- Waiting for the orchestrator to merge Wave 6 screens (B3–C4 + B2 bits), full test green on the rebased branch.
-- Open deviations to decide (listed per screen above): toolbar items sit over the inspector (B2/B3), inspector headers can't sit in the toolbar row (B3), SwiftUI's one-word-last-line wrapping, the AGENTS.md switch starting off (B7), decision title "Changed <File>" (C1).
+- Waiting for the orchestrator to merge Wave 7; platform can run the real Feature/Product check on the Debug app.
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 

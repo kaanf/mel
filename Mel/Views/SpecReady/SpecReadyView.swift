@@ -2,12 +2,12 @@ import SwiftUI
 import MelSpec
 
 /// B7 Spec ready (design/v2 Native-4-Done): file tiles, P1 tasks with Copy Prompt, the start command,
-/// Write AGENTS.md and Commit. "Keep the spec in sync" and Use Codex Instead are hidden in v0.3 (V2 §2).
+/// Write AGENTS.md (on, written on Done or Commit) and Commit. "Keep the spec in sync" and Use Codex Instead are hidden in v0.3 (V2 §2).
 struct SpecReadyView: View {
     let session: SpecSession
     @Environment(AppState.self) private var state
     @State private var summaries: [DocKind: DocSummary] = [:]
-    @State private var writesAgents = false
+    @State private var writesAgents = true
     @State private var committed = false
     @State private var confirmingInit = false
     @State private var copied: Int?
@@ -60,6 +60,12 @@ struct SpecReadyView: View {
             // The per-task prompts the start command points at.
             do { _ = try await session.writeTaskPrompts() } catch { self.error = error.localizedDescription }
             for kind in files { summaries[kind] = session.summary(kind) }
+        }
+        // Done (the screen closes, or the Quick fix sheet's Done): AGENTS.md if the switch is on.
+        // Commit already wrote it.
+        .onDisappear {
+            guard !committed else { return }
+            Task { try? await session.finish(commitToGit: false, writeAgentsFile: writesAgents) }
         }
         .task(id: copied) {
             guard copied != nil else { return }

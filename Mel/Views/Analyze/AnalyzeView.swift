@@ -8,6 +8,14 @@ struct AnalyzeView: View {
 
     private var spec: Spec { session.spec }
     private var result: AnalyzeResult? { spec.analysis }
+
+    /// "All 5 files checked against each other · 12:31"
+    private var subtitle: String {
+        let files = spec.size.files.count
+        if isRunning { return "Checking \(files) files" }
+        let checked = "All \(files) files checked against each other"
+        return result.map { "\(checked) · \($0.analyzedAt.formatted(date: .omitted, time: .shortened))" } ?? checked
+    }
     private var isRunning: Bool { spec.analyze == .running }
     private var issues: [AnalyzeResult.Issue] { result?.issues ?? [] }
 
@@ -46,7 +54,7 @@ struct AnalyzeView: View {
         }
         .background(Theme.Colors.background)
         .navigationTitle("Analyze")
-        .navigationSubtitle(isRunning ? "Checking \(spec.size.files.count) files" : "All \(spec.size.files.count) files checked against each other")
+        .navigationSubtitle(subtitle)
         .toolbar {
             ToolbarItem {
                 Button("Hand Off Anyway") { session.handOffAnyway() }

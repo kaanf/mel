@@ -40,7 +40,7 @@ struct MainView: View {
                 self.setupStep = nil
                 isShowingNewSpec = newSpec
             }
-        } else if !didShowWelcome || state.projects.isEmpty {
+        } else if !didShowWelcome || (state.projects.isEmpty && state.missingFolders.isEmpty) {
             SetupFlow(step: initialSetupStep) { newSpec in
                 isShowingNewSpec = newSpec
             }
@@ -93,14 +93,25 @@ struct MainView: View {
             guard item?.specID != id else { return }
             item = id.flatMap { id in state.specs.first { $0.id == id } }.map(SidebarItem.current)
         }
+        // Follow the pipeline (FLOW.md: Approve → B3 drafts the next file): when the shown spec moves on,
+        // go with it if its current row was open or an agent run just started.
+        .onChange(of: shownSpec.map(SidebarItem.current)) { old, new in
+            guard let old, let new, old.specID == new.specID, let item, item.specID == new.specID, let spec = shownSpec else { return }
+            if item == old || spec.isRunningStage { self.item = new }
+        }
+    }
+
+    private var shownSpec: Spec? {
+        item?.specID.flatMap { id in state.specs.first { $0.id == id } }
     }
 
     @ViewBuilder
     private func detail(_ item: SidebarItem) -> some View {
         switch item {
-        case .project:
-            // A3 Project context: Wave 6 screen, not built yet.
-            ContentUnavailableView("Project Context", systemImage: "house")
+        case .project(let id):
+            if let project = state.projects.first(where: { $0.id == id }) {
+                ProjectSetupView(project: project, readsOnAppear: false, onChange: { setupStep = .pickProject }, onDone: { isShowingNewSpec = true })
+            }
         case .discovery(let id):
             DiscoveryView(session: state.session(for: id), showInspector: $showInspector)
         case .doc(let id, let kind):
@@ -122,6 +133,17 @@ struct MainView: View {
             } else {
                 AnalyzeView(session: session)
             }
+        }
+    }
+}
+
+private extension Spec {
+    /// A file being written or the analyze run going.
+    var isRunningStage: Bool {
+        switch stage {
+        case .drafting: true
+        case .analyze: analyze == .running
+        default: false
         }
     }
 }

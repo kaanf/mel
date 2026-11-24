@@ -9,18 +9,26 @@ struct ProjectSetupView: View {
     @State private var isAddingRule = false
     @State private var rule = ""
     @State private var error: String?
+    /// Lane A reads the repo on appear; the sidebar's project row waits for Read Repo.
+    let readsOnAppear: Bool
     let onChange: () -> Void
     let onDone: () -> Void
 
-    init(project: Project, isNewProject: Bool = false, onChange: @escaping () -> Void, onDone: @escaping () -> Void) {
+    init(project: Project, isNewProject: Bool = false, readsOnAppear: Bool = true, onChange: @escaping () -> Void, onDone: @escaping () -> Void) {
         self.project = project
         _isNewProject = State(initialValue: isNewProject)
+        self.readsOnAppear = readsOnAppear
         self.onChange = onChange
         self.onDone = onDone
     }
 
-    private var setup: ProjectSetup? { state.projectSetup?.project == project ? state.projectSetup : nil }
-    private var isRunning: Bool { setup?.isRunning ?? true }
+    /// This project's run, or (opened from the sidebar) its saved context, so it isn't read again.
+    private var setup: ProjectSetup? {
+        if let setup = state.projectSetup, setup.project == project { return setup }
+        guard let context = state.contexts[project.id] else { return nil }
+        return ProjectSetup(project: project, isNewProject: false, isRunning: false, activity: [], context: context, lastError: nil, branch: state.branches[project.id])
+    }
+    private var isRunning: Bool { setup?.isRunning ?? readsOnAppear }
 
     var body: some View {
         ScrollView {
@@ -62,7 +70,7 @@ struct ProjectSetupView: View {
             Text(error ?? "")
         }
         .task(id: project) {
-            if setup == nil { await state.setUpProject(project) }
+            if setup == nil, readsOnAppear { await state.setUpProject(project) }
         }
     }
 
@@ -118,7 +126,11 @@ struct ProjectSetupView: View {
                 .foregroundStyle(Theme.Colors.label)
                 .padding(.horizontal, Theme.Space.x4)
             VStack(spacing: 0) {
-                if let read = setup?.context?.read, !read.isEmpty {
+                if setup == nil, !readsOnAppear {
+                    actionRow("Mel hasn’t read this repo yet.", glyph: .doc, action: "Read Repo (about 1 min)")
+                } else if let message = setup?.lastError {
+                    actionRow(message, glyph: .alert, action: "Try Again")
+                } else if let read = setup?.context?.read, !read.isEmpty {
                     ForEach(read, id: \.self) { item in
                         readRow(item.label, source: item.source, done: true)
                     }
@@ -133,6 +145,23 @@ struct ProjectSetupView: View {
             .padding(.vertical, Theme.Space.x4)
             .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         }
+    }
+
+    /// Not read yet, or the run failed: one line and a link that starts the run.
+    private func actionRow(_ message: String, glyph: DesignIcon.Glyph, action: String) -> some View {
+        HStack(spacing: Theme.Space.x10) {
+            DesignIcon(glyph: glyph, size: Theme.Size.smallCheck)
+                .foregroundStyle(glyph == .alert ? Theme.Colors.warning : Theme.Colors.secondaryLabel)
+            Text(message)
+                .textStyle(Theme.Text.body)
+                .foregroundStyle(Theme.Colors.label)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button(action) { Task { await state.setUpProject(project) } }
+                .disabled(state.isAgentBusy)
+                .buttonStyle(DesignLinkStyle())
+        }
+        .padding(.horizontal, Theme.Space.x14)
+        .frame(minHeight: Theme.Size.chip)
     }
 
     private func readRow(_ label: String, source: String?, done: Bool) -> some View {
@@ -374,5 +403,26 @@ private extension String {
 #Preview("Reading") {
     ProjectSetupView(project: PreviewData.project, onChange: {}, onDone: {})
         .environment(PreviewData.appState([], projectSetup: PreviewData.projectSetupRunning))
+        .frame(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
+}
+
+#Preview("Failed") {
+    var setup = PreviewData.projectSetupRunning
+    setup.isRunning = false
+    setup.lastError = "Claude Code's reply couldn't be read."
+    return ProjectSetupView(project: PreviewData.project, onChange: {}, onDone: {})
+        .environment(PreviewData.appState([], projectSetup: setup))
+        .frame(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
+}
+
+#Preview("Sidebar, saved context") {
+    ProjectSetupView(project: PreviewData.project, readsOnAppear: false, onChange: {}, onDone: {})
+        .environment(PreviewData.appState([], contexts: [PreviewData.project.id: PreviewData.context], branches: [PreviewData.project.id: "main"]))
+        .frame(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
+}
+
+#Preview("Sidebar, not read yet") {
+    ProjectSetupView(project: PreviewData.project, readsOnAppear: false, onChange: {}, onDone: {})
+        .environment(PreviewData.appState([]))
         .frame(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
 }

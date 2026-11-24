@@ -118,7 +118,8 @@ struct DraftingView: View {
             VStack(alignment: .leading, spacing: Theme.Space.x2) {
                 Text("Stopped. Nothing was lost.")
                     .textStyle(Theme.Text.bodyBold)
-                Text("What the agent wrote so far is saved in \(kind.fileName). You can review it now or let the agent continue.")
+                // A run that didn't start (another spec running, Claude Code not ready) says why.
+                Text(session.lastError ?? "What the agent wrote so far is saved in \(kind.fileName). You can review it now or let the agent continue.")
                     .textStyle(Theme.Text.callout)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
             }
