@@ -306,6 +306,7 @@ import MelSystem
             lastError = "Claude Code isn't ready. Check Settings."
             return .refused
         }
+        lastError = nil
         app.requestNotificationsOnce()
         let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools)
         app.runningSpecID = spec.id
