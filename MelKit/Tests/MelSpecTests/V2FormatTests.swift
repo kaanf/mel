@@ -43,7 +43,10 @@ struct V2FormatTests {
 
     @Test func analyzeInAJSONFenceDecodes() throws {
         let reply = "Here is the check.\n\n```json\n{\"stats\":[],\"issues\":[],\"coverage\":[]}\n```\n"
-        #expect(try AnalyzeResult.decode(reply) == AnalyzeResult(stats: [], issues: [], coverage: []))
+        let before = Date.now
+        let result = try AnalyzeResult.decode(reply)
+        #expect(result == AnalyzeResult(stats: [], issues: [], coverage: [], analyzedAt: result.analyzedAt))
+        #expect(result.analyzedAt >= before)   // stamped by Mel on arrival
     }
 
     @Test func moduleNotesInParenthesesAreDropped() {
@@ -54,6 +57,8 @@ struct V2FormatTests {
     @Test func impactAndProjectContextDecode() throws {
         let impact = try ImpactResult.decode(#"{"items":[{"kind":"tasks","what":"Task 4","count":"1 task"}]}"#)
         #expect(impact.items == [.init(kind: .tasks, what: "Task 4", count: "1 task")])
+        #expect(impact.title == "")
+        #expect(try ImpactResult.decode(#"{"title":"Late cancel window is 12 hours","items":[]}"#).title == "Late cancel window is 12 hours")
 
         let context = try ProjectContext.decode(##"Here: {"product":"P","tech":"T","structure":"# Structure\n\n## Modules\n\n- Booking — `Sources/Booking`\n- Payments — Sources/Payments\n\n## Tests\n\n- Unit — Tests","principles":"R"}"##)
         #expect(context.modules == [Module(name: "Booking", path: "Sources/Booking"), Module(name: "Payments", path: "Sources/Payments")])

@@ -27,11 +27,22 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
     public var stats: [Stat]
     public var issues: [Issue]
     public var coverage: [CoverageRow]
+    /// B6 "Analyzed …". Mel's clock, not the model's: a reply has none, so decoding one stamps now.
+    public var analyzedAt: Date
 
-    public init(stats: [Stat], issues: [Issue], coverage: [CoverageRow]) {
+    public init(stats: [Stat], issues: [Issue], coverage: [CoverageRow], analyzedAt: Date = .now) {
         self.stats = stats
         self.issues = issues
         self.coverage = coverage
+        self.analyzedAt = analyzedAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        stats = try c.decode([Stat].self, forKey: .stats)
+        issues = try c.decode([Issue].self, forKey: .issues)
+        coverage = try c.decode([CoverageRow].self, forKey: .coverage)
+        analyzedAt = try c.decodeIfPresent(Date.self, forKey: .analyzedAt) ?? .now
     }
 
     /// "14 of 15" · "requirements have a task".
@@ -107,9 +118,20 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
 
 /// C1 "What this affects": one entry per stale file.
 public struct ImpactResult: Codable, Hashable, Sendable {
+    /// One line on what changed ("Late cancel window is 12 hours"); the saved decision's title. Empty if the reply has none.
+    public var title: String
     public var items: [Item]
 
-    public init(items: [Item]) { self.items = items }
+    public init(title: String = "", items: [Item]) {
+        self.title = title
+        self.items = items
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        items = try c.decode([Item].self, forKey: .items)
+    }
 
     public struct Item: Codable, Hashable, Sendable {
         public var kind: DocKind

@@ -109,7 +109,7 @@ enum PreviewData {
         let coverage = [
             ("Goal and success metric", CoverageState.covered), ("Users and roles", .covered), ("Platforms", .covered), ("Payments", .asking),
             ("Scope and out of scope", .notYet), ("Constraints and existing code", .notYet), ("Privacy, speed, offline", .notYet),
-            ("Integrations", .notYet), ("Data the app keeps", .notYet), ("Edge cases", .notYet),
+            ("Integrations", .notYet), ("Data the app keeps", .later), ("Edge cases", .later),
         ].map { CoverageItem(label: $0, state: $1) }
         return Spec(name: "Yoga Studio Booking", idea: "An app for my yoga studio where members book classes, buy class packs and get reminders. Teachers should see who is coming to each class.",
                     folder: folder, stage: .discovery, docs: locked, questions: questions, coverage: coverage)
@@ -124,7 +124,41 @@ enum PreviewData {
     )
     static let crashed = spec(.stopped(.architecture, .crashed("claude exited with status 1")), usageLimit.docs)
     static let review = spec(.review(.requirements), docs(.approved, .review))
-    static let analyzeIssues = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .issues(4))
+    static let analyzeIssues: Spec = {
+        var result = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .issues(4))
+        result.analysis = analysis
+        return result
+    }()
+    static let analyzeRunning = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .running)
+    /// B6 as drawn.
+    static let analysis = AnalyzeResult(
+        stats: [
+            .init(value: "14 of 15", label: "requirements have a task"), .init(value: "7 of 7", label: "screens trace to a requirement"),
+            .init(value: "2 of 3", label: "quality requirements are covered"), .init(value: "1", label: "contradiction between files"),
+        ],
+        issues: [
+            .init(id: "i1", kind: .contradiction, location: "REQUIREMENTS 1.3 · EXPERIENCE › Confirm booking",
+                  text: "Requirement 1.3 returns the credit up to 12 hours before class, but the screen copy says “Free cancellation up to 24 hours”.",
+                  actions: [.init(label: "Use 24 Hours", fix: "", files: [.requirements]), .init(label: "Use 12 Hours", fix: "", files: [.experience])]),
+            .init(id: "i2", kind: .noTask, location: "REQUIREMENTS 2.2",
+                  text: "When the studio cancels a class, members get their credit back. No task builds this and no test checks it.",
+                  actions: [.init(label: "Move to Later", fix: "", files: [.requirements]), .init(label: "Add Task", fix: "", files: [.tasks])]),
+            .init(id: "i3", kind: .qualityNotCovered, location: "REQUIREMENTS Q3",
+                  text: "The schedule should be readable offline. ARCHITECTURE.md has no local cache and TASKS.md has no task for it.",
+                  actions: [.init(label: "Drop Requirement", fix: "", files: [.requirements]), .init(label: "Add Task", fix: "", files: [.architecture, .tasks])]),
+            .init(id: "i4", kind: .scopeCreep, location: "TASKS 9", text: "Task 9 “Notification settings screen” traces to no requirement.",
+                  actions: [.init(label: "Remove Task", fix: "", files: [.tasks]), .init(label: "Link to Requirement", fix: "", files: [.tasks])]),
+        ],
+        coverage: [
+            ("1.1", "Book a class with free spots", ["c", "c", "c", "c"]), ("1.2", "Join the waitlist when full", ["c", "c", "c", "c"]),
+            ("1.3", "Cancel 12h before, credit returned", ["x", "c", "c", "c"]), ("2.1", "Pay, get credits and a receipt", ["c", "c", "c", "c"]),
+            ("2.2", "Studio cancels, credit returned", ["c", "c", "m", "m"]), ("Q1", "Schedule opens in under 1 second", ["c", "c", "c", "c"]),
+            ("Q2", "Payment data never stored on device", ["c", "c", "c", "c"]), ("Q3", "Schedule readable offline", ["c", "m", "m", "m"]),
+        ].map { id, text, m in
+            let mark = { (s: String) -> AnalyzeResult.Mark in s == "c" ? .covered : s == "m" ? .missing : .conflict }
+            return AnalyzeResult.CoverageRow(id: id, text: text, screen: mark(m[0]), architecture: mark(m[1]), task: mark(m[2]), test: mark(m[3]))
+        }
+    )
     static let edited = spec(.review(.requirements), docs(.approved, .edited, .stale, .stale, .stale), analyze: .stale)
     static let done = spec(.done, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
 
@@ -214,8 +248,8 @@ enum PreviewData {
     static let projectSetup = ProjectSetup(project: project, isNewProject: false, isRunning: false, activity: readLines, context: context, lastError: nil, branch: "main", fileCount: 214)
     static let projectSetupRunning = ProjectSetup(project: project, isNewProject: false, isRunning: true, activity: Array(readLines.prefix(2)), context: nil, lastError: nil, branch: "main", fileCount: 214)
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup, branches: branches)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup, branches: branches, sessions: sessions)
         state.missingFolders = missing
         return state
     }
@@ -235,5 +269,190 @@ enum PreviewData {
         shouldHappen: "One booking, one credit. The second tap does nothing.",
         location: "Class detail › Book button",
         files: [URL(filePath: "/tmp/crash-1123.log"), URL(filePath: "/tmp/double-tap.mov")]
+    )
+
+    // B3 Drafting as drawn: REQUIREMENTS.md at step 3, story 3 being written.
+    static let liveRequirements = """
+        # Requirements
+
+        ## 1. Book a class
+
+        As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
+
+        - 1.1 WHEN a member taps Book on a class with free spots, THE system SHALL reserve one spot.
+        - 1.2 IF the class is full, THEN THE system SHALL offer the waiting list.
+        - 1.3 WHEN a booking is made, THE system SHALL send a confirmation.
+
+        ## 2. Buy a class pack
+
+        As a member, I want to buy a pack of classes in the app, so that I can book without paying each time.
+
+        - 2.1 WHEN a member buys a pack, THE system SHALL add its credits to the account.
+        - 2.2 IF the payment fails, THEN THE system SHALL keep the credits unchanged.
+
+        ## 3. Cancel a booking
+
+        As a member, I want to cancel a booking I can’t make, so that
+        """
+    static let draftingActivity = [
+        "read specs/PRODUCT.md (approved)", "read 5 answers, 1 left open", "wrote story 1 “Book a class” (3 criteria)",
+        "wrote story 2 “Buy a class pack” (2 criteria)", "writing story 3 “Cancel a booking”",
+    ].enumerated().map { ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_000 + Double($0.offset * 20)), text: $0.element) }
+    static let draftingSession = SpecSession.preview(
+        drafting, documents: [.product: "# Product"], liveText: liveRequirements, activity: draftingActivity, isRunning: true, draftStep: 3
+    )
+
+    // B4 Review as drawn: REQUIREMENTS.md with round-2 gaps, an assumption and an open question.
+    static let reviewMarkdown = """
+        # Requirements
+
+        ## 1. Book a class
+
+        P1 · MVP
+
+        As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
+
+        Source: your idea, Question 4 (cancellations)
+
+        - 1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot, deduct one credit and show it under Upcoming.
+        - 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.
+
+        > [!ASSUMPTION]
+        > The waitlist is first come, first served. When a spot frees up, the first member on it is booked automatically and notified.
+
+        ## 2. Buy a class pack
+
+        P1 · MVP
+
+        As a member, I want to buy a pack of classes in the app, so that I can book without paying each time.
+
+        Source: Question 2 (payments)
+
+        - 2.1 WHEN a member completes payment, THE APP SHALL add the pack’s credits and email a receipt.
+
+        > [!OPEN QUESTION]
+        > What happens to unused credits when a pack expires?
+
+        <!-- MVP line -->
+
+        ## Quality requirements
+
+        Source: Intake (privacy, speed, offline) and project principles
+
+        - Q1 THE APP SHALL open the weekly schedule in under 1 second on a mid-range phone.
+        - Q2 THE APP SHALL never store card data on the device.
+        - Q3 WHILE offline, THE APP SHALL show the last loaded schedule and say when it was updated.
+
+        ## Edge cases
+
+        - Two members book the last spot at the same moment: one gets it, the other is offered the waitlist.
+        - Payment succeeds but the app closes before credits show: credits appear on next open.
+        """
+    static let reviewRoundTwo: Spec = {
+        var spec = review
+        spec.questions += ["Can members book for a friend?", "Do teachers see payment status?"].enumerated().map { i, title in
+            Question(id: "r\(i + 1)", title: title, why: "Found while drafting REQUIREMENTS.md.", shapes: .requirements, round: .draft,
+                     options: [Option(label: "Yes", note: ""), Option(label: "No", note: "")])
+        }
+        return spec
+    }()
+    static let reviewSession = SpecSession.preview(reviewRoundTwo, documents: [.product: "# Product", .requirements: reviewMarkdown])
+
+    // B5 Review EXPERIENCE.md as drawn.
+    static let experienceMarkdown = """
+        # Experience
+
+        ## Flow 1 · Book a class
+
+        Covers: 1.1, 1.2, 1.3
+
+        1. Schedule (1.1)
+        2. Class detail (1.1, 1.2)
+        3. Confirm booking (1.1)
+        4. Booked (1.1, 1.3)
+
+        - Class is full: Waitlist sheet (1.2)
+        - No credits left: Buy pack (2.1)
+
+        ## Screens and states
+
+        Every screen lists what it shows when data is missing, slow, failing or offline.
+
+        | Screen | States | Criteria |
+        |---|---|---|
+        | Schedule | Default, Empty week, Loading, Offline, Error | 1.1 |
+        | Class detail | Default, Full, Loading, !Error | 1.1, 1.2 |
+        | Confirm booking | Default, No credits, !Error | 1.1 |
+        | Booked | Default, Added to calendar | 1.1 |
+        | Waitlist sheet | Default, Spot opened, Error | 1.2 |
+        | Upcoming | Default, Empty, Cancel confirm, Late cancel | 1.3 |
+        | Buy pack | Default, Paying, Paid, Card declined | 2.1 |
+
+        ## Visual direction
+
+        > [!ASSUMPTION]
+        > Calm and light, one accent taken from the studio logo, large tap targets for use right before class. Platform-native controls on iOS and Android.
+        """
+    static let reviewExperience = spec(.review(.experience), docs(.approved, .approved, .review), questions: allAnswered)
+    static let experienceSession = SpecSession.preview(reviewExperience, documents: [.product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown])
+
+    // B7 Spec ready as drawn.
+    static let tasksMarkdown = """
+        # Tasks
+
+        - [ ] 1. Booking data model and local store
+          - Priority: P1
+          - Covers: 1.1, 1.2
+          - Reads: ARCHITECTURE § Data
+          - Verify: `./gradlew :shared:allTests --tests "*Booking*"`
+        - [ ] 2. Schedule and Class detail screens
+          - Priority: P1
+          - Covers: 1.1, Q1
+          - Reads: EXPERIENCE › Schedule, Class detail
+          - Verify: `./gradlew :androidApp:connectedCheck`
+          - Parallel with: 3
+        - [ ] 3. Class pack checkout
+          - Priority: P1
+          - Covers: 2.1, Q2
+          - Reads: EXPERIENCE › Buy pack
+          - Verify: `./gradlew :shared:allTests --tests "*Checkout*"`
+          - Parallel with: 2
+        """
+    static let doneSession = SpecSession.preview(done, documents: [
+        .product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture", .tasks: tasksMarkdown,
+    ])
+
+    // C1 Refine as drawn: 1.3 edited from 12 to 24 hours.
+    static let editedSession: SpecSession = {
+        let before = """
+            # Requirements
+
+            ## 1. Book a class
+
+            - 1.3 WHEN a member cancels at least 12 hours before class,
+              THE APP SHALL return the credit.
+            """
+        let after = before.replacingOccurrences(of: "12 hours", with: "24 hours")
+        let date = Date.now
+        return SpecSession.preview(
+            edited, documents: [.product: "# Product", .requirements: after],
+            impact: ImpactResult(items: [
+                .init(kind: .experience, what: "Copy on Confirm booking and Upcoming › Late cancel", count: "2 places"),
+                .init(kind: .architecture, what: "Cancellation rule in BookingPolicy", count: "1 section"),
+                .init(kind: .tasks, what: "Task 4 “Cancel booking” and task 7 “Credit refund tests”", count: "2 tasks"),
+            ]),
+            snapshots: [.requirements: before],
+            decisions: [
+                Decision(id: "D-03", title: "Cancellation window 12 hours", reason: "Your first answer in review.", source: "You", date: date.addingTimeInterval(-86_400), affects: ["1.3"]),
+                Decision(id: "D-04", title: "Class packs bought in the app", reason: "Mentioned in the idea. Desk payments stay possible, staff adds credits.", source: "Discovery Q2", date: date.addingTimeInterval(-90_000), affects: ["2.1"]),
+                Decision(id: "D-06", title: "Waitlist is first come, first served", reason: "Confirmed assumption. Simple to explain at the desk.", source: "You", date: date.addingTimeInterval(-3_600), affects: ["1.2"]),
+                Decision(id: "D-07", title: "Cancellation window 24 hours", reason: "Studio policy changed. Teachers need a full day to offer freed spots to the waitlist.", source: "You", date: date, replaces: "D-03", affects: ["1.3"]),
+            ]
+        )
+    }()
+
+    // C2 Agent stopped as drawn: ARCHITECTURE.md stopped at step 3.
+    static let stoppedSession = SpecSession.preview(
+        usageLimit, documents: [.product: "# Product", .requirements: reviewMarkdown, .architecture: "# Architecture"], activity: draftingActivity, draftStep: 3
     )
 }

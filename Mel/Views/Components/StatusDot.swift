@@ -16,7 +16,6 @@ struct StatusDot: View {
     let style: Style
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
 
     var body: some View {
         dot
@@ -37,13 +36,15 @@ struct StatusDot: View {
             ))
         case .running:
             // design: @keyframes pulse, scale 0.7 and opacity 0.55 at 50 %, 1.4 s
-            Circle().fill(Theme.Colors.drafting)
-                .scaleEffect(pulse ? 0.7 : 1)
-                .opacity(pulse ? 0.55 : 1)
-                .onAppear {
-                    guard !reduceMotion else { return }
-                    withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 0.7).repeatForever()) { pulse = true }
-                }
+            // Scoped to the dot: a repeating withAnimation in onAppear also animated the toolbar item's placement.
+            if reduceMotion {
+                Circle().fill(Theme.Colors.drafting)
+            } else {
+                Circle().fill(Theme.Colors.drafting)
+                    .phaseAnimator([false, true]) { dot, pulse in
+                        dot.scaleEffect(pulse ? 0.7 : 1).opacity(pulse ? 0.55 : 1)
+                    } animation: { _ in .timingCurve(0.4, 0, 0.2, 1, duration: 0.7) }
+            }
         }
     }
 }

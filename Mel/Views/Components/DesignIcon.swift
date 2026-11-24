@@ -3,7 +3,7 @@ import SwiftUI
 /// Line icons drawn in design/v2 that have no matching SF Symbol, stroked from the design's own SVG path data.
 struct DesignIcon: View {
     nonisolated enum Glyph {
-        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector
+        case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector, stop, lock, bell, star, question, docLines, code, share, flowArrow, branch, checkCircle, warning, minus
 
         /// SVG `d` attribute, as written in the `.dc.html` (circles written as two arcs).
         var path: String {
@@ -12,6 +12,19 @@ struct DesignIcon: View {
             case .chevronDown: "M4 6l4 4 4-4"
             case .chevronRight: "M6 3l5 5-5 5"
             case .arrowRight: "M3 8h10M9 4l4 4-4 4"
+            case .stop: "M5.5 4H10.5A1.5 1.5 0 0 1 12 5.5V10.5A1.5 1.5 0 0 1 10.5 12H5.5A1.5 1.5 0 0 1 4 10.5V5.5A1.5 1.5 0 0 1 5.5 4Z"
+            case .lock: "M5 7H11A1.5 1.5 0 0 1 12.5 8.5V12.5A1.5 1.5 0 0 1 11 14H5A1.5 1.5 0 0 1 3.5 12.5V8.5A1.5 1.5 0 0 1 5 7ZM5.5 7V5a2.5 2.5 0 0 1 5 0v2"
+            case .bell: "M4 11V7a4 4 0 0 1 8 0v4l1.25 1.5H2.75zM6.5 14h3"
+            case .star: "M8 1.75l1.6 3.9 4.15.35-3.15 2.75.95 4.05L8 10.6l-3.55 2.2.95-4.05L2.25 6l4.15-.35z"
+            case .question: "M8 1.75A6.25 6.25 0 1 1 8 14.25A6.25 6.25 0 1 1 8 1.75zM6.25 6.25a1.75 1.75 0 1 1 2.5 1.6c-.5.25-.75.6-.75 1.15M8 11.1v.15"
+            case .docLines: "M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5zM9.5 1.5V5H13M5.5 8h5M5.5 10.5h3.5"
+            case .code: "M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5"
+            case .share: "M8 1.75v8M5 4.5l3-2.75 3 2.75M5.5 7H4a1.25 1.25 0 0 0-1.25 1.25v4.5A1.25 1.25 0 0 0 4 14h8a1.25 1.25 0 0 0 1.25-1.25v-4.5A1.25 1.25 0 0 0 12 7h-1.5"
+            case .flowArrow: "M1 5h15M12 1.5L16 5l-4 3.5"
+            case .branch: "M1 1v5h12M10 3l3 3-3 3"
+            case .checkCircle: "M8 1.5A6.5 6.5 0 1 1 8 14.5A6.5 6.5 0 1 1 8 1.5zM5.25 8.25l1.9 1.9 3.6-4.15"
+            case .warning: "M8 2.25l6.25 11H1.75zM8 6.5v3M8 11.5v.1"
+            case .minus: "M3 8h10"
             case .draftNow: "M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"
             case .inspector: "M3.75 2.75H12.25A2 2 0 0 1 14.25 4.75V11.25A2 2 0 0 1 12.25 13.25H3.75A2 2 0 0 1 1.75 11.25V4.75A2 2 0 0 1 3.75 2.75ZM10 2.75V13.25"
             case .plus: "M8 3v10M3 8h10"
@@ -33,19 +46,28 @@ struct DesignIcon: View {
         /// SVG stroke-width as drawn.
         var lineWidth: CGFloat {
             switch self {
-            case .house, .folder, .doc, .gear, .inspector: 1.4
+            case .house, .folder, .doc, .gear, .inspector, .question, .docLines, .code, .share, .flowArrow, .branch: 1.4
             case .chevronDown, .check: 2
             case .chevronRight, .arrowRight: 2.2
-            case .plus, .terminal, .popUp: 1.6
+            case .plus, .terminal, .popUp, .stop, .lock: 1.6
+            case .minus: 1.8
             case .alert: 1.7
+            case .checkCircle: 1.8
             case .folderPlus: 1
             case .close: 2.6
-            case .paperclip, .draftNow: 1.5
+            case .paperclip, .draftNow, .bell, .star, .warning: 1.5
             }
         }
 
-        /// SVG viewBox (16 × 16, except the pop-up arrows: 10 × 14).
-        var viewBox: CGSize { self == .popUp ? CGSize(width: 10, height: 14) : CGSize(width: 16, height: 16) }
+        /// SVG viewBox (16 × 16, except the pop-up arrows 10 × 14 and B5's flow arrow 18 × 10 and branch 16 × 12).
+        var viewBox: CGSize {
+            switch self {
+            case .popUp: CGSize(width: 10, height: 14)
+            case .flowArrow: CGSize(width: 18, height: 10)
+            case .branch: CGSize(width: 16, height: 12)
+            default: CGSize(width: 16, height: 16)
+            }
+        }
     }
 
     let glyph: Glyph
@@ -63,7 +85,7 @@ struct DesignIcon: View {
     }
 }
 
-/// SVG path data (M L H V A Z, absolute and relative) scaled from its viewBox into the rect.
+/// SVG path data (M L H V C A Z, absolute and relative) scaled from its viewBox into the rect.
 nonisolated struct SVGPathShape: Shape {
     let data: String
     let viewBox: CGSize
@@ -103,6 +125,10 @@ nonisolated struct SVGPathShape: Shape {
                 let large = scanner.flag(), sweep = scanner.flag()
                 let end = point()
                 addArc(to: &path, from: current, to: end, rx: rx, ry: ry, degrees: angle, large: large, sweep: sweep)
+                current = end
+            case "C":
+                let c1 = point(), c2 = point(), end = point()
+                path.addCurve(to: end, control1: c1, control2: c2)
                 current = end
             case "Z":
                 path.closeSubpath(); current = start

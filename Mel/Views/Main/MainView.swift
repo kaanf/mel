@@ -10,8 +10,31 @@ struct MainView: View {
     @State private var showInspector = true
     /// B1's Add Project… (A2) or Read Repo (A3); back to B1 when done.
     @State private var setupStep: SetupFlow.Step?
+    /// C3's start cards open B1 with a size picked.
+    @State private var newSpecSize: SpecSize?
 
     var body: some View {
+        #if DEBUG
+        // `-screen failure`: C2's dialog in the window, where the design draws it (sheets can't be captured).
+        if DebugScreen.current == .failure {
+            FailureSheet(session: PreviewData.stoppedSession, kind: .architecture, reason: .usageLimit(resetsAt: nil))
+                .padding(.top, 72)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .ignoresSafeArea()
+        } else if DebugScreen.current == .settings {
+            // `-screen settings`: C4's pane in the window, for comparison with the drawn dialog.
+            SettingsView(updates: PreviewData.updates())
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
+    }
+
+    @ViewBuilder
+    private var content: some View {
         if let setupStep {
             SetupFlow(step: setupStep) { newSpec in
                 self.setupStep = nil
@@ -24,6 +47,7 @@ struct MainView: View {
         } else if isShowingNewSpec {
             NewSpecView(draft: initialDraft, onAddProject: { setupStep = .pickProject }, onReadRepo: { setupStep = .projectSetup($0) }) {
                 isShowingNewSpec = false
+                newSpecSize = nil
             }
         } else {
             library
@@ -34,7 +58,7 @@ struct MainView: View {
         #if DEBUG
         if let draft = DebugScreen.current?.newSpecDraft { return draft }
         #endif
-        return NewSpecView.Draft()
+        return NewSpecView.Draft(size: newSpecSize)
     }
 
     private var initialSetupStep: SetupFlow.Step {
@@ -51,7 +75,10 @@ struct MainView: View {
             if let item, item.specID.map({ id in state.specs.contains { $0.id == id } }) ?? true {
                 detail(item).id(item)
             } else if state.specs.isEmpty {
-                EmptyLibraryView { isShowingNewSpec = true }
+                HomeView { size in
+                    newSpecSize = size
+                    isShowingNewSpec = true
+                }
             } else {
                 ContentUnavailableView("No Spec Selected", systemImage: "doc.text", description: Text("Choose a spec in the sidebar."))
             }
@@ -81,30 +108,20 @@ struct MainView: View {
             switch session.spec.docs[kind] ?? .locked {
             case .writing, .stopped:
                 DraftingView(session: session, kind: kind, showInspector: $showInspector)
-            case .review, .approved, .edited, .stale:
+            case .edited:
+                RefineView(session: session, kind: kind, showInspector: $showInspector)
+            case .review, .approved, .stale:
                 ReviewView(session: session, kind: kind)
             case .locked:
                 LockedDocView(kind: kind, size: session.spec.size)
             }
-        case .analyze:
-            // B6 Analyze: Wave 6 screen, not built yet.
-            ContentUnavailableView("Analyze", systemImage: "checklist")
-        }
-    }
-}
-
-struct EmptyLibraryView: View {
-    @Environment(AppState.self) private var state
-    let onNewSpec: () -> Void
-
-    var body: some View {
-        ContentUnavailableView {
-            Label("No Specs Yet", systemImage: "doc.text")
-        } description: {
-            Text("Start from an idea. The agent turns it into a spec with you.")
-        } actions: {
-            Button("New Spec…", action: onNewSpec)
-                .disabled(!state.agent.isReady)
+        case .analyze(let id):
+            let session = state.session(for: id)
+            if session.spec.stage == .done {
+                SpecReadyView(session: session)
+            } else {
+                AnalyzeView(session: session)
+            }
         }
     }
 }

@@ -694,7 +694,7 @@ struct IdeaTextArea: View {
     let placeholder: String
 
     /// NSTextView's line fragment padding inside TextEditor.
-    private static let inset: CGFloat = 5
+    static let inset: CGFloat = 5
 
     var body: some View {
         // A multi-line TextField ignores line height; TextEditor honors it.

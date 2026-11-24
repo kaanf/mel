@@ -81,7 +81,8 @@ final class SpecSessionTests {
     private let tasks = "# Tasks\n\n- [ ] 1. Build booking\n  - Covers: 1.1\n"
     private let passed = #"{"stats":[],"issues":[],"coverage":[]}"#
     private let issues = #"{"stats":[],"issues":[{"id":"i1","kind":"noTask","location":"REQUIREMENTS 1.1","text":"No test.","actions":[{"label":"Add Task","fix":"Add a test task for 1.1.","files":["tasks"]}]}],"coverage":[]}"#
-    private let impact = #"{"items":[{"kind":"architecture","what":"the Booking module","count":"1 section"},{"kind":"tasks","what":"Task 1","count":"1 task"}]}"#
+    private let untitledImpact = #"{"items":[{"kind":"tasks","what":"Task 1","count":"1 task"}]}"#
+    private let impact = #"{"title":"Refunds","items":[{"kind":"architecture","what":"the Booking module","count":"1 section"},{"kind":"tasks","what":"Task 1","count":"1 task"}]}"#
 
     private func file(_ text: String, session id: String? = nil) -> [AgentEvent] {
         (id.map { [.session($0)] } ?? []) + [.text(text), .done(result: "")]
@@ -333,11 +334,12 @@ final class SpecSessionTests {
 
     @Test func keepAsIsMakesTheEditApproved() async throws {
         let (session, runner, _) = try approvedFeature()
-        runner.add([[.done(result: impact)]])
+        runner.add([[.done(result: untitledImpact)]])
         await session.start()
         await approveAll(session)
         try await editRequirements(session)
-        try await session.saveDecision(title: "Refunds", reason: "Studios asked for it.", for: .requirements)
+        try await session.saveDecision(reason: "Studios asked for it.", for: .requirements)
+        #expect(session.decisions.first?.title == "Changed \(DocKind.requirements.title)")   // the impact reply had no title
         #expect(session.decisions.first?.affects == ["1.2"])
 
         session.keepAsIs()
@@ -352,7 +354,8 @@ final class SpecSessionTests {
         await session.start()
         await approveAll(session)
         try await editRequirements(session)
-        try await session.saveDecision(title: "Refunds", reason: "Studios asked for it.", for: .requirements)
+        try await session.saveDecision(reason: "Studios asked for it.", for: .requirements)
+        #expect(session.decisions.first?.title == "Refunds")
 
         await session.refine()
         #expect(runner.requests[6].prompt.contains("Reason: Studios asked for it. Update what this affects here: the Booking module."))

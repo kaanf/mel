@@ -285,7 +285,7 @@ import MelSystem
         library.save(projects.map(\.folder) + missingFolders)
     }
 
-    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:]) -> AppState {
+    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], sessions: [SpecSession] = []) -> AppState {
         let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() }, defaults: UserDefaults(suiteName: "preview")!)
         state.isPreview = true
         state.specs = specs
@@ -295,6 +295,7 @@ import MelSystem
         state.foundRepositories = foundRepositories
         state.projectSetup = projectSetup
         state.branches = branches
+        for session in sessions { state.sessions[session.spec.id] = session }   // fixtures with live text, activity, step
         state.selection = specs.first?.id
         return state
     }

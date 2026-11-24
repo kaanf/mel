@@ -8,6 +8,8 @@ struct RadioRow: View {
     var suggested = false
     var keyHint: String?
     let isSelected: Bool
+    /// B2 rows are inset 9/12 inside the card; C2 draws them flush (6/0).
+    var insets = EdgeInsets(top: Theme.Space.x9, leading: Theme.Space.x12, bottom: Theme.Space.x9, trailing: Theme.Space.x12)
     let action: () -> Void
 
     var body: some View {
@@ -50,8 +52,7 @@ struct RadioRow: View {
                         .accessibilityHidden(true)
                 }
             }
-            .padding(.vertical, Theme.Space.x9)
-            .padding(.horizontal, Theme.Space.x12)
+            .padding(insets)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
