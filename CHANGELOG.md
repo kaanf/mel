@@ -6,14 +6,22 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
-Mel v2 is in progress and ships as **0.3**. It is a new design for the whole app.
+## [0.3] · 2026-11-24
 
+Mel v2: a new design for the whole app.
+
+### Added
 - **Projects.** Pick a repo once; Mel reads it and writes short project context files that every spec and agent reads first, so new work extends your code instead of rebuilding it.
 - **Three sizes.** Quick fix (one SPEC.md), Feature (Requirements, Architecture, Tasks) or Product (adds Product and Experience).
-- **Short intake.** A few questions up front, then a short second round for gaps found in the draft.
-- **Analyze.** Before handoff, Mel checks every file against the others: contradictions, requirements with no task, uncovered quality needs, scope creep.
-- **Refine.** Change an approved file and Mel marks what is now out of date, records why in DECISIONS.md, and updates only the affected parts.
-- **Handoff.** A ready-to-paste prompt per task, with what it builds and how to verify it, plus an optional AGENTS.md.
+- **Analyze.** Before handoff, Mel checks the files against each other: contradictions, requirements with no task, uncovered quality needs, scope creep. Fix an issue with one click; a recheck keeps open issues and only adds real new ones.
+- **Refine.** Edit an approved file, even in another app, and Mel marks what is now out of date, records why in DECISIONS.md, and updates only the affected parts.
+- **Handoff.** A ready-to-paste prompt per task, with what it builds and how to verify it, plus an optional AGENTS.md written when you finish.
+- Mel names the spec from your idea if you leave the name empty.
+
+### Changed
+- Discovery is replaced by a short intake: a few questions up front, then a short second round for gaps found in the draft.
+- DESIGN.md is split into EXPERIENCE.md (Product) and ARCHITECTURE.md.
+- Specs started from an idea without a repo go to ~/Developer.
 - New look, light mode.
 
 ## [0.2.1] · 2026-11-23
@@ -55,7 +63,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.3...HEAD
+[0.3]: https://github.com/kaanf/mel/releases/tag/v0.3
 [0.2.1]: https://github.com/kaanf/mel/releases/tag/v0.2.1
 [0.2]: https://github.com/kaanf/mel/releases/tag/v0.2
 [0.1]: https://github.com/kaanf/mel/releases/tag/v0.1
