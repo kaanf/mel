@@ -1,6 +1,6 @@
 # platform status
 
-Wave: 7, real-run check done (docs/research/W7-REAL-RUN.md); standing by
+Wave: 7, real-run notes merged (main 402e9f1); waiting for core's prompt changes
 Updated: 2026-11-24
 
 ## Done (Wave 7)
@@ -70,7 +70,8 @@ Updated: 2026-11-24
 - 3: local end-to-end update test ✓. Build 1000 → 1001 via localhost feed with bundle id com.kaanf.mel.updatetest, Developer ID signed, not notarized. Download, `OK: EdDSA signature is correct`, replace, relaunch all seen. /Applications/Mel.app and com.kaanf.mel untouched; test defaults removed. Write-up: docs/research/SPARKLE-UPDATE-TEST.md. Test folder /tmp/mel-update-test.Kz4oST left for manual deletion.
 
 ## Next
-- Stand by. Wave 7 real-run check starts when the orchestrator says ui has wired the screens: Feature on an existing repo + Product from an idea, Debug build only, never /Applications/Mel.app.
+- Wait for core's prompt changes (intake `name`, analyze/tasks/revise). Then re-record the affected fixtures (intake, analyze, draft-steps, …) per `docs/research/v2-prompts/README.md`, and do one short Product re-run in the Debug app (Fix + re-Analyze) to check whether issues converge. Start with `defaults delete com.kaanf.mel.debug`; Debug build only, never /Applications/Mel.app.
+- Don't delete `~/untitled-spec` (the orchestrator is asking the user).
 - Scratchpad probe copies are gone after a session ends; recreate from `docs/research/v2-prompts/probe/` per its README.
 
 ## Notes
