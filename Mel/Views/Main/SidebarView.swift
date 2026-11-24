@@ -1,5 +1,6 @@
 import SwiftUI
 import MelSpec
+import UniformTypeIdentifiers
 
 /// Library sidebar, design/v2 variant drawn on B5–C3: per project a Project context row,
 /// "Specs", and each spec with Discovery, its size's files and Analyze. Rows are drawn here
@@ -10,6 +11,9 @@ struct SidebarView: View {
     let onNewSpec: () -> Void
     @State private var collapsed: Set<Spec.ID> = []
     @FocusState private var isFocused: Bool
+    /// A missing project being located.
+    @State private var locating: URL?
+    @State private var locateError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,6 +21,9 @@ struct SidebarView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(state.projects) { project in
                         projectSection(project)
+                    }
+                    ForEach(state.missingFolders, id: \.self) { folder in
+                        missingRow(folder)
                     }
                 }
                 .padding(.top, Theme.Size.titleBar)
@@ -38,6 +45,44 @@ struct SidebarView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .navigationSplitViewColumnWidth(Theme.Size.sidebarWidth + Theme.Space.x8)
         .toolbar(removing: .sidebarToggle)
+        .fileImporter(isPresented: Binding(get: { locating != nil }, set: { if !$0 { locating = nil } }), allowedContentTypes: [.folder]) { result in
+            guard let missing = locating, case .success(let folder) = result else { return }
+            do { try state.locate(missing, at: folder) } catch { locateError = error.localizedDescription }
+        }
+        .alert("Couldn’t Add the Folder", isPresented: Binding(get: { locateError != nil }, set: { if !$0 { locateError = nil } })) {
+        } message: {
+            Text(locateError ?? "")
+        }
+    }
+
+    /// A project folder that moved or was deleted since the last launch (not drawn; the project row's look).
+    private func missingRow(_ folder: URL) -> some View {
+        Button { locating = folder } label: {
+            HStack(spacing: Theme.Space.x6) {
+                DesignIcon(glyph: .house, size: Theme.Size.projectIcon)
+                Text(folder.lastPathComponent)
+                    .textStyle(Theme.Text.body)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Text("Missing").textStyle(Theme.Text.caption).fixedSize()
+            }
+            .foregroundStyle(Theme.Colors.secondaryLabel)
+            .padding(.leading, Theme.Space.x8)
+            .padding(.trailing, Theme.Space.x8)
+            .frame(height: Theme.Size.sidebarRow)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .padding(.horizontal, Theme.Space.x8)
+        .padding(.top, Theme.Space.x6)
+        .help("\(folder.path(percentEncoded: false)) is missing. Click to locate it.")
+        .accessibilityLabel("\(folder.lastPathComponent), Missing")
+        .accessibilityHint("Locate the moved folder")
+        .contextMenu {
+            Button("Locate…") { locating = folder }
+            Button("Remove from List") { state.removeMissing(folder) }
+        }
     }
 
     // MARK: Sections
@@ -358,5 +403,16 @@ private struct SidebarRow<Icon: View>: View {
         Color.white
     }
     .environment(PreviewData.appState([]))
+    .frame(width: 900, height: 600)
+}
+
+#Preview("Missing project") {
+    @Previewable @State var selection: SidebarItem?
+    NavigationSplitView {
+        SidebarView(selection: $selection, onNewSpec: {})
+    } detail: {
+        Color.white
+    }
+    .environment(PreviewData.appState([PreviewData.review], missing: [URL(filePath: "/Users/me/Developer/old-portfolio")]))
     .frame(width: 900, height: 600)
 }

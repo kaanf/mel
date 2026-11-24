@@ -24,7 +24,7 @@ struct MelApp: App {
         }
         .defaultSize(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
         .commands {
-            MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady, updater: updater)
+            MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady && !(state.projects.isEmpty && state.missingFolders.isEmpty), updater: updater)
         }
 
 
