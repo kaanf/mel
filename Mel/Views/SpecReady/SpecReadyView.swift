@@ -200,10 +200,6 @@ struct SpecReadyView: View {
                 Toggle("Write AGENTS.md", isOn: $writesAgents)
                     .toggleStyle(DesignSwitchStyle())
                     .labelsHidden()
-                    .onChange(of: writesAgents) { _, on in
-                        guard on else { return }
-                        do { try session.writeAgentsMD() } catch { self.error = error.localizedDescription; writesAgents = false }
-                    }
             }
             .frame(minHeight: Theme.Size.projectRow)   // CSS min-height leaves out the padding
             .padding(.vertical, Theme.Space.x8)
@@ -243,7 +239,7 @@ struct SpecReadyView: View {
     private func commit() {
         Task {
             do {
-                try await session.finish(commitToGit: true)
+                try await session.finish(commitToGit: true, writeAgentsFile: writesAgents)
                 committed = true
             } catch {
                 self.error = error.localizedDescription

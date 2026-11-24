@@ -1,7 +1,7 @@
 # core status
 
-Wave: 7 merged (incl. CoverageState.later), standing by
-Updated: 2026-11-23
+Wave: 7 user-decision items ready to merge
+Updated: 2026-11-24
 
 ## Done
 - W6 reducer (`Pipeline.swift`): sizes, approve with open items, revise queue (`Spec.queue`), analyze stage/result, edited → later files stale, undo / keepAsIs / refine. 24 tests.
@@ -50,6 +50,8 @@ Updated: 2026-11-23
 
 - ui request (B2): `CoverageState.later` (topic left to the draft, asked in round 2). intake.md: `notYet` = one of the intake questions asks it, else `later`; sample includes one. `decideText` lists `later` topics with the other uncovered ones. Compile fix in ui's DiscoveryView (`case .notYet, .later`). Full suite green 2 runs (190 tests).
 
+- User decisions (2026-11-24): (1) AGENTS.md only on Done/Commit: `finish(commitToGit:writeAgentsFile:)`, `writeAgentsMD` private, commit includes AGENTS.md when written; SpecReadyView's switch no longer writes. (2) `AnalyzeResult.analyzedAt` (Mel's clock: a reply has none, decoding stamps now; persisted in state.json). (3) impact.md returns `title`; `ImpactResult.title` (empty if missing); `saveDecision(reason:for:)` titles the decision with it, else "Changed <File>". Scripted `pr-impact.jsonl` has a title. Full suite green (190).
+
 ## In progress
 - (nothing)
 
@@ -73,7 +75,10 @@ Updated: 2026-11-23
 - (nothing)
 
 ## Requests to orchestrator
-- (none) CoverageState.later merged; platform is re-recording intake.
+**Ready to merge** (user-decision items 1–3), rebased on ed41bc2.
+- CONTRACTS: `SpecSession.finish(commitToGit: Bool, writeAgentsFile: Bool) async throws`; `writeAgentsMD()` removed from the API; `SpecSession.saveDecision(reason: String, for: DocKind) async throws` (no `title:`); `AnalyzeResult.analyzedAt: Date` (init param defaults to now); `ImpactResult.title: String` (`init(title: String = "", items:)`).
+- Touched ui files: SpecReadyView (switch no longer writes; Commit passes `writeAgentsFile: writesAgents`), RefineView (saveDecision call). ui still needs to call `finish(commitToGit: false, writeAgentsFile: writesAgents)` on Done.
+- Platform: re-record impact against the new impact.md (`title`).
 
 ## Questions for the user
 - A4x (first spec, no project): where should Mel create the new project folder? I'm using `~/Developer/<slug>/` if `~/Developer` exists, else `~/<slug>/`. A folder picker would need a UI change.
