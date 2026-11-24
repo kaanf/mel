@@ -146,7 +146,9 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - W7 merged: core v1 API dropped + AppState.branches (6d4ca6e), ui B1 bottom pass (321dbef), platform allowsTools → `--tools ""` + no-tools re-recordings (a34c1db). User confirmed: sidebar project name + status; Quick fix fields go into the idea text; Paste Log sheet; empty name → "Untitled Spec".
 - Wave 6 ui screens merged (dd2d320): B3–B7, C1–C4. G6 met except the side-by-side check (one pixel pass per screen done by ui). User decisions 2026-11-23: system toolbar placement kept (buttons over the inspector, inspector headers below the toolbar); B7 AGENTS.md switch on, written on Done; C1 decision title from the impact run; B6 shows analysis time. Workflow: agents test once per batch, one merge request.
 - Wave 7: core adds writeAgentsFile / analyzedAt / ImpactResult.title; ui wires every screen + shortcuts; platform real run after.
-- Waiting on the user: v0.2.1 in-app update test.
+- W7 real run (platform, docs/research/W7-REAL-RUN.md): 16 bugs fixed by core + ui; re-run cancelled by the user.
+- v0.3 published 2026-11-24 (tag v0.3 at 9d718e7, build 389, notarized; appcast.xml on main 0a6e8d4). v0.2 → v0.2.1 in-app update confirmed by the user. ~/untitled-spec deleted.
+- Next: the user reports problems from v0.3; ui d10d7e4 (Spec.untitledName literal swap) goes in the next batch.
 
 ## Risks
 
