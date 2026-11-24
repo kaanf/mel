@@ -49,12 +49,13 @@ public struct AnalyzeResult: Codable, Hashable {
     var stats: [Stat]                                  // Stat { value: String, label: String }
     var issues: [Issue]                                // Issue { id, kind: IssueKind, location, text, actions: [Action] } (2 actions, 2nd is primary)
     var coverage: [CoverageRow]                        // CoverageRow { id "1.3", text, screen: Mark?, architecture, task, test: Mark }
+    var analyzedAt: Date                               // Mel's clock when the reply arrives (not the model's); persisted; init(…, analyzedAt: Date = .now)
     enum IssueKind: String { case contradiction, noTask, qualityNotCovered, scopeCreep }
     struct Action { label: String, fix: String, files: [DocKind] }
     enum Mark: String { case covered, missing, conflict }
     static func decode(_ reply: String) throws -> AnalyzeResult
 }
-public struct ImpactResult: Codable, Hashable { var items: [Item]   // Item { kind: DocKind, what: String, count: String }
+public struct ImpactResult: Codable, Hashable { var title: String; var items: [Item]   // title: one-line summary, "" if missing; init(title: String = "", items:); Item { kind: DocKind, what: String, count: String }
     static func decode(_ reply: String) throws -> ImpactResult }
 
 // MelSpec / Decision.swift
@@ -135,13 +136,12 @@ func analyze() async
 func fixIssues() async                                 // each issue's primary action, then Analyze again
 func apply(_ action: AnalyzeResult.Action) async
 func handOffAnyway()
-func saveDecision(title: String, reason: String, for kind: DocKind) async throws
+func saveDecision(reason: String, for kind: DocKind) async throws   // title = impact.title, else "Changed <File>"
 func undoEdit(_ kind: DocKind) async
 func refine() async
 func keepAsIs()
 func resumeLater()                                     // C2
 func writeTaskPrompts() async throws -> [URL]
-func writeAgentsMD() throws
 static func preview(_ spec: Spec, documents:, liveText:, activity:, isRunning:, lastError:, conflict:,
                     draftStep: Int = 0, impact: ImpactResult? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = []) -> SpecSession
 ```
@@ -235,7 +235,7 @@ W7 (core, merged 2026-11-23):
 
 ```swift
 // SpecSession: git runs off the main actor, so views call it in a Task
-func finish(commitToGit: Bool) async throws
+func finish(commitToGit: Bool, writeAgentsFile: Bool) async throws   // AGENTS.md is written only here (B7 Done/Commit), never on the switch
 // AppState: branch per project, read from .git/HEAD on load (no process), refreshed by A3, cleared on removeProject
 private(set) var branches: [Project.ID: String]
 static func preview(…, branches: [Project.ID: String] = [:]) -> AppState
@@ -594,7 +594,7 @@ import Observation
     var startCommand: String { get }                // claude "Read specs/ and implement TASKS.md, task 1"
     func showInFinder()
     func openStartCommandInTerminal()
-    func finish(commitToGit: Bool) async throws     // W7: async
+    func finish(commitToGit: Bool, writeAgentsFile: Bool) async throws     // W7
     var canCommit: Bool { get }                     // Git installed; checkbox hidden otherwise
     var isGitRepository: Bool { get }              // false → commit asks before `git init`
     func updateIdea(_ idea: String)                 // "Your Idea › Edit…"
