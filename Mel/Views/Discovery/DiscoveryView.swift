@@ -406,11 +406,13 @@ struct QuestionCard: View {
                         .onSubmit { if !trimmedText.isEmpty && !session.isRunning { submit() } }
                         .modifier(NoteField())
                         .focused($noteFocused)
+                        .accessibilityLabel("Your answer")
                 } else {
                     TextField("Note for the agent", text: $note, prompt: Text("Note for the agent").foregroundStyle(Theme.Colors.tertiary))
                         .modifier(NoteField())
                         .frame(height: Theme.Size.button)
                         .focused($noteFocused)
+                        .accessibilityLabel("Note for the agent, optional")
                 }
             }
             .padding(EdgeInsets(top: Theme.Space.x10, leading: Theme.Space.x12, bottom: Theme.Space.x12, trailing: Theme.Space.x12))

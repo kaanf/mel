@@ -302,6 +302,7 @@ struct NewSpecView: View {
         VStack(alignment: .leading, spacing: Theme.Space.x2) {
             TextField("Spec name", text: $draft.name, prompt: Text(Spec.untitledName).foregroundStyle(Theme.Colors.tertiary))
                 .textFieldStyle(.plain)
+                .accessibilityLabel("Spec name")
                 // A single-line field ignores `.lineHeight`; centered in the 36 pt line box like CSS.
                 .font(Theme.Text.largeTitle.font)
                 .tracking(Theme.Text.largeTitle.tracking)
