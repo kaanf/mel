@@ -243,6 +243,22 @@ static func preview(…, branches: [Project.ID: String] = [:]) -> AppState
 // No-tools prompts (analyze, impact) must say "Do not read any files"; otherwise the model writes tool calls as text and never stops
 ```
 
+W7 real-run fixes (core, merged 2026-11-24):
+
+```swift
+// MelSpec
+Intake.name: String?                       // intake names the spec (Title Case, ≤4 words); blank → nil
+CoverageItem.question: String?             // notYet topic → the question that covers it; answering marks it covered (Draft Now does not)
+static let Spec.untitledName = "Untitled Spec"   // B1/A4x pass this; the session renames before the first file unless the user typed a name
+Spec.outOfDate: [DocKind]                  // stale files waiting for Refine/Keep; the pill checks this, not the stage
+// AppState / MelStorage
+func AppState.rename(_ id: Spec.ID, to name: String) throws -> URL   // moves specs/<slug>/ (and a project created this launch)
+// createSpec(project: nil): parent defaults to ~/Developer (created if missing), never ~
+SpecStore.freeFolder(name:in:) -> URL      // slug, slug-2, … never reuses a folder; ProjectStore.createProject uses it too
+// Prompts: analyze.md gets {{earlier}} (previous issues; same id if still present, new only if it would make an agent build the wrong thing);
+// revise.md changes only the cited passages; first analyze stat is always "criteria have a task"; Test is missing only when Task is
+```
+
 Notes: `Stage.analyze` covers B6 while running and with results (`spec.analyze` says which). C1 is not a stage; it shows when a file is `edited`. Revise runs reuse `Stage.drafting(kind)`. Views iterate `spec.size.files`, never `DocKind.allCases`.
 
 ## Project conventions
