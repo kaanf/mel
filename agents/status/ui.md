@@ -1,6 +1,6 @@
 # ui status
 
-Wave 7 real-run fixes merged; standing by during platform's re-run
+Standing by while the orchestrator cuts v0.3 (main 9d718e7)
 Updated: 2026-11-24
 
 ## Done
@@ -137,7 +137,7 @@ Updated: 2026-11-24
 
 ## Next
 - Bug 2: core renames the spec in place (`spec.name`/`spec.folder` update), nothing to wire. B1/A4x use `Spec.untitledName` (committed, build only; not tested yet).
-- Stand by for bug reports from platform's re-run. Until the orchestrator says so: no full xcodebuild test, no Debug app launch.
+- v0.3 is being cut from main 9d718e7. Until the orchestrator says it's done: no xcodebuild at all (not even build), no Debug app launch. Then stand by for the user's problem reports.
 - Comparison tooling: scratchpad of session 6a7afc62 (`tools/compare.sh <screen> <mock>`, `tools/bottom.sh` with `-scrollBottom`, `sbs`, `crop`, `winid` picks the ≥1000 pt window). Sheets can't be captured: debug screens `failure` and `settings` draw C2/C4 in the window.
 - GUI: AX actions and PID-targeted events only, no System Events keystrokes.
 
