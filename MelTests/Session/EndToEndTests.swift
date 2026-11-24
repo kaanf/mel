@@ -61,6 +61,7 @@ final class EndToEndTests {
                            makeRunner: { AgentRunner(adapter: ScriptedClaude(script: script), executable: $0) },
                            defaults: UserDefaults(suiteName: "mel-e2e-\(UUID().uuidString)")!)
         app.agent = .ready(executable: URL(filePath: "/bin/sh"), version: "test")
+        app.developerFolder = parent.appending(path: "Developer", directoryHint: .isDirectory)
         app.notify = { [unowned self] title, _, _ in notifications.append(title) }
         app.authorizeNotifications = {}
         return (app, script)
@@ -178,7 +179,9 @@ final class EndToEndTests {
         #expect(!FileManager.default.fileExists(atPath: agents.path))
         try await session.finish(commitToGit: false, writeAgentsFile: true)
         #expect(try text(session, "prompts/task-01.md").contains("Waitlist store"))
-        #expect(try String(contentsOf: project.folder.appending(path: "AGENTS.md"), encoding: .utf8).contains("## Spec: Waitlist"))
+        let agentsText = try String(contentsOf: agents, encoding: .utf8)
+        #expect(agentsText.contains("## Spec: Waitlist"))
+        #expect(agentsText.contains("`.mel/project/`"))
         #expect(session.decisions.map(\.title) == ["Should the schedule work offline?"])
         try await expectOnDisk(session)
         #expect(script.requests.count == 6)
@@ -203,12 +206,22 @@ final class EndToEndTests {
             ("e2e/v2/pr-tasks-refined.jsonl", []),
             ("e2e/v2/pr-analyze-passed.jsonl", []),
         ])
-        let session = try newSpec(app)
+        let session = try app.createSpec(name: Spec.untitledName, idea: "Members book yoga classes and buy class packs.", size: .product, project: nil)
 
-        // Intake, both answers, PRODUCT.md.
+        // Intake names the untitled spec: its folder and its new project folder follow.
         await session.start()
+        #expect(session.spec.name == "Yoga Studio Booking")
+        #expect(session.spec.folder.path.hasSuffix("/Developer/yoga-studio-booking/specs/yoga-studio-booking"))
+        #expect(app.projects.map(\.name) == ["yoga-studio-booking"])
+        #expect(app.specs.first?.folder == session.spec.folder)
+        #expect(!FileManager.default.fileExists(atPath: app.developerFolder.appending(path: "untitled-spec").path))
+        #expect(session.spec.coverage.count { $0.state == .covered } == 1)
+
+        // Both answers, PRODUCT.md; each answer covers its topic.
         await session.answer(.option(0, note: nil))
+        #expect(session.spec.coverage.count { $0.state == .covered } == 2)
         await session.answer(.option(0, note: nil))
+        #expect(session.spec.coverage.allSatisfy { $0.state == .covered })
         #expect(session.spec.stage == .review(.product))
         #expect(session.documents[.product] == "# Product\n\n## Problem\n\nMembers can't book yoga classes online.\n\n## Users and roles\n\nMembers and studio staff.\n")
         #expect(session.spec.sessionID == "e2e00000-0000-4000-8000-000000000009")
@@ -247,15 +260,17 @@ final class EndToEndTests {
 
         // Analyze finds an issue; Fix revises TASKS.md, then Analyze passes.
         #expect(session.spec.analyze == .issues(1))
+        #expect(script.requests[8].prompt.contains("## Earlier issues\n\n(none: this is the first check)"))
         await session.fixIssues()
         #expect(script.requests[9].prompt.contains("Add a task that builds class packs for 2.1."))
         await session.approve(.tasks)
+        #expect(script.requests[10].prompt.contains("- i1 (noTask, REQUIREMENTS 2.1): No task builds class packs."))
         #expect(session.spec.analyze == .passed)
 
         // C1: an edit to REQUIREMENTS.md → impact → reason → refine the three later files.
         let edited = try #require(session.documents[.requirements]).replacingOccurrences(of: "reserve a spot", with: "reserve up to two spots")
         session.save(edited, for: .requirements)
-        #expect(session.spec.docs[.experience] == .stale)
+        #expect(session.spec.outOfDate == [.experience, .architecture, .tasks])
         try await wait("the impact run") { session.impact != nil }
         #expect(script.requests[11].allowsTools == false)
         #expect(session.impact?.items.map(\.kind) == [.experience, .tasks])
@@ -281,7 +296,7 @@ final class EndToEndTests {
         for title in ["Two spots per booking", "Should full classes have a waitlist?", "How do members pay?"] { #expect(decisions.contains(title)) }
         #expect(try text(session, ".mel/approved/REQUIREMENTS.md") == session.documents[.requirements])
         #expect(script.requests.count == 16)
-        #expect(script.requests.allSatisfy { $0.workingDirectory == session.spec.project })
+        #expect(script.requests.dropFirst().allSatisfy { $0.workingDirectory == session.spec.project })   // intake ran before the rename
     }
 
     @Test func oneRunAtATime() async throws {
@@ -312,6 +327,7 @@ final class EndToEndTests {
         ])
         let session = try newSpec(app)
         await session.start()
+        #expect(session.spec.name == "Yoga Studio")   // a typed name stays
         await session.draftNow()
         let approving = Task { await session.approve(.product) }
         try await wait("the partial draft") { !session.activity.isEmpty }

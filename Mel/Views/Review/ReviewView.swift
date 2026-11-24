@@ -2,7 +2,7 @@ import SwiftUI
 import MelSpec
 
 /// B4 Review (design/v2 Native-3-Review): one drafted file as an article or editable Markdown,
-/// "Before you approve", Approve. EXPERIENCE.md is B5 (Native-3b-Experience): flows, states table, Approve only.
+/// "Before you approve", Approve. EXPERIENCE.md is B5 (Native-3b-Experience): flows and the states table.
 /// The review inspector and agent suggestions are hidden in v0.3 (V2 §2).
 struct ReviewView: View {
     let session: SpecSession
@@ -31,6 +31,10 @@ struct ReviewView: View {
     private var spec: Spec { session.spec }
     private var files: [DocKind] { spec.size.files }
     private var isApproved: Bool { spec.docs[kind] == .approved }
+    private var isStale: Bool { spec.docs[kind] == .stale }
+    /// The approved file the user changed, which made this one out of date.
+    private var editedFile: DocKind? { files.first { spec.docs[$0] == .edited } }
+    private var staleCount: Int { files.count { spec.docs[$0] == .stale } }
     /// Open items don't block: they stay marked in the file for the next agent.
     private var canApprove: Bool { spec.docs[kind] == .review }
     private var next: DocKind? { spec.size.file(after: kind) }
@@ -133,6 +137,7 @@ struct ReviewView: View {
         // The file's H1 is the article title; the summary and the checklist come right after it.
         let hasTitle = if case .heading(1, _)? = blocks.first { true } else { false }
         return VStack(alignment: .leading, spacing: Theme.Space.x14) {
+            if isStale { staleBanner }
             if hasTitle { MarkdownBlocksView(blocks: Array(blocks.prefix(1)), isExperience: isExperience) }
             Text("\(summary.line(for: kind)) Written from \(source), project context and your answers.")
                 .textStyle(Theme.Text.body)
@@ -151,6 +156,26 @@ struct ReviewView: View {
                 isExperience: isExperience
             )
         }
+    }
+
+    /// An out-of-date file (not drawn; B3's stopped-banner look): the edit that caused it and C1's two exits.
+    private var staleBanner: some View {
+        HStack(spacing: Theme.Space.x12) {
+            VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                Text("Out of date").textStyle(Theme.Text.bodyBold)
+                Text("\(editedFile?.fileName ?? "An earlier file") changed after this file was approved. Refine updates the files it affects; Keep leaves them as they are.")
+                    .textStyle(Theme.Text.callout)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Keep as It Is") { session.keepAsIs() }
+                .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.button, leading: Theme.Space.x16, trailing: Theme.Space.x16, text: Theme.Text.body))
+            Button(staleCount == 1 ? "Refine 1 File" : "Refine \(staleCount) Files") { Task { await session.refine() } }
+                .buttonStyle(DesignButtonStyle(height: Theme.Size.button, leading: Theme.Space.x16, trailing: Theme.Space.x16, elevation: .init()))
+        }
+        .disabled(session.isRunning)
+        .padding(Theme.Space.x12)
+        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
 
     private var editor: some View {
@@ -299,21 +324,20 @@ struct ReviewView: View {
         } else {
             ToolbarItem(placement: .principal) { status }.sharedBackgroundVisibility(.hidden)
         }
-        if !isExperience {
-            ToolbarItem {
-                HStack(spacing: Theme.Space.x2) {
-                    modeButton(.preview, glyph: .docLines, label: "Preview")
-                    modeButton(.edit, glyph: .code, label: "Edit Markdown")
-                }
+        // B5 gets the same buttons as B4 (real-run feedback; the mock draws only Approve).
+        ToolbarItem {
+            HStack(spacing: Theme.Space.x2) {
+                modeButton(.preview, glyph: .docLines, label: "Preview")
+                modeButton(.edit, glyph: .code, label: "Edit Markdown")
             }
-            ToolbarItem {
-                HStack(spacing: Theme.Space.x2) {
-                    Button { session.showInFinder() } label: { toolbarIcon(.folder) }
-                        .accessibilityLabel("Show in Finder")
-                        .help("Show in Finder")
-                    ShareLink(item: spec.folder.appending(path: kind.fileName)) { toolbarIcon(.share) }
-                        .accessibilityLabel("Share")
-                }
+        }
+        ToolbarItem {
+            HStack(spacing: Theme.Space.x2) {
+                Button { session.showInFinder() } label: { toolbarIcon(.folder) }
+                    .accessibilityLabel("Show in Finder")
+                    .help("Show in Finder")
+                ShareLink(item: spec.folder.appending(path: kind.fileName)) { toolbarIcon(.share) }
+                    .accessibilityLabel("Share")
             }
         }
         if spec.stage == .done {
@@ -322,7 +346,7 @@ struct ReviewView: View {
                     .buttonStyle(DesignButtonStyle(height: Theme.Size.buttonToolbar, leading: Theme.Space.x16, trailing: Theme.Space.x16))
             }
             .sharedBackgroundVisibility(.hidden)
-        } else if !isApproved {
+        } else if spec.docs[kind] == .review {
             ToolbarItem {
                 Button("Approve", action: approve)
                     .buttonStyle(DesignButtonStyle(height: Theme.Size.buttonToolbar, leading: Theme.Space.x16, trailing: Theme.Space.x16, keyHint: "⌘↩"))
@@ -337,7 +361,9 @@ struct ReviewView: View {
     private var status: some View {
         let count = files.firstIndex(of: kind).map { "\($0 + 1) of \(files.count)" } ?? ""
         let maxWidth = compact ? Theme.Size.statusPillCompact : isExperience ? Theme.Size.statusPillExperience : Theme.Size.statusPillReview
-        if let next, !isApproved {
+        if isStale {
+            StatusPill(indicator: .idle, text: compact ? "Out of date" : "Out of date · \(editedFile?.fileName ?? "an earlier file") changed", count: count, maxWidth: maxWidth)
+        } else if let next, !isApproved {
             StatusPill(indicator: .idle, text: compact ? "Idle" : "Idle · \(next.fileName) starts when you approve", count: count, maxWidth: maxWidth)
         } else {
             StatusPill(indicator: .idle, text: isApproved ? "Approved" : "Idle", count: count, maxWidth: maxWidth)
@@ -400,5 +426,13 @@ struct ReviewView: View {
         ReviewView(session: PreviewData.session(PreviewData.done), kind: .tasks)
     }
     .environment(PreviewData.appState([PreviewData.done]))
+    .frame(width: 1000, height: 720)
+}
+
+#Preview("Out of date") {
+    NavigationStack {
+        ReviewView(session: PreviewData.editedSession, kind: .architecture)
+    }
+    .environment(PreviewData.appState([PreviewData.edited], sessions: [PreviewData.editedSession]))
     .frame(width: 1000, height: 720)
 }

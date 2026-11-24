@@ -101,7 +101,8 @@ struct DraftingView: View {
             }
         }
         .inspector(isPresented: $showInspector) {
-            LivePreview(text: session.liveText, kind: kind, isRunning: !isStopped)
+            // While running the streamed text; stopped, the file as saved ("Nothing was lost").
+            LivePreview(text: isStopped ? session.documents[kind] ?? "" : session.liveText, kind: kind, isRunning: !isStopped)
                 .inspectorColumnWidth(min: Theme.Size.livePreviewWidth, ideal: Theme.Size.livePreviewWidth, max: Theme.Size.livePreviewWidth)
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
@@ -321,15 +322,15 @@ struct LivePreview: View {
     private func line(_ line: Line, isFirst: Bool, isLast: Bool) -> some View {
         switch line {
         case .title(let text):
-            Text(text).textStyle(Theme.Text.headlineBold)
+            Text(MarkdownBlocksView.inline(text)).textStyle(Theme.Text.headlineBold)
         case .heading(let text):
-            Text(text).textStyle(Theme.Text.bodyBold).padding(.top, isFirst ? 0 : Theme.Space.x4)
+            Text(MarkdownBlocksView.inline(text)).textStyle(Theme.Text.bodyBold).padding(.top, isFirst ? 0 : Theme.Space.x4)
         case .text(let text):
             if isLast && isRunning {
                 // The caret follows the last word, as drawn.
-                Text("\(text)\(Text(" \u{258F}").foregroundStyle(Theme.Colors.drafting))").textStyle(Theme.Text.calloutLoose)
+                Text("\(MarkdownBlocksView.inline(text))\(Text(" \u{258F}").foregroundStyle(Theme.Colors.drafting))").textStyle(Theme.Text.calloutLoose)
             } else {
-                Text(text).textStyle(Theme.Text.calloutLoose)
+                Text(MarkdownBlocksView.inline(text)).textStyle(Theme.Text.calloutLoose)
             }
         case .count(let text):
             Text(text).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.secondaryLabel)

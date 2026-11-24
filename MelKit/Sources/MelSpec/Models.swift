@@ -47,6 +47,12 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
 
     /// The project folder: `folder` is `<project>/specs/<slug>/`.
     public var project: URL { folder.deletingLastPathComponent().deletingLastPathComponent().normalizedFolder }
+
+    /// B1's name when the user types none; intake then names the spec.
+    public static let untitledName = "Untitled Spec"
+
+    /// C1: approved files a user edit made out of date, waiting for Refine or Keep.
+    public var outOfDate: [DocKind] { size.files.filter { docs[$0] == .stale } }
 }
 
 /// V2.md §4. The size fixes the files and their order.
@@ -189,11 +195,14 @@ public struct CoverageItem: Codable, Hashable, Sendable {
     public var label: String
     public var phase: DocKind
     public var state: CoverageState
+    /// The intake question that asks about it; answering it makes the topic covered.
+    public var question: String?
 
-    public init(label: String, phase: DocKind = .product, state: CoverageState) {
+    public init(label: String, phase: DocKind = .product, state: CoverageState, question: String? = nil) {
         self.label = label
         self.phase = phase
         self.state = state
+        self.question = question
     }
 
     /// state.json from before phased Discovery has no `phase`; those topics load as `.product`.
@@ -202,6 +211,7 @@ public struct CoverageItem: Codable, Hashable, Sendable {
         label = try c.decode(String.self, forKey: .label)
         phase = try c.decodeIfPresent(DocKind.self, forKey: .phase) ?? .product
         state = try c.decode(CoverageState.self, forKey: .state)
+        question = try c.decodeIfPresent(String.self, forKey: .question)
     }
 }
 

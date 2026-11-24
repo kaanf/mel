@@ -84,15 +84,26 @@ struct SpecReadyView: View {
     }
 
     private var intro: String {
-        let approved = files.count == 1 ? "1 file approved" : "\(files.count) files approved"
-        let analyze: String = switch spec.analyze {
-        case .passed: ", Analyze passed"
-        case .issues(let n): n == 1 ? ", 1 Analyze issue left open" : ", \(n) Analyze issues left open"
-        default: ""
+        let approvedCount = files.count { spec.docs[$0] == .approved }
+        var parts = [approvedCount == 1 ? "1 file approved" : "\(approvedCount) files approved"]
+        // After an edit to an approved file (C1): what changed and what is out of date.
+        let edited = files.filter { spec.docs[$0] == .edited }
+        let stale = files.count { spec.docs[$0] == .stale }
+        if !edited.isEmpty { parts.append("\(edited.map(\.fileName).joined(separator: ", ")) edited") }
+        if stale > 0 { parts.append(stale == 1 ? "1 out of date" : "\(stale) out of date") }
+        switch spec.analyze {
+        case .passed: parts.append("Analyze passed")
+        case .issues(let n): parts.append(n == 1 ? "1 Analyze issue left open" : "\(n) Analyze issues left open")
+        case .stale: parts.append("Analyze needs a rerun")
+        default: break
+        }
+        let summary = parts.joined(separator: ", ")
+        if let first = edited.first {
+            return "\(summary). Open \(first.fileName) to refine the files it affects or keep them as they are."
         }
         return spec.size == .quickFix
-            ? "\(approved). SPEC.md says what breaks, what should happen and how to verify the fix."
-            : "\(approved)\(analyze). Every task names the requirements it builds and how to prove it works."
+            ? "\(summary). SPEC.md says what breaks, what should happen and how to verify the fix."
+            : "\(summary). Every task names the requirements it builds and how to prove it works."
     }
 
     /// The tile's short summary ("5 stories, 15 criteria, 3 quality").
@@ -154,7 +165,7 @@ struct SpecReadyView: View {
                 .frame(width: Theme.Size.taskNumber, alignment: .leading)
             VStack(alignment: .leading, spacing: Theme.Space.x3) {
                 HStack(spacing: Theme.Space.x8) {
-                    Text(task.title).textStyle(Theme.Text.bodyBold)
+                    Text(MarkdownBlocksView.inline(task.title)).textStyle(Theme.Text.bodyBold)
                     Text(task.priority)
                         .textStyle(Theme.Text.micro)
                         .padding(.horizontal, Theme.Space.x6)
@@ -164,10 +175,11 @@ struct SpecReadyView: View {
                         Text(order).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
                     }
                 }
-                Text("Builds \(task.covers.joined(separator: ", ")) · reads \(task.reads)")
+                Text(MarkdownBlocksView.inline("Builds \(task.covers.joined(separator: ", ")) · reads \(task.reads)"))
                     .textStyle(Theme.Text.callout)
                     .foregroundStyle(Theme.Colors.bodyLabel)
-                Text("Verify: \(task.verify)")
+                // A shell command: drop the code backticks, keep `*` globs as typed.
+                Text("Verify: \(task.verify.trimmingCharacters(in: CharacterSet(charactersIn: "`")))")
                     .textStyle(Theme.Text.codeCaptionLoose)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .lineLimit(1)
