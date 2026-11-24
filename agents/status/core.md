@@ -59,6 +59,8 @@ Updated: 2026-11-24
 - Stand by for ui's Wave 7 requests.
 
 ## Notes
+- `SpecSession.run` clears `lastError` after the refusal guards (ui's Wave 7 merge, accepted).
+- Don't run the full `xcodebuild … test` while platform runs the Debug app (the test host shares the debug bundle id); wait for the orchestrator. `swift test` in MelKit is fine.
 - `SpecSession` holds `AppState` weakly; tests keep the AppState alive. `AppState.init` takes `defaults:` (tests pass a throwaway suite; previews use suite "preview" and never save the library).
 - `changeAnswer` only records the new answer; it does not drop later questions. The next turn sees it.
 - A run refused because another spec is running (or Claude Code isn't ready) sets `lastError`; during drafting the file goes to `stopped(kind, .user)` so Continue Drafting works.
