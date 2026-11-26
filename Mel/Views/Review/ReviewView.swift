@@ -104,6 +104,12 @@ struct ReviewView: View {
             } message: {
                 Text("You also have unsaved edits here. Keep Mine replaces the file with your edits. Use File loads the file and drops your edits.")
             }
+            .alert("Mel couldn’t find where this goes in \(kind.fileName).", isPresented: Binding(get: { spec.unplaced.contains(kind) }, set: { _ in })) {
+                Button("Rewrite \(kind.fileName)") { Task { await session.rewrite(kind) } }
+                Button("Cancel", role: .cancel) { session.cancelRewrite(kind) }
+            } message: {
+                Text("Nothing was changed. Rewriting has the agent write the whole file again, which uses more tokens than a change.")
+            }
             .sheet(isPresented: $showsRoundTwo) { roundTwoSheet }
             .sheet(isPresented: $showReady) {
                 SpecReadyView(session: session)

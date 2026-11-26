@@ -84,10 +84,17 @@ Field rules:
 - **ProjectContext.structure** has `## Modules` with lines `- Name — path` (em dash), which B1's "Builds on" chips read.
 - **AnalyzeResult**: `stats` (4 × `{"value", "label"}`), `issues` (`{"id", "kind", "location", "text", "actions"}`, `kind` ∈ `contradiction`, `noTask`, `qualityNotCovered`, `scopeCreep`, exactly 2 actions `{"label", "fix", "files": [DocKind]}`, the second primary), `coverage` (`{"id", "text", "screen", "architecture", "task", "test"}`, marks `covered`/`missing`/`conflict`, `screen` is `null` without EXPERIENCE.md).
 - **ImpactResult**: one item per affected later file, `kind` a `DocKind` raw value; unaffected files are left out.
+- **Patch** (revise): `{"edits": [{"old", "new"}]}`. `Patch.apply` replaces each `old` with `new`, in order; `old` must occur exactly once, character for character. If one doesn't, or the reply can't be read, nothing is applied: the file is unplaced. `{"edits": []}` means nothing to change.
 
-Analyze and Impact pass the files inline and run with `allowsTools: false` (`--tools ""`). The prompt must then say not to read files: with no tools and a prompt that invites reading, the model writes tool calls as plain text and the run never finishes (seen: 11+ min).
+Analyze, Impact and Revise pass the files inline and run with `allowsTools: false` (`--tools ""`). The prompt must then say not to read files: with no tools and a prompt that invites reading, the model writes tool calls as plain text and the run never finishes (seen: 11+ min).
 
-### Streaming Markdown stages (drafting, revise)
+### Revise (patch runs, OQ #25)
+
+Round-2 and open-question answers, analyze fixes and Refine run `revise.md`: one run per file, no tools, no stored session, reply a **Patch**. Mel applies it and writes the file; everything outside the edits stays word for word. Nothing streams into the file, so a stopped run leaves it untouched and Resume runs the patch again.
+
+Unplaced: the file goes back to review unchanged and keeps its instruction (`Spec.unplaced`). B4 offers "Rewrite FILE" or Cancel. Rewrite runs `rewrite.md`, a streaming whole-file stage like drafting (`Spec.rewriting` marks it for Resume); it is the only way a whole file is written again. Cancel drops the instruction.
+
+### Streaming Markdown stages (drafting, rewrite)
 
 The agent outputs only the file's Markdown; Mel shows the text deltas live and saves the final `result`. Two kinds of comment, both stripped before saving:
 

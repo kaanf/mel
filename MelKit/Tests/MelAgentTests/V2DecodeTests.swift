@@ -63,4 +63,50 @@ struct V2DecodeTests {
         #expect(impact.items.map(\.kind) == [.tasks])
         #expect(!impact.title.isEmpty)
     }
+
+    /// The recorded revise run answered a round-2 question and an open question about this file.
+    @Test func revisePatchDecodesAndPlacesEveryEdit() throws {
+        let file = """
+        # Requirements
+
+        ## 1. Book a class
+
+        P1 · MVP
+        Source: your idea
+
+        As a member, I want to book a class, so that I have a spot.
+
+        - 1.1 WHEN a member taps Book, THE APP SHALL reserve a spot.
+
+        ## 2. Buy a pack
+
+        P1 · MVP
+        Source: Question 1 (payments)
+
+        As a member, I want to buy a class pack, so that I can book without paying each time.
+
+        - 2.1 WHEN a member completes payment, THE APP SHALL add the pack's credits.
+
+        <!-- MVP line -->
+
+        > [!ASSUMPTION]
+        > Packs expire after 6 months.
+
+        ## Quality requirements
+
+        - Q1 THE APP SHALL open the schedule in under 1 second.
+
+        ## Edge cases
+
+        - Two members book the last spot at once: one gets it.
+
+        """
+        let patch = try Patch.decode(fixtures.result("revise"))
+        #expect(patch.edits.count == 2)
+        let edited = try #require(patch.apply(to: file))
+        #expect(edited.contains("## 3. Join a waitlist"))
+        #expect(edited.contains("valid for 12 months"))
+        #expect(!edited.contains("Packs expire after 6 months."))
+        #expect(edited.hasPrefix(file.prefix(while: { $0 != "2" })))
+    }
 }

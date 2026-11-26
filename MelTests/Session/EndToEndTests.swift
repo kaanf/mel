@@ -253,7 +253,9 @@ final class EndToEndTests {
         await session.answerFollowUp(questionID: waitlist.id, .option(0, note: nil))
         #expect(script.requests[4].prompt.contains("Answer to “Should full classes have a waitlist?”: Yes"))
         #expect(session.followUpQuestions(for: .requirements).isEmpty)
+        #expect(script.requests[4].allowsTools == false)
         #expect(session.summary(.requirements).stories == 3)
+        #expect(session.summary(.requirements).assumptions == 0)
 
         for kind in [DocKind.requirements, .experience, .architecture, .tasks] { await session.approve(kind) }
         #expect(script.requests[5].prompt.contains("### REQUIREMENTS.md"))
@@ -323,7 +325,7 @@ final class EndToEndTests {
             ("e2e/v2/pr-product.jsonl", []),
             ("e2e/v2/pr-requirements-partial.jsonl", ["hang"]),
             ("claude-2.1.311-unknown-resume.jsonl", []),
-            ("e2e/v2/pr-requirements-revised.jsonl", []),
+            ("e2e/v2/pr-requirements-full.jsonl", []),
         ])
         let session = try newSpec(app)
         await session.start()

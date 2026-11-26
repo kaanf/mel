@@ -6,6 +6,9 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Changed
+- **Changes are patches.** When you answer a question in review, fix an Analyze issue or refine files after an edit, Claude Code now sends only the passages that change and Mel puts them in place. The rest of the file stays word for word, and the run is shorter and uses fewer tokens. If Mel can't find where a change goes, nothing is changed and you can choose to rewrite the file.
+
 ## [0.4] · 2026-11-26
 
 ### Added

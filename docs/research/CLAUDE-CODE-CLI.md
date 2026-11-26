@@ -111,6 +111,7 @@ Real recordings, safe to commit (no secrets; `cwd` paths point at disposable pro
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-draft-steps.jsonl` | v2 B3: REQUIREMENTS.md draft with `<!-- mel:step 1…7 -->` markers (split across deltas) and a `<!-- mel:questions … -->` trailer |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-analyze.jsonl` | v2 B6: `AnalyzeResult` JSON for a Feature spec, all four issue kinds |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-impact.jsonl` | v2 C1: `ImpactResult` JSON for an edited REQUIREMENTS.md |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-revise.jsonl` | Wave 8 patch run: the real `revise.md` prompt with `--tools ""`, a round-2 answer and an open-question answer for REQUIREMENTS.md. `result` is a bare `{"edits": [{"old", "new"}]}` with 2 edits, each `old` found once (1 turn, 14 s, 1.4k output tokens) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-attachments.jsonl` | v2 B1: Read opens a `.log` and a `.png` in `specs/<slug>/.mel/attachments/` under the read-only flags |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-in.json` | `claude auth status` signed in (email/org replaced with placeholders) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-out.json` | `claude auth status` signed out (no `USER` in the environment) |

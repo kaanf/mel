@@ -205,7 +205,7 @@ import MelSystem
     private func advance() async {
         switch spec.stage {
         case .drafting(let kind):
-            if let instruction = spec.instructions[kind] { await revise(kind, instruction) } else { await draft(kind) }
+            await begin(kind)
         case .analyze where spec.analyze == .running:
             await runAnalyze()
         default:
@@ -228,6 +228,11 @@ import MelSystem
             try? await Task.sleep(for: .seconds(resetsAt.timeIntervalSinceNow))
             guard spec.stage == .stopped(kind, reason) else { return }
         }
+        if spec.instructions[kind] != nil, spec.rewriting != kind {
+            // A stopped patch run wrote nothing: run it again.
+            spec.apply(.resume)
+            return await advance()
+        }
         let partial = DraftText.truncatedToLastCompleteSection(documents[kind] ?? "")
         spec.apply(.resume)
         documents[kind] = partial
@@ -243,20 +248,56 @@ import MelSystem
     func finishByHand() {
         guard case .stopped(let kind, _) = spec.stage, spec.apply(.finishByHand) else { return }
         spec.instructions[kind] = nil
+        spec.rewriting = nil
         persist()
+    }
+
+    /// A draft, or with a pending instruction a patch run (a whole-file run after "Rewrite FILE").
+    private func begin(_ kind: DocKind) async {
+        guard let instruction = spec.instructions[kind] else { return await draft(kind) }
+        var values = promptValues(drafting: kind)
+        values["file"] = kind.fileName
+        values["instruction"] = instruction
+        values["current"] = documents[kind] ?? ""
+        values["approved"] = approvedText(except: kind)
+        if spec.rewriting == kind {
+            await write(kind, prompt: Prompt.rewrite.build(values, fillGaps: spec.fillGaps, language: spec.language))
+        } else {
+            await patch(kind, prompt: Prompt.revise.build(values, fillGaps: spec.fillGaps, language: spec.language))
+        }
     }
 
     private func draft(_ kind: DocKind) async {
         await write(kind, prompt: Prompt(drafting: kind).build(promptValues(drafting: kind), fillGaps: spec.fillGaps, language: spec.language))
     }
 
-    private func revise(_ kind: DocKind, _ instruction: String) async {
-        var values = promptValues(drafting: kind)
-        values["file"] = kind.fileName
-        values["instruction"] = instruction
-        values["current"] = documents[kind] ?? ""
-        values["approved"] = approvedText(except: kind)
-        await write(kind, prompt: Prompt.revise.build(values, fillGaps: spec.fillGaps, language: spec.language))
+    /// A revise run: the reply is `{old, new}` edits, applied here. The file changes only when
+    /// every edit is placed; otherwise the instruction stays for "Rewrite FILE" (OQ #25).
+    private func patch(_ kind: DocKind, prompt: String) async {
+        let current = documents[kind] ?? ""
+        liveText = current
+        draftStep = 0
+        activity = []
+        persist()
+        let end = await run(prompt, resume: nil, persist: false, tools: false)
+        liveText = ""
+        switch end {
+        case .done(let reply):
+            if let patched = (try? Patch.decode(reply))?.apply(to: current) {
+                let final = patched.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+                documents[kind] = final
+                write(final, for: kind)
+                spec.instructions[kind] = nil
+                app?.notify("\(kind.fileName) is ready for review", spec.name, nil)
+            }
+            spec.apply(.draftFinished)
+        case .stopped(let reason):
+            spec.apply(.draftStopped(reason))
+            if reason != .user { app?.notify("\(spec.name) stopped", Self.message(reason), nil) }
+        case .refused:
+            spec.apply(.draftStopped(.user))
+        }
+        persist()
     }
 
     /// Streams `kind` into its file: fresh, or continuing `partial` in the stored Claude Code session.
@@ -273,7 +314,7 @@ import MelSystem
         switch end {
         case .stopped(.sessionNotFound):
             // The stored session is gone: write the file again from the start.
-            return await advanceFresh(kind)
+            return await begin(kind)
         case .done(let result):
             let full = reply.isEmpty ? result : reply
             let final = DraftText.file(fromReply: full, kind: kind).trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
@@ -283,6 +324,7 @@ import MelSystem
             spec.questions.removeAll { $0.round == .draft && $0.shapes == kind && $0.answer == nil }
             spec.questions += Self.unique(asked.map { $0.with(id: "\(kind.rawValue)-\($0.id)") }, after: spec.questions)
             spec.instructions[kind] = nil
+            spec.rewriting = nil
             spec.apply(.draftFinished)
             app?.notify("\(kind.fileName) is ready for review", spec.name, nil)
         case .stopped(let reason):
@@ -295,11 +337,6 @@ import MelSystem
             spec.apply(.draftStopped(.user))
         }
         persist()
-    }
-
-    /// After a lost session: the stage is still `.drafting(kind)`, so start that file over.
-    private func advanceFresh(_ kind: DocKind) async {
-        if let instruction = spec.instructions[kind] { await revise(kind, instruction) } else { await draft(kind) }
     }
 
     /// A text delta while drafting: the preview updates at most 10 times a second, the file every 500 ms.
@@ -495,6 +532,21 @@ import MelSystem
         spec.instructions.merge(instructions) { old, new in old + "\n" + new }
         persist()
         await advance()
+    }
+
+    /// "Rewrite FILE" after a patch couldn't be placed: the only run that writes a whole file again.
+    func rewrite(_ kind: DocKind) async {
+        guard spec.unplaced.contains(kind), spec.apply(.revise([kind])) else { return }
+        spec.rewriting = kind
+        persist()
+        await advance()
+    }
+
+    /// Cancel on the same offer: the file stays as it is.
+    func cancelRewrite(_ kind: DocKind) {
+        guard spec.unplaced.contains(kind) else { return }
+        spec.instructions[kind] = nil
+        persist()
     }
 
     // MARK: - Analyze

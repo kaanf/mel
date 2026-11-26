@@ -24,6 +24,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var queue: [DocKind]
     /// The pending revise instruction per file (an answer, an analyze fix, a refine); cleared when its revise ends.
     public var instructions: [DocKind: String]
+    /// The file "Rewrite FILE" is writing whole, until that run ends.
+    public var rewriting: DocKind?
     public var sessionID: String?
 
     /// A new spec starts in Discovery with every file of its size locked.
@@ -53,6 +55,10 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
 
     /// B1's name when the user types none; intake then names the spec.
     public static let untitledName = "Untitled Spec"
+
+    /// Files whose revise reply couldn't be placed: nothing changed, the instruction waits for
+    /// "Rewrite FILE" or Cancel (OQ #25).
+    public var unplaced: [DocKind] { size.files.filter { instructions[$0] != nil && docs[$0] == .review && !queue.contains($0) } }
 
     /// C1: approved files a user edit made out of date, waiting for Refine or Keep.
     public var outOfDate: [DocKind] { size.files.filter { docs[$0] == .stale } }

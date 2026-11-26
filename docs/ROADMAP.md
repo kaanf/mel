@@ -160,7 +160,8 @@ Gate G8: a Product spec uses fewer tokens than the same spec on v0.4; a Tell Mel
 - 2026-11-26: spec language (English/Türkçe) on A1 + Settings › Specs, stored per spec, appended to every spec prompt (`language.md`); OQ #5 decided.
 - v0.4 published 2026-11-26 (build 409, notarized DMG); spec language selection and assumption confirmation fix. appcast.xml updated for in-app updates.
 - 2026-11-26: canvas V2 simplified flow chosen as the next target (OQ #23–25), with expressiveness and token budget as product rules. `docs/design/v2/` synced from the canvas (V2-0…V2-9, D1, updated Native-*). Wave 8 planned; OQ #26–30 open.
-- Next: Wave 8 step 8.1 (patch engine). Problems the user reports from v0.4 come first.
+- 2026-11-26: 8.1 done. Revise runs reply with a `Patch` (`MelSpec/Patch.swift`), no tools, no stored session; unplaced → B4 alert "Rewrite FILE" / Cancel (`rewrite.md`, the old whole-file prompt). Real run recorded (`claude-2.1.311-revise.jsonl`: 2 edits placed, 14 s). 248 tests green. Left for 8.4/8.5: the drawn V2-7 state with the rewrite's cost, Cancel putting the request back in the box.
+- Next: Wave 8 step 8.2 (token readout). Problems the user reports from v0.4 come first.
 
 ## Risks
 

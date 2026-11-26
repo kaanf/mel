@@ -19,7 +19,8 @@ struct PromptTests {
         for kind in DocKind.allCases { #expect(placeholders(Prompt(drafting: kind)) == Self.drafting) }
         #expect(placeholders(.project) == ["mode"])
         #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
-        #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
+        #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "rules"])
+        #expect(placeholders(.rewrite) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
         #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds", "screen"])
         #expect(placeholders(.impact) == ["file", "before", "after", "later", "kinds"])
         #expect(placeholders(.continue) == ["file", "partial"])

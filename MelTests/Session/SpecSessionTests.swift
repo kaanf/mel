@@ -88,6 +88,12 @@ final class SpecSessionTests {
         (id.map { [.session($0)] } ?? []) + [.text(text), .done(result: "")]
     }
 
+    /// A revise reply: a patch that adds `text` after `line`.
+    private func adding(_ text: String, after line: String) -> [AgentEvent] {
+        let patch = Patch(edits: [Patch.Edit(old: line, new: line + text)])
+        return [.done(result: String(decoding: try! JSONEncoder().encode(patch), as: UTF8.self))]
+    }
+
     /// Intake with no questions → three files → Analyze passed. Ends in `.analyze`.
     private func approvedFeature(analyze: String? = nil) throws -> (SpecSession, FakeRunner, AppState) {
         try makeSession([[.done(result: noQuestions)], file(requirements, session: "s1"), file(architecture), file(tasks), [.done(result: analyze ?? passed)]])
@@ -108,7 +114,7 @@ final class SpecSessionTests {
         let (session, runner, app) = try makeSession([
             [.done(result: intake)],
             [.session("s1"), .step("read README.md"), .text("<!-- mel:step 1 -->\n" + requirements), .text("\n" + trailer), .done(result: "")],
-            file(requirements + "- 1.2 THE APP SHALL keep a waitlist.\n"),
+            adding("- 1.2 THE APP SHALL keep a waitlist.\n", after: "- 1.1 THE APP SHALL book.\n"),
             file(architecture), file(tasks), [.done(result: passed)],
         ])
 
@@ -140,6 +146,10 @@ final class SpecSessionTests {
         await session.answerFollowUp(questionID: "requirements-waitlist", .option(0, note: nil))
         #expect(runner.requests[2].prompt.contains("Answer to “Is there a waitlist?”: Yes"))
         #expect(runner.requests[2].prompt.contains("## 1. Book a class"))
+        #expect(runner.requests[2].prompt.contains(#"{"edits": [{"old": "…", "new": "…"}]}"#))
+        #expect(!runner.requests[2].allowsTools)
+        #expect(!runner.requests[2].persistSession)
+        #expect(session.documents[.requirements] == requirements + "- 1.2 THE APP SHALL keep a waitlist.\n")
         #expect(session.spec.stage == .review(.requirements))
         #expect(session.followUpQuestions(for: .requirements).isEmpty)
         #expect(session.summary(.requirements).criteria == 2)
@@ -279,7 +289,7 @@ final class SpecSessionTests {
 
     @Test func fixIssuesRevisesThenAnalyzesAgain() async throws {
         let (session, runner, _) = try approvedFeature(analyze: issues)
-        runner.add([file(tasks + "- [ ] 2. Test booking\n  - Covers: 1.1\n"), [.done(result: passed)]])
+        runner.add([adding("- [ ] 2. Test booking\n  - Covers: 1.1\n", after: "  - Covers: 1.1\n"), [.done(result: passed)]])
         await session.start()
         await approveAll(session)
         #expect(session.spec.analyze == .issues(1))
@@ -290,6 +300,64 @@ final class SpecSessionTests {
         await session.approve(.tasks)
         #expect(session.spec.stage == .analyze)
         #expect(session.spec.analyze == .passed)
+        #expect(session.tasks.count == 2)
+    }
+
+    @Test func unplacedPatchChangesNothingAndCancelDropsIt() async throws {
+        let (session, runner, _) = try approvedFeature(analyze: issues)
+        runner.add([adding("- [ ] 2. Test booking\n", after: "- [ ] 9. No such task\n")])
+        await session.start()
+        await approveAll(session)
+        notifications = []
+
+        await session.fixIssues()
+        #expect(session.spec.stage == .review(.tasks))
+        #expect(session.spec.unplaced == [.tasks])
+        #expect(session.documents[.tasks] == tasks)
+        #expect(notifications.isEmpty)
+
+        session.cancelRewrite(.tasks)
+        #expect(session.spec.unplaced.isEmpty)
+        #expect(session.spec.instructions.isEmpty)
+        #expect(runner.requests.count == 6)
+    }
+
+    @Test func rewriteAfterAnUnreadablePatchWritesTheWholeFile() async throws {
+        let (session, runner, _) = try approvedFeature(analyze: issues)
+        runner.add([[.done(result: "I added the task.")], file(tasks + "- [ ] 2. Test booking\n  - Covers: 1.1\n"), [.done(result: passed)]])
+        await session.start()
+        await approveAll(session)
+        await session.fixIssues()
+        #expect(session.spec.unplaced == [.tasks])
+
+        await session.rewrite(.tasks)
+        #expect(runner.requests[6].prompt.contains("your reply is the whole new file"))
+        #expect(runner.requests[6].prompt.contains("Add a test task for 1.1."))
+        #expect(runner.requests[6].allowsTools)
+        #expect(session.spec.stage == .review(.tasks))
+        #expect(session.spec.unplaced.isEmpty)
+        #expect(session.spec.rewriting == nil)
+        #expect(session.tasks.count == 2)
+        await session.approve(.tasks)
+        #expect(session.spec.analyze == .passed)
+    }
+
+    @Test func stoppedPatchKeepsTheFileAndResumeRunsItAgain() async throws {
+        let (session, runner, _) = try approvedFeature(analyze: issues)
+        runner.add([[], adding("- [ ] 2. Test booking\n  - Covers: 1.1\n", after: "  - Covers: 1.1\n")])
+        await session.start()
+        await approveAll(session)
+        let fixing = Task { await session.fixIssues() }
+        try await wait { runner.hasOpenRun }
+        await session.stop()
+        await fixing.value
+        #expect(session.spec.stage == .stopped(.tasks, .user))
+        #expect(session.documents[.tasks] == tasks)
+
+        await session.resume()
+        #expect(runner.requests[6].prompt == runner.requests[5].prompt)
+        #expect(runner.requests[6].resumeSessionID == nil)
+        #expect(session.spec.stage == .review(.tasks))
         #expect(session.tasks.count == 2)
     }
 
@@ -350,7 +418,7 @@ final class SpecSessionTests {
 
     @Test func refineRevisesEachStaleFile() async throws {
         let (session, runner, _) = try approvedFeature()
-        runner.add([[.done(result: impact)], file(architecture + "- Refunds\n"), file(tasks + "- [ ] 2. Refunds\n  - Covers: 1.2\n"), [.done(result: passed)]])
+        runner.add([[.done(result: impact)], adding("- Refunds\n", after: "- Booking\n"), adding("- [ ] 2. Refunds\n  - Covers: 1.2\n", after: "  - Covers: 1.1\n"), [.done(result: passed)]])
         await session.start()
         await approveAll(session)
         try await editRequirements(session)
