@@ -13,6 +13,9 @@ struct NewView: View {
     @State private var files: [URL] = []
     @State private var isAttaching = false
     @State private var error: String?
+    /// A New product gets its own folder, so Start asks what it is called first.
+    @State private var isNaming = false
+    @State private var name = ""
     @FocusState private var isFocused: Bool
     /// The spec was made; the board takes over.
     var onStart: () -> Void = {}
@@ -81,6 +84,7 @@ struct NewView: View {
         .fileImporter(isPresented: $isAttaching, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { files += urls.filter { !files.contains($0) } }
         }
+        .sheet(isPresented: $isNaming) { naming }
         .alert("Couldn’t Start", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
         } message: {
             Text(error ?? "")
@@ -219,13 +223,66 @@ struct NewView: View {
 
     private func start() {
         guard canStart else { return }
+        if planned == .product {
+            isNaming = true
+        } else {
+            create(named: Spec.untitledName)
+        }
+    }
+
+    /// With `Spec.untitledName` the intake names the spec (and a new product's folder).
+    private func create(named name: String) {
         do {
             // A new product gets its own folder; a feature or a fix goes into the project.
-            _ = try state.createSpec(name: Spec.untitledName, idea: text, size: planned, project: planned == .product ? nil : project, fillGaps: fillsGaps, files: files)
+            _ = try state.createSpec(name: name, idea: text, size: planned, project: planned == .product ? nil : project, fillGaps: fillsGaps, files: files)
             onStart()
         } catch {
             self.error = error.localizedDescription
         }
+    }
+
+    /// Not drawn: the name of a new product, asked once after Start. Its folder in ~/Developer takes it.
+    private var naming: some View {
+        let typed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return VStack(alignment: .leading, spacing: Theme.Space.x16) {
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                Text("What is it called?").textStyle(Theme.Text.headline).accessibilityAddTraits(.isHeader)
+                Text("The new folder in ~/Developer and the spec take this name. You can rename the spec later.")
+                    .textStyle(Theme.Text.calloutLoose)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            TextField("For example: Yoga Studio Booking", text: $name)
+                .textFieldStyle(.plain)
+                .textStyle(Theme.Text.body)
+                .padding(.horizontal, Theme.Space.x10)
+                .frame(height: Theme.Size.buttonLarge)
+                .surface(Theme.Colors.background, .focus, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+                .onSubmit { if !typed.isEmpty { finishNaming(typed) } }
+                .accessibilityLabel("Name")
+            HStack(spacing: Theme.Space.x12) {
+                Button("Cancel") { isNaming = false }
+                    .buttonStyle(DesignLinkStyle())
+                    .keyboardShortcut(.cancelAction)
+                Spacer(minLength: 0)
+                Button("Let Mel name it") { finishNaming(Spec.untitledName) }
+                    .buttonStyle(BoardPillStyle(height: Theme.Size.buttonLarge, padding: Theme.Space.x16))
+                    .help("Mel names it from your idea after its first read")
+                Button("Start") { finishNaming(typed) }
+                    .buttonStyle(AccentPillStyle(padding: Theme.Space.x16, hint: "↩"))
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(typed.isEmpty)
+            }
+        }
+        .foregroundStyle(Theme.Colors.label)
+        .padding(Theme.Space.x24)
+        .frame(width: Theme.Size.newNameSheet)
+        .background(Theme.Colors.background)
+    }
+
+    private func finishNaming(_ name: String) {
+        isNaming = false
+        create(named: name)
     }
 }
 

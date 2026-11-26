@@ -755,6 +755,8 @@ extension Theme.Size {
     static let newBoxFooter: CGFloat = 52
     static let attachButton: CGFloat = 32
     static let attachIcon: CGFloat = 15
+    /// 440 · the sheet that asks a new product's name (not drawn).
+    static let newNameSheet: CGFloat = 440
     /// V2 sidebar: 40 pt top for the traffic lights; file rows 24; New 30; agent line 22.
     static let sidebarTop: CGFloat = 40
     static let sidebarFileRow: CGFloat = 24

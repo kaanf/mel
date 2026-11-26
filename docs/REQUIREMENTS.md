@@ -39,7 +39,7 @@ As a user, I want to point Mel at my code or at nothing, so that I can begin in 
 
 As a user, I want one box to write in, so that I do not have to classify my own request.
 
-- 4.1 New SHALL ask for the idea only. The spec is named by the intake.
+- 4.1 New SHALL ask for the idea only. A Feature or Quick fix is named by the intake; WHEN the user starts a New product, THE APP SHALL ask its name once ("Let Mel name it" leaves it to the intake). A spec can be renamed from its sidebar menu.
 - 4.2 WHEN the box has text, THE APP SHALL guess the size from the words, with no agent run: a bug is a Quick fix, a new app a New product, anything else a Feature; without a project it is always a New product.
 - 4.3 THE APP SHALL show the guess as one chip with a one-line reason; WHEN the user clicks the chip, THE APP SHALL cycle Quick fix, Feature, New product and say "You picked …".
 - 4.4 THE APP SHALL let the user add files with the attach button or by dropping them on the box, and copy them into the spec's folder.

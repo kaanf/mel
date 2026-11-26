@@ -73,6 +73,7 @@ A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has
 | Quick fix chip "1 question, 1 file" | "1 file" | The intake may ask two |
 | Time estimates | hidden | OQ #17 |
 | sidebar 244, inbox 300, answer pills, Stop in the toolbar | sidebar 272, inbox 340, one answer per row with wrapping text, Stop in the working line | The user's feedback on 0.5: too narrow, answers ran out of the column, writing wasn't visible |
+| not drawn | a sheet asking a New product's name after Start | The user's request: its folder takes the name |
 | not drawn | Spec language row in Settings › Specs | Added in 0.4 (OQ #5) |
 | not drawn | Settings › General with the update controls | Sparkle, since 0.2 |
 | not drawn | not signed in / not working on Start's agent line; attached file chips on New; "Mark as Done" on Ready | States the drawing doesn't cover, in the drawn components' look |
