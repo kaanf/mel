@@ -1,13 +1,13 @@
 # Spec format
 
-The Markdown contract for the files Mel generates (V2.md §3, §4, §6). Agents are prompted with it (`MelKit/Sources/MelSpec/Prompts/`), and `MarkdownParser` parses it to drive the review screens. Each prompt's sample reply is checked against Mel's parser in `PromptTests`. Files stay readable in any Markdown viewer.
+The Markdown contract for the files Mel generates (V2.md §3, §4, §6). Agents are prompted with it (`MelKit/Sources/MelSpec/Prompts/`), and `MarkdownParser` parses it to drive the board (the plan, the cards, the checks by ID). Each prompt's sample reply is checked against Mel's parser in `PromptTests`. Files stay readable in any Markdown viewer.
 
 ## Folder layout
 
 ```
 <project>/
 ├── AGENTS.md                         optional; Mel owns only its <!-- mel:begin --> … <!-- mel:end --> block
-├── .mel/project/                     project context, written once (A3), committed
+├── .mel/project/                     project context, read once in the background, committed
 │   ├── product.md  tech.md  structure.md  principles.md
 └── specs/
     └── <spec-slug>/
@@ -16,8 +16,8 @@ The Markdown contract for the files Mel generates (V2.md §3, §4, §6). Agents 
         ├── prompts/task-01.md …      written at handoff
         └── .mel/                     app state, never committed
             ├── state.json
-            ├── approved/<FILE>.md    snapshot at approval (C1 diff, Undo)
-            └── attachments/          B1 files and pasted logs
+            ├── approved/<FILE>.md    each file as Mel last wrote it (Update's diff, Undo)
+            └── attachments/          files added on New or to a Tell Mel request
 ```
 
 Deleting `.mel/` loses the pipeline state, never the spec itself.
@@ -41,7 +41,7 @@ Deleting `.mel/` loses the pipeline state, never the spec itself.
 > What happens to unused credits when a pack expires?
 ```
 
-  An **assumption** is a decision the agent made, written as a statement; Confirm removes the wrapper and keeps the text, Change replaces it. An **open question** is a gap the agent could not decide. Both may remain when the user approves (OQ #18). With "Let Mel fill small gaps" off, the agent makes no assumptions and every gap is an open question.
+  An **assumption** is a decision the agent made, written as a statement; the board counts them as "small things Mel guessed". An **open question** is a gap the agent could not decide: it becomes a card, and its answer takes the callout out. One may stay in a file when the user chooses "Write it now" (OQ #32), for the coding agent to see. With "Let Mel guess small details" off, the agent makes no assumptions and every gap is an open question.
 - No TBD, TODO or placeholders. No front matter.
 - HTML comments are hidden by the parser. The only one kept in a file is `<!-- MVP line -->`.
 
@@ -49,8 +49,8 @@ Deleting `.mel/` loses the pipeline state, never the spec itself.
 
 Mel strips these from the reply before it writes the file:
 
-- `<!-- mel:step N -->` on its own line when the agent reaches step N of the file's fixed checklist (`DocKind.draftSteps`, shown in B3). Markers can arrive split across text deltas and back to back. Mel counts only complete markers and shows the highest N.
-- An optional trailer at the very end, up to 3 round-2 questions (shown in B4 "Before you approve"):
+- `<!-- mel:step N -->` on its own line when the agent reaches step N of the file's fixed checklist (`DocKind.draftSteps`). Markers can arrive split across text deltas and back to back. The board doesn't show the checklist; the markers are only stripped.
+- An optional trailer at the very end, up to 3 questions the draft couldn't settle. Each becomes a card in "Mel needs you":
 
 ```
 <!-- mel:questions
@@ -142,7 +142,7 @@ Covers: 1.1, 1.2, 1.3
 Calm and light, one accent color, large tap targets.
 ```
 
-A state prefixed `!` is missing (B5 flags it).
+A state prefixed `!` is missing; the formatted view flags it.
 
 ## ARCHITECTURE.md
 
@@ -191,7 +191,7 @@ Expected behavior uses EARS criteria (`- 1.1 WHEN …, THE APP SHALL …`).
 
 ## DECISIONS.md
 
-Written by Mel only, newest first. A decision that replaces another names it; the older one shows "Replaced by" in C1.
+Written by Mel only, newest first: every answer, Tell Mel request, removal, rewrite and reason for an edit, in the user's own words. A decision that replaces another names it. A removed story's entry offers Restore on the board.
 
 ```markdown
 # Decisions
@@ -207,15 +207,15 @@ Studio policy changed. Teachers need a full day to offer freed spots to the wait
 
 ## Project context (`.mel/project/`)
 
-`product.md`, `tech.md`, `structure.md`, `principles.md`. `structure.md` has a `## Modules` list of `- Name — path` lines: B1's "Builds on" chips. "Add Rule" appends `- <rule>` to `principles.md`.
+`product.md`, `tech.md`, `structure.md`, `principles.md`. `structure.md` has a `## Modules` list of `- Name — path` lines. `principles.md` holds the rules every agent follows as `- <rule>` lines: Settings › Specs lists them, "Add Rule" appends one and the remove button takes one out.
 
 ## Agent JSON replies
 
 | Run | Shape |
 |---|---|
-| Project context (A3) | `{"product","tech","structure","principles"}`, each a Markdown file |
-| Intake (B2) | `{"coverage":[{"label","state"}],"questions":[{"id","title","why","shapes","options":[{"label","note","suggested"}]}]}` |
-| Analyze (B6) | `{"stats":[{"value","label"}],"issues":[{"id","kind","location","text","actions":[{"label","fix","files"}]}],"coverage":[{"id","text","screen","architecture","task","test"}]}`; `kind` is `contradiction`, `noTask`, `qualityNotCovered` or `scopeCreep`; marks are `covered`, `missing` or `conflict`; `screen` is null without EXPERIENCE.md |
-| Impact (C1) | `{"items":[{"kind","what","count"}]}` |
+| Project context | `{"product","tech","structure","principles","read","sources"}`: four Markdown files, what was read, and where each file's content came from |
+| Intake | `{"name","coverage":[{"label","state"}],"questions":[{"id","title","about","why","shapes","options":[{"label","note","suggested"}]}]}`; `name` names an untitled spec |
+| Check | `{"issues":[{"id","location","text","ids","actions":[{"label","fix","files"}]}]}`: contradictions only, two actions each. Coverage, stats and missing-task issues are Mel's own checks by ID |
+| Change | `{"edits":[{"file","old","new"}]}`: each `old` must occur exactly once in its file; all edits are placed or none |
 
 Text around the JSON (a code fence) is ignored.

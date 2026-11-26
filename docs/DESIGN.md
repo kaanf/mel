@@ -1,10 +1,8 @@
 # Design
 
-> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
-
 Guiding rule: **performance, speed and the least complexity that works.** No speculative abstractions, no fallback layers, no dependencies unless essential. When something here starts to grow, cut scope before adding machinery.
 
-Deferred to a later version (see REQUIREMENTS.md › Later): Pause/Resume, "Ask for changes" with suggestions, Review inspector/History, time estimates, parallel runs. Only one agent run at a time across the app: `AgentRunner` is a single shared instance.
+Deferred (see REQUIREMENTS.md › Later): Codex, following the coding agent's progress, time estimates, parallel spec runs. One spec runs at a time across the app (`AppState.runningSpecID`); reading a project's context may run next to it.
 
 ## 1. Architecture
 
@@ -17,7 +15,7 @@ Deferred to a later version (see REQUIREMENTS.md › Later): Pause/Resume, "Ask 
 | State | Observation (`@Observable`) |
 | Concurrency | async/await, `AsyncStream`, `Task` cancellation |
 | Processes | Foundation `Process` + `Pipe` |
-| Persistence | One Codable JSON file per spec (`specs/.mel/state.json`) + `UserDefaults` for app settings and the library |
+| Persistence | One Codable JSON file per spec (`specs/<slug>/.mel/state.json`) + `UserDefaults` for app settings and the library |
 | Markdown | Own small line-based parser for our fixed format; `AttributedString(markdown:)` for inline styling. **No dependencies.** |
 | Notifications | `UserNotifications` |
 | Updates | Sparkle 2 (the only third-party dependency; app target only, decided 2026-11-23) |
@@ -47,7 +45,7 @@ Mel.xcodeproj
 │   └── Session/         AppState, SpecSession                         → all MelKit modules
 ├── MelTests/Session/
 ├── MelKit/              local package (nonisolated by default)
-│   ├── Sources/MelSpec/     domain: models, pipeline reducer, Markdown parser, Prompts/
+│   ├── Sources/MelSpec/     domain: models, the board's pipeline, patches, Markdown parser, Prompts/
 │   ├── Sources/MelStorage/  spec folder I/O, state.json, library, file watcher   → MelSpec
 │   ├── Sources/MelAgent/    Claude Code adapter, AgentRunner, ShellPath           → MelSpec
 │   ├── Sources/MelSystem/   Terminal, Finder, pasteboard, Git, notifications
@@ -77,7 +75,7 @@ Dependencies point one way, toward `MelSpec`. The compiler enforces it through t
 ```
 MelKit/                        (local package)
 ├── Sources/
-│   ├── MelSpec/                domain: Models, Reducer, MarkdownParser, Prompts/ (*.md resources)  → Foundation only
+│   ├── MelSpec/                domain: Models, Board, Change, Analysis, MarkdownParser, Prompts/ (*.md resources)  → Foundation only
 │   ├── MelStorage/             SpecStore, Library, FileWatcher                                     → MelSpec
 │   ├── MelAgent/               AgentTypes, ClaudeCode, AgentRunner, ShellPath                      → MelSpec
 │   └── MelSystem/              SystemActions, Git, Notifier                                        → (none)
@@ -105,110 +103,120 @@ Rules:
 
 ```
 SwiftUI views ──observe──▶ SpecSession (@Observable, @MainActor), one per open spec
-                                │ start · answer · stop · approve
+                                │ answerCard · tell · removeStory · save · resumeBoard · startBuilding
+                                ▼
+                 Spec.nextStep (MelSpec, pure) ──▶ draft(file) | change | check | nil (waits for the user)
+                                │
                                 ▼
                      AgentRunner (actor) ──▶ claude -p … (Process)
-                                │ text chunks
+                                │ text deltas, or one JSON reply
                                 ▼
-                     SpecFile: append to buffer → write file (debounced)
+          draft: stream into the file (debounced)      change: Change.apply places {old, new} edits
 ```
 
-**Mel is the only writer of the spec files.** Claude Code runs without write/shell tools and streams plain Markdown on stdout; Mel appends it to the file. No output parsing is needed for drafting; JSON is used only for Discovery questions.
+**Mel is the only writer of the spec files.** Claude Code runs without write or shell tools. A draft streams plain Markdown that Mel appends to the file; every later change comes back as edits that Mel places.
 
-`AgentAdapter` is a small protocol with one implementation (`ClaudeCode`) so Codex can be added later. No other abstraction for it now.
+`AppState` (one per app) holds the agent's status, the library (projects, their context, specs), the current project and the sessions. `AgentAdapter` is a small protocol with one implementation (`ClaudeCode`) so Codex can be added later.
 
 ## 2. Data model
 
+The types are in `MelKit/Sources/MelSpec/` (`Models.swift`, `Board.swift`, `Analysis.swift`, `Change.swift`, `Decision.swift`, `ProjectContext.swift`, `Tokens.swift`). The shape that matters:
+
 ```swift
-struct Spec: Codable, Identifiable {
+struct Spec {
     let id: UUID
-    var name: String                 // "Yoga Studio Booking"
-    var idea: String
-    var folder: URL                  // …/yoga-studio-booking/specs
-    var stage: Stage
-    var docs: [DocKind: DocStatus]
-    var questions: [Question]
-    var coverage: [CoverageItem]
-    var sessionID: String?           // Claude Code session, for resume
+    var name, idea: String
+    var size: SpecSize               // quickFix | feature | product: fixes the files and their order
+    var folder: URL                  // <project>/specs/<slug>/
+    var stage: Stage                 // discovery (intake) | board | done
+    var docs: [DocKind: DocStatus]   // locked, writing, stopped, approved (written), edited, stale
+    var questions: [Question]        // intake, a draft's questions, open questions left in a file
+    var analyze: AnalyzeStatus       // the check after the last file
+    var analysis: AnalyzeResult?     // coverage by ID + contradictions; its issues are cards
+    var halted: Halt?                // the agent stopped; nothing runs until Resume
+    var unplacedChange: UnplacedChange?   // waits for "Rewrite FILE" or Cancel
+    var removedStories: [RemovedStory]?   // for Restore
+    var tokens: [TokenStep: Int]?    // per step, from result.usage
+    var build: BuildState?           // building | done, after the handoff
+    var fillGaps: Bool, language: SpecLanguage?, attachments: [Attachment], sessionID: String?
 }
-
-enum DocKind: String, Codable, CaseIterable { case product, requirements, design, tasks }
-enum Stage: Codable { case discovery, drafting(DocKind), review(DocKind), stopped(DocKind, StopReason), done }
-enum DocStatus: String, Codable { case locked, writing, stopped, review, approved }
-
-struct Question: Codable, Identifiable {
-    let id: String
-    var title: String, why: String, shapes: DocKind
-    var options: [Option]
-    var answer: Answer?
-}
-struct Option: Codable { var label: String; var note: String; var suggested: Bool }
-enum Answer: Codable { case option(Int, note: String?), agentDecides }
-struct CoverageItem: Codable { var label: String; var state: CoverageState }
-enum CoverageState: String, Codable { case covered, asking, notYet }
-
-enum StopReason: Codable { case user, usageLimit(resetsAt: Date?), signedOut, crashed(String), timeout }
 ```
 
-The whole `Spec` is saved to `specs/.mel/state.json` on every change (debounced, atomic). It's small; no database. The library is an array of folder bookmarks in `UserDefaults`.
+- A `Card` is what the inbox shows: built from a `Question` or from a check issue, answered with an `Answer` (`option`, `text`, or `agentDecides` for a guess).
+- The whole `Spec` is saved to `.mel/state.json` on every change (debounced, atomic). No database. The library is an array of project folders in `UserDefaults`; specs are found by scanning.
+- State from before 0.5 still loads: a lane stage (`drafting`, `review`, `stopped`, `analyze`) decodes as `board`, and the doc status `review` counts as written.
+- App settings are `UserDefaults` keys read with `@AppStorage`: `fillGaps`, `showTokens`, `showSidebarFiles`, `commitSpec`, `writeAgentsFile`, `settingsTab`, `didShowWelcome`; `AppState` keeps `currentProject`, `editorApp`, `specLanguage`, `extraSearchPaths`, `projects`.
 
 ## 3. Key flows
 
-### Pipeline
+### The board's pipeline
 
-A pure reducer in `Spec/`:
+Pure, in `MelSpec/Board.swift`. `Spec.nextStep` says what to run; mutating functions record what happened. `SpecSession.runBoard` loops until `nextStep` is nil.
 
 ```
-discovery ──(all covered | Draft Now)──▶ drafting(product)
-drafting(d) ──finished──▶ review(d)
-drafting(d) ──error | Stop──▶ stopped(d, reason) ──Resume──▶ drafting(d)   (continues from partial)
-                                                 └─Finish myself──▶ review(d)
-review(d) ──Approve──▶ drafting(next d) | done
+discovery ──every intake question answered | Skip──▶ board
+board:  nextStep =
+          nil       while a card is open, an edit waits for Update / Keep, a change is unplaced, or the agent is halted
+          change    answers were given since the files were written: one patch run for all of them
+          draft(f)  the next file not written yet (or the one that was cut off)
+          check     every file is written and the check hasn't run (not for a Quick fix)
+          nil       → isReady: Start Building is enabled
+board ──Start Building──▶ done
 ```
+
+No file is approved. The gate is the inbox: a file starts only when no card of the written files is open; "Write it now" turns open cards into guesses (`agentDecides`) with no run.
 
 ### Drafting
 
-1. Build prompt: stage instructions + idea + answers + approved earlier files.
-2. Run `claude -p` with stream output and write tools disabled.
-3. Append text chunks to an in-memory buffer; write the file at most every 500 ms (atomic). The live preview observes the buffer, throttled to ~10 updates/s.
-4. Progress = count of `##` sections in the buffer vs. the expected count (DESIGN.md has 7; for REQUIREMENTS/TASKS the prompt asks the agent to start with a one-line plan, e.g. `5 stories`, stripped from the file). The step list and "section 3 of 7" come from this.
-5. On finish: trim, ensure final newline, write, → review.
+1. Build the prompt (`Prompts/<kind>.md`): project context, idea, answers, the files written before, attachment paths.
+2. Run `claude -p` with read-only tools and a stored session.
+3. Append text deltas to a buffer; write the file at most every 500 ms (atomic); the open file's preview updates at most 10 times a second.
+4. On finish: strip the markers, write the file, save its snapshot (`.mel/approved/`), turn the draft's trailer questions and `[!OPEN QUESTION]` callouts into cards.
+
+### Changes
+
+Tell Mel, card answers, Update after an edit, Remove and Restore all run `Prompts/change.md` once over the written files, without tools unless the request has attachments. The reply is a `Change` (`{file, old, new}` edits). `Change.apply` places every edit or none.
+
+- Placed: files are written, snapshots saved, Mel's own checks by ID rerun for free, and the result line carries what Undo needs.
+- Not placed: nothing changes. `Spec.unplacedChange` keeps the edits; "Rewrite FILE" streams that one file whole (`Prompts/rewrite.md`), the only whole-file rewrite, then the edits that did fit go in.
+- Free, no run: `Story.move` (scope), `StoryRemoval` (what a story takes with it), `Spec.writeNow`.
 
 ### Stop and resume
 
-- **Stop**: `SIGINT`, then `SIGTERM` after 3 s. The partial file is already on disk.
-- **Resume after stop**: new run with `--resume <sessionID>` and "continue from the first incomplete section"; Mel truncates the file to the last complete `##` section, then appends.
-- **Usage limit**: notification at `resetsAt` if known; the user taps Resume. No automatic scheduled runs.
+- **Stop**: `SIGINT`, then `SIGTERM` after 3 s. A cut-off draft is already on disk; `Spec.halt` records the reason and the file.
+- **Resume**: the cut-off file is truncated to its last complete `##` section and continued with `--resume <sessionID>` (`Prompts/continue.md`); an unknown session writes it again from the start. A stopped change or check simply runs again.
+- **Usage limit**: Resume waits for `resetsAt` and posts a notification then. No automatic runs.
+- A board that was working when Mel quit is halted at load, so nothing runs on launch.
 
-### Review
+### Edits by hand
 
-- Preview = parsed Markdown rendered with SwiftUI. Edit = `TextEditor` on the raw text (switch to `NSTextView` only if large files feel slow).
-- In-app edits save on change (debounced, atomic).
-- External edits: watch the file (`DispatchSource`). If the in-app editor has no unsaved changes → reload. If it does → ask "Keep Mine / Use File". No merge algorithm.
-- Assumptions are plain callouts in the file; Confirm / Change are small text edits Mel applies to the file. Files never contain open questions.
-- The activity log during drafting lives in memory only (not persisted).
-- Approve: status → approved. Editing an approved file sets it back to review; nothing else cascades.
+- The file editor saves on change (debounced, atomic). `FileWatcher` sees edits made elsewhere: no unsaved text in Mel → reload; otherwise ask "Keep Mine / Use File". No merge.
+- An edit to a written file marks it `edited` and the files after it `stale`; the banner settles it: Update (one change run with the diff against the snapshot), Keep, or Undo (the snapshot goes back).
+
+### Project context
+
+`AppState.readContext(of:)`: one read-only run over the repo returns four Markdown files as JSON (`ProjectContext`), written to `.mel/project/`. It starts in the background after Start and from Settings › Specs › Read Again. Every spec prompt includes the files when they exist; a spec started before they do says "(no project context yet)" and the agent reads the repo itself.
 
 ### Detection
 
-Read the login-shell `PATH` once per scan (`$SHELL -l -c 'printf %s "$PATH"'`, 5 s timeout), add the extra search paths, find `claude`, run `claude --version`, check auth. Details in [AGENT-INTEGRATION.md](AGENT-INTEGRATION.md).
+Read the login-shell `PATH` once per scan, add the extra search paths, find `claude`, run `claude --version`, check auth. Details in [AGENT-INTEGRATION.md](AGENT-INTEGRATION.md).
 
 ## 4. Interfaces
 
 ```swift
 protocol AgentAdapter: Sendable {
-    func detect(searchPaths: [String]) async -> AgentStatus     // ready / notSignedIn / missing
-    func loginCommand(_ exe: URL) -> String
+    func detect(extraPaths: [String]) async -> AgentStatus       // ready / notSignedIn / missing / broken
+    func loginCommand(executable: URL) -> String
     func arguments(for request: AgentRequest) -> [String]
-    func parse(line: Substring) -> AgentEvent?                   // one NDJSON line
-    func stopReason(exitCode: Int32, lastError: String?) -> StopReason
+    func environment(path: String) -> [String: String]
+    func parse(line: Substring) -> [AgentEvent]                   // one NDJSON line
 }
 
-enum AgentEvent { case session(String), text(String), step(String), json(Data), done, failed(StopReason) }
+enum AgentEvent { case session(String), text(String), step(String), rateLimit(allowed: Bool, resetsAt: Date?), usage(tokens: Int), done(result: String), failed(StopReason) }
 
-actor AgentRunner {
+protocol AgentRunning: Sendable {                                 // AgentRunner; tests use a fake
     func run(_ request: AgentRequest) -> AsyncThrowingStream<AgentEvent, Error>
-    func stop()
+    func stop() async
 }
 ```
 
@@ -219,7 +227,8 @@ System integration:
 | Open Terminal with a command | Write a temporary `.command` script and `NSWorkspace.open` it. No Apple Events entitlement or permission prompt |
 | Show in Finder | `NSWorkspace.shared.activateFileViewerSelecting` |
 | Copy | `NSPasteboard.general` |
-| Git commit | `/usr/bin/git` via `Process`; checkbox disabled if git is unavailable |
+| Open in Editor | `NSWorkspace.open`, with the app chosen in Settings › Specs or the Mac's default |
+| Git commit | `/usr/bin/git` via `Process`; skipped if git is unavailable |
 | Notifications | `UNUserNotificationCenter` |
 
 ## 5. Performance
@@ -227,21 +236,23 @@ System integration:
 - Never block the main actor: process I/O, file writes and Markdown parsing run off it.
 - Read stdout in chunks and split lines in the runner; don't decode JSON on the main actor.
 - Throttle UI updates from the stream (~10/s) and debounce disk writes (500 ms).
-- Parse Markdown once per change into blocks and render blocks lazily (`LazyVStack`).
+- Parse Markdown once per change into blocks, off the main actor.
+- Tokens are a budget (OQ #24): a change is a patch, never a rewrite; scope moves, guesses and coverage checks cost no run.
 - Launch fast: no work at launch except restoring the library; detection runs in the background.
 
 ## 6. Security and privacy
 
 - Mel's only network call is Sparkle's update check (the appcast, then the DMG when the user agrees). No telemetry, no system profile.
 - Claude Code runs with write and shell tools disabled, working directory = the project folder.
+- Never overwrite a user's edit; never change a Ready file without a user action: a card answer, Tell Mel, Remove, Update or Rewrite (OQ #29).
 - Prompts and history stay in the spec folder.
 - `.mel/` is never committed: the spec commit excludes it by pathspec; `.gitignore` is left alone.
 - A user-chosen executable must exist, be executable and answer `--version`.
 
 ## 7. Testing
 
-- Unit: pipeline reducer, Markdown parser (stories, criteria, callouts, tasks).
+- Unit (MelKit): the board's pipeline (`BoardTests`), patches and changes, coverage by ID, the Markdown parser, prompts against their sample replies.
 - Agent: parse recorded NDJSON fixtures (success, usage limit, signed out, crash); runner tests with a fake `claude` shell script (stop, timeout).
-- End to end with the fake script: idea → 4 files → done; stop and resume.
+- Session (`MelTests`): `BoardSessionTests` drive `SpecSession` with scripted replies; `EndToEndTests` run the real `AgentRunner` and parsing against `fake-claude.sh`.
 - `#Preview` for every screen state using fixtures.
 - Before each release: real Claude Code run, installed from the notarized DMG on a clean account.

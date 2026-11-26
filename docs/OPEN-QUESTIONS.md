@@ -25,6 +25,7 @@
 | 31 | When are a file's card answers applied? | **Together, in one change run, once every open card is answered** (or on "Write it now"). An answer changed later runs a change at once | 2026-11-26 |
 | 32 | What does "Write it now" do with open cards? | **Marks them as guesses, with no run.** An `[!OPEN QUESTION]` callout stays in the file for the coding agent | 2026-11-26 |
 | 33 | Is the contradiction check run again after its issues are fixed? | **No.** Mel's own checks by ID run again for free after every change; contradictions are looked for once, after the last file. "Check again" runs it on request | 2026-11-26 |
+| 29 | Invariant once approval is gone | **"Never change a Ready file without a user action"**: a card answer, Tell Mel, Remove, Update or Rewrite. "Never overwrite a user's edit" stays. In CLAUDE.md, REQUIREMENTS.md and DESIGN.md | 2026-11-27 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open
@@ -41,7 +42,6 @@ Each has a recommended default that the other docs already assume; change the do
 | 14 | Settings tabs General, Specs, Advanced aren't designed | Use the proposal in UI.md | Needed for M3 3.2 |
 | 15 | Telemetry / crash reporting? | None in MVP | Privacy promise: Mel makes no network calls |
 | 19 | Bundle identifier | `com.kaanf.mel` (placeholder until the Apple Developer account is set up) | Needed in Wave 0 |
-| 29 | Invariant "never change an approved file without a user action" once approval is gone | **"Never change a Ready file without a user action"**: a card answer, Tell Mel, Remove, Update or Rewrite. "Never overwrite a user's edit" stays | CLAUDE.md and DESIGN.md state the old wording |
 | 34 | What moves a spec to Building and Done in the sidebar? | **The user.** "Build with Claude Code" moves it to Building; "Mark as Done" (Ready, or the row's menu) moves it to Done. Mel doesn't watch the coding agent, so "Task 3 of 7" and "Merged yesterday" aren't shown, and Ready's "What happens next" has two lines | The canvas draws progress Mel can't see without tracking the agent's work |
 | 35 | Which repos does Start list? | **The 5 most recently edited** in `~/Developer`; any other folder is dropped on the window or added from the sidebar's project menu | A long list pushes Start off the screen |
 | 30 | Cheaper model for small runs (intake, impact, patches)? | **Not yet.** Measure with the token readout first; then decide per run kind | Lower usage, but a quality risk the user should judge |

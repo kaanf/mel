@@ -1,131 +1,151 @@
 # Requirements
 
-> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+EARS acceptance criteria, the same format Mel generates (see [SPEC-FORMAT.md](SPEC-FORMAT.md)). "THE APP" means Mel. Screens are named as in [UI.md](UI.md) and `docs/design/v2/FLOW.md` › V2. Two product rules stand over all of them (OQ #24): the user can say, change or remove anything in their own words, and Mel never spends more tokens than doing the same spec by hand.
 
-EARS acceptance criteria, same format Mel generates (see [SPEC-FORMAT.md](SPEC-FORMAT.md)). "THE APP" means Mel. Screens are named as in [UI.md](UI.md).
+## 1. Find the coding agent
 
-## 1. Detect the coding agent
+As a user, I want Mel to find the coding agent already on my Mac, so that I can start without configuring anything.
 
-As a user, I want the app to find the coding agent already on my Mac, so that I can start without configuring anything.
+- 1.1 WHEN the app launches, THE APP SHALL look for Claude Code (`claude`) using the login shell's `PATH` plus the extra search paths, because apps opened from the Dock do not inherit the Terminal `PATH`.
+- 1.2 THE APP SHALL show the agent on Start as one status line: found and signed in, checking, not signed in (with Sign In), or not working.
+- 1.3 WHEN no agent is found, THE APP SHALL show the install command with Copy, Check Again and a link to choose the path, on the same screen.
+- 1.4 WHEN the user clicks Sign In, THE APP SHALL open Terminal with Claude Code's own login command.
+- 1.5 WHEN the window becomes active and the agent is not ready, THE APP SHALL look again.
+- 1.6 WHILE the agent is not ready, THE APP SHALL keep Start disabled on Start and on New, and say why.
+- 1.7 THE APP SHALL show the agent's status at the bottom of the sidebar; clicking it opens Settings › Agents.
 
-- 1.1 WHEN the app launches for the first time, THE APP SHALL show the Welcome window and scan for Claude Code (`claude`).
-- 1.2 THE APP SHALL resolve executables using the user's login-shell `PATH` plus the configured extra search paths (defaults: `/opt/homebrew/bin`, `~/.local/bin`, `~/.npm-global/bin`), because apps opened from the Dock do not inherit the Terminal `PATH`.
-- 1.3 WHILE a scan is running, THE APP SHALL show the agent row as "Checking".
-- 1.4 WHEN an agent is found and authenticated, THE APP SHALL show its name, resolved path and "Ready".
-- 1.5 WHEN an agent is found but not authenticated, THE APP SHALL show "Not signed in" and a "Sign In…" button.
-- 1.6 WHEN the user clicks "Sign In…", THE APP SHALL open Terminal running Claude Code's own login command, and re-check the agent when the app becomes active again.
-- 1.7 WHEN the user clicks "Scan Again" or "Scan Now", THE APP SHALL rerun detection.
-- 1.8 WHEN Claude Code is not found, THE APP SHALL explain how to install it and offer "choose the file manually".
-- 1.9 IF Claude Code is not Ready, THEN THE APP SHALL disable New Spec and say why, with a link to fix it.
-- 1.10 WHERE "Look for the agent when the app opens" is on, THE APP SHALL rerun detection at every launch.
+## 2. Settings
 
-## 2. Manage the agent in Settings
+As a user, I want the defaults in one place, so that Mel does not ask me the same things for every spec.
 
-As a user, I want to see how the app finds and uses Claude Code, so that I can fix problems.
+- 2.1 Settings › Agents SHALL show Claude Code's status, location and account state, let the user choose the executable, add and remove search paths, and scan again.
+- 2.2 Settings › Specs SHALL hold: Show spec files in the sidebar (off), Open files in (the Mac's default app, or one that opens Markdown), Let Mel guess small details (on), Show token use on the board (on), Spec language, Write AGENTS.md (on) and Commit the spec to Git (on).
+- 2.3 Settings › Specs SHALL show what Mel knows about the current project, with Show Files and Read Again, and the project's rules with Add Rule and a remove button per rule.
+- 2.4 Settings › General SHALL show the version, "Check for Updates…" and "Automatically check for updates".
 
-- 2.1 THE APP SHALL show Claude Code in Settings › Agents with its status, version, location and account state.
-- 2.2 WHEN the user clicks "Change…" for the location, THE APP SHALL let them choose an executable file and validate it before saving.
-- 2.3 WHEN the user clicks "Open Terminal…", THE APP SHALL open Terminal with Claude Code's login command.
-- 2.4 THE APP SHALL let the user add and remove extra search paths.
+## 3. Start with a project
 
-## 3. Start a new spec
+As a user, I want to point Mel at my code or at nothing, so that I can begin in one step.
 
-As a user, I want to describe my idea in plain words, so that the agent can turn it into a spec with me.
+- 3.1 WHEN the library has no project, or on first launch, THE APP SHALL show Start.
+- 3.2 Start SHALL list the 5 most recently edited git repos in `~/Developer`, each with its folder, language and age, and "No code yet, start from an idea".
+- 3.3 WHEN the user drops a folder on the window, THE APP SHALL add it to the list and select it.
+- 3.4 WHEN the user presses Start with a repo, THE APP SHALL add it as the current project, open New, and read the project once in the background.
+- 3.5 THE APP SHALL never make a screen wait for the project to be read; a spec's own runs go on next to it.
+- 3.6 WHEN the user presses Start with "No code yet", THE APP SHALL open New without a project; the first spec then creates the project folder under `~/Developer`.
+- 3.7 THE APP SHALL let the user switch projects, add one, locate a missing one and remove one from the sidebar's project menu.
 
-- 3.1 WHEN the user chooses New Spec (⌘N, toolbar +, or sidebar), THE APP SHALL present the New Spec sheet.
-- 3.2 THE APP SHALL require a name and an idea before Continue is enabled.
-- 3.3 THE APP SHALL show which agent will write the spec ("Claude Code · Found on this Mac"), without a picker.
-- 3.4 THE APP SHALL let the user choose the parent folder and show the resulting spec path (`<folder>/<slug>/specs`).
-- 3.5 IF the target `specs` folder already contains any of the four files, THEN THE APP SHALL ask before using it and never overwrite those files silently.
-- 3.6 WHEN the user clicks Continue, THE APP SHALL create the folder, save the idea, add the spec to the sidebar and start Discovery.
+## 4. Describe the work
 
-## 4. Discovery questions
+As a user, I want one box to write in, so that I do not have to classify my own request.
 
-As a user, I want to answer a few focused questions, so that the spec reflects what I actually want.
+- 4.1 New SHALL ask for the idea only. The spec is named by the intake.
+- 4.2 WHEN the box has text, THE APP SHALL guess the size from the words, with no agent run: a bug is a Quick fix, a new app a New product, anything else a Feature; without a project it is always a New product.
+- 4.3 THE APP SHALL show the guess as one chip with a one-line reason; WHEN the user clicks the chip, THE APP SHALL cycle Quick fix, Feature, New product and say "You picked …".
+- 4.4 THE APP SHALL let the user add files with the attach button or by dropping them on the box, and copy them into the spec's folder.
+- 4.5 WHEN the box is empty, THE APP SHALL offer three examples that fill it.
+- 4.6 WHEN the user presses Start (⌘↩), THE APP SHALL create `specs/<slug>/` in the project, or a new project folder for a New product, select the spec and open its board.
 
-- 4.1 THE APP SHALL show one question at a time with its number ("Question 4"), which file it shapes, why it matters, and either 2–4 options plus "You decide" or, for an open question, a text field plus "Skip".
-- 4.2 WHEN the agent marks an option as suggested, THE APP SHALL label it "Suggested" with the reason.
-- 4.3 THE APP SHALL let the user pick an option with the mouse or the keys 1–4, and add an optional note for the agent.
-- 4.4 WHEN the user presses Continue (↩), THE APP SHALL record the answer and request the next question.
-- 4.5 WHEN the user picks "You decide", THE APP SHALL let the agent choose the best option for that topic and record it as an assumption.
-- 4.6 THE APP SHALL show answered questions above the current one, and WHEN the user clicks one, THE APP SHALL let them change the answer.
-- 4.7 THE APP SHALL show the coverage checklist in the inspector, grouped by phase (Product, Requirements, Design, Tasks), each topic "Covered", "Asking" or "Not yet", with a count ("3 of 7").
-- 4.8 THE APP SHALL not limit the number of questions; Discovery SHALL end only WHEN every coverage topic is covered, and then start drafting PRODUCT.md.
-- 4.9 WHEN the user clicks "Draft Now", THE APP SHALL end Discovery early and the agent SHALL decide the remaining topics as assumptions.
-- 4.10 THE APP SHALL show the progress stepper (Idea › Questions › Draft › Review).
-- 4.11 WHILE the app waits for the user's answer, THE APP SHALL show "Needs you" status in the toolbar and sidebar.
-- 4.12 Discovery SHALL run in phases in file order: Product, Requirements, Design, Tasks. The agent SHALL finish a phase's topics before asking about the next phase, and MAY add a topic only to the current or a later phase.
-- 4.13 WHEN a phase starts, the agent SHALL first ask an open question ("What do you have in mind for the design? Screens, style, apps you like…"); the user MAY answer in free text or skip. The agent SHALL then sharpen that answer with option questions.
-- 4.14 WHERE the product has a user interface, the Design phase SHALL ask about the user experience: main screens and navigation, visual style and tone, and reference apps.
+## 5. Answer in one inbox
 
-## 5. Draft a file
+As a user, I want every question in one place and in one style, so that I always know what Mel needs from me.
 
-As a user, I want to watch the agent write each file, so that I know it is working and can stop it.
+- 5.1 WHEN a board opens for a new spec, THE APP SHALL run one intake that returns every question at once, and ask them one at a time under "Mel needs you".
+- 5.2 Every question and card SHALL offer its options and "Something else…", which takes a typed answer used exactly like a tapped one.
+- 5.3 WHEN the user clicks "Skip, write the plan now", THE APP SHALL start writing; the questions left become guesses.
+- 5.4 WHEN a file is written, THE APP SHALL add its questions as cards: those the draft asked and one per open question it left in the file.
+- 5.5 WHEN the check finds a contradiction, THE APP SHALL show it as a red "These disagree" card with its two fixes.
+- 5.6 An answered card SHALL show its answer and Change.
+- 5.7 WHEN every open card of the written files is answered, THE APP SHALL apply the answers in one change run (OQ #31).
+- 5.8 Every answer the user gave SHALL be logged in DECISIONS.md with its reason.
 
-- 5.1 WHEN a stage starts, THE APP SHALL run the stage's agent with the approved earlier files and Discovery answers as context.
-- 5.2 WHILE the agent is writing, THE APP SHALL show the status line ("Running · Writing criteria for story 3 of 5"), a progress bar and the step list (Done / Running / Next).
-- 5.3 WHILE the agent is writing, THE APP SHALL show a live, read-only preview of the file as it grows, and state that editing becomes possible at review.
-- 5.4 THE APP SHALL keep an Activity Log with timestamped agent actions, collapsed by default.
-- 5.5 THE APP SHALL list the following files under "Up Next" with what each waits for.
-- 5.6 WHEN the user clicks Stop, THE APP SHALL end the agent run, keep everything written so far, and offer "Continue Drafting" and "Review What's Written".
-- 5.7 THE APP SHALL write the file to disk progressively, so that a crash or quit keeps the partial result.
-- 5.8 WHEN a file finishes, THE APP SHALL move it to Review and post a notification if the app is not frontmost.
-- 5.9 THE APP SHALL not start the next file until the previous file is approved.
+## 6. Files written one at a time
 
-## 6. Review and approve
+As a user, I want Mel to write the files without me reading each one, so that I review a plan instead of documents.
 
-As a user, I want to read, edit and approve each file, so that the spec says exactly what I mean.
+- 6.1 THE APP SHALL write the size's files in order, one at a time, streaming each to disk as it grows.
+- 6.2 THE APP SHALL start the next file only WHEN no card of the written files is open, so an answer never forces a later file to be rewritten.
+- 6.3 WHILE a file waits for answers, THE APP SHALL say so in the toolbar pill and in Files ("ARCHITECTURE.md starts after 2 answers") and offer "Write it now".
+- 6.4 WHEN the user clicks "Write it now", THE APP SHALL mark the open cards as guesses with no agent run and start the next file (OQ #32).
+- 6.5 THE APP SHALL show four file states only: Ready, Writing, Needs you and Waiting.
+- 6.6 THE APP SHALL show the plan from the files: stories in First version and Later, what it must also do, Screens (New product only) and Build order.
+- 6.7 AFTER the last file of a Feature or New product, THE APP SHALL check coverage by ID itself and run one agent check for contradictions; "Check again" runs it on request (OQ #33).
+- 6.8 WHEN everything is written, answered and applied, THE APP SHALL show "Plan is ready" and enable Start Building.
+- 6.9 THE APP SHALL post a notification when the plan is ready, when Mel needs answers, and when the agent stops.
 
-- 6.1 THE APP SHALL show the file in a rendered Preview, and an editable raw Markdown view, switchable from the toolbar.
-- 6.2 WHEN the user edits the file in the app, THE APP SHALL save it automatically and show "Saved · your edits are never overwritten"; WHEN the file changes in another editor, THE APP SHALL reload it, and IF the in-app editor has unsaved changes, THEN THE APP SHALL ask which version to keep.
-- 6.3 THE APP SHALL show a "Before you approve" summary with the count of assumptions to confirm.
-- 6.4 THE APP SHALL show each assumption with Confirm and "Change…".
-- 6.5 THE generated files SHALL contain no open questions, TBDs or placeholders; WHEN drafting meets a gap Discovery didn't cover, the agent SHALL decide it and mark it as an assumption.
-- 6.6 WHILE the file has unconfirmed assumptions, THE APP SHALL disable Approve and say how many remain; WHEN none remain and the user clicks Approve or presses ⌘↩, THE APP SHALL mark the file Approved.
-- 6.7 WHEN a file is approved, THE APP SHALL unlock and start the next file.
-- 6.8 IF the user edits an approved file, THEN THE APP SHALL mark it back to Review.
-- 6.9 WHEN the user approves TASKS.md and a criterion is not covered by any task, THE APP SHALL warn before approving.
+## 7. Change anything
 
-## 7. Recover from agent failure
+As a user, I want to change, add or remove anything in my own words, so that the plan is mine.
 
-As a user, I want a clear way forward when the agent stops, so that I never lose work or restart.
+- 7.1 THE APP SHALL show Tell Mel under the board's center once a file exists: one request at a time, with attachments, no chat and no history.
+- 7.2 WHEN the user sends a request, THE APP SHALL run one change run that returns `{old, new}` edits and place them; every other passage stays word for word.
+- 7.3 WHEN a change is placed, THE APP SHALL show one line ("Changed 2 places in REQUIREMENTS.md, 1 in TASKS.md") with its token cost and Undo, highlight the changed passages in an open file, and log the request in DECISIONS.md.
+- 7.4 IF an edit cannot be placed, THEN THE APP SHALL change nothing and offer "Rewrite FILE" with its cost, and Cancel, which puts the request back in the box.
+- 7.5 THE APP SHALL rewrite a whole file only from "Rewrite FILE".
+- 7.6 WHEN the user moves a story between First version and Later, THE APP SHALL change its tag in REQUIREMENTS.md at once, with no agent run.
+- 7.7 WHEN the user chooses Remove… on a story, THE APP SHALL list what goes with it (criteria, screens, tasks) before removing; Remove cuts the story and one change run takes out what was built on it, or nothing changes.
+- 7.8 A removed story SHALL be listed in DECISIONS.md with Restore.
+- 7.9 THE APP SHALL hide Tell Mel while it asks the intake questions, while the user edits a file and while the agent is stopped.
 
-- 7.1 WHEN the agent process exits with an error or stops producing output past a timeout, THE APP SHALL mark the file "Stopped" and save the partial result.
-- 7.2 THE APP SHALL explain the cause in plain words, distinguishing account limits (for example a usage limit) from spec problems, and state that approved files were not changed.
-- 7.3 THE APP SHALL show per-file state (Approved, unchanged / Stopped at section N of M / Not started).
-- 7.4 THE APP SHALL offer: resume, or finish the file by hand; WHEN a usage-limit reset time is known, THE APP SHALL post a notification at that time.
-- 7.5 WHEN the agent resumes, THE APP SHALL give it the partial file and continue from the next unfinished section.
-- 7.6 THE APP SHALL offer "Show Details" with the raw agent error output.
+## 8. Read and edit files
 
-## 8. Hand off
+As a user, I want the Markdown files one click away, so that I can check or change them myself.
 
-As a user, I want to start building from the finished spec, so that the spec turns into software.
+- 8.1 WHEN the user clicks Files, THE APP SHALL list the files with their states; clicking one opens it in the board's center (⌘1 to ⌘5; Esc goes back to the plan).
+- 8.2 An open file SHALL offer Formatted and Markdown views, Open in Editor, Reveal in Finder and Edit.
+- 8.3 A file still being written SHALL be read-only, a file not started cannot be opened, and DECISIONS.md is read-only.
+- 8.4 WHEN the user saves an edit, in Mel or in another editor, THE APP SHALL keep it and show a banner naming the files built on it, with Update, "Keep them as they are", "Undo my change" and a "Why?" field saved to DECISIONS.md.
+- 8.5 Update SHALL run one change run that changes only what depends on the edit.
+- 8.6 IF a file changes on disk while the in-app editor has unsaved text, THEN THE APP SHALL ask which version to keep, and never overwrite either silently.
+- 8.7 WHERE "Show spec files in the sidebar" is on, THE APP SHALL list the open spec's files under it.
 
-- 8.1 WHEN all four files are approved, THE APP SHALL show the Spec ready sheet with each file and its summary (for example "5 stories, 14 criteria").
-- 8.2 THE APP SHALL show a Claude Code build command with Copy and "Open in Terminal" (in the project folder).
-- 8.3 WHERE "Commit the spec to Git" is on, THE APP SHALL create one commit of `specs/` (always excluding `.mel/` (Mel's internal state; no setting in the MVP)), initializing a repository only after asking.
-- 8.4 THE APP SHALL offer "Show in Finder".
+## 9. When the agent stops
 
-## 9. Library and app shell
+As a user, I want a clear way forward when the agent stops, so that I never lose work.
 
-As a user, I want all my specs in one window, so that I can come back to any of them.
+- 9.1 WHEN a run fails, times out or is stopped, THE APP SHALL keep everything written, show a banner with the cause in plain words, and run nothing until the user resumes.
+- 9.2 The banner SHALL offer Resume and, when a file was cut off, "Finish it myself", which opens that file for editing.
+- 9.3 WHEN the user resumes a cut-off file, THE APP SHALL continue it from its last complete section in the same Claude Code session, or write it again if that session is gone.
+- 9.4 WHEN a usage limit has a known reset time, Resume SHALL wait for it and post a notification then.
+- 9.5 A board that was working when Mel quit SHALL wait for Resume at the next launch.
+- 9.6 THE APP SHALL run one spec at a time; starting a second SHALL be refused with the reason.
 
-- 9.1 THE APP SHALL list specs in the sidebar, each expandable to Discovery and the four files with their states.
-- 9.2 THE APP SHALL restore the library, selection and window state at relaunch.
-- 9.3 IF a spec folder is moved or deleted outside the app, THEN THE APP SHALL show it as missing with "Locate…" and "Remove from list".
-- 9.4 THE APP SHALL support standard macOS commands: ⌘N new spec, ⌘, settings, ⌘↩ approve, ⌥⌘I toggle inspector, ⌘⌫ remove from list.
-- 9.5 THE APP SHALL support Light and Dark appearance and respect Reduce Motion and Increase Contrast.
-- 9.6 THE APP SHALL run at most one agent at a time; WHILE one runs, starting another spec's run SHALL be disabled with the reason shown.
-- 9.7 THE APP SHALL be distributed as a Developer ID–signed, notarized DMG.
-- 9.8 THE APP SHALL offer "Check for Updates…" in the app menu and in Settings; WHEN a newer version exists and the user agrees, THE APP SHALL download it, verify its signature, replace itself and relaunch.
-- 9.9 WHILE "Automatically check for updates" is on (the default), THE APP SHALL check for a newer version once a day; the user MAY turn it off in Settings.
+## 10. Token use
 
-## Later (not in the first version)
+As a user, I want to see what a spec costs me, so that I can trust Mel with my plan's usage.
 
-Designed on the canvas, deliberately left out of the first version to keep it small and fast:
+- 10.1 THE APP SHALL count each run's output and uncached input tokens from `result.usage` and keep them per spec and step (OQ #26).
+- 10.2 WHERE "Show token use on the board" is on, THE APP SHALL show the spec's total in the board toolbar, with a popover by step, and state it on Ready.
+- 10.3 THE APP SHALL never start an agent run for a scope move, for "Write it now", for Mel's own coverage checks or for finding what a removed story takes with it.
 
-- Pause / Resume of a running draft (Stop + Resume covers it).
-- "Ask for changes" agent chat in Review, with inline Accept/Reject suggestions; Review inspector tabs Agent, Questions, History.
-- Time estimates ("About 2 min left").
-- Agent runs for several specs in parallel.
-- Codex and choosing between agents.
+## 11. Hand off
+
+As a user, I want one button that starts the build, so that the plan turns into software.
+
+- 11.1 WHEN the user clicks Start Building, THE APP SHALL write `prompts/task-NN.md` for each task, and as Settings › Specs says, write AGENTS.md (only its own marked block) and commit the spec to Git (never `.mel/` state).
+- 11.2 Ready SHALL state what was planned (stories, tasks, token use) and offer "Build with Claude Code" (⌘↩), which opens Terminal in the project with task 1's prompt.
+- 11.3 Ready SHALL offer each task's prompt with Copy Prompt and its check command, and the spec files, both closed by default.
+- 11.4 WHEN the user starts the build, THE APP SHALL list the spec under Building; WHEN the user marks it done, under Done (OQ #34).
+
+## 12. Library and app shell
+
+- 12.1 THE APP SHALL list the current project's specs in the sidebar as Needs you, Building and Done, each with one line on what it waits for or what Mel is doing.
+- 12.2 THE APP SHALL restore the library and the current project at relaunch, and find specs by scanning `specs/*/.mel/state.json`.
+- 12.3 IF a project folder is moved or deleted outside the app, THEN THE APP SHALL offer "Locate…" and "Remove from the List" in the project menu.
+- 12.4 A spec made before 0.5 that was drafting, in review, stopped or in Analyze SHALL open on the board with its files and open questions.
+- 12.5 THE APP SHALL support ⌘N New, ⌘, Settings, ⌘↩ for the screen's primary action and ↑/↓ in the sidebar.
+- 12.6 THE APP SHALL be Light mode only and respect Reduce Motion.
+- 12.7 THE APP SHALL be distributed as a Developer ID signed, notarized DMG and update itself (Check for Updates…, daily check unless turned off).
+
+## Invariants
+
+- Mel is the only writer of the spec files. Claude Code runs without write or shell tools.
+- Never overwrite a user's edit. Never change a Ready file without a user action: a card answer, Tell Mel, Remove, Update or Rewrite (OQ #29).
+- All file writes are atomic.
+
+## Later (drawn on the canvas, not built)
+
+- Codex and choosing between agents (Start, Ready, the stopped banner, Settings › Default agent).
+- "Ask me before an agent changes the plan", and Mel following the coding agent's progress ("Task 3 of 7", "Merged yesterday").
+- "Save specs to" as a setting; Settings › Advanced.
+- Time estimates.

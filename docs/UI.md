@@ -1,161 +1,81 @@
 # UI
 
-> v1 document. Where it differs from [V2.md](V2.md), V2.md wins; this file is rewritten during Wave 6.
+How the V2 screens are built. The design source is `docs/design/v2/` (read `FLOW.md` › V2 first); this file maps each drawn screen to its view and names what differs from the drawing. Live canvas: https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd
 
-Screen-by-screen spec from the design canvas, mapped to SwiftUI. Canvas: https://claude.ai/artifact/45PrPjDYUrevUVJp2xNfUX
+Rules for every screen:
 
-The canvas is a web mock of a macOS 26 app. Build the real thing with system components and materials (Liquid Glass comes free with standard toolbars, sidebars, sheets and buttons on macOS 26). Do not reproduce the mock's hex colors, shadows or hand-drawn traffic lights. Use semantic colors (`.primary`, `.secondary`, `.tint`, `.green`, `.orange`, `.purple`) so Light/Dark and Increase Contrast work.
-
-The canvas also links a "Jojo" design system, but none of the screens use it; they follow the macOS HIG. We ignore Jojo for now (see OPEN-QUESTIONS).
+- **Pixel-exact.** Colors, spacing, radii and type come from the `.dc.html` inline styles and live as named tokens in `Mel/Views/Theme.swift`. Views use tokens, never literals.
+- **Light mode only**, in a real macOS window (system traffic lights, corners and shadow). The mock's grey page and drawn window frame are not built.
+- Every view has `#Preview`s for each state, built from `Views/Preview/PreviewData.swift`.
+- A Debug build opens one fixture state with `-screen <name>` (`Views/Preview/DebugScreen.swift`): `start`, `noAgent`, `new`, `newEmpty`, `board`, `boardAsking`, `boardWaiting`, `boardStopped`, `boardUnplaced`, `boardChanged`, `boardEdited`, `ready`, `settings`, `specsSettings`.
 
 ## Window structure
 
 ```
-WindowGroup (main)
+WindowGroup (main)                         MainView
+├── StartView                              no project yet, or first launch
+├── NewView                                Start from an idea, before the first spec makes a project
 └── NavigationSplitView
-    ├── sidebar   SpecLibrarySidebar          (spec → Discovery + 4 files, status trailing)
-    ├── detail    StageView (switches on selection + stage state)
-    │             ├── DiscoveryView
-    │             ├── DraftingView
-    │             ├── ReviewView
-    │             ├── FailureView
-    │             └── EmptyLibraryView
-    └── .inspector  StageInspector (per stage)
-Window "Welcome"   (first launch, single instance)
-Settings           (single pane: Agents; MVP)
-Sheets             NewSpecSheet · SpecReadySheet
+    ├── sidebar   SidebarView              project menu · Needs you / Building / Done · New · agent line
+    └── detail    NewView                  nothing selected, or ⌘N
+                  BoardView                the selected spec while it is planned
+                  ReadyView                after Start Building
+Settings          SettingsView (tabs)      GeneralSettings · AgentSettings · SpecsSettings
 ```
 
-Toolbar: title + subtitle (spec name), status text, trailing actions per stage, inspector toggle (`.inspector` + `ToolbarItem` with `sidebar.trailing`).
+`MainView` holds what the columns share: whether New is showing, and the file open in the board's center (the sidebar's file rows set it too).
 
-Status colors used in the mock and their meaning:
+## Screens
 
-| State | Mock color | SwiftUI |
+| Id | Drawn in | View | States |
+|---|---|---|---|
+| V2-0, V2-0b | V2-0-Start | `Views/Start/StartView` | agent ready, checking, not signed in, not working; no agent (install row, Check Again); no repos found |
+| V2-1 | V2-1-New | `Views/New/NewView` | empty with examples; a guess with its reason; picked by the user; files attached; no project |
+| V2-2 | V2-2-Board | `Views/Board/BoardView` + `BoardInbox`, `BoardPlan`, `BoardFileView`, `BoardTell` | asking (intake), cards open, waiting for answers (V2-9), file open and a change applied (V2-4), stopped (V2-5), change couldn't be placed (V2-7), Remove confirmation (V2-8), edited by hand, plan ready |
+| V2-3 | V2-3-Ready | `Views/Ready/ReadyView` | ready, building, done; Quick fix; disclosures open and closed |
+| V2-6 | V2-6-Settings-Specs | `Views/Settings/SpecsSettings` | project read, reading, not read, no project; adding a rule |
+| C4 | Native-Settings-Agents | `Views/Settings/SettingsView` › `AgentSettings` | ready, not signed in, not found |
+| sidebar | V2-1, V2-2, V2-3 | `Views/Main/SidebarView` | groups with rows and empty; New open; file rows; usage limit; missing project |
+
+### Start
+
+A 620 pt column centered in the window: logo, title, the "Your agents" line, the project list, the footnote and Start (↩). The list is the 5 most recently edited repos in `~/Developer`, then folders the user dropped, then "No code yet". A drop anywhere on the window adds a folder.
+
+### New
+
+One box (5 lines, grows no further; it scrolls), the attach button, the size chip and Start (⌘↩). Attached files show as chips inside the box; a drop on the box attaches. Under the box: the reason for the guess, or three examples while it is empty.
+
+### Board
+
+Center: the plan (Plan, Screens for a New product, Build order), or an open file. Right: "Mel needs you", 300 pt. Under the center: Tell Mel with the result line or the unplaced offer above it. Toolbar: the spec's name and size, the status pill with "Write it now" while a file waits, Stop while the agent runs, the token total, Files and Start Building. Banners above the center: stopped, and edited by hand.
+
+### Ready
+
+A 640 pt column: the check, "Ready to build", the summary sentence, "Build with Claude Code" (⌘↩), "What happens next", then two closed disclosures (task prompts and checks, spec files) and the line on AGENTS.md and the commit with "Change in Settings".
+
+### Settings
+
+A `TabView`: General (updates), Agents, Specs. Links that open Settings pick the tab first (`settingsTab`): the sidebar's agent line and Start's Change open Agents, Ready's "Change in Settings" opens Specs.
+
+### Sidebar
+
+A 244 pt panel inset 8 pt in the white window. The project button is a menu: the projects, "Locate …" for a missing one, Add Project…, Remove from the List. A spec row is 40 pt: dot, name, one line (`Spec.sidebarNote`). Dots: Needs you blue (#C93400 while stopped), Building blue ring, Done green. A row's menu moves a handed-off spec between Building and Done.
+
+## What differs from the drawing
+
+| Drawn | Built | Why |
 |---|---|---|
-| Ready / Approved / Done | green check | `.green` + `checkmark` |
-| Agent running / Checking | pulsing purple dot | `.purple`, `symbolEffect(.pulse)` (off with Reduce Motion) |
-| Needs you / Not signed in / Stopped | orange | `.orange` + `exclamationmark.circle` |
-| Locked / Queued / Not yet | secondary | `.secondary` + `lock` |
-
-## MVP deviations from the canvas
-
-The canvas shows two agents (Claude Code, Codex). The MVP supports **Claude Code only** (Codex later, behind the same adapter). So:
-
-- Welcome and Settings › Agents show a single agent row. The "Default agent for new specs" row is dropped.
-- New Spec shows the agent as read-only text, no picker.
-- Failure sheet drops "Continue now with Codex".
-- Spec ready drops "Use Codex Instead".
-- Settings › Agents drops the per-agent on/off switch (there is nothing to switch to).
-
-Also left out of the first version to keep it small (see REQUIREMENTS.md › Later):
-
-- Drafting: no Pause/Resume button (Stop + Resume only), no paused state.
-- Review: no inspector (Agent chat, Questions, History tabs), no inline agent suggestions, no "Ask for changes" field.
-- No time estimates ("About 2 min left", "about 1 min").
-- Only one agent run at a time across all specs.
-
-The sections below describe the MVP version.
-
-## 0 · Welcome (first launch)
-
-Artboard `Native-0-Welcome`. Centered window ~600 pt wide, no toolbar.
-
-- App icon, "Welcome", subtitle: "Specs are written by the coding agent already on your Mac, using your own account. Here is what we found."
-- Section "Coding Agent" with trailing "Scan Again" link button.
-- Grouped list (inset, rounded) with one row: icon, "Claude Code", monospaced path, trailing status: Ready (green check) / Checking (pulsing dot) / Not signed in + "Sign In…" button / Not found + "Choose File…".
-- Row "Spec language" with a segmented English | Türkçe control (added after v0.3, not in the v2 design; OQ #5). New specs keep the language they were made with; also in Settings › Specs.
-- Footnote: "Sign In opens Terminal with Claude Code's own login command. Not installed? Install it, then Scan Again, or choose the file manually."
-- Footer: "You can change this later in Settings › Agents." + prominent "Continue" (enabled only when Ready; otherwise "Continue Without Agent" lets the user look around with New Spec disabled).
-
-SwiftUI: `Form` with `.formStyle(.grouped)` or custom `List` section; `LabeledContent`; `.buttonStyle(.borderedProminent)` with `.controlSize(.large)`.
-
-## 1 · New Spec sheet
-
-Artboard `Native-1-NewSpec`. Sheet over the main window (main window empty state behind: "No Specs Yet / Start from an idea. The agent turns it into a spec with you.").
-
-- Title "New Spec", subtitle "Describe your idea. The agent asks a few questions, then drafts the spec with you."
-- Right-aligned label form (`Form` with `.formStyle(.columns)`):
-  - Name: `TextField`
-  - Idea: multi-line `TextField(axis: .vertical)` 6 lines, placeholder "What should it do, and for whom?", help "Plain words are fine. Say who uses it and what they do."
-  - Agent: read-only "Claude Code" + "Found on this Mac"
-  - Save in: folder pop-up (recent folders + "Choose…" → `fileImporter` / `NSOpenPanel` directory) and monospaced resulting path.
-- Footer: help button (?), Cancel (`.cancelAction`), Continue (`.defaultAction`, disabled until valid).
-
-## 2 · Discovery
-
-Artboard `Native-2-Discovery`.
-
-- Sidebar: spec expanded: Discovery (selected, badge "3 of 7" = topics covered), PRODUCT.md "Draft", REQUIREMENTS.md "Waiting", DESIGN.md "Queued", TASKS.md "Queued".
-- Toolbar: title "Discovery", subtitle spec name; status "Needs you · Claude Code is waiting for an answer"; "Draft Now" button (help tooltip: "Skip the remaining questions. The agent decides the rest and marks each decision as an assumption."); inspector toggle.
-- Content column (max ~620 pt, centered):
-  - Stepper: Idea ✓ › Questions › Draft › Review.
-  - "Your Idea" card with idea text + "Edit…".
-  - "Answered" list: question → answer, each clickable.
-  - Current question card: "Question 4" · "Shapes REQUIREMENTS.md"; title; why-text; radio options with note, "Suggested" badge and key hint 1–4, last option "You decide" ("The agent picks the best option and marks it as an assumption"); "Note for the agent (optional)" text field.
-  - Footer: "Press 1 to 4 to choose. Answers can be changed later." · "Continue ↩" (default).
-- Inspector: "Understanding 3 of 7" checklist (Covered ✓ / Asking ● / Not yet ○), footnote "Questions continue until every item is covered."; Agent "Claude Code · Spec mode"; Folder "specs/".
-
-SwiftUI: custom radio rows (`Picker(.radioGroup)` cannot show notes and badges), `.onKeyPress(characters: "1234")`, `.keyboardShortcut(.defaultAction)`.
-
-## 2b · Drafting
-
-Artboard `Native-2b-Drafting`. Two modes: running / stopped (the canvas's paused mode is Later).
-
-- Sidebar: PRODUCT.md Approved, REQUIREMENTS.md Writing|Stopped, DESIGN.md and TASKS.md Locked.
-- Toolbar: title "Drafting"; status "Running · Writing story 3 of 5" with a thin progress bar under the toolbar (purple running, gray stopped); Stop.
-- Stepper: Idea › Questions › Draft Requirements › Review.
-- When stopped: banner "Stopped. Nothing was lost. Stories 1 and 2 are saved in REQUIREMENTS.md. You can review them now or let the agent continue." with "Continue Drafting" and "Review What's Written".
-- Card "REQUIREMENTS.md · Claude Code": step list (Done / Running / Stopped / Next).
-- Disclosure "Activity Log": timestamped monospaced lines (`12:04:39 wrote story 1 "Book a class" (3 criteria)`).
-- "Up Next": DESIGN.md "Starts after you approve Requirements", TASKS.md "Starts after you approve Design".
-- Footnote: "You can switch apps. You'll get a notification when Requirements is ready to review."
-- Inspector = "Live Preview" of the file, rendered, read-only, with a trailing caret while running, and "Read only while the agent writes. You can edit once it's ready for review."
-
-## 3 · Review
-
-Artboard `Native-3-Review`.
-
-- Sidebar: REQUIREMENTS.md "Review".
-- Toolbar: file name; "Saved · your edits are never overwritten"; "Idle · DESIGN.md starts when you approve"; "2 of 4"; segmented Preview / Edit Markdown; Share; Show in Finder; "Approve ⌘↩" prominent. No inspector in the MVP.
-- Document (Preview mode):
-  - Title, summary line "5 stories, 14 acceptance criteria. Written from PRODUCT.md and your answers."
-  - "Before you approve" box: "1 assumption to confirm" — "Confirm or change each assumption to approve." Approve stays disabled until none remain.
-  - Story blocks: title, user story, numbered criteria with bold EARS keywords.
-  - Assumption callout (Change… / Confirm).
-- Edit Markdown mode: monospaced editable source (`TextEditor`; `NSTextView` only if large files feel slow).
-
-## Failure · Agent stopped
-
-Artboard `Native-Error-Partial`.
-
-- Sidebar: DESIGN.md "Stopped", TASKS.md "Locked".
-- Background: DESIGN.md partial draft (sections 1 and 2).
-- Alert-style sheet: "Claude Code stopped while writing DESIGN.md"; plain explanation ("…your plan's usage limit was reached. This is a limit on your Claude account, not a problem with the spec. Nothing you approved was changed.").
-- File state list: PRODUCT.md Approved, unchanged · REQUIREMENTS.md Approved, unchanged · DESIGN.md Stopped at section 3 of 7, Sections 1 and 2 saved · TASKS.md Not started.
-- "What should happen next?" radio: Resume with Claude Code when the limit resets / Finish DESIGN.md myself. The primary button label follows the choice: Resume Later / Open File. When the cause is not a usage limit (crash, timeout), the first option is "Resume now" with button "Resume".
-- Show Details · Not Now · primary.
-
-## 4 · Spec ready
-
-Artboard `Native-4-Done`. Sheet.
-
-- "Spec ready" — "All four files are approved and saved as plain Markdown. Any coding agent can build from them."
-- File list with green checks and summaries (Problem, users, scope · 5 stories, 14 criteria · 6 sections · 11 tasks, each linked to criteria).
-- "Start building": "Run this in the project folder. It points the agent at your spec." Command box `claude "Read specs/ and implement TASKS.md, task 1"` + Copy (→ "Copied" 2 s). Link: Open in Terminal.
-- Checkbox "Commit the spec to Git — Creates one commit in yoga-studio-booking so the spec has history."
-- Footer: path · Show in Finder · Done.
-
-## Settings › Agents
-
-Artboard `Native-Settings-Agents`. `Settings { TabView }` with tabs General, Agents, Specs, Advanced (only Agents is designed).
-
-- Claude Code group: name, status (Ready / Not signed in / Not found), version; Location (path, Change…); Account ("Signed in through the CLI", Open Terminal…).
-- Detection group: "Look for the agent when the app opens" switch; Search paths list ("Your login shell's PATH" fixed first row, then editable paths) with +/−; footnote "Apps opened from the Dock don't see your Terminal PATH, so it is read from your login shell."; "Scan Now".
-
-**MVP: Agents only** (decided 2026-11-23). Settings is a single pane with the Agents content above, no TabView. General, Specs and Advanced are out: notifications are controlled in System Settings, New Spec remembers recent folders, and extra CLI arguments would undermine the read-only invocation.
-
-**Updates group** (added 2026-11-23, below Detection): "Version 0.2 (build 123)"; "Automatically check for updates" switch; "Check for Updates…" button (disabled while Sparkle is already checking). The same "Check for Updates…" item sits in the app menu right after "About Mel". Sparkle's own windows show what's new, download progress and "Install and Relaunch".
+| Codex chip, install row, "Use Codex instead", "Continue with the other agent", Default agent | hidden | OQ #7, #28 |
+| "Ask me before an agent changes the plan" and step 2 of "What happens next" | hidden; Ready has two steps | OQ #28 |
+| "Task 3 of 7", "Merged yesterday" in the sidebar | "Building with Claude Code", "Built"; the user moves a spec to Done | OQ #34: Mel doesn't watch the coding agent |
+| "Save specs to", Settings › Advanced | hidden | Not configurable; nothing to hold |
+| "Read 2 days ago" in Settings › Specs | left out | No date kept |
+| Quick fix chip "1 question, 1 file" | "1 file" | The intake may ask two |
+| Time estimates | hidden | OQ #17 |
+| not drawn | Spec language row in Settings › Specs | Added in 0.4 (OQ #5) |
+| not drawn | Settings › General with the update controls | Sparkle, since 0.2 |
+| not drawn | not signed in / not working on Start's agent line; attached file chips on New; "Mark as Done" on Ready | States the drawing doesn't cover, in the drawn components' look |
 
 ## Copy and tone
 
-Short, plain sentences, no jargon, no exclamation marks. Title Case for buttons and menu items ("Scan Again", "Draft Now", "Review…"). Ellipsis on buttons that open more UI. No time estimates in the MVP.
+Short, plain sentences, no jargon, no exclamation marks. Title Case for buttons and menu items ("Start Building", "Check Again"), sentence case for links and quiet actions ("Write it now", "Something else…"). Ellipsis on buttons that open more UI. The words Mel uses for itself: "Mel" does things, "Claude Code" writes and builds. No time estimates.

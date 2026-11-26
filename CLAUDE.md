@@ -8,7 +8,7 @@ Read `docs/ROADMAP.md` › Status (where things stand) and `git log --oneline -1
 
 ## Project
 
-Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea into a four-file Markdown spec using the user's installed Claude Code. Codex is post-MVP; keep the `AgentAdapter` protocol but don't build Codex UI. Read `README.md`, then the doc for your task:
+Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea into a Markdown spec (one to five files by size) using the user's installed Claude Code. Codex is post-MVP; keep the `AgentAdapter` protocol but don't build Codex UI. Read `README.md`, then the doc for your task:
 
 - What and why: `docs/PRODUCT.md`, `docs/REQUIREMENTS.md`
 - Screens: `docs/UI.md`
@@ -16,7 +16,7 @@ Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea
 - CLI integration: `docs/AGENT-INTEGRATION.md`
 - Generated file format: `docs/SPEC-FORMAT.md`
 - Work order: `docs/TASKS.md` (reference task IDs like `M2 2.3` in commits)
-- Current target (Wave 8, simplified flow + token budget): `docs/V2.md` §0, `docs/design/v2/FLOW.md` › V2 sections
+- The flow and its two product rules (say anything, token budget): `docs/V2.md` §0, `docs/design/v2/FLOW.md` › V2 sections
 - Undecided points: `docs/OPEN-QUESTIONS.md` (don't silently decide them; ask)
 - Plan and status: `docs/ROADMAP.md`
 
@@ -37,8 +37,10 @@ Performance, speed and the least complexity that works come first. Prefer the si
 
 ## Invariants
 
-- Mel is the only writer of `PRODUCT.md`, `REQUIREMENTS.md`, `DESIGN.md`, `TASKS.md`. Claude Code runs without write or shell tools.
-- Never overwrite a user's edit; never change an approved file without a user action.
+- Mel is the only writer of the spec files (`PRODUCT.md`, `REQUIREMENTS.md`, `EXPERIENCE.md`, `ARCHITECTURE.md`, `TASKS.md`, `SPEC.md`, `DECISIONS.md`). Claude Code runs without write or shell tools.
+- Never overwrite a user's edit; never change a Ready file without a user action: a card answer, Tell Mel, Remove, Update or Rewrite.
+- Every change to a written file is a patch. A whole file is rewritten only from "Rewrite FILE".
+- Token budget: no agent run for what Swift can do (scope moves, coverage by ID, guesses).
 - All file writes are atomic.
 - Agent CLI flags and output shapes are verified against fixtures in `MelKit/Tests/MelAgentTests/Fixtures/`; update fixtures when a CLI changes.
 

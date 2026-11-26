@@ -2,35 +2,37 @@
 
 A native macOS app that turns a plain-language idea into a build-ready spec, written by the coding agent already installed on the user's Mac (Claude Code in the MVP) on the user's own account.
 
-The output is four plain Markdown files in the user's project folder, each reviewed and approved in order:
+You write what you want in one box. Mel asks a few questions, writes the files one at a time, and shows them as a plan you can change in your own words. The output is plain Markdown in the project folder; the size of the work decides the files:
 
 ```
-specs/
-├── PRODUCT.md        problem, users, scope
-├── REQUIREMENTS.md   user stories + EARS acceptance criteria
-├── DESIGN.md         architecture, data model, ...
-└── TASKS.md          implementation tasks, each linked to criteria
+specs/<spec>/
+├── PRODUCT.md        problem, users, scope                      (New product)
+├── REQUIREMENTS.md   stories + EARS acceptance criteria         (Feature, New product)
+├── EXPERIENCE.md     flows, screens and their states            (New product)
+├── ARCHITECTURE.md   modules, data, API, decisions              (Feature, New product)
+├── TASKS.md          tasks, each linked to criteria and a check (Feature, New product)
+├── SPEC.md           one short spec                             (Quick fix)
+└── DECISIONS.md      every answer and change, with its reason
 ```
 
-Any coding agent can then build from `specs/`.
+Any coding agent can then build from it; Mel starts Claude Code on task 1.
 
 ## Status
 
-Pre-development. Documents only, no Xcode project yet.
-
-This repository previously held Jojo (Rust helper + SwiftUI shell). It was removed in favor of Mel; the Claude Code knowledge it verified was kept in `docs/research/`. The old code is in git history.
+Shipped: v0.4 (notarized DMG, in-app updates). On `main`: the simplified V2 flow for v0.5. Where things stand: [docs/ROADMAP.md](docs/ROADMAP.md) › Status. What changed for users: [CHANGELOG.md](CHANGELOG.md).
 
 ## Documents
 
 | File | What it holds |
 |---|---|
 | [docs/PRODUCT.md](docs/PRODUCT.md) | Problem, users, principles, MVP scope and non-goals |
+| [docs/V2.md](docs/V2.md) | The simplified flow and its two product rules (§0) |
 | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | User stories with numbered EARS acceptance criteria |
-| [docs/UI.md](docs/UI.md) | Screen-by-screen spec mapped from the design canvas to SwiftUI |
-| [docs/DESIGN.md](docs/DESIGN.md) | Architecture, modules, data model, state machines, persistence |
+| [docs/UI.md](docs/UI.md) | The drawn screens (`docs/design/v2/`) mapped to views, and what differs |
+| [docs/DESIGN.md](docs/DESIGN.md) | Architecture, modules, data model, the board's pipeline, persistence |
 | [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md) | How the app detects, runs, streams and recovers Claude Code |
 | [docs/research/CLAUDE-CODE-CLI.md](docs/research/CLAUDE-CODE-CLI.md) | Claude Code CLI behavior verified on 2.1.311, with real recorded fixtures |
-| [docs/SPEC-FORMAT.md](docs/SPEC-FORMAT.md) | The Markdown contract for the four generated files |
+| [docs/SPEC-FORMAT.md](docs/SPEC-FORMAT.md) | The Markdown contract for the generated files |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Waves, gates and status |
 | [docs/TASKS.md](docs/TASKS.md) | Milestones and implementation tasks, linked to criteria |
 | [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) | Decisions still to make, with a recommended default for each |
@@ -38,7 +40,7 @@ This repository previously held Jojo (Rust helper + SwiftUI shell). It was remov
 
 ## Source
 
-Design canvas (8 artboards, macOS 26 HIG): https://claude.ai/artifact/45PrPjDYUrevUVJp2xNfUX
+Design canvas: https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd (copy in `docs/design/v2/`; read `FLOW.md` first).
 
 ## Tech stack (summary)
 
