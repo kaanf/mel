@@ -31,8 +31,7 @@ This repository previously held Jojo (Rust helper + SwiftUI shell). It was remov
 | [docs/AGENT-INTEGRATION.md](docs/AGENT-INTEGRATION.md) | How the app detects, runs, streams and recovers Claude Code |
 | [docs/research/CLAUDE-CODE-CLI.md](docs/research/CLAUDE-CODE-CLI.md) | Claude Code CLI behavior verified on 2.1.311, with real recorded fixtures |
 | [docs/SPEC-FORMAT.md](docs/SPEC-FORMAT.md) | The Markdown contract for the four generated files |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Waves, gates and the three-agent setup |
-| [agents/](agents/README.md) | Agent briefs, shared contracts, status files |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Waves, gates and status |
 | [docs/TASKS.md](docs/TASKS.md) | Milestones and implementation tasks, linked to criteria |
 | [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) | Decisions still to make, with a recommended default for each |
 | [CLAUDE.md](CLAUDE.md) | Conventions for coding agents working in this repo |

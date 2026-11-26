@@ -32,7 +32,7 @@ The app launches the user-installed `claude` CLI, which reads `~/.claude` and ne
 - **Not sandboxed**, Hardened Runtime, Developer ID signed, notarized and stapled, shipped as a **DMG**.
 - `scripts/release.sh`: `xcodebuild archive` → export (Developer ID) → `notarytool submit --wait` → `stapler staple` → `hdiutil create` DMG → notarize + staple the DMG.
 - No Mac App Store.
-- **Updates: Sparkle 2.** Feed `https://raw.githubusercontent.com/kaanf/mel/main/appcast.xml` (latest release only), DMG enclosure from the GitHub release. Updates are signed with an EdDSA key (private key in the release Mac's login Keychain, backed up by the user; public key `SUPublicEDKey` in Info.plist). Sparkle compares `CFBundleVersion`: `release.sh` sets it to `git rev-list --count HEAD`, so every release from `main` is higher. `release.sh` ends with `sign_update` on the notarized DMG and writes `appcast.xml`; the orchestrator commits it after `gh release create`. Automatic daily checks are on by default (`SUEnableAutomaticChecks`), no system profile is sent.
+- **Updates: Sparkle 2.** Feed `https://raw.githubusercontent.com/kaanf/mel/main/appcast.xml` (latest release only), DMG enclosure from the GitHub release. Updates are signed with an EdDSA key (private key in the release Mac's login Keychain, backed up by the user; public key `SUPublicEDKey` in Info.plist). Sparkle compares `CFBundleVersion`: `release.sh` sets it to `git rev-list --count HEAD`, so every release from `main` is higher. `release.sh` ends with `sign_update` on the notarized DMG and writes `appcast.xml`; it is committed after `gh release create`. Automatic daily checks are on by default (`SUEnableAutomaticChecks`), no system profile is sent.
 - Sparkle is imported only in `App/` (`SPUStandardUpdaterController`); views get plain values and closures.
 
 ### Project layout
@@ -55,9 +55,51 @@ Mel.xcodeproj
 └── scripts/release.sh
 ```
 
-Exact types and signatures: [agents/CONTRACTS.md](../agents/CONTRACTS.md).
+Rule: `MelSpec` stays pure (no I/O, no SwiftUI) so the pipeline is unit-testable. Full dependency rules below.
 
-Rule: `MelSpec` stays pure (no I/O, no SwiftUI) so the pipeline is unit-testable. Full dependency rules: CONTRACTS.md › Layers and dependencies.
+### Project conventions
+
+- Xcode project `Mel.xcodeproj`, shared scheme `Mel`. The app target `Mel` holds only `App/`, `Views/`, `Session/`; its test target `MelTests` holds `Session/` tests.
+- Everything below the UI lives in one local Swift package, **`MelKit/`** (`swift-tools-version: 6.2`, `.macOS(.v26)`), referenced by the project. Its library targets are the modules; its test targets are Swift Testing. No third-party dependencies (the only one in the project is Sparkle 2, app target only).
+- The `Mel` scheme runs **all** tests (app + every MelKit test target), so the one `xcodebuild … test` command in CLAUDE.md stays the only command.
+- App targets use synchronized folders (`PBXFileSystemSynchronizedRootGroup`): adding a file never changes `project.pbxproj`. Don't add `.gitkeep` files (each needs a pbxproj exception, otherwise "Multiple commands produce .gitkeep"); a folder shows up with its first real file.
+- Bundle identifier `com.kaanf.mel`. Hardened Runtime on. **No App Sandbox.**
+
+#### Isolation
+
+- App target: Xcode defaults, **default actor isolation `MainActor`**, approachable concurrency. `AppState`, `SpecSession` and views are main-actor.
+- MelKit targets: the package default (**nonisolated**), Swift 6 language mode. Types are plain values, actors or `Sendable`; no `nonisolated` markers needed. Nothing in MelKit is `@MainActor`.
+
+#### Layers and dependencies
+
+Dependencies point one way, toward `MelSpec`. The compiler enforces it through the package's target dependencies; the import rule for app folders is checked in review.
+
+```
+MelKit/                        (local package)
+├── Sources/
+│   ├── MelSpec/                domain: Models, Reducer, MarkdownParser, Prompts/ (*.md resources)  → Foundation only
+│   ├── MelStorage/             SpecStore, Library, FileWatcher                                     → MelSpec
+│   ├── MelAgent/               AgentTypes, ClaudeCode, AgentRunner, ShellPath                      → MelSpec
+│   └── MelSystem/              SystemActions, Git, Notifier                                        → (none)
+└── Tests/
+    ├── MelSpecTests/ MelStorageTests/
+    └── MelAgentTests/ (+ Fixtures/) MelSystemTests/
+Mel/                           (app target)
+├── App/               MelApp (composition root), Updater  → may import everything, the only place that imports Sparkle
+├── Session/           AppState, SpecSession       → MelSpec, MelStorage, MelAgent, MelSystem
+└── Views/             screens, Components/, Preview/  → SwiftUI, MelSpec, UniformTypeIdentifiers
+MelTests/Session/
+```
+
+Rules:
+
+1. **MelKit modules never import SwiftUI or AppKit**, except `MelSystem`, which may use AppKit for `NSWorkspace`/`NSPasteboard`. `MelSpec` does no I/O beyond reading its own bundled prompt resources.
+2. **Modules don't know each other sideways.** `MelStorage` and `MelAgent` only see `MelSpec`; `MelSystem` sees nothing.
+3. **Views import only `SwiftUI`, `MelSpec` and `UniformTypeIdentifiers`** (for `fileImporter` content types). Anything a view needs to do (copy, show in Finder, open Terminal, sign in) is a method on `AppState` or `SpecSession`. Views never touch `MelAgent`, `MelStorage` or `MelSystem`.
+4. **Session depends on abstractions for the runner.** `SpecSession` gets an `any AgentRunning`; it never names `AgentRunner` or `ClaudeCode`.
+5. **`MelApp` is the composition root**: it builds `ClaudeCode`, the `AgentRunner` factory and `AppState` (see `AppState.init`). Nothing else constructs `ClaudeCode` or `AgentRunner`.
+6. Only what another module uses is `public`. Public structs get an explicit `public init`.
+7. The app target turns on the `MemberImportVisibility` upcoming feature, so a file only sees members of modules it imports. Together with per-file imports, the only thing left to review for rule 3 is the import lines in `Mel/Views/`.
 
 ### Runtime overview
 

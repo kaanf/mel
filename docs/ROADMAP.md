@@ -1,19 +1,10 @@
 # Roadmap
 
-Mel is built by three Claude Code agents working in parallel git worktrees, coordinated by an orchestrator (the main Claude Code session in the repo root). How the agents work together: [agents/README.md](../agents/README.md). Task details: [TASKS.md](TASKS.md).
-
-## Agents
-
-| Agent | Owns | Worktree | Branch |
-|---|---|---|---|
-| **core** | Xcode project, `MelKit/Package.swift`, `MelKit/Sources/MelSpec/`, `MelKit/Sources/MelStorage/`, `Mel/Session/` | `../mel-worktrees/core` | `agent/core` |
-| **platform** | `MelKit/Sources/MelAgent/`, `MelKit/Sources/MelSystem/`, fixtures, `scripts/`, `docs/research/` | `../mel-worktrees/platform` | `agent/platform` |
-| **ui** | `Mel/App/`, `Mel/Views/`, assets | `../mel-worktrees/ui` | `agent/ui` |
-| **orchestrator** | `docs/`, `agents/`, `CLAUDE.md`, `README.md`, merges to `main` | repo root | `main` |
+Mel was built in waves by three parallel Claude Code agents (core, platform, ui) and an orchestrator. That setup was retired on 2026-11-26; work now happens in a single session on `main`. The waves below are history. Task details: [TASKS.md](TASKS.md).
 
 ## Waves
 
-Each wave ends at a gate. The orchestrator merges each finished branch into `main`, checks the gate, then tells every agent to rebase on `main` and start the next wave. Nobody starts the next wave early.
+Each wave ended at a gate.
 
 ```
 Wave 0  Foundation        core: Xcode project + contract stubs
@@ -148,14 +139,15 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - Wave 7: core adds writeAgentsFile / analyzedAt / ImpactResult.title; ui wires every screen + shortcuts; platform real run after.
 - W7 real run (platform, docs/research/W7-REAL-RUN.md): 16 bugs fixed by core + ui; re-run cancelled by the user.
 - v0.3 published 2026-11-24 (tag v0.3 at 9d718e7, build 389, notarized; appcast.xml on main 0a6e8d4). v0.2 → v0.2.1 in-app update confirmed by the user. ~/untitled-spec deleted.
-- Next: the user reports problems from v0.3; ui d10d7e4 (Spec.untitledName literal swap) goes in the next batch.
+- Spec.untitledName and the a11y labels on B1 / intake merged after v0.3.
+- 2026-11-26: multi-agent setup retired (worktrees, `agent/*` branches and `agents/` removed; layer rules moved to DESIGN.md › Project conventions).
+- Next: the user reports problems from v0.3.
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
 | Merge conflicts in `project.pbxproj` | Synchronized folders: adding files never touches the project file. Only core edits project settings. |
-| Agents drift from each other's APIs | Contracts written down first ([agents/CONTRACTS.md](../agents/CONTRACTS.md)) and stubbed in Wave 0; changes only through the orchestrator. |
 | Claude Code CLI behaves differently than documented | platform verifies in Wave 0 before anyone depends on it; fixtures drive tests. |
 | Long discovery (no question limit) | Prompt rules in AGENT-INTEGRATION.md; check with real runs in Wave 2. |
 | Apple Developer account missing | Needed only in Wave 3 (OPEN-QUESTIONS #16). |

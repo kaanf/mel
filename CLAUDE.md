@@ -4,12 +4,7 @@ Guidance for coding agents working in this repo.
 
 ## Session start (every session, also after /clear)
 
-Find out who you are from the working directory, then rebuild your context before doing anything else:
-
-- **`/Users/kaan/Projects/mel-worktrees/<name>`** → you are agent `<name>` (core, platform or ui). Read `agents/README.md`, `agents/<name>.md`, `agents/CONTRACTS.md`, then `agents/status/<name>.md` (where you left off) and `git log --oneline -15`. Continue from "Next" in your status file.
-- **`/Users/kaan/Projects/mel`** (branch `main`) → you are the orchestrator. Read `agents/ORCHESTRATOR.md`, `docs/ROADMAP.md`, and every agent's status on its branch: `git fetch origin && git show origin/agent/<name>:agents/status/<name>.md`.
-
-Your status file is your memory. Keep it current.
+Read `docs/ROADMAP.md` › Status (where things stand) and `git log --oneline -15` before doing anything else. Keep the Status section current.
 
 ## Project
 
@@ -22,7 +17,7 @@ Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea
 - Generated file format: `docs/SPEC-FORMAT.md`
 - Work order: `docs/TASKS.md` (reference task IDs like `M2 2.3` in commits)
 - Undecided points: `docs/OPEN-QUESTIONS.md` (don't silently decide them; ask)
-- Plan and multi-agent setup: `docs/ROADMAP.md`, `agents/README.md`, `agents/CONTRACTS.md`. If you are one of the agents (core, platform, ui), your brief is `agents/<name>.md`.
+- Plan and status: `docs/ROADMAP.md`
 
 ## Priority
 
@@ -33,7 +28,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 - Swift 6 with strict concurrency. SwiftUI first; AppKit only when SwiftUI can't do it.
 - `@Observable` for state, async/await for concurrency. No Combine, no architecture frameworks.
 - **No third-party dependencies.** Ask before adding one. Only exception: Sparkle 2 for updates, imported only in `App/` (approved 2026-11-23).
-- Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI, `MelSpec` and `UniformTypeIdentifiers`. Rules: `agents/CONTRACTS.md` › Layers and dependencies. `MelSpec` stays pure (no I/O, no SwiftUI).
+- Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI, `MelSpec` and `UniformTypeIdentifiers`. Rules: `docs/DESIGN.md` › Project conventions. `MelSpec` stays pure (no I/O, no SwiftUI).
 - Keep the main actor free: process I/O, file writes and parsing run off it; throttle stream-driven UI updates.
 - Match the v2 design (`docs/design/v2/`) pixel for pixel: its colors, spacing, padding, radii and type, kept as named tokens in one place. Icons: SF Symbols where they match the drawn glyph.
 - Every view has `#Preview`s for each state, built from fixtures.
@@ -48,7 +43,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 
 ## Commits
 
-Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`), agent name as scope when working as an agent, task ID at the end: `feat(core): pipeline reducer (2.1)`.
+Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`), optional area scope, task ID at the end: `feat(session): pipeline reducer (2.1)`.
 
 ## Commands
 
