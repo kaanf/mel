@@ -99,9 +99,9 @@ struct MarkdownParserTests {
 
     @Test func summaryOfRepoRequirements() throws {
         let s = MarkdownParser.summary(try doc("REQUIREMENTS.md"), kind: .requirements)
-        #expect(s.stories == 9)
-        #expect(s.criteria == 71)
-        #expect(s.sections == 10)
+        #expect(s.stories == 12)
+        #expect(s.criteria == 77)
+        #expect(s.sections == 14)
         #expect(s.assumptions == 0)
     }
 
@@ -114,10 +114,6 @@ struct MarkdownParserTests {
     @Test func designHasSevenNumberedSectionsInSpecFormatSample() {
         let text = (1...7).map { "## \($0). Section" }.joined(separator: "\n\n")
         #expect(MarkdownParser.summary("# Design\n\n" + text, kind: .architecture).sections == 7)
-    }
-
-    @Test func repoTasksCoverEveryRepoCriterion() throws {
-        #expect(MarkdownParser.uncoveredCriteria(requirements: try doc("REQUIREMENTS.md"), tasks: try doc("TASKS.md")).isEmpty)
     }
 
     @Test func uncoveredCriteriaInFileOrder() {

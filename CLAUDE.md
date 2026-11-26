@@ -15,7 +15,7 @@ Mel: native macOS app (macOS 26+, shipped as a notarized DMG) that turns an idea
 - Architecture and data model: `docs/DESIGN.md`
 - CLI integration: `docs/AGENT-INTEGRATION.md`
 - Generated file format: `docs/SPEC-FORMAT.md`
-- Work order: `docs/TASKS.md` (reference task IDs like `M2 2.3` in commits)
+- Work order: `docs/ROADMAP.md` waves and steps (reference the step in commits, like `8.5`). `docs/TASKS.md` is the v1 plan, kept as history
 - The flow and its two product rules (say anything, token budget): `docs/V2.md` §0, `docs/design/v2/FLOW.md` › V2 sections
 - Undecided points: `docs/OPEN-QUESTIONS.md` (don't silently decide them; ask)
 - Plan and status: `docs/ROADMAP.md`

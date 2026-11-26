@@ -187,6 +187,93 @@ final class EndToEndTests {
         #expect(app.specs.first?.build == .done)
     }
 
+    /// A New product on the board: gating, one change run for an answer, Mel's own check as a card,
+    /// a change that can't be placed, and what costs no run at all.
+    @Test func productOnTheBoard() async throws {
+        let (app, script) = makeApp([
+            ("e2e/v2/pr-intake.jsonl", []),
+            ("e2e/v2/pr-product.jsonl", []),
+            ("e2e/v2/pr-requirements-asked.jsonl", []),
+            ("e2e/v2/pr-change-answer.jsonl", []),
+            ("e2e/v2/pr-experience.jsonl", []),
+            ("e2e/v2/pr-architecture.jsonl", []),
+            ("e2e/v2/pr-tasks.jsonl", []),
+            ("e2e/v2/pr-analyze-issues.jsonl", []),
+            ("e2e/v2/pr-change-task.jsonl", []),
+            ("e2e/v2/pr-change-unplaced.jsonl", []),
+            ("e2e/v2/pr-architecture.jsonl", []),
+            ("e2e/v2/pr-change-remove.jsonl", []),
+        ])
+        let session = try app.createSpec(name: Spec.untitledName, idea: "Members book yoga classes and buy class packs.", size: .product, project: nil, parent: parent)
+        await session.start()
+        #expect(session.spec.name == "Yoga Studio Booking")   // the intake names it, and its folders
+        #expect(session.spec.folder.path.hasSuffix("/yoga-studio-booking/specs/yoga-studio-booking"))
+        await session.answerIntake(.option(0, note: nil))
+        await session.answerIntake(.text("iPhone, then Android"))
+
+        // Files one at a time: EXPERIENCE.md waits for the question REQUIREMENTS.md asked.
+        #expect(script.requests.count == 3)
+        #expect(script.requests[1].prompt.contains("Which platforms first? iPhone, then Android"))
+        #expect(session.spec.written == [.product, .requirements])
+        #expect(session.spec.openCards.map(\.text) == ["How long is a waitlist spot held?"])
+        #expect(session.spec.gate?.file == .experience)
+        #expect(session.documents[.requirements]?.contains("mel:questions") == false)
+
+        // The answer goes in as one patch, then the rest is written and checked.
+        await session.answerCard(try #require(session.spec.openCards.first?.id), .option(0, note: nil))
+        #expect(script.requests[3].allowsTools == false)
+        #expect(script.requests[3].prompt.contains("How long is a waitlist spot held?"))
+        #expect(session.documents[.requirements]?.contains("- 3.2 WHEN a waitlist spot is offered, THE APP SHALL hold it for 2 hours.") == true)
+        #expect(session.documents[.requirements]?.hasPrefix("# Requirements\n\n## 1. Book a class\n\nP1 · MVP") == true)   // the rest word for word
+        #expect(session.spec.written == SpecSize.product.files)
+        #expect(script.requests.count == 8)
+
+        // The agent found no contradiction; Mel's own check by ID found a P1 criterion without a task.
+        let issue = try #require(session.spec.openCards.first)
+        #expect(session.spec.openCards.count == 1)
+        #expect(issue.text.contains("2.1"))
+        #expect(!session.spec.isReady)
+        await session.answerCard(issue.id, .option(issue.options.count - 1, note: nil))
+        #expect(script.requests.count == 9)
+        #expect(session.tasks.map(\.title) == ["Booking store", "Class packs"])
+        #expect(session.spec.analyze == .passed)   // checked again for free
+        #expect(session.spec.isReady)
+
+        // Tell Mel: one edit has no place in ARCHITECTURE.md, so nothing changes until the user chooses.
+        let before = session.documents
+        #expect(await session.tell("Members can book while offline."))
+        #expect(session.spec.unplacedChange?.files == [.architecture])
+        #expect(session.documents == before)
+        await session.rewriteUnplaced()
+        #expect(script.requests.count == 11)
+        #expect(script.requests[10].prompt.contains("Members can book while offline."))
+        #expect(session.spec.unplacedChange == nil)
+        #expect(session.documents[.requirements]?.contains("- A booking made offline waits and syncs later.") == true)   // the edit that did fit
+        #expect(session.lastChange?.line == "Rewrote ARCHITECTURE.md")
+
+        // Remove: Mel cuts the story itself; one run looks for what was built on it (nothing here).
+        #expect(session.removal(ofStory: "3")?.summary == "Also removes requirements 3.1 and 3.2.")
+        await session.removeStory("3")
+        #expect(script.requests.count == 12)
+        #expect(script.requests[11].prompt.contains("Story 3 “Waitlist” was removed from REQUIREMENTS.md"))
+        #expect(session.documents[.requirements]?.contains("## 3. Waitlist") == false)
+        #expect(session.spec.removedStories?.map(\.id) == ["3"])
+
+        // Free: a scope move is a text edit.
+        session.moveStory("2", toLater: true)
+        #expect(session.stories.map(\.isFirst) == [true, false])
+        #expect(script.requests.count == 12)
+        #expect(session.spec.tokenTotal == 0)   // the scripted results carry no usage
+
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        #expect(session.spec.stage == .done)
+        #expect(try text(session, "prompts/task-02.md").contains("Class packs"))
+        #expect(session.decisions.map(\.source).contains("Tell Mel") == false)   // the rewrite's decision stands in for it
+        #expect(session.decisions.contains { $0.title == "Rewrote ARCHITECTURE.md" })
+        #expect(session.decisions.contains { $0.title.hasPrefix("Removed: ") })
+        try await expectOnDisk(session)
+    }
+
     /// A spec's intake runs while the project is still being read: nothing waits for the context.
     @Test func startReadsTheProjectInTheBackground() async throws {
         let (app, script) = makeApp([("claude-2.1.311-project-context.jsonl", []), ("e2e/v2/ft-intake.jsonl", [])])

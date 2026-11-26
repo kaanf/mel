@@ -1,5 +1,7 @@
 # Tasks
 
+> The v1 build plan (M0–M5), kept as history. Its `Covers:` IDs point at the v1 requirements, not at today's [REQUIREMENTS.md](REQUIREMENTS.md). Work since v0.2 is planned in [ROADMAP.md](ROADMAP.md) by wave and step.
+
 Ordered so that the riskiest part (driving the real CLI) is proven first, and every screen can be built against fixture data before the pipeline is wired. `Covers:` lists criteria from [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## M0 · Foundation
