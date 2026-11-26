@@ -54,11 +54,12 @@ struct V2DecodeTests {
     }
 
     @Test func analyzeAndImpactDecode() throws {
-        let analysis = try AnalyzeResult.decode(fixtures.result("analyze"))
-        #expect((3...4).contains(analysis.stats.count))
-        #expect(analysis.stats.first?.label == "criteria have a task")
-        #expect(Set(analysis.issues.map(\.kind)) == [.contradiction, .noTask, .qualityNotCovered, .scopeCreep])
-        #expect(analysis.coverage.allSatisfy { $0.screen == nil })
+        // The planted contradiction (`config.json` in REQUIREMENTS, `settings.json` in the other two) comes first.
+        let contradictions = try AnalyzeResult.contradictions(in: fixtures.result("analyze"))
+        #expect(contradictions.first?.text.contains("settings.json") == true)
+        #expect(contradictions.first?.ids?.contains("5.1") == true)
+        #expect(contradictions.allSatisfy { $0.actions.count == 2 })
+        #expect(Set(contradictions.flatMap(\.actions).flatMap(\.files)).isSubset(of: [.requirements, .architecture, .tasks]))
         let impact = try ImpactResult.decode(fixtures.result("impact"))
         #expect(impact.items.map(\.kind) == [.tasks])
         #expect(!impact.title.isEmpty)

@@ -10,6 +10,7 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 - **Token use.** The toolbar shows how many tokens a spec has used so far. Click it to see the split: questions, each file, checks and changes.
 
 ### Changed
+- **Faster Analyze.** Mel now checks by itself that every P1 criterion and quality requirement has a task and that screens trace to a criterion. Claude Code only looks for contradictions between files, so the check takes about half the time and tokens. Criteria of P2 and P3 stories no longer need a task, and "possible scope creep" is no longer reported.
 - **Changes are patches.** When you answer a question in review, fix an Analyze issue or refine files after an edit, Claude Code now sends only the passages that change and Mel puts them in place. The rest of the file stays word for word, and the run is shorter and uses fewer tokens. If Mel can't find where a change goes, nothing is changed and you can choose to rewrite the file.
 
 ## [0.4] · 2026-11-26

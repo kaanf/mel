@@ -31,28 +31,30 @@ struct V2FormatTests {
         #expect(try Intake.decode(#"{"name":"  ","coverage":[],"questions":[]}"#, size: .product).name == nil)
     }
 
-    @Test func analyzeDecodes() throws {
+    @Test func contradictionsDecodeAlsoInAJSONFence() throws {
         let reply = """
-        {"stats":[{"value":"14 of 15","label":"requirements have a task"}],
-         "issues":[{"id":"i1","kind":"noTask","location":"REQUIREMENTS 2.2","text":"No task builds this.",
-                    "actions":[{"label":"Move to Later","fix":"Set story 2 to P2.","files":["requirements"]},
-                               {"label":"Add Task","fix":"Add a task for 2.2.","files":["tasks"]}]}],
-         "coverage":[{"id":"2.2","text":"Studio cancels","screen":null,"architecture":"covered","task":"missing","test":"missing"}]}
+        Here is the check.
+
+        ```json
+        {"issues":[{"id":"c1","location":"REQUIREMENTS 1.3 · EXPERIENCE › Confirm booking","text":"12 hours against 24 hours.","ids":["1.3"],
+                    "actions":[{"label":"Use 24 Hours","fix":"Change criterion 1.3 to 24 hours.","files":["requirements"]},
+                               {"label":"Use 12 Hours","fix":"Change the copy to 12 hours.","files":["experience"]}]}]}
+        ```
         """
-        let result = try AnalyzeResult.decode(reply)
-        #expect(result.stats == [.init(value: "14 of 15", label: "requirements have a task")])
-        #expect(result.issues[0].kind == .noTask)
-        #expect(result.issues[0].actions[1].files == [.tasks])
-        #expect(result.coverage[0].screen == nil)
-        #expect(result.coverage[0].task == .missing)
+        let found = try AnalyzeResult.contradictions(in: reply)
+        #expect(found.map(\.id) == ["c1"])
+        #expect(found[0].ids == ["1.3"])
+        #expect(found[0].actions[1].files == [.experience])
+        #expect(try AnalyzeResult.contradictions(in: #"{"issues":[]}"#).isEmpty)
+        #expect(throws: (any Error).self) { try AnalyzeResult.contradictions(in: "The files agree.") }
     }
 
-    @Test func analyzeInAJSONFenceDecodes() throws {
-        let reply = "Here is the check.\n\n```json\n{\"stats\":[],\"issues\":[],\"coverage\":[]}\n```\n"
-        let before = Date.now
-        let result = try AnalyzeResult.decode(reply)
-        #expect(result == AnalyzeResult(stats: [], issues: [], coverage: [], analyzedAt: result.analyzedAt))
-        #expect(result.analyzedAt >= before)   // stamped by Mel on arrival
+    /// state.json written by 0.4 holds the agent's whole result, every mark set.
+    @Test func analysisSavedByEarlierVersionsDecodes() throws {
+        let saved = #"{"stats":[{"value":"14 of 15","label":"requirements have a task"}],"issues":[],"coverage":[{"id":"2.2","text":"Studio cancels","screen":null,"architecture":"covered","task":"missing","test":"missing"}]}"#
+        let result = try JSONDecoder().decode(AnalyzeResult.self, from: Data(saved.utf8))
+        #expect(result.coverage[0].architecture == .covered)
+        #expect(result.coverage[0].screen == nil)
     }
 
     @Test func moduleNotesInParenthesesAreDropped() {

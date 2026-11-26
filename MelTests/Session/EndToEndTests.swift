@@ -262,11 +262,13 @@ final class EndToEndTests {
 
         // Analyze finds an issue; Fix revises TASKS.md, then Analyze passes.
         #expect(session.spec.analyze == .issues(1))
-        #expect(script.requests[8].prompt.contains("## Earlier issues\n\n(none: this is the first check)"))
+        #expect(script.requests[8].prompt.contains("## Earlier contradictions\n\n(none: this is the first check)"))
         await session.fixIssues()
-        #expect(script.requests[9].prompt.contains("Add a task that builds class packs for 2.1."))
+        #expect(session.spec.analysis?.issues.map(\.id) == ["task-2.1"])   // found by ID, not by the agent
+        #expect(session.spec.analysis?.coverage.map(\.id) == ["1.1", "2.1", "3.1", "Q1"])
+        #expect(script.requests[9].prompt.contains("Add a task that covers criterion 2.1."))
         await session.approve(.tasks)
-        #expect(script.requests[10].prompt.contains("- i1 (noTask, REQUIREMENTS 2.1): No task builds class packs."))
+        #expect(script.requests[10].prompt.contains("## Earlier contradictions\n\n(none: this is the first check)"))
         #expect(session.spec.analyze == .passed)
 
         // C1: an edit to REQUIREMENTS.md → impact → reason → refine the three later files.

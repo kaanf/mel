@@ -60,13 +60,12 @@ struct V2FixtureTests {
     }
 
     @Test func analyze() throws {
+        // Contradictions only (8.3): coverage, stats and missing tasks are Mel's own checks.
         let analysis = try object("analyze")
-        #expect((3...4).contains((analysis["stats"] as? [Any])?.count ?? 0))
+        #expect(Set(analysis.keys) == ["issues"])
         let issues = try #require(analysis["issues"] as? [[String: Any]])
-        #expect(Set(issues.compactMap { $0["kind"] as? String }) == ["contradiction", "noTask", "qualityNotCovered", "scopeCreep"])
+        #expect(issues.allSatisfy { Set($0.keys) == ["id", "location", "text", "ids", "actions"] })
         #expect(issues.allSatisfy { ($0["actions"] as? [Any])?.count == 2 })
-        let coverage = try #require(analysis["coverage"] as? [[String: Any]])
-        #expect(coverage.allSatisfy { $0["screen"] is NSNull })  // Feature size: no EXPERIENCE.md
     }
 
     @Test func impact() throws {

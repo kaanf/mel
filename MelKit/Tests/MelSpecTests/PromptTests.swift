@@ -21,7 +21,7 @@ struct PromptTests {
         #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
         #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "rules"])
         #expect(placeholders(.rewrite) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
-        #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds", "screen"])
+        #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds"])
         #expect(placeholders(.impact) == ["file", "before", "after", "later", "kinds"])
         #expect(placeholders(.continue) == ["file", "partial"])
         #expect(placeholders(.discovery) == ["name", "idea", "answers", "coverage"])
@@ -80,9 +80,9 @@ struct PromptTests {
     }
 
     @Test func analyzeImpactAndProjectSamplesDecode() throws {
-        let analyze = try AnalyzeResult.decode(sample(Prompt.analyze.build([:]), startingWith: #"{"stats""#))
-        #expect(analyze.issues.first?.actions.count == 2)
-        #expect(analyze.coverage.first?.screen == .conflict)
+        let analyze = try AnalyzeResult.contradictions(in: sample(Prompt.analyze.build([:]), startingWith: #"{"issues":[{"#))
+        #expect(analyze.first?.actions.count == 2)
+        #expect(analyze.first?.ids == ["1.3"])
         let impact = try ImpactResult.decode(sample(Prompt.impact.build([:]), startingWith: #"{"title""#))
         #expect(impact.title == "Late cancel window is 12 hours")
         #expect(impact.items.map(\.kind) == [.experience, .tasks])

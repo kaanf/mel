@@ -219,6 +219,24 @@ public enum MarkdownParser {
         }
     }
 
+    /// EXPERIENCE's "Screens and states" rows: each screen with the criterion IDs in its Criteria cell.
+    public static func screens(_ experience: String) -> [(name: String, criteria: [String])] {
+        var result: [(String, [String])] = []
+        for case .table(let header, let rows) in blocks(experience) where header.first == "Screen" {
+            for row in rows where !row.isEmpty {
+                result.append((row[0], row.count > 2 ? coversList("Covers:" + row[2]) ?? [] : []))
+            }
+        }
+        return result
+    }
+
+    /// Every ID on a flow's `Covers:` line in EXPERIENCE.
+    public static func flowCriteria(_ experience: String) -> [String] {
+        blocks(experience).flatMap { block in
+            if case .covers(let ids) = block { ids } else { [String]() }
+        }
+    }
+
     // MARK: - Line helpers
 
     private static func heading(_ line: Substring) -> Block? {

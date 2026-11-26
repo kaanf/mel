@@ -564,15 +564,17 @@ import MelSystem
 
     private func runAnalyze() async {
         lastError = nil
-        let earlier = spec.analysis?.issues.map { "- \($0.id) (\($0.kind.rawValue), \($0.location)): \($0.text)" } ?? []
+        // Coverage is checked here by ID; the run only looks for contradictions.
+        let earlier = spec.analysis?.issues.filter { $0.kind == .contradiction }.map { "- \($0.id) (\($0.location)): \($0.text)" } ?? []
         let values = ["name": spec.name, "approved": approvedText(except: nil), "kinds": spec.size.kindsText,
-                      "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n"),
-                      "screen": spec.size.files.contains(.experience) ? "" : "This spec has no EXPERIENCE.md: `screen` is null in every row."]
+                      "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n")]
         let end = await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false)
         guard spec.stage == .analyze else { return }
         switch end {
         case .done(let reply):
-            if let result = try? AnalyzeResult.decode(reply) {
+            if let contradictions = try? AnalyzeResult.contradictions(in: reply) {
+                var result = AnalyzeResult.coverage(requirements: documents[.requirements] ?? "", experience: spec.size.files.contains(.experience) ? documents[.experience] ?? "" : nil, tasks: documents[.tasks] ?? "")
+                result.add(contradictions)
                 spec.apply(.analyzeFinished(result))
             } else {
                 spec.apply(.analyzeFailed)

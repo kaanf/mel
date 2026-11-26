@@ -22,7 +22,8 @@ public struct OpenQuestion: Identifiable, Hashable, Sendable {
     }
 }
 
-/// B6: the analyze run's JSON reply (V2.md §5 Analyze).
+/// B6: what Analyze found. Coverage, stats and the missing-task issues come from `coverage`, by
+/// ID and without an agent run; the agent only adds contradictions (`add`).
 public struct AnalyzeResult: Codable, Hashable, Sendable {
     public var stats: [Stat]
     public var issues: [Issue]
@@ -89,16 +90,19 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
         }
     }
 
-    /// One requirement (`1.3`, `Q1`) across the files after REQUIREMENTS. `screen` is nil without EXPERIENCE.md.
+    /// One requirement (`1.3`, `Q1`) across the files after REQUIREMENTS. A nil mark is blank:
+    /// `screen` without EXPERIENCE.md or for a quality requirement no screen names, `task` and
+    /// `test` for a P2/P3 criterion without a task, `architecture` unless a contradiction is there
+    /// (ARCHITECTURE.md carries no IDs to trace).
     public struct CoverageRow: Codable, Identifiable, Hashable, Sendable {
         public var id: String
         public var text: String
         public var screen: Mark?
-        public var architecture: Mark
-        public var task: Mark
-        public var test: Mark
+        public var architecture: Mark?
+        public var task: Mark?
+        public var test: Mark?
 
-        public init(id: String, text: String, screen: Mark?, architecture: Mark, task: Mark, test: Mark) {
+        public init(id: String, text: String, screen: Mark?, architecture: Mark?, task: Mark?, test: Mark?) {
             self.id = id
             self.text = text
             self.screen = screen
@@ -110,9 +114,90 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
 
     public enum Mark: String, Codable, Hashable, Sendable { case covered, missing, conflict }
 
-    /// Decodes the JSON object in `reply`; text around it is ignored.
-    public static func decode(_ reply: String) throws -> AnalyzeResult {
-        try JSONDecoder().decode(AnalyzeResult.self, from: jsonObject(in: reply))
+    /// A contradiction between files, from the analyze run's reply. `ids` are the requirements it is about.
+    public struct Contradiction: Decodable, Hashable, Sendable {
+        public var id: String
+        public var location: String
+        public var text: String
+        public var ids: [String]?
+        public var actions: [Action]
+    }
+
+    /// Decodes the reply's `{"issues": [...]}`; text around the object is ignored.
+    public static func contradictions(in reply: String) throws -> [Contradiction] {
+        struct Reply: Decodable { var issues: [Contradiction] }
+        return try JSONDecoder().decode(Reply.self, from: jsonObject(in: reply)).issues
+    }
+
+    /// The checks Mel makes itself, by ID: every P1 criterion and every quality requirement has a
+    /// task, a covering task has a Verify step, screens name a criterion. A story without a tag
+    /// line counts as P1. `experience` is nil for a size without EXPERIENCE.md.
+    public static func coverage(requirements: String, experience: String?, tasks: String) -> AnalyzeResult {
+        var criteria: [(id: String, text: String, needsTask: Bool)] = []
+        var isP1 = true
+        for block in MarkdownParser.blocks(requirements) {
+            switch block {
+            case .heading(2, _): isP1 = true
+            case .priority(let priority, _): isP1 = priority == "P1"
+            case .criterion(let id, let text): criteria.append((id, text, isP1 || id.hasPrefix("Q")))
+            default: break
+            }
+        }
+        let known = Set(criteria.map(\.id))
+        let specTasks = SpecTask.parse(tasks)
+        let withTask = Set(specTasks.flatMap(\.covers))
+        let withTest = Set(specTasks.filter { !$0.verify.isEmpty }.flatMap(\.covers))
+        let screens = experience.map(MarkdownParser.screens) ?? []
+        let onScreen = Set(screens.flatMap(\.criteria)).union(experience.map(MarkdownParser.flowCriteria) ?? [])
+
+        var result = AnalyzeResult(stats: [], issues: [], coverage: [])
+        for c in criteria {
+            let isQuality = c.id.hasPrefix("Q")
+            let task: Mark? = withTask.contains(c.id) ? .covered : c.needsTask ? .missing : nil
+            let screen: Mark? = experience == nil ? nil : onScreen.contains(c.id) ? .covered : isQuality ? nil : .missing
+            result.coverage.append(CoverageRow(id: c.id, text: c.text, screen: screen, architecture: nil, task: task,
+                                               test: task == .covered ? (withTest.contains(c.id) ? .covered : .missing) : task))
+            guard task == .missing else { continue }
+            if isQuality {
+                result.issues.append(Issue(id: "task-\(c.id)", kind: .qualityNotCovered, location: "REQUIREMENTS \(c.id)", text: "No task covers quality requirement \(c.id).", actions: [
+                    Action(label: "Drop Requirement", fix: "Remove quality requirement \(c.id).", files: [.requirements]),
+                    Action(label: "Add Task", fix: "Add \(c.id) to the Covers of the task that has to meet it, or add a task for it.", files: [.tasks]),
+                ]))
+            } else {
+                result.issues.append(Issue(id: "task-\(c.id)", kind: .noTask, location: "REQUIREMENTS \(c.id)", text: "No task covers criterion \(c.id).", actions: [
+                    Action(label: "Move to Later", fix: "Criterion \(c.id) has no task. Tag its story P2 and move the story below the MVP line.", files: [.requirements]),
+                    Action(label: "Add Task", fix: "Add a task that covers criterion \(c.id).", files: [.tasks]),
+                ]))
+            }
+        }
+
+        func stat(_ rows: [CoverageRow], _ label: String) {
+            guard !rows.isEmpty else { return }
+            result.stats.append(Stat(value: "\(rows.count { $0.task == .covered }) of \(rows.count)", label: label))
+        }
+        let needed = Set(criteria.filter(\.needsTask).map(\.id))
+        stat(result.coverage.filter { !$0.id.hasPrefix("Q") && needed.contains($0.id) }, "P1 criteria have a task")
+        stat(result.coverage.filter { $0.id.hasPrefix("Q") }, "quality requirements have a task")
+        if !screens.isEmpty {
+            let traced = screens.count { !known.isDisjoint(with: $0.criteria) }
+            result.stats.append(Stat(value: "\(traced) of \(screens.count)", label: "screens trace to a criterion"))
+        }
+        return result
+    }
+
+    /// Adds the agent's contradictions: listed first, counted in the stats, and marked `conflict`
+    /// on their rows in the columns of the files their actions change.
+    public mutating func add(_ found: [Contradiction]) {
+        issues.insert(contentsOf: found.map { Issue(id: $0.id, kind: .contradiction, location: $0.location, text: $0.text, actions: $0.actions) }, at: 0)
+        stats.append(Stat(value: "\(found.count)", label: found.count == 1 ? "contradiction between files" : "contradictions between files"))
+        for contradiction in found {
+            let files = Set(contradiction.actions.flatMap(\.files))
+            for i in coverage.indices where contradiction.ids?.contains(coverage[i].id) == true {
+                if files.contains(.experience), coverage[i].screen != nil { coverage[i].screen = .conflict }
+                if files.contains(.architecture) { coverage[i].architecture = .conflict }
+                if files.contains(.tasks) { coverage[i].task = .conflict }
+            }
+        }
     }
 }
 

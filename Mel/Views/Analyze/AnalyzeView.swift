@@ -126,7 +126,9 @@ struct AnalyzeView: View {
 
     private func coverage(_ rows: [AnalyzeResult.CoverageRow]) -> some View {
         let hasScreens = rows.contains { $0.screen != nil }
-        let columns = (hasScreens ? ["Screen"] : []) + ["Architecture", "Task", "Test"]
+        // Blank unless a contradiction is there: ARCHITECTURE.md carries no IDs to trace.
+        let hasArchitecture = rows.contains { $0.architecture != nil }
+        let columns = (hasScreens ? ["Screen"] : []) + (hasArchitecture ? ["Architecture"] : []) + ["Task", "Test"]
         return VStack(alignment: .leading, spacing: Theme.Space.x8) {
             HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
                 Text("Coverage").textStyle(Theme.Text.bodyBold).frame(maxWidth: .infinity, alignment: .leading).accessibilityAddTraits(.isHeader)
@@ -145,7 +147,7 @@ struct AnalyzeView: View {
                 .padding(.horizontal, Theme.Space.x14)
                 .background(Theme.Colors.fill)
                 ForEach(rows) { row in
-                    let marks = (hasScreens ? [row.screen] : []) + [row.architecture, row.task, row.test]
+                    let marks = (hasScreens ? [row.screen] : []) + (hasArchitecture ? [row.architecture] : []) + [row.task, row.test]
                     HStack(spacing: 0) {
                         Text(row.id).textStyle(Theme.Text.code).foregroundStyle(Theme.Colors.secondaryLabel).frame(width: Theme.Size.coverageID, alignment: .leading)
                         Text(row.text).textStyle(Theme.Text.body).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)

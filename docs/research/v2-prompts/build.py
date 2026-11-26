@@ -38,8 +38,7 @@ build("requirements", {**feature, **work, "answers": read(f"{i}/answers.txt"), "
                        "approved": "(none yet)", "steps": read(f"{i}/steps.txt")})
 build("analyze", {"name": work["name"], "kinds": feature["kinds"],
                   "approved": "\n\n".join(section(f + ".md", read(f"{i}/{f}.md")) for f in ["REQUIREMENTS", "ARCHITECTURE", "TASKS"]),
-                  "earlier": "(none: this is the first check)",
-                  "screen": "This spec has no EXPERIENCE.md: `screen` is null in every row."})
+                  "earlier": "(none: this is the first check)"})
 build("impact", {"file": "REQUIREMENTS.md", "kinds": "`architecture`, `tasks`",
                  "before": read(f"{i}/before.md"), "after": read(f"{i}/after.md"),
                  "later": "\n\n".join(section(f + ".md", read(f"{i}/{f}.md")) for f in ["ARCHITECTURE", "TASKS"])})

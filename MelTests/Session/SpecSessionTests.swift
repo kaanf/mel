@@ -166,7 +166,10 @@ final class SpecSessionTests {
         // Analyze runs without tools.
         #expect(runner.requests[5].allowsTools == false)
         #expect(session.spec.stage == .analyze)
-        #expect(session.spec.analyze == .passed)
+        // Mel's own check: the criterion round 2 added has no task. The agent found no contradiction.
+        #expect(session.spec.analysis?.issues.map(\.id) == ["task-1.2"])
+        #expect(session.spec.analysis?.stats.map(\.value) == ["1 of 2", "0"])
+        #expect(session.spec.analyze == .issues(1))
         session.handOffAnyway()
         #expect(session.spec.stage == .done)
 
