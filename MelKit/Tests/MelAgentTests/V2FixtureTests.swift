@@ -75,8 +75,8 @@ struct V2FixtureTests {
     }
 
     /// Recorded with `allowsTools: false` (`--tools ""`): files are inline, so one turn and no steps.
-    @Test func analyzeImpactAndReviseRunWithoutTools() throws {
-        for name in ["analyze", "impact", "revise"] {
+    @Test func analyzeImpactReviseAndChangeRunWithoutTools() throws {
+        for name in ["analyze", "impact", "revise", "change"] {
             #expect(try fixtureText("claude-2.1.311-\(name).jsonl").contains(#""tools":[]"#))
             #expect(try events(name).allSatisfy { if case .step = $0 { false } else { true } })
         }

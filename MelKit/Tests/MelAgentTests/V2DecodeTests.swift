@@ -65,6 +65,16 @@ struct V2DecodeTests {
         #expect(!impact.title.isEmpty)
     }
 
+    /// The recorded change run had two requests against REQUIREMENTS, ARCHITECTURE and TASKS; only REQUIREMENTS states them.
+    @Test func changeDecodes() throws {
+        let change = try Change.decode(fixtures.result("change"))
+        #expect(change.edits.count == 9)
+        #expect(change.files(in: SpecSize.feature.files) == [.requirements])
+        #expect(change.edits.contains { $0.old == "is a multiple of 4" && $0.new == "is a multiple of 3" })
+        #expect(change.edits.allSatisfy { $0.old.count < 60 })   // short passages, not whole sections
+        #expect(change.summary(order: SpecSize.feature.files) == "Changed 9 places in REQUIREMENTS.md")
+    }
+
     /// The recorded revise run answered a round-2 question and an open question about this file.
     @Test func revisePatchDecodesAndPlacesEveryEdit() throws {
         let file = """

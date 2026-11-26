@@ -26,6 +26,10 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var instructions: [DocKind: String]
     /// The file "Rewrite FILE" is writing whole, until that run ends.
     public var rewriting: DocKind?
+    /// Board: the agent stopped; nothing runs until the user resumes.
+    public var halted: Halt?
+    /// Board: a change that couldn't be placed, waiting for "Rewrite FILE" or Cancel.
+    public var unplacedChange: UnplacedChange?
     /// Tokens used per step, from each run's `result.usage` (OQ #26); nil before the first counted run.
     public var tokens: [TokenStep: Int]?
     public var sessionID: String?
@@ -148,6 +152,9 @@ public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hash
 
 public enum Stage: Codable, Hashable, Sendable {
     case discovery
+    /// The V2 board (Board.swift): files are written one at a time between the user's answers.
+    /// It replaces `drafting`, `review`, `stopped` and `analyze`, which go with the lane A–C views.
+    case board
     case drafting(DocKind)
     case review(DocKind)
     case stopped(DocKind, StopReason)
@@ -168,8 +175,34 @@ public enum AnalyzeStatus: Codable, Hashable, Sendable {
     case stale
 }
 
-/// Round 1 comes from the intake; round 2 from a draft's `<!-- mel:questions -->` trailer (B4 "Before you approve").
-public enum QuestionRound: Int, Codable, Hashable, Sendable { case intake = 1, draft = 2 }
+/// Round 1 comes from the intake; round 2 from a draft's `<!-- mel:questions -->` trailer; `open`
+/// is an `[!OPEN QUESTION]` callout a draft left in its file (board only).
+public enum QuestionRound: Int, Codable, Hashable, Sendable { case intake = 1, draft = 2, open = 3 }
+
+/// Why the board's agent stopped. `file` is the draft it cut off, kept as far as it got.
+public struct Halt: Codable, Hashable, Sendable {
+    public var reason: StopReason
+    public var file: DocKind?
+
+    public init(reason: StopReason, file: DocKind? = nil) {
+        self.reason = reason
+        self.file = file
+    }
+}
+
+/// A change run whose edits couldn't all be placed (OQ #25). Nothing was changed: `files` are
+/// offered for a whole rewrite one by one, `change` holds the edits for the other files.
+public struct UnplacedChange: Codable, Hashable, Sendable {
+    public var request: String
+    public var change: Change
+    public var files: [DocKind]
+
+    public init(request: String, change: Change, files: [DocKind]) {
+        self.request = request
+        self.change = change
+        self.files = files
+    }
+}
 
 /// A file copied into `specs/<slug>/.mel/attachments/` (B1 Add Files, drop, Paste Log).
 public struct Attachment: Codable, Identifiable, Hashable, Sendable {
@@ -188,8 +221,12 @@ public struct Question: Codable, Identifiable, Hashable, Sendable {
     public var round: QuestionRound
     public var options: [Option]
     public var answer: Answer?
+    /// The topic in two or three words, for a card's "REQUIREMENTS.md · about cancelling".
+    public var about: String?
+    /// Board: answered after its file was written; the next change run applies it.
+    public var pending: Bool?
 
-    public init(id: String, title: String, why: String, shapes: DocKind, round: QuestionRound = .intake, options: [Option], answer: Answer? = nil) {
+    public init(id: String, title: String, why: String, shapes: DocKind, round: QuestionRound = .intake, options: [Option], answer: Answer? = nil, about: String? = nil) {
         self.id = id
         self.title = title
         self.why = why
@@ -197,6 +234,7 @@ public struct Question: Codable, Identifiable, Hashable, Sendable {
         self.round = round
         self.options = options
         self.answer = answer
+        self.about = about
     }
 }
 

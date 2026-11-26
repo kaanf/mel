@@ -42,4 +42,8 @@ build("analyze", {"name": work["name"], "kinds": feature["kinds"],
 build("impact", {"file": "REQUIREMENTS.md", "kinds": "`architecture`, `tasks`",
                  "before": read(f"{i}/before.md"), "after": read(f"{i}/after.md"),
                  "later": "\n\n".join(section(f + ".md", read(f"{i}/{f}.md")) for f in ["ARCHITECTURE", "TASKS"])})
+build("change", {**feature, "project": project, "name": work["name"], "idea": work["idea"],
+                 "reading": "Everything you need is in this prompt. Do not read files or call tools.", "attachments": "(none)",
+                 "requests": "- The long break comes after every 3rd focus session of the day, not every 4th.\n- REQUIREMENTS.md asked “Should the goal-reached message show the count?”. The answer: Yes, as `Goal reached: 8/8`.",
+                 "current": "\n\n".join(section(f + ".md", read(f"{i}/{f}.md")) for f in ["REQUIREMENTS", "ARCHITECTURE", "TASKS"])})
 print("built", sorted(os.listdir(out)))

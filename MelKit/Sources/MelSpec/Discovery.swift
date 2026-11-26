@@ -59,6 +59,7 @@ struct WireQuestion: Decodable {
     var title: String
     var why: String?
     var shapes: DocKind?
+    var about: String?
     var options: [WireOption]?
 
     struct WireOption: Decodable {
@@ -69,7 +70,8 @@ struct WireQuestion: Decodable {
 
     func question(round: QuestionRound, shapes fallback: DocKind) -> Question {
         Question(id: id, title: title, why: why ?? "", shapes: shapes ?? fallback, round: round,
-                 options: (options ?? []).map { Option(label: $0.label, note: $0.note ?? "", suggested: $0.suggested ?? false) })
+                 options: (options ?? []).map { Option(label: $0.label, note: $0.note ?? "", suggested: $0.suggested ?? false) },
+                 about: about?.isEmpty == false ? about : nil)
     }
 }
 

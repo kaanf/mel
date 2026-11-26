@@ -65,6 +65,10 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
         public var text: String
         /// Two actions, drawn left to right; the second is the primary one.
         public var actions: [Action]
+        /// Board: the action the user picked, or what they typed instead.
+        public var answer: Answer?
+        /// Board: answered, and the next change run applies it.
+        public var pending: Bool?
 
         public init(id: String, kind: IssueKind, location: String, text: String, actions: [Action]) {
             self.id = id
@@ -183,6 +187,17 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
             result.stats.append(Stat(value: "\(traced) of \(screens.count)", label: "screens trace to a criterion"))
         }
         return result
+    }
+
+    /// After the files changed: Mel's own checks again, free. Contradictions stay as they are,
+    /// answered or not; only a new check run looks for them again.
+    public mutating func refresh(requirements: String, experience: String?, tasks: String) {
+        let kept = issues.filter { $0.kind == .contradiction }
+        var fresh = Self.coverage(requirements: requirements, experience: experience, tasks: tasks)
+        fresh.stats.append(Stat(value: "\(kept.count)", label: kept.count == 1 ? "contradiction between files" : "contradictions between files"))
+        fresh.issues.insert(contentsOf: kept, at: 0)
+        fresh.analyzedAt = analyzedAt
+        self = fresh
     }
 
     /// Adds the agent's contradictions: listed first, counted in the stats, and marked `conflict`

@@ -17,6 +17,7 @@ enum SidebarItem: Hashable {
     /// The row that matches where the spec is now.
     static func current(_ spec: Spec) -> SidebarItem {
         switch spec.stage {
+        case .board: .doc(spec.id, spec.written.last ?? spec.size.files[0])   // until the board view (8.5)
         case .discovery: .discovery(spec.id)
         case .drafting(let kind), .review(let kind), .stopped(let kind, _): .doc(spec.id, kind)
         case .analyze: .analyze(spec.id)

@@ -21,6 +21,7 @@ struct PromptTests {
         #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
         #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "rules"])
         #expect(placeholders(.rewrite) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
+        #expect(placeholders(.change) == ["files", "reading", "project", "name", "idea", "requests", "attachments", "current", "kinds", "rules"])
         #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds"])
         #expect(placeholders(.impact) == ["file", "before", "after", "later", "kinds"])
         #expect(placeholders(.continue) == ["file", "partial"])

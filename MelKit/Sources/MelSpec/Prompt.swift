@@ -10,6 +10,8 @@ public enum Prompt: String, CaseIterable, Sendable {
     case product, requirements, experience, architecture, tasks, spec
     /// `revise` replies with a `Patch`; `rewrite` streams the whole file, only after an unplaced patch (OQ #25).
     case revise, rewrite, analyze, impact
+    /// Board: one patch run across the written files; replies with a `Change`.
+    case change
     case `continue`
 
     public init(drafting kind: DocKind) {
