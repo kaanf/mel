@@ -28,6 +28,11 @@ struct BoardInbox: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Theme.Space.x16)
+            // The next question, a card answered or reopened, a new file's cards.
+            .animation(.board, value: spec.intakeCard?.id)
+            .animation(.board, value: spec.cards.map { $0.id + ($0.answer == nil ? "?" : "") })
+            .animation(.board, value: freeCard)
+            .animation(.board, value: isAsking)
         }
         .foregroundStyle(Theme.Colors.label)
         .background(Theme.Colors.fillSubtle)
@@ -70,6 +75,7 @@ struct BoardInbox: View {
             .padding(Theme.Space.x14)
             .surface(Theme.Colors.background, .inboxCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
             .id(card.id)
+            .transition(.asymmetric(insertion: .opacity.combined(with: .offset(x: 12)), removal: .opacity))
             Button("Skip, write the plan now") { Task { await session.skipIntake() } }
                 .buttonStyle(DesignLinkStyle())
                 .padding(.vertical, Theme.Space.x4)
@@ -102,6 +108,7 @@ struct BoardInbox: View {
             Text(label)
                 .textStyle(Theme.Text.body)
                 .foregroundStyle(quiet ? Theme.Colors.bodyLabel : Theme.Colors.label)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if likely {
                 Text("Likely").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.likely)
@@ -122,7 +129,10 @@ struct BoardInbox: View {
             cardView(card)
         }
         if spec.halted == nil, spec.written != spec.size.files {
-            Text(waitText).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.secondaryLabel)
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+                if spec.gate == nil, session.isRunning { ProgressView().controlSize(.mini) }
+                Text(waitText).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.secondaryLabel)
+            }
         }
         summary.padding(.top, Theme.Space.x4)
     }
@@ -159,29 +169,23 @@ struct BoardInbox: View {
                     Task { await session.answerCard(card.id, .text(text)) }
                 }
             } else {
-                FlowLayout(spacing: Theme.Space.x6) {
+                // One answer per row: an answer is often a sentence, and the column is narrow.
+                VStack(spacing: Theme.Space.x6) {
                     ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
                         Button(option.label) { Task { await session.answerCard(card.id, .option(index, note: nil)) } }
-                            .buttonStyle(BoardPillStyle(elevation: .answerPill))
+                            .buttonStyle(CardOptionStyle())
                     }
-                    Button { openFree(card.id) } label: {
-                        Text("Something else…")
-                            .textStyle(Theme.Text.callout)
-                            .foregroundStyle(Theme.Colors.bodyLabel)
-                            .padding(.horizontal, Theme.Space.x12)
-                            .frame(height: Theme.Size.button)
-                            .surface(.clear, .pillOutline, in: Capsule())
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
+                    Button("Something else…") { openFree(card.id) }.buttonStyle(CardOptionStyle(quiet: true))
                 }
                 .disabled(session.isRunning)
+                .opacity(session.isRunning ? 0.5 : 1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Theme.Space.x12)
         .surface(done ? .clear : Theme.Colors.background, done ? .outline : card.disagrees ? .disagreeCard : .inboxCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         .opacity(done ? 0.75 : 1)
+        .transition(.drop)
         .accessibilityElement(children: .contain)
     }
 
@@ -243,5 +247,25 @@ struct BoardInbox: View {
         .padding(.vertical, Theme.Space.x10)
         .padding(.horizontal, Theme.Space.x12)
         .surface(.clear, .outlineReplaced, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+    }
+}
+
+/// An answer on a decision card: a full-width row whose text wraps. "Something else…" is the quiet one.
+struct CardOptionStyle: ButtonStyle {
+    var quiet = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .textStyle(Theme.Text.callout)
+            .foregroundStyle(quiet ? Theme.Colors.bodyLabel : Theme.Colors.label)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, Theme.Space.x6)
+            .padding(.horizontal, Theme.Space.x12)
+            .frame(minHeight: Theme.Size.button)
+            .surface(quiet ? .clear : Theme.Colors.background, quiet ? .pillOutline : .answerPill, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.row))
     }
 }

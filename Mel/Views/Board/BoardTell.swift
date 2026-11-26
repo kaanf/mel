@@ -130,7 +130,7 @@ struct BoardTell: View {
                     .textStyle(Theme.Text.caption)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Button(session.isRunning ? "Placing…" : "Send") {
+                Button("Send") {
                     let (sent, attached) = (request, files)
                     Task {
                         // The request stays in the box until the run has finished.

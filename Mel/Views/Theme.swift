@@ -644,8 +644,8 @@ extension Theme.Text {
 }
 
 extension Theme.Size {
-    /// 300 · "Mel needs you" column and the token popover.
-    static let inboxWidth: CGFloat = 300
+    /// 340 · "Mel needs you" column (drawn 300; widened so answers fit on a line or two).
+    static let inboxWidth: CGFloat = 340
     /// 760 / 780 / 680 / 860 · widest Plan, open file and Tell Mel, intake summary, Screens.
     static let planMaxWidth: CGFloat = 760
     static let fileMaxWidth: CGFloat = 780
@@ -672,8 +672,8 @@ extension Theme.Size {
     static let skeletonCard: CGFloat = 56
     /// 190 · a story menu's least width; 26 · token popover row.
     static let tokenRow: CGFloat = 26
-    /// 244 · V2 sidebar; 26 · project tile; 40 · spec row; 44 · project button.
-    static let boardSidebar: CGFloat = 244
+    /// 272 · V2 sidebar (drawn 244; widened for longer spec names); 26 · project tile; 40 · spec row; 44 · project button.
+    static let boardSidebar: CGFloat = 272
     static let projectTile: CGFloat = 26
     static let specRow: CGFloat = 40
     static let projectButton: CGFloat = 44
@@ -790,6 +790,18 @@ extension Theme.Elevation {
     /// Settings › Specs: a value pop-up (ring 0.18 + 0 1 1 0.06) and a small button (ring 0.18).
     static let settingsValue = Theme.Elevation(ring: .black.opacity(0.18), drop: Theme.Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
     static let settingsButton = Theme.Elevation(ring: .black.opacity(0.18))
+}
+
+// MARK: - Motion
+
+extension Animation {
+    /// Things that appear, leave or change place on the board, in the sidebar and between screens.
+    static let board = Animation.smooth(duration: 0.28)
+}
+
+extension AnyTransition {
+    /// A banner or card coming in from above its place.
+    static let drop = AnyTransition.opacity.combined(with: .offset(y: -6))
 }
 
 extension View {

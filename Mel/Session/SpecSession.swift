@@ -81,6 +81,13 @@ import MelSystem
     var currentQuestion: Question? { spec.questions.first { $0.round == .intake && $0.answer == nil } }
     var answeredQuestions: [Question] { spec.questions.filter { $0.round == .intake && $0.answer != nil } }
 
+    /// The heading the draft being written has reached ("2. Buy a class pack"), for the board's working line.
+    var writingSection: String? {
+        guard let start = liveText.range(of: "\n#", options: .backwards)?.upperBound ?? (liveText.hasPrefix("#") ? liveText.startIndex : nil) else { return nil }
+        let line = liveText[start...].prefix { !$0.isNewline }.drop { $0 == "#" || $0 == " " }
+        return line.isEmpty ? nil : String(line)
+    }
+
     /// The tasks on Ready and in Build order.
     var tasks: [SpecTask] { SpecTask.parse(documents[.tasks] ?? "") }
 
@@ -125,6 +132,15 @@ import MelSystem
         for i in spec.coverage.indices where spec.coverage[i].question == question.id { spec.coverage[i].state = .covered }
     }
 
+    /// Rename… in the sidebar: the name Mel shows. The folder keeps its slug, so paths in prompts,
+    /// AGENTS.md and Git stay valid.
+    func setName(_ name: String) {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name != spec.name else { return }
+        spec.name = name
+        persist()
+    }
+
     /// Intake named an untitled spec: before any file is written, its folder takes the name.
     private func rename(to name: String) async {
         await flush()
@@ -151,12 +167,13 @@ import MelSystem
         _ = await running?.value
     }
 
-    /// A text delta while drafting: the preview updates at most 10 times a second, the file every 500 ms.
+    /// A text delta while drafting: the preview updates at most 5 times a second (each update parses and
+    /// lays out the open file again), the file every 500 ms.
     private func received(_ text: String) {
         guard let kind = draftKind else { return }
         reply += text
         let now = ContinuousClock.now
-        if now - shownAt >= .milliseconds(100) {
+        if now - shownAt >= .milliseconds(200) {
             shownAt = now
             liveText = DraftText.file(fromReply: reply, kind: kind)
         }

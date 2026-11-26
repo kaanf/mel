@@ -72,6 +72,10 @@ struct NewView: View {
         .toolbar(removing: .title)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .navigationTitle("New")
+        .animation(.board, value: text.isEmpty)
+        .animation(.board, value: planned)
+        .animation(.board, value: files)
+        .animation(.easeOut(duration: 0.15), value: isFocused)
         .onAppear { isFocused = true }
         .onChange(of: idea) { size = nil }
         .fileImporter(isPresented: $isAttaching, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
@@ -119,7 +123,7 @@ struct NewView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add files")
                 .help("Add files: a log, a screenshot, a document")
-                if !text.isEmpty { sizeChip }
+                if !text.isEmpty { sizeChip.transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .leading))) }
                 Spacer(minLength: 0)
                 Button("Start", action: start)
                     .buttonStyle(AccentPillStyle(padding: Theme.Space.x16, hint: "⌘↩"))

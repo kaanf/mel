@@ -73,11 +73,17 @@ struct MainView: View {
         NavigationSplitView {
             SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
         } detail: {
-            if !isShowingNew, let spec = shownSpec {
-                detail(spec).id(spec.id)
-            } else {
-                NewView(idea: initialIdea) { isShowingNew = false }.id(state.currentProject?.id)
+            ZStack {
+                if !isShowingNew, let spec = shownSpec {
+                    detail(spec).id(spec.id).transition(.opacity)
+                } else {
+                    NewView(idea: initialIdea) { isShowingNew = false }.id(state.currentProject?.id).transition(.opacity)
+                }
             }
+            // New ↔ a spec, one spec ↔ another, Board → Ready: a short cross-fade instead of a cut.
+            .animation(.easeInOut(duration: 0.18), value: isShowingNew)
+            .animation(.easeInOut(duration: 0.18), value: shownSpec?.id)
+            .animation(.board, value: shownSpec?.stage)
         }
         .onChange(of: state.selection) { _, id in
             openFile = nil

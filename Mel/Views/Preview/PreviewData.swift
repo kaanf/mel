@@ -273,6 +273,14 @@ enum PreviewData {
     }()
     static let boardWaitingSession = SpecSession.preview(boardWaiting, documents: boardDocuments.filter { $0.key == .product || $0.key == .requirements }, decisions: boardDecisions)
 
+    /// EXPERIENCE.md being written: the working line under the toolbar, the pulsing file dot.
+    static let boardWritingSession: SpecSession = {
+        var spec = PreviewData.spec(.board, docs(.approved, .approved, .writing), questions: boardCards.map { var q = $0; q.answer = q.answer ?? .option(0, note: nil); return q })
+        spec.tokens = [.questions: 2_100, .product: 4_800, .requirements: 7_400]
+        return SpecSession.preview(spec, documents: boardDocuments.filter { $0.key == .product || $0.key == .requirements },
+                                   liveText: "# Experience\n\n## Flow 1 · Book a class\n\nCovers: 1.1\n\n1. Schedule (1.1)\n", isRunning: true, decisions: boardDecisions)
+    }()
+
     /// The intake: one question at a time.
     static let boardAsking: Spec = {
         var spec = PreviewData.spec(.discovery, locked, questions: Array(allAnswered.prefix(3)))

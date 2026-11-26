@@ -6,6 +6,15 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Added
+- **Rename a spec.** Right-click it in the sidebar and choose Rename…. Mel still names a new spec from your idea.
+- **You can see Mel working.** While a file is written, a line under the toolbar says which file and which section it has reached, with Watch to read along and Stop. The file's dot pulses.
+
+### Changed
+- **Wider sidebar and question column**, so names and answers fit.
+- **Answers on a card are one per row** and wrap, instead of pills that ran out of the column. Long "It must also" items wrap too instead of running under the question column.
+- **Smoother.** Cards, banners, stories and screens now fade and slide into place instead of jumping.
+
 ## [0.5] · 2026-11-27
 
 ### Added

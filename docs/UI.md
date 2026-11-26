@@ -7,7 +7,7 @@ Rules for every screen:
 - **Pixel-exact.** Colors, spacing, radii and type come from the `.dc.html` inline styles and live as named tokens in `Mel/Views/Theme.swift`. Views use tokens, never literals.
 - **Light mode only**, in a real macOS window (system traffic lights, corners and shadow). The mock's grey page and drawn window frame are not built.
 - Every view has `#Preview`s for each state, built from `Views/Preview/PreviewData.swift`.
-- A Debug build opens one fixture state with `-screen <name>` (`Views/Preview/DebugScreen.swift`): `start`, `noAgent`, `new`, `newEmpty`, `board`, `boardAsking`, `boardWaiting`, `boardStopped`, `boardUnplaced`, `boardChanged`, `boardEdited`, `ready`, `settings`, `specsSettings`.
+- A Debug build opens one fixture state with `-screen <name>` (`Views/Preview/DebugScreen.swift`): `start`, `noAgent`, `new`, `newEmpty`, `board`, `boardAsking`, `boardWaiting`, `boardWriting`, `boardStopped`, `boardUnplaced`, `boardChanged`, `boardEdited`, `ready`, `settings`, `specsSettings`.
 
 ## Window structure
 
@@ -47,7 +47,7 @@ One box (5 lines, grows no further; it scrolls), the attach button, the size chi
 
 ### Board
 
-Center: the plan (Plan, Screens for a New product, Build order), or an open file. Right: "Mel needs you", 300 pt. Under the center: Tell Mel with the result line or the unplaced offer above it. Toolbar: the spec's name and size, the status pill with "Write it now" while a file waits, Stop while the agent runs, the token total, Files and Start Building. Banners above the center: stopped, and edited by hand.
+Center: the plan (Plan, Screens for a New product, Build order), or an open file. Right: "Mel needs you", 340 pt (drawn 300). While the agent runs, a working line sits above the center: what Mel is doing, the section a draft has reached, Watch and Stop. Under the center: Tell Mel with the result line or the unplaced offer above it. Toolbar: the spec's name and size, the status pill with "Write it now" while a file waits, Stop while the agent runs, the token total, Files and Start Building. Banners above the center: stopped, and edited by hand.
 
 ### Ready
 
@@ -59,7 +59,7 @@ A `TabView`: General (updates), Agents, Specs. Links that open Settings pick the
 
 ### Sidebar
 
-A 244 pt panel inset 8 pt in the white window. The project button is a menu: the projects, "Locate …" for a missing one, Add Project…, Remove from the List. A spec row is 40 pt: dot, name, one line (`Spec.sidebarNote`). Dots: Needs you blue (#C93400 while stopped), Building blue ring, Done green. A row's menu moves a handed-off spec between Building and Done.
+A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has Rename…, which changes the shown name only. The project button is a menu: the projects, "Locate …" for a missing one, Add Project…, Remove from the List. A spec row is 40 pt: dot, name, one line (`Spec.sidebarNote`). Dots: Needs you blue (#C93400 while stopped), Building blue ring, Done green. A row's menu moves a handed-off spec between Building and Done.
 
 ## What differs from the drawing
 
@@ -72,9 +72,14 @@ A 244 pt panel inset 8 pt in the white window. The project button is a menu: the
 | "Read 2 days ago" in Settings › Specs | left out | No date kept |
 | Quick fix chip "1 question, 1 file" | "1 file" | The intake may ask two |
 | Time estimates | hidden | OQ #17 |
+| sidebar 244, inbox 300, answer pills, Stop in the toolbar | sidebar 272, inbox 340, one answer per row with wrapping text, Stop in the working line | The user's feedback on 0.5: too narrow, answers ran out of the column, writing wasn't visible |
 | not drawn | Spec language row in Settings › Specs | Added in 0.4 (OQ #5) |
 | not drawn | Settings › General with the update controls | Sparkle, since 0.2 |
 | not drawn | not signed in / not working on Start's agent line; attached file chips on New; "Mark as Done" on Ready | States the drawing doesn't cover, in the drawn components' look |
+
+## Motion
+
+One curve for the board, the sidebar and screen changes (`Animation.board`, a 0.28 s smooth spring) and one entrance for banners and cards (`AnyTransition.drop`: fade in from 6 pt above). Animations are tied to the value that changed (`.animation(_:value:)`), never to a whole view, so streaming text doesn't animate. The only repeating animations are the system spinner and the writing file's dot; both stop with Reduce Motion or when the run ends.
 
 ## Copy and tone
 

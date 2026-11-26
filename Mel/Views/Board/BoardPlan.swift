@@ -20,7 +20,7 @@ struct BoardPlan: View {
             if spec.size != .quickFix {
                 HStack(spacing: Theme.Space.x2) {
                     ForEach(tabs, id: \.self) { item in
-                        Button(item.rawValue) { tab = item }
+                        Button(item.rawValue) { withAnimation(.board) { tab = item } }
                             .buttonStyle(BoardSegmentStyle(isSelected: tab == item, height: Theme.Size.buttonSmall, padding: Theme.Space.x16, text: tab == item ? Theme.Text.bodyBold : Theme.Text.body))
                             .accessibilityAddTraits(tab == item ? .isSelected : [])
                     }
@@ -34,6 +34,10 @@ struct BoardPlan: View {
             case .order: order
             }
         }
+        // A story changing group, a removed one, the plan filling in as files are written.
+        .animation(.board, value: stories.map { $0.id + ($0.isFirst ? "+" : "-") })
+        .animation(.board, value: confirming)
+        .animation(.board, value: spec.written)
     }
 
     // MARK: Plan
@@ -124,12 +128,13 @@ struct BoardPlan: View {
             }
             .disabled(session.isRunning)
             if confirming == story.id {
-                removeConfirmation(story)
+                removeConfirmation(story).transition(.drop)
             }
         }
         .padding(.vertical, Theme.Space.x12)
         .padding(.horizontal, Theme.Space.x14)
         .surface(isLater ? Theme.Colors.fillSubtle : Theme.Colors.background, isLater ? .outlineReplaced : .storyCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .transition(.opacity)
         .draggable(story.id)
     }
 
@@ -169,10 +174,11 @@ struct BoardPlan: View {
                     ForEach(quality, id: \.self) { text in
                         Text(text)
                             .textStyle(Theme.Text.callout)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.vertical, Theme.Space.x5)
                             .padding(.horizontal, Theme.Space.x10)
-                            .frame(height: Theme.Size.buttonSmall)
-                            .background(Theme.Colors.chipFill, in: Capsule())
+                            .frame(minHeight: Theme.Size.buttonSmall)
+                            .background(Theme.Colors.chipFill, in: RoundedRectangle(cornerRadius: Theme.Size.buttonSmall / 2))
                     }
                 }
             }

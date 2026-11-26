@@ -40,15 +40,26 @@ struct BoardView: View {
             if showsFiles {
                 BoardFilesStrip(spec: spec, isAsking: isAsking, open: open) { Task { await session.writeNow() } }
                     .padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x8, trailing: Theme.Space.x20))
+                    .transition(.drop)
+            }
+            if session.isRunning {
+                working
+                    .padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x10, trailing: Theme.Space.x20))
+                    .transition(.drop)
             }
             if spec.halted != nil {
-                stoppedBanner.padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x10, trailing: Theme.Space.x20))
+                stoppedBanner
+                    .padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x10, trailing: Theme.Space.x20))
+                    .transition(.drop)
             }
             if let edited {
-                editBanner(edited).padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x10, trailing: Theme.Space.x20))
+                editBanner(edited)
+                    .padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x10, trailing: Theme.Space.x20))
+                    .transition(.drop)
             }
             ScrollView {
                 center
+                    .transition(.opacity)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x20, bottom: Theme.Space.x16, trailing: Theme.Space.x20))
             }
@@ -57,10 +68,58 @@ struct BoardView: View {
                 BoardTell(session: session)
                     .frame(maxWidth: Theme.Size.fileMaxWidth)
                     .padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x20, trailing: Theme.Space.x20))
+                    .transition(.opacity.combined(with: .offset(y: 8)))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .foregroundStyle(Theme.Colors.label)
+        // Banners and Tell Mel come and go; the center changes between plan and file.
+        .animation(.board, value: session.isRunning)
+        .animation(.board, value: spec.halted)
+        .animation(.board, value: edited)
+        .animation(.board, value: showsFiles)
+        .animation(.board, value: openFile)
+        .animation(.board, value: isAsking)
+        .animation(.board, value: isEditing)
+        .animation(.board, value: session.lastChange)
+        .animation(.board, value: spec.unplacedChange)
+    }
+
+    /// What Mel is doing right now, where the user is looking: which file, and the section it has reached.
+    private var working: some View {
+        let writing = spec.size.files.first { spec.docs[$0] == .writing }
+        return HStack(spacing: Theme.Space.x10) {
+            ProgressView().controlSize(.small)
+            VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                Text(status.text).textStyle(Theme.Text.bodyBold)
+                Text(workingNote(writing))
+                    .textStyle(Theme.Text.callout)
+                    .foregroundStyle(Theme.Colors.bodyLabel)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .contentTransition(.opacity)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if let writing, openFile != .doc(writing) {
+                Button("Watch") { open(.doc(writing)) }
+                    .buttonStyle(BoardPillStyle())
+                    .help("Open \(writing.fileName) and read it as it is written")
+            }
+            Button("Stop") { Task { await session.stop() } }
+                .buttonStyle(BoardPillStyle())
+                .help("Stops the agent. Everything written so far is kept.")
+        }
+        .padding(.vertical, Theme.Space.x10)
+        .padding(.horizontal, Theme.Space.x14)
+        .surface(Theme.Colors.accentTint, .editBanner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .accessibilityElement(children: .contain)
+    }
+
+    private func workingNote(_ writing: DocKind?) -> String {
+        if writing != nil { return session.writingSection.map { "Now: \($0)" } ?? session.activity.last?.text.capitalizedFirst ?? "Starting…" }
+        if isAsking { return "Its questions appear on the right in a moment." }
+        if spec.analyze == .running { return "Looking for places where the files disagree." }
+        return "Only the passages that change are rewritten."
     }
 
     @ViewBuilder
@@ -95,7 +154,7 @@ struct BoardView: View {
         ToolbarItem(placement: .principal) {
             HStack(spacing: Theme.Space.x8) {
                 HStack(spacing: Theme.Space.x8) {
-                    status.dot
+                    if session.isRunning { ProgressView().controlSize(.mini) } else { status.dot }
                     Text(status.text).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1)
                 }
                 .padding(.horizontal, Theme.Space.x12)
@@ -110,19 +169,6 @@ struct BoardView: View {
             }
         }
         .sharedBackgroundVisibility(.hidden)
-        if session.isRunning {
-            ToolbarItem {
-                Button { Task { await session.stop() } } label: {
-                    HStack(spacing: Theme.Space.x6) {
-                        DesignIcon(glyph: .stop, size: Theme.Size.alertIcon)
-                        Text("Stop").textStyle(Theme.Text.body)
-                    }
-                    .foregroundStyle(Theme.Colors.label)
-                    .padding(.horizontal, Theme.Space.x6)
-                }
-                .help("Stops the agent. Everything written so far is kept.")
-            }
-        }
         ToolbarItem {
             Button { showsFiles.toggle() } label: {
                 HStack(spacing: Theme.Space.x6) {
@@ -325,13 +371,19 @@ extension FileState {
 /// The 7 pt file state dot: Ready green, Writing blue ring, Needs you blue, Waiting grey ring.
 struct FileStateDot: View {
     let state: FileState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Group {
             switch state {
             case .ready: Circle().fill(Theme.Colors.success)
             case .needsYou: Circle().fill(Theme.Colors.accent)
-            case .writing: Circle().strokeBorder(Theme.Colors.accent, lineWidth: Theme.Size.statusDotStroke)
+            case .writing:
+                // Pulses while the file is written, so the row reads as alive at a glance.
+                Circle().strokeBorder(Theme.Colors.accent, lineWidth: Theme.Size.statusDotStroke)
+                    .phaseAnimator(reduceMotion ? [false] : [false, true]) { dot, dim in
+                        dot.opacity(dim ? 0.35 : 1)
+                    } animation: { _ in .easeInOut(duration: 0.7) }
             case .waiting: Circle().strokeBorder(Theme.Colors.tertiary, lineWidth: Theme.Size.statusDotStroke)
             }
         }
@@ -454,11 +506,13 @@ struct BoardAsking: View {
                         ForEach(known, id: \.self) { label in
                             HStack(spacing: Theme.Space.x6) {
                                 DesignIcon(glyph: .check, size: Theme.Size.readyCheck + 1, weight: 2.2).foregroundStyle(Theme.Colors.success)
-                                Text(label).textStyle(Theme.Text.callout).lineLimit(1)
+                                Text(label).textStyle(Theme.Text.callout).fixedSize(horizontal: false, vertical: true)
                             }
+                            .padding(.vertical, Theme.Space.x5)
                             .padding(.horizontal, Theme.Space.x10)
-                            .frame(height: Theme.Size.buttonSmall)
-                            .background(Theme.Colors.chipFill, in: Capsule())
+                            .frame(minHeight: Theme.Size.buttonSmall)
+                            .background(Theme.Colors.chipFill, in: RoundedRectangle(cornerRadius: Theme.Size.buttonSmall / 2))
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
                         }
                     }
                 }
@@ -502,6 +556,11 @@ struct BoardSkeleton: View {
         .frame(width: 1036, height: 800)
 }
 
+#Preview("Writing a file") {
+    NavigationStack { BoardView(session: PreviewData.boardWritingSession, openFile: .constant(nil)) }
+        .frame(width: 1036, height: 800)
+}
+
 #Preview("Stopped") {
     NavigationStack { BoardView(session: PreviewData.boardStoppedSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
@@ -520,4 +579,8 @@ struct BoardSkeleton: View {
 #Preview("Edited by hand") {
     NavigationStack { BoardView(session: PreviewData.boardEditedSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
+}
+
+private extension String {
+    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

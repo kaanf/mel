@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Chips that wrap onto the next line (CSS `flex-wrap: wrap` with one gap both ways), leading-aligned.
+/// A chip longer than a line gets the line's width, so a chip whose text may wrap never leaves its column.
 struct FlowLayout: Layout {
     var spacing: CGFloat
 
@@ -16,12 +17,18 @@ struct FlowLayout: Layout {
         for row in rows(width: bounds.width, subviews: subviews) {
             var x = bounds.minX
             for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
+                let size = size(of: subviews[index], in: bounds.width)
                 subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
             y += row.height + spacing
         }
+    }
+
+    /// A chip's own size, or the row's width when it is longer: its text then wraps.
+    private func size(of subview: LayoutSubview, in width: CGFloat) -> CGSize {
+        let ideal = subview.sizeThatFits(.unspecified)
+        return ideal.width > width ? subview.sizeThatFits(ProposedViewSize(width: width, height: nil)) : ideal
     }
 
     private struct Row {
@@ -34,7 +41,7 @@ struct FlowLayout: Layout {
         var rows: [Row] = []
         var row = Row()
         for (index, subview) in subviews.enumerated() {
-            let size = subview.sizeThatFits(.unspecified)
+            let size = size(of: subview, in: width)
             if !row.indices.isEmpty, row.width + spacing + size.width > width {
                 rows.append(row)
                 row = Row()

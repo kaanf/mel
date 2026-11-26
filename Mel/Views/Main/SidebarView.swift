@@ -17,6 +17,9 @@ struct SidebarView: View {
     /// A missing project being located.
     @State private var locating: URL?
     @State private var error: String?
+    /// The spec being renamed, and the name typed so far.
+    @State private var renaming: Spec.ID?
+    @State private var newName = ""
 
     private var project: Project? { state.currentProject }
     private var specs: [Spec] { project.map(state.specs) ?? [] }
@@ -56,6 +59,10 @@ struct SidebarView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(EdgeInsets(top: Theme.Space.x6, leading: Theme.Space.x8, bottom: Theme.Space.x8, trailing: Theme.Space.x8))
+                // A new spec, one moving to Building or Done, the file rows opening under the selected one.
+                .animation(.board, value: specs.map { $0.id.uuidString + ($0.build?.rawValue ?? "") })
+                .animation(.board, value: selection)
+                .animation(.board, value: showsFiles)
             }
             .scrollIndicators(.never)
             footer
@@ -86,6 +93,15 @@ struct SidebarView: View {
         .alert("Couldn’t Add the Folder", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
         } message: {
             Text(error ?? "")
+        }
+        .alert("Rename", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField("Name", text: $newName)
+            Button("Rename") {
+                if let renaming { state.session(for: renaming).setName(newName) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The name Mel shows for this spec. Its folder keeps its name.")
         }
     }
 
@@ -160,6 +176,8 @@ struct SidebarView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(spec.name).textStyle(isSelected ? Theme.Text.bodyMedium : Theme.Text.body).lineLimit(1).truncationMode(.tail)
                     Text(spec.sidebarNote).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(1)
+                        .contentTransition(.opacity)
+                        .animation(.board, value: spec.sidebarNote)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -176,7 +194,12 @@ struct SidebarView: View {
         .focusable(false)
         .accessibilityLabel("\(spec.name), \(spec.sidebarNote)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .transition(.opacity)
         .contextMenu {
+            Button("Rename…") {
+                newName = spec.name
+                renaming = spec.id
+            }
             if spec.stage == .done {
                 // Mel can't see the coding agent work: the user moves a built spec on.
                 if spec.build != .building { Button("Move to Building") { state.session(for: spec.id).setBuild(.building) } }
@@ -197,6 +220,7 @@ struct SidebarView: View {
             fileRow(.decisions, state: nil)
         }
         .padding(EdgeInsets(top: Theme.Space.x2, leading: Theme.Space.x22, bottom: Theme.Space.x4, trailing: 0))
+        .transition(.drop)
     }
 
     private func fileRow(_ file: BoardFile, state: FileState?) -> some View {
