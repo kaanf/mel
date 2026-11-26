@@ -118,7 +118,7 @@ struct AgentSettings: View {
                 DesignIcon(glyph: .terminal, size: Theme.Size.checkIcon, weight: 1.7)
                     .foregroundStyle(Theme.Colors.onAccent)
                     .frame(width: Theme.Size.agentCardTile, height: Theme.Size.agentCardTile)
-                    .background(Theme.Colors.label, in: RoundedRectangle(cornerRadius: Theme.Radius.code))
+                    .background(Theme.Colors.agentTile, in: RoundedRectangle(cornerRadius: Theme.Radius.code))
                     .accessibilityHidden(true)
                 Text("Claude Code").textStyle(Theme.Text.bodyBold).frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: Theme.Space.x6) {

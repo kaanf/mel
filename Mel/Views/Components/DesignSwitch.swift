@@ -12,7 +12,7 @@ struct DesignSwitchStyle: ToggleStyle {
                 .frame(width: Theme.Size.switchWidth, height: Theme.Size.switchHeight)
                 .overlay(alignment: configuration.isOn ? .trailing : .leading) {
                     Color.clear
-                        .surface(Theme.Colors.background, .switchKnob, in: Circle())
+                        .surface(Theme.Colors.onAccent, .switchKnob, in: Circle())
                         .frame(width: Theme.Size.switchKnob, height: Theme.Size.switchKnob)
                         .padding(Theme.Space.x2)
                 }

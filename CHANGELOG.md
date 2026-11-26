@@ -7,6 +7,7 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 ## [Unreleased]
 
 ### Added
+- **Dark mode.** Mel follows your Mac's appearance.
 - **Name a new product.** Start asks what it is called; its folder takes the name. "Let Mel name it" keeps the old behavior.
 - **Rename a spec.** Right-click it in the sidebar and choose Rename…. Mel still names a feature or a fix from your idea.
 - **You can see Mel working.** While a file is written, a line under the toolbar says which file and which section it has reached, with Watch to read along and Stop. The file's dot pulses.

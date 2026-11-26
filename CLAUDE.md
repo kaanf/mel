@@ -29,9 +29,9 @@ Performance, speed and the least complexity that works come first. Prefer the si
 - Swift 6 with strict concurrency. SwiftUI first; AppKit only when SwiftUI can't do it.
 - `@Observable` for state, async/await for concurrency. No Combine, no architecture frameworks.
 - **No third-party dependencies.** Ask before adding one. Only exception: Sparkle 2 for updates, imported only in `App/` (approved 2026-11-23).
-- Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI, `MelSpec` and `UniformTypeIdentifiers`. Rules: `docs/DESIGN.md` › Project conventions. `MelSpec` stays pure (no I/O, no SwiftUI).
+- Layers are modules. App target `Mel` = `App/ Views/ Session/`; local package `MelKit` = `MelSpec`, `MelStorage`, `MelAgent`, `MelSystem`. Dependencies point toward `MelSpec`; views import only SwiftUI, `MelSpec` and `UniformTypeIdentifiers` (`Theme.swift` also AppKit, for light/dark colors). Rules: `docs/DESIGN.md` › Project conventions. `MelSpec` stays pure (no I/O, no SwiftUI).
 - Keep the main actor free: process I/O, file writes and parsing run off it; throttle stream-driven UI updates.
-- Match the v2 design (`docs/design/v2/`) pixel for pixel: its colors, spacing, padding, radii and type, kept as named tokens in one place. Icons: SF Symbols where they match the drawn glyph.
+- Match the v2 design (`docs/design/v2/`) pixel for pixel in Light: its colors, spacing, padding, radii and type, kept as named tokens in one place. Every color token also has a Dark value (not drawn); views never branch on the appearance. Icons: SF Symbols where they match the drawn glyph.
 - Every view has `#Preview`s for each state, built from fixtures.
 - Tests: Swift Testing (`import Testing`, `@Test`, `#expect`).
 

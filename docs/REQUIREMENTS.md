@@ -134,7 +134,7 @@ As a user, I want one button that starts the build, so that the plan turns into 
 - 12.3 IF a project folder is moved or deleted outside the app, THEN THE APP SHALL offer "Locate…" and "Remove from the List" in the project menu.
 - 12.4 A spec made before 0.5 that was drafting, in review, stopped or in Analyze SHALL open on the board with its files and open questions.
 - 12.5 THE APP SHALL support ⌘N New, ⌘, Settings, ⌘↩ for the screen's primary action and ↑/↓ in the sidebar.
-- 12.6 THE APP SHALL be Light mode only and respect Reduce Motion.
+- 12.6 THE APP SHALL follow the system's Light or Dark appearance and respect Reduce Motion.
 - 12.7 THE APP SHALL be distributed as a Developer ID signed, notarized DMG and update itself (Check for Updates…, daily check unless turned off).
 
 ## Invariants

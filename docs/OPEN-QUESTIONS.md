@@ -13,7 +13,7 @@
 | 6 | Discovery question limit / open questions | **Replaced (v2 design).** Short intake (about 1–2 / 3 / 5 questions by size), then a round 2 for gaps found in the draft. Open questions may stay in a file, marked `[!OPEN QUESTION]` | 2026-11-23 |
 | 18 | Approve with unconfirmed assumptions? | **Yes (v2 design).** "You can approve anyway": open items stay marked in the file for the next agent | 2026-11-23 |
 | 20 | Target design | **v2 canvas** https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd (copy in `docs/design/v2/`), including the honeycomb logo. Built **pixel-exact**: colors, spacing, padding, radii, type as drawn. Items deferred in #7, #15, #17 stay deferred (Codex, Link Issue, Pause, inspector/suggestions/History, time estimates) | 2026-11-23 |
-| 21 | Dark mode? | **No.** Light mode only (Aqua forced) | 2026-11-23 |
+| 21 | Dark mode? | **Yes, following the system** (changed 2026-11-27 at the user's request; was Light only). The canvas draws Light only: every token in `Theme.swift` keeps its drawn Light value and carries a Dark one of Mel's own, on macOS's dark palette. No in-app switch | 2026-11-27 |
 | 22 | Window chrome | **Real macOS window** (traffic lights, title bar, corners, shadow); only the content is pixel-exact | 2026-11-23 |
 | 5 | Language of the app UI and of generated specs | **UI English.** Spec language asked on A1 Welcome (English or Türkçe, also in Settings › Specs), stored per spec; every prompt of the spec asks for it, Mel's markers stay English | 2026-11-26 |
 | 23 | Next target design | **Canvas V2 simplified flow** (`FLOW.md` › V2, screens `V2-*`; summary in V2.md §0). Lanes A–C and D1 stay as reference. Built in Wave 8 | 2026-11-26 |

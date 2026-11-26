@@ -5,7 +5,7 @@ How the V2 screens are built. The design source is `docs/design/v2/` (read `FLOW
 Rules for every screen:
 
 - **Pixel-exact.** Colors, spacing, radii and type come from the `.dc.html` inline styles and live as named tokens in `Mel/Views/Theme.swift`. Views use tokens, never literals.
-- **Light mode only**, in a real macOS window (system traffic lights, corners and shadow). The mock's grey page and drawn window frame are not built.
+- **Light and Dark**, following the system, in a real macOS window (system traffic lights, corners and shadow). Light is the drawing. Dark isn't drawn: each color token carries a Dark value next to its drawn one (`Color(hex:dark:)`, `Color.ink` for neutral washes and hairlines), so no view decides anything per appearance. The mock's grey page and drawn window frame are not built.
 - Every view has `#Preview`s for each state, built from `Views/Preview/PreviewData.swift`.
 - A Debug build opens one fixture state with `-screen <name>` (`Views/Preview/DebugScreen.swift`): `start`, `noAgent`, `new`, `newEmpty`, `board`, `boardAsking`, `boardWaiting`, `boardWriting`, `boardStopped`, `boardUnplaced`, `boardChanged`, `boardEdited`, `ready`, `settings`, `specsSettings`.
 

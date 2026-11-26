@@ -93,7 +93,7 @@ Rules:
 
 1. **MelKit modules never import SwiftUI or AppKit**, except `MelSystem`, which may use AppKit for `NSWorkspace`/`NSPasteboard`. `MelSpec` does no I/O beyond reading its own bundled prompt resources.
 2. **Modules don't know each other sideways.** `MelStorage` and `MelAgent` only see `MelSpec`; `MelSystem` sees nothing.
-3. **Views import only `SwiftUI`, `MelSpec` and `UniformTypeIdentifiers`** (for `fileImporter` content types). Anything a view needs to do (copy, show in Finder, open Terminal, sign in) is a method on `AppState` or `SpecSession`. Views never touch `MelAgent`, `MelStorage` or `MelSystem`.
+3. **Views import only `SwiftUI`, `MelSpec` and `UniformTypeIdentifiers`** (for `fileImporter` content types). One exception: `Views/Theme.swift` imports AppKit for `NSColor`'s light/dark provider, which SwiftUI lacks. Anything a view needs to do (copy, show in Finder, open Terminal, sign in) is a method on `AppState` or `SpecSession`. Views never touch `MelAgent`, `MelStorage` or `MelSystem`.
 4. **Session depends on abstractions for the runner.** `SpecSession` gets an `any AgentRunning`; it never names `AgentRunner` or `ClaudeCode`.
 5. **`MelApp` is the composition root**: it builds `ClaudeCode`, the `AgentRunner` factory and `AppState` (see `AppState.init`). Nothing else constructs `ClaudeCode` or `AgentRunner`.
 6. Only what another module uses is `public`. Public structs get an explicit `public init`.

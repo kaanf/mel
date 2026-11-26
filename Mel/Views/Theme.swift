@@ -1,6 +1,8 @@
 import SwiftUI
+import AppKit
 
 /// Design tokens of the v2 design, taken 1:1 from the inline styles in `docs/design/v2/*.dc.html`.
+/// The hex and opacity in each comment are the drawn Light value; each color also carries a Dark one (see `Color.init(hex:dark:)`).
 /// Views use these, never literals. Each comment names the screen (id from `design/v2/FLOW.md`) and element.
 /// Values are exact: two tokens share a value only where the design uses it for the same thing.
 enum Theme {
@@ -10,103 +12,103 @@ enum Theme {
     enum Colors {
         // Text
         /// #1D1D1F · all screens: primary text, sidebar rows, toolbar title.
-        static let label = Color(hex: 0x1D1D1F)
+        static let label = Color(hex: 0x1D1D1F, dark: 0xF5F5F7)
         /// #6E6E73 · all screens: captions, sidebar status words, hints, toolbar subtitle.
-        static let secondaryLabel = Color(hex: 0x6E6E73)
+        static let secondaryLabel = Color(hex: 0x6E6E73, dark: 0x98989D)
         /// #3A3A3C · A3 intro and file descriptions, B1 size notes, B6 issue text, C1 diff context.
-        static let bodyLabel = Color(hex: 0x3A3A3C)
+        static let bodyLabel = Color(hex: 0x3A3A3C, dark: 0xD1D1D6)
         /// #AEAEB2 · disabled primary button fill (B1/A2/A4x Start), A4x "Untitled Spec", Locked dot, B3 bar when not running, B4 dashed MVP line.
-        static let tertiary = Color(hex: 0xAEAEB2)
+        static let tertiary = Color(hex: 0xAEAEB2, dark: 0x636366)
         /// #0066D6 · all screens: text links ("Back to Setup", B4 "Answer 2 Questions").
-        static let link = Color(hex: 0x0066D6)
+        static let link = Color(hex: 0x0066D6, dark: 0x4DA3FF)
         /// #FFFFFF · text on accent buttons (A1 Continue, B4 Approve).
-        static let onAccent = Color(hex: 0xFFFFFF)
+        static let onAccent = Color(hex: 0xFFFFFF, dark: 0xFFFFFF)
 
         // Surfaces
         /// #FFFFFF · window content, white buttons, cards, popovers.
-        static let background = Color(hex: 0xFFFFFF)
+        static let background = Color(hex: 0xFFFFFF, dark: 0x1E1E20)
         /// #F5F5F7 · grouped boxes: B4 "Before you approve", A3 file samples, B7 command block, B5 attachments.
-        static let fill = Color(hex: 0xF5F5F7)
+        static let fill = Color(hex: 0xF5F5F7, dark: 0x2C2C2E)
         /// #FBFBFD · A2 drop zone, A4x unselected size card.
-        static let fillSubtle = Color(hex: 0xFBFBFD)
+        static let fillSubtle = Color(hex: 0xFBFBFD, dark: 0x242426)
         /// rgba(0,0,0,0.03) · C4 search path field.
-        static let fieldFill = Color.black.opacity(0.03)
+        static let fieldFill = Color.ink(0.03)
         /// rgba(0,0,0,0.04) · toolbar status pill (B2, B3, B4, B5).
-        static let statusPillFill = Color.black.opacity(0.04)
+        static let statusPillFill = Color.ink(0.04)
         /// rgba(0,0,0,0.05) · B1 unselected "Builds on" chips, A4x example chips.
-        static let chipFill = Color.black.opacity(0.05)
+        static let chipFill = Color.ink(0.05)
         /// rgba(0,0,0,0.06) · B4 "P1 · MVP" badge, A3 segmented control track, B1 icon well.
-        static let badgeFill = Color.black.opacity(0.06)
+        static let badgeFill = Color.ink(0.06)
         /// rgba(0,0,0,0.08) · selected sidebar row, B4 Preview/Markdown selected segment, B2 progress track.
-        static let selectionFill = Color.black.opacity(0.08)
+        static let selectionFill = Color.ink(0.08)
         /// rgba(0,0,0,0.12) · switch track off (B1, B7, C4).
-        static let switchOffFill = Color.black.opacity(0.12)
+        static let switchOffFill = Color.ink(0.12)
         /// #F6F6F8 · sidebar panel (B2–C3): the design's rgba(245,245,247,0.86) over the white window, as WebKit draws it.
-        static let sidebarPanel = Color(hex: 0xF6F6F8)
+        static let sidebarPanel = Color(hex: 0xF6F6F8, dark: 0x28282A)
         /// rgba(255,255,255,0.8) · toolbar glass groups (B1–B5). macOS 26 draws toolbar glass; reference value.
-        static let toolbarGlass = Color(hex: 0xFFFFFF, opacity: 0.8)
+        static let toolbarGlass = Color(hex: 0xFFFFFF, opacity: 0.8, dark: 0xFFFFFF, darkOpacity: 0.8)
         /// rgba(255,255,255,0.22) · ⌘↩ / ↩ key hint on accent buttons (A1, A3, B1, B4).
-        static let keyHintOnAccent = Color(hex: 0xFFFFFF, opacity: 0.22)
+        static let keyHintOnAccent = Color(hex: 0xFFFFFF, opacity: 0.22, dark: 0xFFFFFF, darkOpacity: 0.22)
 
         // Accent
         /// #007AFF · primary buttons, selection rings, switch on, radio on, active step.
-        static let accent = Color(hex: 0x007AFF)
+        static let accent = Color(hex: 0x007AFF, dark: 0x0A84FF)
         /// rgba(0,122,255,0.08) · selected chip and size card (B1, A4x).
-        static let accentSelectedFill = Color(hex: 0x007AFF, opacity: 0.08)
+        static let accentSelectedFill = Color(hex: 0x007AFF, opacity: 0.08, dark: 0x0A84FF, darkOpacity: 0.136)
         /// rgba(0,122,255,0.06) · B4 suggestion box, C1 new decision, A2 drop zone with a folder.
-        static let accentTint = Color(hex: 0x007AFF, opacity: 0.06)
+        static let accentTint = Color(hex: 0x007AFF, opacity: 0.06, dark: 0x0A84FF, darkOpacity: 0.102)
         /// rgba(0,122,255,0.3) · outline of `accentTint` boxes (B4 suggestion, C1 new decision).
-        static let accentOutline = Color(hex: 0x007AFF, opacity: 0.3)
+        static let accentOutline = Color(hex: 0x007AFF, opacity: 0.3, dark: 0x0A84FF, darkOpacity: 0.51)
 
         // Separators (0.5 pt lines)
         /// rgba(0,0,0,0.1) · list separators (A1, B2, B3, B4 "Before you approve"), inspector left edge.
-        static let separator = Color.black.opacity(0.1)
+        static let separator = Color.ink(0.1)
         /// rgba(0,0,0,0.08) · sidebar footer top edge (B2–B4), A3 rows, A1x and C4 section bottoms.
-        static let separatorLight = Color.black.opacity(0.08)
+        static let separatorLight = Color.ink(0.08)
         /// rgba(0,0,0,0.07) · table rows in B6 Analyze, B7 tasks, C1 affected files.
-        static let separatorTable = Color.black.opacity(0.07)
+        static let separatorTable = Color.ink(0.07)
         /// rgba(0,0,0,0.06) · B1 form section edges, B5 table, A4x footer.
-        static let separatorFaint = Color.black.opacity(0.06)
+        static let separatorFaint = Color.ink(0.06)
         /// rgba(0,0,0,0.15) · vertical divider between toolbar controls (B3, C4).
-        static let toolbarDivider = Color.black.opacity(0.15)
+        static let toolbarDivider = Color.ink(0.15)
         /// rgba(0,0,0,0.2) · 16 pt connector line between steps (B2, B3).
-        static let stepConnector = Color.black.opacity(0.2)
+        static let stepConnector = Color.ink(0.2)
 
         // Status
         /// #248A3D · check marks, Approved dot, B6 "✓" cell.
-        static let success = Color(hex: 0x248A3D)
+        static let success = Color(hex: 0x248A3D, dark: 0x30D158)
         /// rgba(36,138,61,0.1) · B1 "Context ready" badge fill.
-        static let successBadgeFill = Color(hex: 0x248A3D, opacity: 0.1)
+        static let successBadgeFill = Color(hex: 0x248A3D, opacity: 0.1, dark: 0x30D158, darkOpacity: 0.17)
         /// #1B6E30 · B1 "Context ready" badge text.
-        static let successBadgeText = Color(hex: 0x1B6E30)
+        static let successBadgeText = Color(hex: 0x1B6E30, dark: 0x6FE08C)
         /// #B25000 · Out of date dot (C1, Rerun), B6 quality/scope issue dot.
-        static let warning = Color(hex: 0xB25000)
+        static let warning = Color(hex: 0xB25000, dark: 0xFF9F0A)
         /// rgba(178,80,0,0.1) · B1 "No context yet" badge fill.
-        static let warningBadgeFill = Color(hex: 0xB25000, opacity: 0.1)
+        static let warningBadgeFill = Color(hex: 0xB25000, opacity: 0.1, dark: 0xFF9F0A, darkOpacity: 0.17)
         /// #8A3D00 · B1 "No context yet" badge text.
-        static let warningBadgeText = Color(hex: 0x8A3D00)
+        static let warningBadgeText = Color(hex: 0x8A3D00, dark: 0xFFC266)
         /// #C93400 · B6 issues dot and contradiction, B5 missing-state outline, C2 warning glyph.
-        static let caution = Color(hex: 0xC93400)
+        static let caution = Color(hex: 0xC93400, dark: 0xFF6B3D)
         /// #A52A00 · B5 "Missing" badge text, B6 Missing / Conflict cells.
-        static let cautionText = Color(hex: 0xA52A00)
+        static let cautionText = Color(hex: 0xA52A00, dark: 0xFF9272)
         /// #D70015 · C2 stopped file mark.
-        static let failure = Color(hex: 0xD70015)
+        static let failure = Color(hex: 0xD70015, dark: 0xFF453A)
         /// #8944AB · B3 progress bar while the agent runs.
-        static let drafting = Color(hex: 0x8944AB)
+        static let drafting = Color(hex: 0x8944AB, dark: 0xBF5AF2)
 
         // C1 Refine
         /// #FFF4E5 · C1 "You changed an approved file" banner.
-        static let bannerFill = Color(hex: 0xFFF4E5)
+        static let bannerFill = Color(hex: 0xFFF4E5, dark: 0x3A2B14)
         /// rgba(178,80,0,0.35) · C1 banner outline.
-        static let bannerOutline = Color(hex: 0xB25000, opacity: 0.35)
+        static let bannerOutline = Color(hex: 0xB25000, opacity: 0.35, dark: 0xFF9F0A, darkOpacity: 0.595)
         /// rgba(215,0,21,0.07) · C1 diff, removed line.
-        static let diffRemovedFill = Color(hex: 0xD70015, opacity: 0.07)
+        static let diffRemovedFill = Color(hex: 0xD70015, opacity: 0.07, dark: 0xFF453A, darkOpacity: 0.119)
         /// #86000F · C1 diff, removed line text.
-        static let diffRemovedText = Color(hex: 0x86000F)
+        static let diffRemovedText = Color(hex: 0x86000F, dark: 0xFF8A80)
         /// rgba(36,138,61,0.09) · C1 diff, added line.
-        static let diffAddedFill = Color(hex: 0x248A3D, opacity: 0.09)
+        static let diffAddedFill = Color(hex: 0x248A3D, opacity: 0.09, dark: 0x30D158, darkOpacity: 0.153)
         /// #155724 · C1 diff, added line text.
-        static let diffAddedText = Color(hex: 0x155724)
+        static let diffAddedText = Color(hex: 0x155724, dark: 0x7EE2A0)
     }
 
     // MARK: - Text
@@ -524,61 +526,61 @@ enum Theme {
 
         // Raised controls (outer ring + drop)
         /// Large accent button: A1 Continue, A3 Save and Start a Spec, B1 Start, C1 Refine 3 Files.
-        static let primaryLarge = Elevation(ring: .black.opacity(0.08), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.12)))
+        static let primaryLarge = Elevation(ring: .ink(0.08), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.12)))
         /// Toolbar accent button: B4/B5 Approve, B6 Fix n Issues.
-        static let primaryToolbar = Elevation(ring: .black.opacity(0.08), drop: Drop(y: 1, blur: 4, color: .black.opacity(0.12)))
+        static let primaryToolbar = Elevation(ring: .ink(0.08), drop: Drop(y: 1, blur: 4, color: .black.opacity(0.12)))
         /// Regular accent button: B2 Continue, C2 main action.
-        static let primary = Elevation(ring: .black.opacity(0.08), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.12)))
+        static let primary = Elevation(ring: .ink(0.08), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.12)))
         /// Regular white button: B2 Decide Later, B3 Continue Drafting, B4 Reject.
-        static let button = Elevation(ring: .black.opacity(0.15), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.08)))
+        static let button = Elevation(ring: .ink(0.15), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.08)))
         /// Small white button: A3 Change…, Add Rule, Edit Files.
-        static let buttonSmall = Elevation(ring: .black.opacity(0.12), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
+        static let buttonSmall = Elevation(ring: .ink(0.12), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
         /// B1 small white button (26 pt).
-        static let buttonSmallLight = Elevation(ring: .black.opacity(0.12), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.05)))
+        static let buttonSmallLight = Elevation(ring: .ink(0.12), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.05)))
         /// Toolbar white button: B6 Hand Off Anyway, C1 Undo Change.
-        static let buttonToolbar = Elevation(ring: .black.opacity(0.12), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.08)))
+        static let buttonToolbar = Elevation(ring: .ink(0.12), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.08)))
         /// Toolbar white control: B4/B5 (32 pt).
-        static let toolbarControl = Elevation(ring: .black.opacity(0.18), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+        static let toolbarControl = Elevation(ring: .ink(0.18), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
         /// Toolbar glass group (B1–B5). macOS 26 draws toolbar glass; reference value.
-        static let toolbarGroup = Elevation(ring: .black.opacity(0.1), drop: Drop(y: 1, blur: 4, color: .black.opacity(0.08)))
+        static let toolbarGroup = Elevation(ring: .ink(0.1), drop: Drop(y: 1, blur: 4, color: .black.opacity(0.08)))
         /// Sidebar panel (B2–C3).
-        static let sidebar = Elevation(ring: .black.opacity(0.08), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.05)))
+        static let sidebar = Elevation(ring: .ink(0.08), drop: Drop(y: 1, blur: 3, color: .black.opacity(0.05)))
         /// Selected segment: A3 mode control, B4 inspector tab.
-        static let segmentSelected = Elevation(ring: .black.opacity(0.06), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.1)))
+        static let segmentSelected = Elevation(ring: .ink(0.06), drop: Drop(y: 1, blur: 2, color: .black.opacity(0.1)))
         /// B2 option radio, off.
-        static let radioOff = Elevation(ring: .black.opacity(0.3), drop: Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
+        static let radioOff = Elevation(ring: .ink(0.3), drop: Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
         /// B2 option radio, on.
-        static let radioOn = Elevation(ring: .black.opacity(0.1))
+        static let radioOn = Elevation(ring: .ink(0.1))
         /// B2 option key ("1", "2" …).
-        static let optionKey = Elevation(ring: .black.opacity(0.12))
+        static let optionKey = Elevation(ring: .ink(0.12))
         /// C4 pop-up menu.
-        static let menu = Elevation(ring: .black.opacity(0.15))
+        static let menu = Elevation(ring: .ink(0.15))
         /// Switch knob (B1, B7, C4).
         static let switchKnob = Elevation(drop: Drop(y: 1, blur: 2, color: .black.opacity(0.25)))
         /// B2 note field: ring plus inner shadow.
-        static let field = Elevation(ring: .black.opacity(0.22), innerDrop: Drop(y: 0.5, blur: 1, color: .black.opacity(0.06)))
+        static let field = Elevation(ring: .ink(0.22), innerDrop: Drop(y: 0.5, blur: 1, color: .black.opacity(0.06)))
 
         // Inset outlines
         /// A1 agent list, B1 form box, toolbar status pill.
-        static let outlineFaint = Elevation(ring: .black.opacity(0.06), insetRing: true)
+        static let outlineFaint = Elevation(ring: .ink(0.06), insetRing: true)
         /// B1 unselected size card, A4x unselected card, B5 box, C4 switch track.
-        static let outlineLight = Elevation(ring: .black.opacity(0.08), insetRing: true)
+        static let outlineLight = Elevation(ring: .ink(0.08), insetRing: true)
         /// B5 attachment tiles, A1x install command.
-        static let outline = Elevation(ring: .black.opacity(0.1), insetRing: true)
+        static let outline = Elevation(ring: .ink(0.1), insetRing: true)
         /// C1 replaced decision (shown at 0.6 opacity).
-        static let outlineReplaced = Elevation(ring: .black.opacity(0.12), insetRing: true)
+        static let outlineReplaced = Elevation(ring: .ink(0.12), insetRing: true)
         /// B5 and B6 cards.
-        static let outlineCard = Elevation(ring: .black.opacity(0.14), insetRing: true)
+        static let outlineCard = Elevation(ring: .ink(0.14), insetRing: true)
         /// A3 file list, B6 issue list, B7 task list.
-        static let outlineList = Elevation(ring: .black.opacity(0.16), insetRing: true)
+        static let outlineList = Elevation(ring: .ink(0.16), insetRing: true)
         /// B4 box with an outline.
-        static let outlineStrong = Elevation(ring: .black.opacity(0.18), insetRing: true)
+        static let outlineStrong = Elevation(ring: .ink(0.18), insetRing: true)
         /// B2 "Suggested" tag.
-        static let outlineTag = Elevation(ring: .black.opacity(0.25), insetRing: true)
+        static let outlineTag = Elevation(ring: .ink(0.25), insetRing: true)
         /// Selected chip, size card or drop zone (B1, A2, A4x).
         static let selected = Elevation(ring: Colors.accent, ringWidth: 1.5, insetRing: true)
         /// A2 empty drop zone.
-        static let dropZone = Elevation(ring: .black.opacity(0.14), ringWidth: 1.5, insetRing: true)
+        static let dropZone = Elevation(ring: .ink(0.14), ringWidth: 1.5, insetRing: true)
         /// B4 suggestion box, C1 new decision.
         static let accentBox = Elevation(ring: Colors.accentOutline, insetRing: true)
         /// C1 banner.
@@ -600,32 +602,32 @@ enum Theme {
 
 extension Theme.Colors {
     /// #B8000F · "These disagree" label, Remove… in a story's menu.
-    static let disagreeText = Color(hex: 0xB8000F)
+    static let disagreeText = Color(hex: 0xB8000F, dark: 0xFF7B72)
     /// rgba(215,0,21,0.45) · ring of an open "These disagree" card.
-    static let disagreeRing = Color(hex: 0xD70015, opacity: 0.45)
+    static let disagreeRing = Color(hex: 0xD70015, opacity: 0.45, dark: 0xFF453A, darkOpacity: 0.6)
     /// #0058B9 · "Likely" on the suggested intake option.
-    static let likely = Color(hex: 0x0058B9)
+    static let likely = Color(hex: 0x0058B9, dark: 0x6CB8FF)
     /// #6B2F00 · title of the stopped and unplaced banners.
-    static let bannerTitle = Color(hex: 0x6B2F00)
+    static let bannerTitle = Color(hex: 0x6B2F00, dark: 0xFFC98A)
     /// rgba(0,122,255,0.35) · ring of the edit banner; the button stub in a Screens node.
-    static let accentRing = Color(hex: 0x007AFF, opacity: 0.35)
+    static let accentRing = Color(hex: 0x007AFF, opacity: 0.35, dark: 0x0A84FF, darkOpacity: 0.595)
     /// rgba(0,122,255,0.5) · 1 pt ring of a focused text area (free answer, file editor).
-    static let focusRing = Color(hex: 0x007AFF, opacity: 0.5)
+    static let focusRing = Color(hex: 0x007AFF, opacity: 0.5, dark: 0x0A84FF, darkOpacity: 0.6)
     /// rgba(0,122,255,0.1) · a passage the last change touched; rgba(0,122,255,0.12) · Files button while open.
-    static let changedFill = Color(hex: 0x007AFF, opacity: 0.1)
-    static let filesOpenFill = Color(hex: 0x007AFF, opacity: 0.12)
+    static let changedFill = Color(hex: 0x007AFF, opacity: 0.1, dark: 0x0A84FF, darkOpacity: 0.17)
+    static let filesOpenFill = Color(hex: 0x007AFF, opacity: 0.12, dark: 0x0A84FF, darkOpacity: 0.204)
     /// rgba(36,138,61,0.08) fill and rgba(36,138,61,0.3) ring of the change result line.
-    static let resultFill = Color(hex: 0x248A3D, opacity: 0.08)
-    static let resultRing = Color(hex: 0x248A3D, opacity: 0.3)
+    static let resultFill = Color(hex: 0x248A3D, opacity: 0.08, dark: 0x30D158, darkOpacity: 0.136)
+    static let resultRing = Color(hex: 0x248A3D, opacity: 0.3, dark: 0x30D158, darkOpacity: 0.51)
     /// rgba(0,0,0,0.07) · skeleton lines before the plan exists, bars in a Screens node; rgba(0,0,0,0.12) · its title bar.
-    static let skeleton = Color.black.opacity(0.07)
-    static let skeletonStrong = Color.black.opacity(0.12)
+    static let skeleton = Color.ink(0.07)
+    static let skeletonStrong = Color.ink(0.12)
     /// rgba(0,0,0,0.1) · token button while its popover is open.
-    static let pressedFill = Color.black.opacity(0.1)
+    static let pressedFill = Color.ink(0.1)
     /// rgba(245,245,247,0.86) · V2 sidebar panel; #FBE1AE / #8A4B00 · the project's letter tile.
-    static let sidebarGlass = Color(hex: 0xF5F5F7, opacity: 0.86)
-    static let projectTile = Color(hex: 0xFBE1AE)
-    static let projectTileText = Color(hex: 0x8A4B00)
+    static let sidebarGlass = Color(hex: 0xF5F5F7, opacity: 0.86, dark: 0x2A2A2C, darkOpacity: 0.86)
+    static let projectTile = Color(hex: 0xFBE1AE, dark: 0x5C4418)
+    static let projectTileText = Color(hex: 0x8A4B00, dark: 0xFBD890)
 }
 
 extension Theme.Text {
@@ -684,51 +686,55 @@ extension Theme.Size {
 
 extension Theme.Elevation {
     /// Open decision card and the intake question card: ring 0.1 + 0 2 6 0.06.
-    static let inboxCard = Theme.Elevation(ring: .black.opacity(0.1), drop: Theme.Drop(y: 2, blur: 6, color: .black.opacity(0.06)))
+    static let inboxCard = Theme.Elevation(ring: .ink(0.1), drop: Theme.Drop(y: 2, blur: 6, color: .black.opacity(0.06)))
     /// Open "These disagree" card: 1 pt red inset ring + 0 2 6 0.06.
     static let disagreeCard = Theme.Elevation(ring: Theme.Colors.disagreeRing, ringWidth: 1, insetRing: true, drop: Theme.Drop(y: 2, blur: 6, color: .black.opacity(0.06)))
     /// First-version story card and the Tell Mel box: ring 0.12 + 0 1 3 0.06.
-    static let storyCard = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+    static let storyCard = Theme.Elevation(ring: .ink(0.12), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
     /// A card's answer pill: ring 0.15 + 0 1 2 0.06.
-    static let answerPill = Theme.Elevation(ring: .black.opacity(0.15), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
+    static let answerPill = Theme.Elevation(ring: .ink(0.15), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
     /// White pill without a shadow (banner buttons, First, Restore, Cancel): ring 0.15; "Something else…": the same ring, inset.
-    static let pill = Theme.Elevation(ring: .black.opacity(0.15))
-    static let pillOutline = Theme.Elevation(ring: .black.opacity(0.15), insetRing: true)
+    static let pill = Theme.Elevation(ring: .ink(0.15))
+    static let pillOutline = Theme.Elevation(ring: .ink(0.15), insetRing: true)
     /// Edit in an open file: ring 0.18.
-    static let editButton = Theme.Elevation(ring: .black.opacity(0.18))
+    static let editButton = Theme.Elevation(ring: .ink(0.18))
     /// A file chip in Files: ring 0.1; the open file's article and a Build order task: ring 0.12 / 0.1.
-    static let fileChip = Theme.Elevation(ring: .black.opacity(0.1))
-    static let article = Theme.Elevation(ring: .black.opacity(0.12))
+    static let fileChip = Theme.Elevation(ring: .ink(0.1))
+    static let article = Theme.Elevation(ring: .ink(0.12))
     /// Token popover and a story's menu: ring 0.12 + 0 8 24 0.14.
-    static let popover = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 8, blur: 24, color: .black.opacity(0.14)))
+    static let popover = Theme.Elevation(ring: .ink(0.12), drop: Theme.Drop(y: 8, blur: 24, color: .black.opacity(0.14)))
     /// Screens node: ring 0.14 + 0 1 3 0.06.
-    static let flowNode = Theme.Elevation(ring: .black.opacity(0.14), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+    static let flowNode = Theme.Elevation(ring: .ink(0.14), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
     /// Focused text area: 1 pt inset accent ring.
     static let focus = Theme.Elevation(ring: Theme.Colors.focusRing, ringWidth: 1, insetRing: true)
     /// Edit banner and change result: inset rings in their own color.
     static let editBanner = Theme.Elevation(ring: Theme.Colors.accentRing, insetRing: true)
     static let result = Theme.Elevation(ring: Theme.Colors.resultRing, insetRing: true)
     /// V2 sidebar's project button and New: ring 0.12 + 0 1 2 0.06.
-    static let sidebarButton = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
+    static let sidebarButton = Theme.Elevation(ring: .ink(0.12), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
 }
 
 // MARK: - V2 screens (design/v2/V2-0-Start, V2-1-New, V2-3-Ready, V2-6-Settings-Specs and the V2 sidebar)
 
 extension Theme.Colors {
+    /// #1D1D1F · the agent's dark tile with the white terminal glyph (Settings › Agents); a shade lighter on Dark.
+    static let agentTile = Color(hex: 0x1D1D1F, dark: 0x3A3A3C)
+    /// #FFFFFF · the selected segment of a pill-shaped picker; on Dark it must be lighter than its track, not the window's color.
+    static let segmentFill = Color(hex: 0xFFFFFF, dark: 0x48484A)
     /// #8E8E93 · an empty sidebar group ("Nothing waiting for you").
-    static let emptyGroup = Color(hex: 0x8E8E93)
+    static let emptyGroup = Color(hex: 0x8E8E93, dark: 0x7C7C80)
     /// rgba(0,122,255,0.1) · the sidebar's New button while New is open; its text is `likely` (#0058B9).
-    static let newActiveFill = Color(hex: 0x007AFF, opacity: 0.1)
+    static let newActiveFill = Color(hex: 0x007AFF, opacity: 0.1, dark: 0x0A84FF, darkOpacity: 0.17)
     /// rgba(36,138,61,0.12) · the check's disc on Ready.
-    static let readyDisc = Color(hex: 0x248A3D, opacity: 0.12)
+    static let readyDisc = Color(hex: 0x248A3D, opacity: 0.12, dark: 0x30D158, darkOpacity: 0.204)
     /// rgba(0,122,255,0.35) · glow under "Build with Claude Code".
-    static let buildGlow = Color(hex: 0x007AFF, opacity: 0.35)
+    static let buildGlow = Color(hex: 0x007AFF, opacity: 0.35, dark: 0x0A84FF, darkOpacity: 0.595)
     /// rgba(0,122,255,0.3) · 3 pt halo of the focused idea box on New.
-    static let focusHalo = Color(hex: 0x007AFF, opacity: 0.3)
+    static let focusHalo = Color(hex: 0x007AFF, opacity: 0.3, dark: 0x0A84FF, darkOpacity: 0.51)
     /// #ECECEC · Settings › Specs window content.
-    static let settingsBackground = Color(hex: 0xECECEC)
+    static let settingsBackground = Color(hex: 0xECECEC, dark: 0x242426)
     /// rgba(0,0,0,0.14) · switch track off in Settings › Specs.
-    static let settingsSwitchOff = Color.black.opacity(0.14)
+    static let settingsSwitchOff = Color.ink(0.14)
 }
 
 extension Theme.Text {
@@ -779,19 +785,19 @@ extension Theme.Size {
 
 extension Theme.Elevation {
     /// New's idea box: ring 0.16 + 0 2 10 0.06; focused: 0.5 pt accent ring (its 3 pt halo is drawn apart).
-    static let ideaBox = Theme.Elevation(ring: .black.opacity(0.16), drop: Theme.Drop(y: 2, blur: 10, color: .black.opacity(0.06)))
+    static let ideaBox = Theme.Elevation(ring: .ink(0.16), drop: Theme.Drop(y: 2, blur: 10, color: .black.opacity(0.06)))
     static let ideaBoxFocused = Theme.Elevation(ring: Theme.Colors.accent, drop: Theme.Drop(y: 2, blur: 10, color: .black.opacity(0.06)))
     /// New's size chip: 1 pt inset accent ring at 0.35.
     static let sizeChip = Theme.Elevation(ring: Theme.Colors.accentRing, ringWidth: 1, insetRing: true)
     /// Start's radio, off: 1 pt inset ring at 0.3.
-    static let startRadioOff = Theme.Elevation(ring: .black.opacity(0.3), ringWidth: 1, insetRing: true)
+    static let startRadioOff = Theme.Elevation(ring: .ink(0.3), ringWidth: 1, insetRing: true)
     /// "Build with Claude Code": 0 1 3 accent glow.
     static let buildButton = Theme.Elevation(drop: Theme.Drop(y: 1, blur: 3, color: Theme.Colors.buildGlow))
     /// Ready's disclosure box: inset ring 0.12.
-    static let disclosure = Theme.Elevation(ring: .black.opacity(0.12), insetRing: true)
+    static let disclosure = Theme.Elevation(ring: .ink(0.12), insetRing: true)
     /// Settings › Specs: a value pop-up (ring 0.18 + 0 1 1 0.06) and a small button (ring 0.18).
-    static let settingsValue = Theme.Elevation(ring: .black.opacity(0.18), drop: Theme.Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
-    static let settingsButton = Theme.Elevation(ring: .black.opacity(0.18))
+    static let settingsValue = Theme.Elevation(ring: .ink(0.18), drop: Theme.Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
+    static let settingsButton = Theme.Elevation(ring: .ink(0.18))
 }
 
 // MARK: - Motion
@@ -843,15 +849,35 @@ extension View {
     }
 }
 
-private extension Color {
-    /// sRGB color from `0xRRGGBB`, as written in the design.
-    init(hex: UInt32, opacity: Double = 1) {
+extension Color {
+    /// A design color: sRGB `0xRRGGBB` as drawn for Light, and its Dark counterpart. The design draws
+    /// Light only; the Dark values are Mel's own, on macOS's dark palette (OQ #21). SwiftUI has no
+    /// initializer for a light/dark pair, so this is the one place a view file uses AppKit.
+    fileprivate init(hex: UInt32, opacity: Double = 1, dark: UInt32, darkOpacity: Double? = nil) {
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return NSColor(hex: isDark ? dark : hex, opacity: isDark ? darkOpacity ?? opacity : opacity)
+        })
+    }
+
+    /// A neutral wash or hairline: black at `opacity` on Light, white a little stronger on Dark,
+    /// where the same opacity reads weaker.
+    static func ink(_ opacity: Double) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+                ? NSColor(white: 1, alpha: min(opacity * 1.4 + 0.02, 1))
+                : NSColor(white: 0, alpha: opacity)
+        })
+    }
+}
+
+private extension NSColor {
+    convenience init(hex: UInt32, opacity: Double) {
         self.init(
-            .sRGB,
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255,
-            opacity: opacity
+            srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: opacity
         )
     }
 }

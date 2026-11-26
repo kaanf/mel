@@ -85,7 +85,7 @@ struct BoardPlan: View {
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .frame(maxWidth: .infinity)
                     .padding(Theme.Space.x14)
-                    .surface(.clear, Theme.Elevation(ring: .black.opacity(0.12), ringWidth: 1, insetRing: true), in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                    .surface(.clear, Theme.Elevation(ring: .ink(0.12), ringWidth: 1, insetRing: true), in: RoundedRectangle(cornerRadius: Theme.Radius.card))
             }
         }
         .dropDestination(for: String.self) { ids, _ in
@@ -345,7 +345,7 @@ struct BoardSegmentStyle: ButtonStyle {
             .foregroundStyle(Theme.Colors.label)
             .padding(.horizontal, padding)
             .frame(height: height)
-            .surface(isSelected ? Theme.Colors.background : .clear, isSelected ? .segmentSelected : .init(), in: Capsule())
+            .surface(isSelected ? Theme.Colors.segmentFill : .clear, isSelected ? .segmentSelected : .init(), in: Capsule())
             .contentShape(Capsule())
     }
 }

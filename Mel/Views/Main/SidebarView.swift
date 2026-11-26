@@ -355,7 +355,7 @@ extension Spec {
     NavigationSplitView {
         SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
-        Color.white
+        Theme.Colors.background
     }
     .environment(PreviewData.appState(PreviewData.library))
     .frame(width: 900, height: 600)
@@ -367,7 +367,7 @@ extension Spec {
     NavigationSplitView {
         SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
-        Color.white
+        Theme.Colors.background
     }
     .environment(PreviewData.appState([]))
     .frame(width: 900, height: 600)
@@ -379,7 +379,7 @@ extension Spec {
     NavigationSplitView {
         SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
-        Color.white
+        Theme.Colors.background
     }
     .environment(PreviewData.appState([PreviewData.boardStopped]))
     .frame(width: 900, height: 600)
@@ -391,7 +391,7 @@ extension Spec {
     NavigationSplitView {
         SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
-        Color.white
+        Theme.Colors.background
     }
     .environment(PreviewData.appState([], projects: [], missing: [URL(filePath: "/Users/me/Developer/old-portfolio")]))
     .frame(width: 900, height: 600)

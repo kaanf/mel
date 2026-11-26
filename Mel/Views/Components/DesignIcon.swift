@@ -226,7 +226,7 @@ nonisolated struct SVGPathShape: Shape {
         DesignIcon(glyph: .close, size: 8)
         DesignIcon(glyph: .paperclip, size: 13)
         DesignIcon(glyph: .popUp, size: 9)
-        DesignIcon(glyph: .terminal, size: 16).foregroundStyle(.white).padding(7).background(Theme.Colors.label, in: RoundedRectangle(cornerRadius: Theme.Radius.field))
+        DesignIcon(glyph: .terminal, size: 16).foregroundStyle(.white).padding(7).background(Theme.Colors.agentTile, in: RoundedRectangle(cornerRadius: Theme.Radius.field))
     }
     .foregroundStyle(Theme.Colors.secondaryLabel)
     .padding(Theme.Space.x20)
