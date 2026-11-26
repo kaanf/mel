@@ -142,7 +142,8 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - Spec.untitledName and the a11y labels on B1 / intake merged after v0.3.
 - 2026-11-26: multi-agent setup retired (worktrees, `agent/*` branches and `agents/` removed; layer rules moved to DESIGN.md › Project conventions).
 - 2026-11-26: spec language (English/Türkçe) on A1 + Settings › Specs, stored per spec, appended to every spec prompt (`language.md`); OQ #5 decided.
-- Next: the user reports problems from v0.3.
+- v0.4 published 2026-11-26 (build 409, notarized DMG); spec language selection and assumption confirmation fix. appcast.xml updated for in-app updates.
+- Next: the user reports problems from v0.4.
 
 ## Risks
 
