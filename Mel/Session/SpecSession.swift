@@ -15,6 +15,8 @@ import MelSystem
     private(set) var conflict: DocKind?
     /// B3: the step the draft has reached (`<!-- mel:step N -->`), 0 before the first marker.
     private(set) var draftStep = 0
+    /// Board: the last change's result line, until dismissed or undone.
+    private(set) var lastChange: ChangeResult?
     /// C1 "What this affects", once the impact run is back.
     private(set) var impact: ImpactResult?
     /// Text of each file at approval (`.mel/approved/`), for C1's diff and Undo.
@@ -107,7 +109,7 @@ import MelSystem
     // MARK: - Intake
 
     /// One run returns every round-1 question at once (V2.md §5 Intake).
-    func start() async {
+    func start(board: Bool = false) async {
         guard spec.stage == .discovery, !spec.questions.contains(where: { $0.round == .intake }) else { return }
         lastError = nil
         let end = await run(intakePrompt, step: .questions, resume: nil, persist: false)
@@ -122,7 +124,7 @@ import MelSystem
             spec.coverage = intake.coverage
             spec.questions = Self.unique(intake.questions, after: [])
             persist()
-            if currentQuestion == nil { await finishIntake() }
+            if currentQuestion == nil { board ? await beginBoard() : await finishIntake() }
         case .stopped(.user), .refused:
             break
         case .stopped(let reason):
@@ -441,7 +443,7 @@ import MelSystem
                 return
             }
             write(text, for: kind)
-            if spec.docs[kind] == .edited { await runImpact() }
+            if spec.docs[kind] == .edited, spec.stage != .board { await runImpact() }
         }
     }
 
@@ -496,7 +498,7 @@ import MelSystem
             documents[kind] = text
             saved[kind] = text
             markEdited(kind)
-            if spec.docs[kind] == .edited { Task { await runImpact() } }
+            if spec.docs[kind] == .edited, spec.stage != .board { Task { await runImpact() } }
         case .conflict(let fileText):
             conflictText = fileText
             conflict = kind
@@ -505,7 +507,7 @@ import MelSystem
 
     /// An approved file the user changed becomes `edited`; later files go stale (C1).
     private func markEdited(_ kind: DocKind) {
-        if spec.apply(.edited(kind)) { persist() }
+        if spec.stage == .board ? spec.editedOnBoard(kind) : spec.apply(.edited(kind)) { persist() }
     }
 
     // MARK: - Round 2 and open questions
@@ -549,6 +551,517 @@ import MelSystem
     func cancelRewrite(_ kind: DocKind) {
         guard spec.unplaced.contains(kind) else { return }
         spec.instructions[kind] = nil
+        persist()
+    }
+
+    // MARK: - Board (V2.md §0)
+
+    /// Answers the intake question on screen; after the last one the board starts writing.
+    func answerIntake(_ answer: Answer) async {
+        guard let card = spec.intakeCard else { return }
+        spec.answer(card: card.id, answer)
+        if let question = spec.questions.first(where: { $0.id == card.id }) { cover(question) }
+        persist()
+        if spec.intakeCard == nil { await beginBoard() }
+    }
+
+    /// "Skip, write the plan now": the questions left become guesses.
+    func skipIntake() async {
+        guard spec.stage == .discovery else { return }
+        await stop()
+        lastError = nil
+        await beginBoard()
+    }
+
+    private func beginBoard() async {
+        guard spec.stage == .discovery else { return }
+        for (n, q) in spec.questions.enumerated() where q.answer != nil && q.answer != .agentDecides {
+            addDecision(title: q.title, reason: q.answerText ?? "", source: "Intake Q\(n + 1)")
+        }
+        spec.startBoard()
+        persist()
+        await runBoard()
+    }
+
+    /// Answers a card or changes an answer (also an intake answer, once files exist).
+    func answerCard(_ id: String, _ answer: Answer) async {
+        spec.answer(card: id, answer)
+        let card = spec.cards.first { $0.id == id } ?? spec.questions.first { $0.id == id }.map(Card.init)
+        if answer != .agentDecides, let card, let text = card.answerText {
+            addDecision(title: card.text, reason: text, source: card.disagrees ? "You settled a conflict" : "Your answer")
+        }
+        persist()
+        await runBoard()
+    }
+
+    /// Change on an answered card.
+    func reopenCard(_ id: String) {
+        spec.reopen(card: id)
+        persist()
+    }
+
+    /// "Write it now": open cards become guesses and the next file starts.
+    func writeNow() async {
+        spec.writeNow()
+        persist()
+        await runBoard()
+    }
+
+    /// Runs whatever the board can do without the user. Safe to call at any time.
+    func continueBoard() async {
+        await runBoard()
+    }
+
+    private func runBoard() async {
+        var ran = false
+        while !isRunning, let step = spec.nextStep {
+            let went: Bool
+            switch step {
+            case .draft(let kind): went = await draftOnBoard(kind)
+            case .change: went = await applyAnswers()
+            case .check: went = await check()
+            }
+            persist()
+            guard went else { return }
+            ran = true
+        }
+        guard ran else { return }
+        if spec.isReady {
+            app?.notify("\(spec.name) is ready", "The plan is written. Open Mel to start building.", nil)
+        } else if !spec.openCards.isEmpty {
+            let count = spec.openCards.count
+            app?.notify("Mel needs you", "\(count) \(count == 1 ? "question" : "questions") about \(spec.name).", nil)
+        }
+    }
+
+    /// Streams `kind` into its file and returns how the run ended; `reply` holds the text.
+    private func stream(_ kind: DocKind, prompt: String, step: TokenStep, from partial: String = "") async -> RunEnd {
+        draftKind = kind
+        reply = partial
+        liveText = partial
+        draftStep = 0
+        activity = []
+        persist()
+        let end = await run(prompt, step: step, resume: partial.isEmpty ? nil : spec.sessionID, persist: true)
+        draftKind = nil
+        liveText = ""
+        return end
+    }
+
+    /// Writes `kind`, or continues it from its last complete section after a stop.
+    private func draftOnBoard(_ kind: DocKind, fresh: Bool = false) async -> Bool {
+        let partial = !fresh && spec.docs[kind] == .stopped ? DraftText.truncatedToLastCompleteSection(documents[kind] ?? "") : ""
+        spec.begin(.draft(kind))
+        if !partial.isEmpty {
+            documents[kind] = partial
+            write(partial, for: kind)
+        }
+        let prompt = partial.isEmpty
+            ? Prompt(drafting: kind).build(promptValues(drafting: kind), fillGaps: spec.fillGaps, language: spec.language)
+            : Prompt.continue.build(["file": kind.fileName, "partial": partial], language: spec.language)
+        switch await stream(kind, prompt: prompt, step: TokenStep(file: kind), from: partial) {
+        case .stopped(.sessionNotFound):
+            return await draftOnBoard(kind, fresh: true)
+        case .done(let result):
+            let full = reply.isEmpty ? result : reply
+            let final = DraftText.file(fromReply: full, kind: kind).trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+            documents[kind] = final
+            write(final, for: kind)
+            saveSnapshot(kind)
+            let asked = DraftText.questions(in: full, kind: kind).map { $0.with(id: "\(kind.rawValue)-\($0.id)") } + OpenQuestion.parse(final, kind: kind).map(Question.init)
+            spec.drafted(kind, asked: Self.unique(asked, after: spec.questions.filter { $0.answer != nil || $0.shapes != kind }))
+            return true
+        case .stopped(let reason):
+            let text = DraftText.file(fromReply: reply, kind: kind)
+            documents[kind] = text
+            write(text, for: kind)
+            spec.halt(reason, during: .draft(kind))
+            if reason != .user { app?.notify("\(spec.name) stopped", Self.message(reason), nil) }
+            return false
+        case .refused:
+            spec.halt(.user, during: .draft(kind))
+            return false
+        }
+    }
+
+    // MARK: Changes
+
+    /// The line under Tell Mel after a change (V2-4), with what Undo needs.
+    struct ChangeResult: Hashable {
+        /// "Changed 2 places in REQUIREMENTS.md, 1 in TASKS.md".
+        var line: String
+        var tokens: Int
+        /// The new text of each changed passage, highlighted in an open file.
+        var passages: [DocKind: [String]]
+        fileprivate var before: [DocKind: String]
+        fileprivate var decision: String?
+    }
+
+    private enum ChangeEnd {
+        case applied, unplaced, stopped(StopReason), unreadable, refused
+
+        var isApplied: Bool { if case .applied = self { true } else { false } }
+    }
+
+    /// One change run over the written files: applies its edits, or records the files where they don't fit.
+    private func change(_ requests: [String], attachments: [Attachment] = [], answers: Bool) async -> ChangeEnd {
+        let written = spec.written
+        guard let first = written.first else { return .refused }
+        var values = promptValues(drafting: first)
+        values["reading"] = attachments.isEmpty
+            ? "Everything you need is in this prompt. Do not read files or call tools."
+            : "You may open the attachments below with Read. Everything else you need is in this prompt."
+        values["requests"] = requests.map { "- " + $0 }.joined(separator: "\n")
+        values["attachments"] = attachments.isEmpty ? "(none)" : attachments.map { "- specs/\(slug)/.mel/attachments/\($0.fileName)" }.joined(separator: "\n")
+        values["current"] = text(of: written)
+        values["kinds"] = written.map { "`\($0.rawValue)`" }.joined(separator: ", ")
+        let spent = spec.tokens?[.changes] ?? 0
+        activity = []
+        lastChange = nil
+        let end = await run(Prompt.change.build(values, fillGaps: spec.fillGaps, language: spec.language), step: .changes, resume: nil, persist: false, tools: !attachments.isEmpty)
+        switch end {
+        case .done(let reply):
+            guard let change = try? Change.decode(reply) else { return .unreadable }
+            let current = Dictionary(uniqueKeysWithValues: written.map { ($0, documents[$0] ?? "") })
+            guard let texts = change.apply(to: current) else {
+                spec.unplacedChange = UnplacedChange(request: requests.joined(separator: "\n"), change: change, files: change.unplaced(in: current), answers: answers)
+                return .unplaced
+            }
+            install(texts, line: change.summary(order: written), passages: Dictionary(grouping: change.edits, by: \.file).mapValues { $0.map(\.new) }, spent: spent)
+            return .applied
+        case .stopped(let reason):
+            return .stopped(reason)
+        case .refused:
+            return .refused
+        }
+    }
+
+    /// Puts changed files in place (text, disk, snapshot), reruns Mel's own checks and sets the result line.
+    private func install(_ texts: [DocKind: String], line: String, passages: [DocKind: [String]] = [:], spent: Int) {
+        var before: [DocKind: String] = [:]
+        for (kind, text) in texts {
+            before[kind] = documents[kind]
+            let final = text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+            documents[kind] = final
+            write(final, for: kind)
+            saveSnapshot(kind)
+        }
+        refreshChecks()
+        lastChange = ChangeResult(line: line, tokens: (spec.tokens?[.changes] ?? 0) - spent, passages: passages, before: before)
+    }
+
+    /// Mel's own checks by ID, free, after the files changed. Contradictions keep their cards.
+    private func refreshChecks() {
+        guard var analysis = spec.analysis else { return }
+        analysis.refresh(requirements: documents[.requirements] ?? "", experience: spec.size.files.contains(.experience) ? documents[.experience] ?? "" : nil, tasks: documents[.tasks] ?? "")
+        spec.checked(analysis)
+    }
+
+    /// The answers given since the files were written, in one run.
+    private func applyAnswers() async -> Bool {
+        switch await change(spec.changeRequests, answers: true) {
+        case .applied:
+            spec.changed()
+            return true
+        case .unplaced, .refused:
+            return false
+        case .stopped(let reason):
+            spec.halt(reason, during: .change)
+            if reason != .user { app?.notify("\(spec.name) stopped", Self.message(reason), nil) }
+            return false
+        case .unreadable:
+            lastError = "Claude Code's reply couldn't be read."
+            spec.halt(.crashed("Claude Code's reply couldn't be read."), during: .change)
+            return false
+        }
+    }
+
+    /// Tell Mel: one request against the written files, with the user's words as the decision's
+    /// reason. False when the run didn't finish: the request stays in the box.
+    @discardableResult
+    func tell(_ request: String, files: [URL] = []) async -> Bool {
+        let request = request.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard spec.stage == .board, !isRunning, !request.isEmpty, !spec.written.isEmpty, spec.halted == nil, spec.unplacedChange == nil else { return false }
+        var attachments: [Attachment] = []
+        if let store {
+            for file in files { if let attachment = try? await store.attach(copying: file) { attachments.append(attachment) } }
+            spec.attachments += attachments
+        }
+        let end = await change([request], attachments: attachments, answers: false)
+        defer { persist() }
+        switch end {
+        case .applied:
+            lastChange?.decision = addDecision(title: Self.title(request), reason: request, source: "Tell Mel")
+            persist()
+            await runBoard()
+            return true
+        case .unplaced:
+            return true   // V2-7 takes over; Cancel hands the request back
+        case .stopped(let reason):
+            if reason != .user { lastError = Self.message(reason) }
+            return false
+        case .unreadable:
+            lastError = "Claude Code's reply couldn't be read."
+            return false
+        case .refused:
+            return false
+        }
+    }
+
+    /// Undo on the result line: the changed files go back as they were.
+    func undoChange() {
+        guard let change = lastChange, !isRunning else { return }
+        for (kind, text) in change.before {
+            documents[kind] = text
+            write(text, for: kind)
+            saveSnapshot(kind)
+        }
+        if let id = change.decision { removeDecision(id) }
+        lastChange = nil
+        refreshChecks()
+        persist()
+    }
+
+    func dismissChange() {
+        lastChange = nil
+    }
+
+    /// "Rewrite FILE" (V2-7): the agent writes the first unplaced file whole. It is the only whole
+    /// rewrite, and always the user's choice. The edits that did fit go in once no file is left.
+    func rewriteUnplaced() async {
+        guard var unplaced = spec.unplacedChange, let kind = unplaced.files.first, !isRunning else { return }
+        let before = documents[kind] ?? ""
+        var values = promptValues(drafting: kind)
+        values["file"] = kind.fileName
+        values["instruction"] = unplaced.request
+        values["current"] = before
+        values["approved"] = text(of: spec.written.filter { $0 != kind })
+        let spent = spec.tokens?[.changes] ?? 0
+        let end = await stream(kind, prompt: Prompt.rewrite.build(values, fillGaps: spec.fillGaps, language: spec.language), step: .changes)
+        guard case .done(let result) = end else {
+            // Nothing changes on a stop: the file goes back and the offer stays.
+            write(before, for: kind)
+            if case .stopped(let reason) = end, reason != .user { lastError = Self.message(reason) }
+            persist()
+            return
+        }
+        var texts = [kind: DraftText.file(fromReply: reply.isEmpty ? result : reply, kind: kind)]
+        unplaced.files.removeFirst()
+        unplaced.change = unplaced.change.without([kind])
+        if unplaced.files.isEmpty {
+            let current = Dictionary(uniqueKeysWithValues: spec.written.map { ($0, documents[$0] ?? "") })
+            texts.merge(unplaced.change.apply(to: current) ?? [:]) { rewritten, _ in rewritten }
+            spec.unplacedChange = nil
+            if unplaced.answers { spec.changed() }
+        } else {
+            spec.unplacedChange = unplaced
+        }
+        install(texts, line: "Rewrote \(kind.fileName)", spent: spent)
+        lastChange?.decision = addDecision(title: "Rewrote \(kind.fileName)", reason: unplaced.request, source: "You chose a full rewrite")
+        persist()
+        await runBoard()
+    }
+
+    /// Cancel on the same offer: nothing changed. Returns a typed request for the Tell Mel box.
+    @discardableResult
+    func cancelUnplaced() async -> String {
+        guard let unplaced = spec.unplacedChange, !isRunning else { return "" }
+        spec.unplacedChange = nil
+        if unplaced.answers { spec.changed() }
+        persist()
+        await runBoard()
+        return unplaced.answers ? "" : unplaced.request
+    }
+
+    // MARK: Plan
+
+    var stories: [Story] { Story.parse(documents[.requirements] ?? "") }
+
+    /// First version ↔ Later: Mel edits the story's tag itself, at once and with no run.
+    func moveStory(_ id: String, toLater: Bool) {
+        guard !isRunning, let text = documents[.requirements], let moved = Story.move(id, toLater: toLater, in: text), moved != text else { return }
+        documents[.requirements] = moved
+        write(moved, for: .requirements)
+        saveSnapshot(.requirements)
+        refreshChecks()
+        persist()
+    }
+
+    /// What Remove… on a story card would take with it.
+    func removal(ofStory id: String) -> StoryRemoval? {
+        StoryRemoval(story: id, requirements: documents[.requirements] ?? "", experience: spec.size.files.contains(.experience) ? documents[.experience] : nil, tasks: documents[.tasks] ?? "")
+    }
+
+    /// Remove: Mel cuts the story from REQUIREMENTS.md; one change run takes out what was built on it.
+    func removeStory(_ id: String) async {
+        guard spec.stage == .board, !isRunning, spec.halted == nil, spec.unplacedChange == nil, let removal = removal(ofStory: id) else { return }
+        let before = documents[.requirements] ?? ""
+        let requests = spec.written.compactMap { removal.instruction(for: $0) }
+        documents[.requirements] = removal.requirements
+        write(removal.requirements, for: .requirements)
+        lastChange = nil
+        if !requests.isEmpty, case let end = await change(requests, answers: false), !end.isApplied {
+            // All or nothing: the story goes back.
+            spec.unplacedChange = nil
+            documents[.requirements] = before
+            write(before, for: .requirements)
+            lastError = "Mel couldn't remove what was built on “\(removal.title)”. Nothing was changed."
+            persist()
+            return
+        }
+        saveSnapshot(.requirements)
+        var result = lastChange ?? ChangeResult(line: "", tokens: 0, passages: [:], before: [:])
+        result.line = "Removed “\(removal.title)”"
+        result.before[.requirements] = before
+        result.decision = addDecision(title: "Removed: \(removal.title)", reason: removal.summary.isEmpty ? "Nothing else was built on it." : removal.summary, source: "You")
+        lastChange = result
+        spec.removedStories = (spec.removedStories ?? []) + [RemovedStory(id: id, title: removal.title, section: removal.section)]
+        refreshChecks()
+        persist()
+        await runBoard()
+    }
+
+    /// Restore in DECISIONS.md: one change run puts the story back with what it needs.
+    func restoreStory(_ id: String) async {
+        guard spec.stage == .board, !isRunning, spec.halted == nil, spec.unplacedChange == nil, let removed = spec.removedStories?.first(where: { $0.id == id }) else { return }
+        let request = "Put story \(removed.id) “\(removed.title)” back into REQUIREMENTS.md as it was below, in its place by number, and add back what the other files need for it:\n\n\(removed.section)"
+        switch await change([request], answers: false) {
+        case .applied, .unplaced:
+            spec.removedStories?.removeAll { $0.id == id }
+            lastChange?.decision = addDecision(title: "Restored: \(removed.title)", reason: "", source: "You")
+        case .stopped(let reason):
+            if reason != .user { lastError = Self.message(reason) }
+        case .unreadable:
+            lastError = "Claude Code's reply couldn't be read."
+        case .refused:
+            break
+        }
+        persist()
+        await runBoard()
+    }
+
+    // MARK: Edits by hand, stops, checks, ready
+
+    /// The edit banner's Update: one change run brings the files built on the edit in line.
+    func updateAfterEdit(why: String) async {
+        let edited = spec.size.files.filter { spec.docs[$0] == .edited }
+        guard !edited.isEmpty, !isRunning else { return }
+        let requests = edited.map { kind in
+            "The user edited \(kind.fileName) by hand. \(Self.diff(before: snapshots[kind] ?? "", after: documents[kind] ?? ""))\nChange the other files to match; leave \(kind.fileName) as it is." + (why.isEmpty ? "" : " Why: \(why)")
+        }
+        switch await change(requests, answers: false) {
+        case .applied:
+            await keepEdit(why: why)
+        case .stopped(let reason):
+            if reason != .user { lastError = Self.message(reason) }
+        case .unreadable:
+            lastError = "Claude Code's reply couldn't be read."
+        case .unplaced, .refused:
+            break   // an unplaced Update shows V2-7; the banner stays for Keep or Undo
+        }
+        persist()
+    }
+
+    /// "Keep them as they are" (and Done when nothing was built on the edit).
+    func keepEdit(why: String) async {
+        let edited = spec.size.files.filter { spec.docs[$0] == .edited }
+        guard !edited.isEmpty else { return }
+        edited.forEach(saveSnapshot)
+        spec.settleEdit()
+        if !why.isEmpty { addDecision(title: "Edited \(edited.map(\.fileName).joined(separator: ", "))", reason: why, source: "You") }
+        persist()
+        await runBoard()
+    }
+
+    /// Undo on the banner: the edited files go back to what Mel last wrote.
+    func undoBoardEdit() async {
+        for kind in spec.size.files where spec.docs[kind] == .edited {
+            guard let text = snapshots[kind] else { continue }
+            pendingSaves.removeValue(forKey: kind)?.cancel()
+            documents[kind] = text
+            write(text, for: kind)
+        }
+        spec.settleEdit()
+        persist()
+        await runBoard()
+    }
+
+    /// The lines an edit removed and added.
+    private static func diff(before: String, after: String) -> String {
+        let old = before.split(whereSeparator: \.isNewline).map(String.init)
+        let new = after.split(whereSeparator: \.isNewline).map(String.init)
+        var removed: [String] = [], added: [String] = []
+        for change in new.difference(from: old) {
+            switch change {
+            case .remove(_, let line, _): removed.append(line)
+            case .insert(_, let line, _): added.append(line)
+            }
+        }
+        return (removed.isEmpty ? "" : "Lines removed:\n\(removed.joined(separator: "\n"))\n") + (added.isEmpty ? "" : "Lines added:\n\(added.joined(separator: "\n"))")
+    }
+
+    /// The stopped banner's Resume. After a usage limit with a known reset it waits for it and notifies.
+    func resumeBoard() async {
+        guard let halt = spec.halted, !isRunning else { return }
+        if case .usageLimit(let resetsAt?) = halt.reason, resetsAt > .now {
+            app?.notify("\(spec.name) can continue", "Your Claude usage limit has reset. Open Mel and press Resume.", resetsAt)
+            try? await Task.sleep(for: .seconds(resetsAt.timeIntervalSinceNow))
+            guard spec.halted == halt else { return }
+        }
+        spec.resume()
+        lastError = nil
+        persist()
+        await runBoard()
+    }
+
+    /// "Finish it myself": the cut-off file counts as written; the board goes on after the user's edit.
+    func finishBoardByHand() {
+        spec.finishByHand()
+        persist()
+    }
+
+    /// "Check again": looks for contradictions once more, on request (OQ #33).
+    func checkAgain() async {
+        guard spec.stage == .board, !isRunning, spec.halted == nil, spec.size.hasAnalyze, spec.written == spec.size.files else { return }
+        _ = await check()
+        persist()
+        await runBoard()
+    }
+
+    /// After the last file: Mel's coverage by ID, plus one run that only looks for contradictions.
+    private func check() async -> Bool {
+        let earlier = spec.analysis?.issues.filter { $0.kind == .contradiction && $0.answer == nil }.map { "- \($0.id) (\($0.location)): \($0.text)" } ?? []
+        spec.begin(.check)
+        lastError = nil
+        persist()
+        let values = ["name": spec.name, "approved": text(of: spec.written), "kinds": spec.size.kindsText,
+                      "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n")]
+        switch await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false) {
+        case .done(let reply):
+            if let contradictions = try? AnalyzeResult.contradictions(in: reply) {
+                var result = AnalyzeResult.coverage(requirements: documents[.requirements] ?? "", experience: spec.size.files.contains(.experience) ? documents[.experience] ?? "" : nil, tasks: documents[.tasks] ?? "")
+                result.add(contradictions)
+                spec.checked(result)
+            } else {
+                spec.checkFailed()
+                lastError = "Claude Code's reply couldn't be read."
+            }
+            return true
+        case .stopped(let reason):
+            spec.halt(reason, during: .check)
+            if reason != .user { app?.notify("\(spec.name) stopped", Self.message(reason), nil) }
+            return false
+        case .refused:
+            spec.halt(.user, during: .check)
+            return false
+        }
+    }
+
+    /// "Start Building": writes the task prompts and, as Settings › Specs says, AGENTS.md and the commit.
+    func startBuilding(commitToGit: Bool, writeAgentsFile: Bool) async throws {
+        guard spec.isReady else { return }
+        try await finish(commitToGit: commitToGit, writeAgentsFile: writeAgentsFile)
+        spec.startBuilding()
         persist()
     }
 
@@ -800,8 +1313,21 @@ import MelSystem
 
     // MARK: - Decisions
 
-    private func addDecision(title: String, reason: String, source: String, replaces: String? = nil, affects: [String] = []) {
-        decisions.insert(Decision(id: Decision.nextID(after: decisions), title: title, reason: reason, source: source, date: .now, replaces: replaces, affects: affects), at: 0)
+    @discardableResult
+    private func addDecision(title: String, reason: String, source: String, replaces: String? = nil, affects: [String] = []) -> String {
+        let id = Decision.nextID(after: decisions)
+        decisions.insert(Decision(id: id, title: title, reason: reason, source: source, date: .now, replaces: replaces, affects: affects), at: 0)
+        saveDecisions()
+        return id
+    }
+
+    /// Takes back the decision an undone change logged.
+    private func removeDecision(_ id: String) {
+        decisions.removeAll { $0.id == id }
+        saveDecisions()
+    }
+
+    private func saveDecisions() {
         guard let store else { return }
         let decisions = decisions
         io = Task { [io] in
@@ -879,6 +1405,6 @@ import MelSystem
 
 private extension Question {
     func with(id: String) -> Question {
-        Question(id: id, title: title, why: why, shapes: shapes, round: round, options: options, answer: answer)
+        Question(id: id, title: title, why: why, shapes: shapes, round: round, options: options, answer: answer, about: about)
     }
 }

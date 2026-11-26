@@ -304,6 +304,8 @@ import MelSystem
         branches[project.id] = Git.branch(at: folder)
         for var spec in SpecStore.scan(project: project.folder) where !specs.contains(where: { $0.id == spec.id }) {
             if case .drafting = spec.stage { spec.apply(.draftStopped(.crashed("Mel quit while this file was being written."))) }
+            // A board that was working when Mel quit waits for Resume: nothing runs on launch.
+            if spec.halted == nil, let step = spec.nextStep { spec.halt(.user, during: step) }
             if spec.stage == .analyze, spec.analyze == .running { spec.apply(.analyzeFailed) }
             specs.append(spec)
         }

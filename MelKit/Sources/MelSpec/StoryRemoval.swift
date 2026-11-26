@@ -15,6 +15,8 @@ public struct StoryRemoval: Hashable, Sendable {
     public var sharedTasks: [Int]
     /// REQUIREMENTS.md without the story's section. An `<!-- MVP line -->` inside it is kept.
     public var requirements: String
+    /// The section that was cut, for Restore.
+    public var section: String
 
     /// Nil when REQUIREMENTS.md has no `## <story>. …` section. `experience` is nil for a size without EXPERIENCE.md.
     public init?(story: String, requirements: String, experience: String?, tasks: String) {
@@ -27,6 +29,7 @@ public struct StoryRemoval: Hashable, Sendable {
         criteria = MarkdownParser.blocks(lines[start..<end].joined(separator: "\n")).compactMap { block in
             if case .criterion(let id, _) = block { id } else { nil }
         }
+        section = lines[start..<end].filter { $0.trimming(while: \.isWhitespace) != "<!-- MVP line -->" }.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         lines.replaceSubrange(start..<end, with: mvpLine.isEmpty ? [] : mvpLine + [""])
         self.requirements = lines.joined(separator: "\n")
 
@@ -60,7 +63,9 @@ public struct StoryRemoval: Hashable, Sendable {
             let removed = tasks.isEmpty ? "" : " Remove \(tasks.count == 1 ? "task" : "tasks") \(Self.list(tasks.map(String.init)))."
             let kept = sharedTasks.isEmpty ? "" : " In \(sharedTasks.count == 1 ? "task" : "tasks") \(Self.list(sharedTasks.map(String.init))), remove its IDs from Covers and the work that served only them."
             return what + removed + kept + " Renumber the tasks so there are no gaps, in `Parallel with` too."
-        case .product, .requirements, .spec:
+        case .product:
+            return what + " Remove the lines that described only this story."
+        case .requirements, .spec:
             return nil
         }
     }

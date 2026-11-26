@@ -30,6 +30,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var halted: Halt?
     /// Board: a change that couldn't be placed, waiting for "Rewrite FILE" or Cancel.
     public var unplacedChange: UnplacedChange?
+    /// Board: stories the user removed, kept so DECISIONS.md can offer Restore.
+    public var removedStories: [RemovedStory]?
     /// Tokens used per step, from each run's `result.usage` (OQ #26); nil before the first counted run.
     public var tokens: [TokenStep: Int]?
     public var sessionID: String?
@@ -190,17 +192,33 @@ public struct Halt: Codable, Hashable, Sendable {
     }
 }
 
+/// A story cut from REQUIREMENTS.md with Remove: its section as it was, for Restore.
+public struct RemovedStory: Codable, Identifiable, Hashable, Sendable {
+    public var id: String
+    public var title: String
+    public var section: String
+
+    public init(id: String, title: String, section: String) {
+        self.id = id
+        self.title = title
+        self.section = section
+    }
+}
+
 /// A change run whose edits couldn't all be placed (OQ #25). Nothing was changed: `files` are
 /// offered for a whole rewrite one by one, `change` holds the edits for the other files.
 public struct UnplacedChange: Codable, Hashable, Sendable {
     public var request: String
     public var change: Change
     public var files: [DocKind]
+    /// The run was for card answers (`Spec.changeRequests`), not a request the user typed.
+    public var answers: Bool
 
-    public init(request: String, change: Change, files: [DocKind]) {
+    public init(request: String, change: Change, files: [DocKind], answers: Bool = false) {
         self.request = request
         self.change = change
         self.files = files
+        self.answers = answers
     }
 }
 
