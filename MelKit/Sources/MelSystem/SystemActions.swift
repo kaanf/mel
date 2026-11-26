@@ -29,6 +29,11 @@ public enum SystemActions {
         "'" + s.replacingOccurrences(of: "'", with: #"'\''"#) + "'"
     }
 
+    /// Opens a file in the app macOS uses for it (the board's "Open in Editor").
+    public static func open(_ url: URL) {
+        NSWorkspace.shared.open(url)
+    }
+
     public static func showInFinder(_ url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }

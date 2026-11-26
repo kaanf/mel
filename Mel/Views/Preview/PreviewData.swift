@@ -362,6 +362,81 @@ enum PreviewData {
         }
         return spec
     }()
+    // MARK: Board (V2)
+
+    private static let boardDocuments: [DocKind: String] = [.product: "# Product\n\nA booking app for one yoga studio.\n", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture\n\n## Modules\n\n- shared/booking: booking rules, credits, waitlist.\n", .tasks: tasksMarkdown]
+    private static let boardDecisions = [
+        Decision(id: "D-02", title: "Which phones first?", reason: "iOS and Android", source: "Your answer", date: .now, replaces: nil, affects: []),
+        Decision(id: "D-01", title: "How do members pay?", reason: "Class packs bought in the app", source: "Intake Q1", date: .now, replaces: nil, affects: []),
+    ]
+    private static let boardCards: [Question] = allAnswered + [
+        Question(id: "requirements-studio", title: "If the studio cancels a class, what happens to members’ credits?", why: "", shapes: .requirements, round: .draft,
+                 options: [Option(label: "Give them back", note: ""), Option(label: "Give back and notify", note: "", suggested: true)], about: "cancelling"),
+        Question(id: "requirements-waitlist", title: "When a spot frees up, who gets it?", why: "", shapes: .requirements, round: .draft,
+                 options: [Option(label: "First on the waitlist", note: "", suggested: true), Option(label: "Teacher picks", note: "")], about: "full classes"),
+    ]
+
+    /// V2-2 with everything written: one contradiction card, one answered card.
+    static let board: Spec = {
+        var spec = PreviewData.spec(.board, docs(.approved, .approved, .approved, .approved, .approved), questions: boardCards, analyze: .issues(1))
+        spec.questions[spec.questions.count - 1].answer = .option(0, note: nil)
+        spec.questions[spec.questions.count - 2].answer = .option(1, note: nil)
+        var result = analysis
+        result.issues = [AnalyzeResult.Issue(id: "c1", kind: .contradiction, location: "REQUIREMENTS.md · your answer and old-schedule.jpg", text: "You said members can cancel up to 12 hours before class. The schedule photo you added says 24 hours. Which one?", actions: [
+            .init(label: "12 hours", fix: "Use 12 hours.", files: [.requirements]), .init(label: "24 hours", fix: "Use 24 hours.", files: [.requirements]),
+        ])]
+        spec.analysis = result
+        spec.tokens = tokens.tokens
+        return spec
+    }()
+    static let boardSession = SpecSession.preview(board, documents: boardDocuments, decisions: boardDecisions)
+
+    /// V2-9: REQUIREMENTS.md is written; EXPERIENCE.md waits for two answers.
+    static let boardWaiting: Spec = {
+        var spec = PreviewData.spec(.board, docs(.approved, .approved), questions: boardCards)
+        spec.tokens = [.questions: 2_100, .product: 4_800, .requirements: 7_400]
+        return spec
+    }()
+    static let boardWaitingSession = SpecSession.preview(boardWaiting, documents: boardDocuments.filter { $0.key == .product || $0.key == .requirements }, decisions: boardDecisions)
+
+    /// The intake: one question at a time.
+    static let boardAsking: Spec = {
+        var spec = PreviewData.spec(.discovery, locked, questions: Array(allAnswered.prefix(3)))
+        spec.questions[1].answer = nil
+        spec.questions[2].answer = nil
+        return spec
+    }()
+    static let boardAskingSession = SpecSession.preview(boardAsking)
+
+    /// V2-5: stopped while writing ARCHITECTURE.md.
+    static let boardStopped: Spec = {
+        var spec = PreviewData.spec(.board, docs(.approved, .approved, .approved, .stopped))
+        spec.halted = Halt(reason: .usageLimit(resetsAt: nil), file: .architecture)
+        return spec
+    }()
+    static let boardStoppedSession = SpecSession.preview(boardStopped, documents: boardDocuments.filter { $0.key != .tasks }, decisions: boardDecisions)
+
+    /// V2-7: a Tell Mel change couldn't be placed.
+    static let boardUnplaced: Spec = {
+        var spec = PreviewData.spec(.board, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
+        spec.unplacedChange = UnplacedChange(request: "Members can book while offline, and the bookings sync when they’re back online.", change: Change(edits: []), files: [.architecture])
+        spec.tokens = tokens.tokens
+        return spec
+    }()
+    static let boardUnplacedSession = SpecSession.preview(boardUnplaced, documents: boardDocuments, decisions: boardDecisions)
+
+    /// V2-4: a Tell Mel change was just applied.
+    static let boardChangedSession: SpecSession = {
+        var spec = PreviewData.spec(.board, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
+        spec.tokens = tokens.tokens
+        let passage = "WHEN a class is full, THE APP SHALL offer to join the waitlist instead."
+        return SpecSession.preview(spec, documents: boardDocuments, decisions: boardDecisions,
+                                   lastChange: SpecSession.ChangeResult(line: "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md", tokens: 1_800, passages: [.requirements: [passage]]))
+    }()
+
+    /// The edit banner: REQUIREMENTS.md was changed by hand.
+    static let boardEditedSession = SpecSession.preview(spec(.board, docs(.approved, .edited, .stale, .stale, .stale), analyze: .passed), documents: boardDocuments, decisions: boardDecisions)
+
     static let reviewSession = SpecSession.preview(reviewRoundTwo, documents: [.product: "# Product", .requirements: reviewMarkdown])
 
     // B5 Review EXPERIENCE.md as drawn.

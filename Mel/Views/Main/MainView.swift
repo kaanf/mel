@@ -115,6 +115,24 @@ struct MainView: View {
 
     @ViewBuilder
     private func detail(_ item: SidebarItem) -> some View {
+        if let id = item.specID, let spec = state.specs.first(where: { $0.id == id }), spec.stage == .board || isBoardIntake {
+            BoardView(session: state.session(for: id))
+        } else {
+            laneDetail(item)
+        }
+    }
+
+    /// Until the V2 screens create specs, only the debug fixture shows the board's intake.
+    private var isBoardIntake: Bool {
+        #if DEBUG
+        DebugScreen.current == .boardAsking
+        #else
+        false
+        #endif
+    }
+
+    @ViewBuilder
+    private func laneDetail(_ item: SidebarItem) -> some View {
         switch item {
         case .project(let id):
             if let project = state.projects.first(where: { $0.id == id }) {

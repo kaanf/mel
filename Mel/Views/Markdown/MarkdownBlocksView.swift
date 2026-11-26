@@ -15,6 +15,8 @@ struct MarkdownBlocksView: View {
     var onAnswer: ((Int, String) -> Void)?
     /// EXPERIENCE.md (B5): numbered steps draw as a flow diagram with their branches; the screens table as state chips.
     var isExperience = false
+    /// Board (V2-4): passages the last change wrote. Blocks that hold one get the blue ground.
+    var highlights: [String] = []
 
     /// Blocks grouped the way the article draws them: runs of criteria and list items share one list.
     private enum Item {
@@ -51,6 +53,10 @@ struct MarkdownBlocksView: View {
                 items[items.count - 1] = .criteria(list + [(id, text)])
             case (.criterion(let id, let text), _):
                 items.append(.criteria([(id, text)]))
+            // A task's sub-items (`Priority:`, `Reads:`, `Verify:`) sit under its title.
+            case (.listItem(let text), .tasks(var list)?):
+                list[list.count - 1].details.append(text)
+                items[items.count - 1] = .tasks(list)
             case (.listItem(let text), .bullets(let list)?):
                 items[items.count - 1] = .bullets(list + [text])
             case (.listItem(let text), _):
@@ -63,10 +69,6 @@ struct MarkdownBlocksView: View {
                 items[items.count - 1] = .tasks(list + [(id, text, done, covers, [])])
             case (.task(let id, let text, let done, let covers), _):
                 items.append(.tasks([(id, text, done, covers, [])]))
-            // A task's sub-items (`Priority:`, `Reads:`, `Verify:`) sit under its title.
-            case (.listItem(let text), .tasks(var list)?):
-                list[list.count - 1].details.append(text)
-                items[items.count - 1] = .tasks(list)
             // A story's `P1 · MVP` line becomes a badge after its heading.
             case (.priority(let priority, let mvp), .heading(let level, let text, nil)?):
                 items[items.count - 1] = .heading(level: level, text: text, priority: mvp ? "\(priority) · MVP" : priority)
@@ -90,10 +92,43 @@ struct MarkdownBlocksView: View {
         let items = items
         LazyVStack(alignment: .leading, spacing: Theme.Space.x14) {
             ForEach(items.indices, id: \.self) { index in
-                item(items[index], isFirst: index == 0)
+                if isChanged(items[index]) {
+                    item(items[index], isFirst: index == 0)
+                        .padding(.vertical, Theme.Space.x2)
+                        .padding(.horizontal, Theme.Space.x8)
+                        .background(Theme.Colors.changedFill, in: RoundedRectangle(cornerRadius: Theme.Radius.code))
+                        .padding(.horizontal, -Theme.Space.x8)
+                } else {
+                    item(items[index], isFirst: index == 0)
+                }
             }
         }
         .foregroundStyle(Theme.Colors.label)
+    }
+
+    /// The lines of the changed passages without their Markdown markers, as a block's text has them.
+    private var changedLines: [String] {
+        highlights.flatMap { $0.split(whereSeparator: \.isNewline) }.compactMap { line in
+            var text = line.drop { "#->|\t ".contains($0) }
+            for box in ["[ ] ", "[x] "] where text.hasPrefix(box) { text = text.dropFirst(box.count) }
+            return text.count < 4 ? nil : String(text)
+        }
+    }
+
+    private func isChanged(_ item: Item) -> Bool {
+        guard !highlights.isEmpty else { return false }
+        let text: String = switch item {
+        case .heading(_, let text, _), .paragraph(let text), .source(let text), .code(let text), .assumption(_, let text), .openQuestion(_, let text): text
+        case .criteria(let list): list.map { "\($0.id) \($0.text)" }.joined(separator: "\n")
+        case .bullets(let list): list.joined(separator: "\n")
+        case .ordered(let list): list.map(\.text).joined(separator: "\n")
+        case .tasks(let list): list.map { "\($0.id). \($0.text)\n" + $0.details.joined(separator: "\n") }.joined(separator: "\n")
+        case .covers(let ids): "Covers: " + ids.joined(separator: ", ")
+        case .table(_, let rows), .states(let rows): rows.map { $0.joined(separator: " | ") }.joined(separator: "\n")
+        case .flow(let steps, let branches): (steps + branches).joined(separator: "\n")
+        case .mvpLine: ""
+        }
+        return changedLines.contains { text.contains($0) }
     }
 
     @ViewBuilder

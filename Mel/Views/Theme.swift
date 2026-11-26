@@ -596,6 +596,122 @@ enum Theme {
     }
 }
 
+// MARK: - V2 board (design/v2/V2-2-Board.dc.html and its states V2-4, 5, 7, 8, 9)
+
+extension Theme.Colors {
+    /// #B8000F · "These disagree" label, Remove… in a story's menu.
+    static let disagreeText = Color(hex: 0xB8000F)
+    /// rgba(215,0,21,0.45) · ring of an open "These disagree" card.
+    static let disagreeRing = Color(hex: 0xD70015, opacity: 0.45)
+    /// #0058B9 · "Likely" on the suggested intake option.
+    static let likely = Color(hex: 0x0058B9)
+    /// #6B2F00 · title of the stopped and unplaced banners.
+    static let bannerTitle = Color(hex: 0x6B2F00)
+    /// rgba(0,122,255,0.35) · ring of the edit banner; the button stub in a Screens node.
+    static let accentRing = Color(hex: 0x007AFF, opacity: 0.35)
+    /// rgba(0,122,255,0.5) · 1 pt ring of a focused text area (free answer, file editor).
+    static let focusRing = Color(hex: 0x007AFF, opacity: 0.5)
+    /// rgba(0,122,255,0.1) · a passage the last change touched; rgba(0,122,255,0.12) · Files button while open.
+    static let changedFill = Color(hex: 0x007AFF, opacity: 0.1)
+    static let filesOpenFill = Color(hex: 0x007AFF, opacity: 0.12)
+    /// rgba(36,138,61,0.08) fill and rgba(36,138,61,0.3) ring of the change result line.
+    static let resultFill = Color(hex: 0x248A3D, opacity: 0.08)
+    static let resultRing = Color(hex: 0x248A3D, opacity: 0.3)
+    /// rgba(0,0,0,0.07) · skeleton lines before the plan exists, bars in a Screens node; rgba(0,0,0,0.12) · its title bar.
+    static let skeleton = Color.black.opacity(0.07)
+    static let skeletonStrong = Color.black.opacity(0.12)
+    /// rgba(0,0,0,0.1) · token button while its popover is open.
+    static let pressedFill = Color.black.opacity(0.1)
+    /// rgba(245,245,247,0.86) · V2 sidebar panel; #FBE1AE / #8A4B00 · the project's letter tile.
+    static let sidebarGlass = Color(hex: 0xF5F5F7, opacity: 0.86)
+    static let projectTile = Color(hex: 0xFBE1AE)
+    static let projectTileText = Color(hex: 0x8A4B00)
+}
+
+extension Theme.Text {
+    /// 15/20 bold · "Mel needs you", First version / Later, a file's `##` headings.
+    static let boardTitle = Theme.TextStyle(size: 15, weight: .bold, lineHeight: 20)
+    /// 22/28 bold · a file's `#` title in the board's reader.
+    static let fileTitle = Theme.TextStyle(size: 22, weight: .bold, lineHeight: 28)
+    /// 14/19 semibold · story title.
+    static let storyTitle = Theme.TextStyle(size: 14, weight: .semibold, lineHeight: 19)
+    /// 12/16 bold · Build order column title.
+    static let calloutHeavy = Theme.TextStyle(size: 12, weight: .bold, lineHeight: 16)
+    /// 13/17 semibold · project name in the V2 sidebar.
+    static let sidebarProject = Theme.TextStyle(size: 13, weight: .semibold, lineHeight: 17)
+    /// 12/16 bold on the tile · the project's letter.
+    static let tileLetter = Theme.TextStyle(size: 12, weight: .bold, lineHeight: 16)
+}
+
+extension Theme.Size {
+    /// 300 · "Mel needs you" column and the token popover.
+    static let inboxWidth: CGFloat = 300
+    /// 760 / 780 / 680 / 860 · widest Plan, open file and Tell Mel, intake summary, Screens.
+    static let planMaxWidth: CGFloat = 760
+    static let fileMaxWidth: CGFloat = 780
+    static let askingMaxWidth: CGFloat = 680
+    static let screensMaxWidth: CGFloat = 860
+    /// 40 · intake option row; 20 · its key box.
+    static let optionRow: CGFloat = 40
+    static let optionKey: CGFloat = 20
+    /// 7 · file state dot in Files and the open file's header.
+    static let fileDot: CGFloat = 7
+    /// 8 × 14 · a story's drag grip, six 2.4 pt dots.
+    static let gripWidth: CGFloat = 8
+    static let gripHeight: CGFloat = 14
+    static let gripDot: CGFloat = 2.4
+    /// 2.8 · a dot of the ··· button, 5 pt apart.
+    static let moreDot: CGFloat = 2.8
+    /// 150 wide Screens node with a 78 pt sketch.
+    static let flowNode: CGFloat = 150
+    static let flowSketch: CGFloat = 78
+    /// 200 · narrowest Build order column.
+    static let orderColumnMin: CGFloat = 200
+    /// 12 and 56 · skeleton line and card before the plan exists.
+    static let skeletonLine: CGFloat = 12
+    static let skeletonCard: CGFloat = 56
+    /// 190 · a story menu's least width; 26 · token popover row.
+    static let tokenRow: CGFloat = 26
+    /// 244 · V2 sidebar; 26 · project tile; 40 · spec row; 44 · project button.
+    static let boardSidebar: CGFloat = 244
+    static let projectTile: CGFloat = 26
+    static let specRow: CGFloat = 40
+    static let projectButton: CGFloat = 44
+    /// 16 lines · the file editor; 2 · Tell Mel and a card's free answer; 3 · an intake free answer.
+    static let editorLines = 16
+    static let tellLines = 2
+}
+
+extension Theme.Elevation {
+    /// Open decision card and the intake question card: ring 0.1 + 0 2 6 0.06.
+    static let inboxCard = Theme.Elevation(ring: .black.opacity(0.1), drop: Theme.Drop(y: 2, blur: 6, color: .black.opacity(0.06)))
+    /// Open "These disagree" card: 1 pt red inset ring + 0 2 6 0.06.
+    static let disagreeCard = Theme.Elevation(ring: Theme.Colors.disagreeRing, ringWidth: 1, insetRing: true, drop: Theme.Drop(y: 2, blur: 6, color: .black.opacity(0.06)))
+    /// First-version story card and the Tell Mel box: ring 0.12 + 0 1 3 0.06.
+    static let storyCard = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+    /// A card's answer pill: ring 0.15 + 0 1 2 0.06.
+    static let answerPill = Theme.Elevation(ring: .black.opacity(0.15), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
+    /// White pill without a shadow (banner buttons, First, Restore, Cancel): ring 0.15; "Something else…": the same ring, inset.
+    static let pill = Theme.Elevation(ring: .black.opacity(0.15))
+    static let pillOutline = Theme.Elevation(ring: .black.opacity(0.15), insetRing: true)
+    /// Edit in an open file: ring 0.18.
+    static let editButton = Theme.Elevation(ring: .black.opacity(0.18))
+    /// A file chip in Files: ring 0.1; the open file's article and a Build order task: ring 0.12 / 0.1.
+    static let fileChip = Theme.Elevation(ring: .black.opacity(0.1))
+    static let article = Theme.Elevation(ring: .black.opacity(0.12))
+    /// Token popover and a story's menu: ring 0.12 + 0 8 24 0.14.
+    static let popover = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 8, blur: 24, color: .black.opacity(0.14)))
+    /// Screens node: ring 0.14 + 0 1 3 0.06.
+    static let flowNode = Theme.Elevation(ring: .black.opacity(0.14), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+    /// Focused text area: 1 pt inset accent ring.
+    static let focus = Theme.Elevation(ring: Theme.Colors.focusRing, ringWidth: 1, insetRing: true)
+    /// Edit banner and change result: inset rings in their own color.
+    static let editBanner = Theme.Elevation(ring: Theme.Colors.accentRing, insetRing: true)
+    static let result = Theme.Elevation(ring: Theme.Colors.resultRing, insetRing: true)
+    /// V2 sidebar's project button and New: ring 0.12 + 0 1 2 0.06.
+    static let sidebarButton = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
+}
+
 extension View {
     /// Font, tracking and exact line height of a design text style, glyphs placed like CSS.
     func textStyle(_ style: Theme.TextStyle) -> some View {

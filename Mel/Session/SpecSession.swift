@@ -693,8 +693,14 @@ import MelSystem
         var tokens: Int
         /// The new text of each changed passage, highlighted in an open file.
         var passages: [DocKind: [String]]
-        fileprivate var before: [DocKind: String]
+        fileprivate var before: [DocKind: String] = [:]
         fileprivate var decision: String?
+
+        init(line: String, tokens: Int, passages: [DocKind: [String]]) {
+            self.line = line
+            self.tokens = tokens
+            self.passages = passages
+        }
     }
 
     private enum ChangeEnd {
@@ -747,7 +753,9 @@ import MelSystem
             saveSnapshot(kind)
         }
         refreshChecks()
-        lastChange = ChangeResult(line: line, tokens: (spec.tokens?[.changes] ?? 0) - spent, passages: passages, before: before)
+        var result = ChangeResult(line: line, tokens: (spec.tokens?[.changes] ?? 0) - spent, passages: passages)
+        result.before = before
+        lastChange = result
     }
 
     /// Mel's own checks by ID, free, after the files changed. Contradictions keep their cards.
@@ -910,7 +918,7 @@ import MelSystem
             return
         }
         saveSnapshot(.requirements)
-        var result = lastChange ?? ChangeResult(line: "", tokens: 0, passages: [:], before: [:])
+        var result = lastChange ?? ChangeResult(line: "", tokens: 0, passages: [:])
         result.line = "Removed “\(removal.title)”"
         result.before[.requirements] = before
         result.decision = addDecision(title: "Removed: \(removal.title)", reason: removal.summary.isEmpty ? "Nothing else was built on it." : removal.summary, source: "You")
@@ -1012,6 +1020,19 @@ import MelSystem
         lastError = nil
         persist()
         await runBoard()
+    }
+
+    /// Why the board stopped, in the user's words.
+    var haltText: String? { spec.halted.map { Self.message($0.reason) } }
+
+    func openInEditor(_ kind: DocKind) {
+        guard let store else { return }
+        SystemActions.open(store.url(kind))
+    }
+
+    func showInFinder(_ kind: DocKind) {
+        guard let store else { return }
+        SystemActions.showInFinder(store.url(kind))
     }
 
     /// "Finish it myself": the cut-off file counts as written; the board goes on after the user's edit.
@@ -1398,8 +1419,10 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, draftStep: Int = 0, impact: ImpactResult? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = []) -> SpecSession {
-        SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, draftStep: draftStep, impact: impact, snapshots: snapshots, decisions: decisions)
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, draftStep: Int = 0, impact: ImpactResult? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil) -> SpecSession {
+        let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, draftStep: draftStep, impact: impact, snapshots: snapshots, decisions: decisions)
+        session.lastChange = lastChange
+        return session
     }
 }
 
