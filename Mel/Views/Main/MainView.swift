@@ -40,7 +40,8 @@ struct MainView: View {
 
     @ViewBuilder
     private var flow: some View {
-        if state.projects.isEmpty, state.missingFolders.isEmpty {
+        // A library with only missing folders starts over too; the sidebar's project menu offers Locate once a project is there.
+        if state.projects.isEmpty {
             if startsFromIdea, hasStarted {
                 NewView { isShowingNew = false }
             } else {
