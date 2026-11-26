@@ -13,8 +13,6 @@ import MelSystem
     private(set) var isRunning: Bool
     private(set) var lastError: String?
     private(set) var conflict: DocKind?
-    /// B3: the step the draft has reached (`<!-- mel:step N -->`), 0 before the first marker.
-    private(set) var draftStep = 0
     /// Board: the last change's result line, until dismissed or undone.
     private(set) var lastChange: ChangeResult?
     /// Text of each file as Mel last wrote it (`.mel/approved/`), for the edit banner's Update and Undo.
@@ -67,8 +65,7 @@ import MelSystem
         }
     }
 
-    private init(spec: Spec, documents: [DocKind: String], liveText: String, activity: [ActivityLine], isRunning: Bool, lastError: String?, conflict: DocKind?, draftStep: Int, snapshots: [DocKind: String], decisions: [Decision]) {
-        self.draftStep = draftStep
+    private init(spec: Spec, documents: [DocKind: String], liveText: String, activity: [ActivityLine], isRunning: Bool, lastError: String?, conflict: DocKind?, snapshots: [DocKind: String], decisions: [Decision]) {
         self.snapshots = snapshots
         self.decisions = decisions
         self.spec = spec
@@ -162,7 +159,6 @@ import MelSystem
         if now - shownAt >= .milliseconds(100) {
             shownAt = now
             liveText = DraftText.file(fromReply: reply, kind: kind)
-            draftStep = DraftText.step(in: reply)
         }
         if now - wroteAt >= .milliseconds(500) {
             wroteAt = now
@@ -381,7 +377,6 @@ import MelSystem
         draftKind = kind
         reply = partial
         liveText = partial
-        draftStep = 0
         activity = []
         persist()
         let end = await run(prompt, step: step, resume: partial.isEmpty ? nil : spec.sessionID, persist: true)
@@ -935,7 +930,6 @@ import MelSystem
         let attachments = spec.attachments.map { "- specs/\(slug)/.mel/attachments/\($0.fileName)" }
         return ["name": spec.name, "idea": spec.idea, "files": spec.size.filesText,
                 "project": project ?? "(no project context yet)",
-                "buildsOn": spec.buildsOn.isEmpty ? "(nothing named)" : spec.buildsOn.joined(separator: ", "),
                 "attachments": attachments.isEmpty ? "(none)" : attachments.joined(separator: "\n"),
                 "answers": spec.answersText, "decide": spec.decideText,
                 "approved": approvedText(before: kind), "steps": kind.stepsText]
@@ -1033,8 +1027,8 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, draftStep: Int = 0, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil) -> SpecSession {
-        let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, draftStep: draftStep, snapshots: snapshots, decisions: decisions)
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil) -> SpecSession {
+        let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, snapshots: snapshots, decisions: decisions)
         session.lastChange = lastChange
         return session
     }

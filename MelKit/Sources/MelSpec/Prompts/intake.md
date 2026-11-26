@@ -12,8 +12,6 @@ Name: {{name}}
 
 {{idea}}
 
-Builds on: {{buildsOn}}
-
 ## Attachments
 
 {{attachments}}

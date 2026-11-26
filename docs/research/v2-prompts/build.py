@@ -1,4 +1,4 @@
-"""Builds the five recorded prompts from core's templates: python3 -I build.py <probe-copy> <out-dir>
+"""Builds the recorded prompts from core's templates: python3 -I build.py <probe-copy> <out-dir>
 
 Mirrors Prompt.build (single-pass {{key}} replacement, {{rules}} = rules.md) and the MelSpec helpers
 (promptText, filesText, kindsText, stepsText, answersText, decideText) on the probe inputs.
@@ -29,7 +29,7 @@ project = "\n\n".join(section(f".mel/project/{k}.md", context[k]) for k in ["pro
 feature = {"size": "Feature", "files": "REQUIREMENTS.md, ARCHITECTURE.md, TASKS.md",
            "kinds": "`requirements`, `architecture`, `tasks`"}
 work = {"project": project, "name": "Breaks and daily goal", "idea": read(f"{i}/idea.txt"),
-        "buildsOn": "TimerCore, SessionStore", "attachments": "- specs/breaks-and-goal/.mel/attachments/feedback.txt"}
+        "attachments": "- specs/breaks-and-goal/.mel/attachments/feedback.txt"}
 
 build("project", {"mode": "This folder has code. Read it to learn the project."})
 build("intake", {**feature, **work, "count": "3",
@@ -39,9 +39,6 @@ build("requirements", {**feature, **work, "answers": read(f"{i}/answers.txt"), "
 build("analyze", {"name": work["name"], "kinds": feature["kinds"],
                   "approved": "\n\n".join(section(f + ".md", read(f"{i}/{f}.md")) for f in ["REQUIREMENTS", "ARCHITECTURE", "TASKS"]),
                   "earlier": "(none: this is the first check)"})
-build("impact", {"file": "REQUIREMENTS.md", "kinds": "`architecture`, `tasks`",
-                 "before": read(f"{i}/before.md"), "after": read(f"{i}/after.md"),
-                 "later": "\n\n".join(section(f + ".md", read(f"{i}/{f}.md")) for f in ["ARCHITECTURE", "TASKS"])})
 build("change", {**feature, "project": project, "name": work["name"], "idea": work["idea"],
                  "reading": "Everything you need is in this prompt. Do not read files or call tools.", "attachments": "(none)",
                  "requests": "- The long break comes after every 3rd focus session of the day, not every 4th.\n- REQUIREMENTS.md asked “Should the goal-reached message show the count?”. The answer: Yes, as `Goal reached: 8/8`.",

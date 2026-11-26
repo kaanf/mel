@@ -1,28 +1,16 @@
 import Foundation
 
-/// Text edits Mel makes to the spec files while drafting and reviewing.
+/// What Mel takes out of a drafting reply before it writes the file.
 public enum DraftText {
-    /// The file text for a drafting reply: without step markers, the question trailer and a
-    /// marker still being streamed. v1 replies to REQUIREMENTS and TASKS start with a plan line
+    /// The file text for a drafting reply: without the question trailer and a comment still
+    /// being streamed. `<!-- mel:step N -->` lines, which drafts wrote before 0.5 (and a session
+    /// resumed from then still may), are dropped too. v1 replies to REQUIREMENTS and TASKS start with a plan line
     /// (`5 stories`), dropped too (the v1 e2e fixtures have one); every v2 file starts with `#`.
     public static func file(fromReply reply: String, kind: DocKind) -> String {
         let text = strippingMarkers(reply)
         guard kind == .requirements || kind == .tasks, text.first?.isNumber == true else { return text }
         guard let newline = text.firstIndex(where: \.isNewline) else { return "" }
         return String(text[newline...].drop(while: \.isNewline))
-    }
-
-    /// The highest complete `<!-- mel:step N -->` so far, or 0 before the first.
-    public static func step(in reply: String) -> Int {
-        var step = 0
-        var rest = reply[...]
-        while let marker = rest.range(of: "<!-- mel:step ") {
-            let digits = rest[marker.upperBound...].prefix(while: \.isNumber)
-            // Only a complete marker counts: "1" may still become "12".
-            if let n = Int(digits), rest[digits.endIndex...].hasPrefix(" -->") { step = max(step, n) }
-            rest = rest[marker.upperBound...]
-        }
-        return step
     }
 
     /// `text` without step-marker lines, the `<!-- mel:questions … -->` trailer, and a

@@ -33,7 +33,7 @@ struct ModelsTests {
     }
 
     @Test func v2SpecRoundTrips() throws {
-        var spec = Spec(name: "Booking", idea: "x", size: .feature, folder: URL(filePath: "/p/specs/booking"), buildsOn: ["Booking"], attachments: [Attachment(fileName: "log-1.txt")], analyze: .issues(2))
+        var spec = Spec(name: "Booking", idea: "x", size: .feature, folder: URL(filePath: "/p/specs/booking"), attachments: [Attachment(fileName: "log-1.txt")], analyze: .issues(2))
         spec.docs[.architecture] = .stale
         spec.questions = [Question(id: "q", title: "Offline?", why: "", shapes: .requirements, round: .draft, options: [])]
         #expect(try JSONDecoder().decode(Spec.self, from: JSONEncoder().encode(spec)) == spec)

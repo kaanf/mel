@@ -45,14 +45,11 @@ struct V2FixtureTests {
         #expect(coverage.allSatisfy { ["covered", "asking", "notYet", "later"].contains($0["state"]) })
     }
 
-    /// Markers arrive split across deltas (`"<!-- m"`, `"-- mel:step 2"`), so stripping them needs a buffer.
-    @Test func draftWithStepMarkersAndTrailer() throws {
-        let events = try events("draft-steps")
-        let deltas = events.compactMap { if case .text(let t) = $0 { t } else { nil } }
-        #expect(deltas.contains("<!-- m"))
-        let draft = try result("draft-steps")
-        let markers = draft.matches(of: #/<!-- mel:step (\d+) -->/#).map { Int($0.1)! }
-        #expect(markers == Array(1...7))
+    /// Since 0.5 a draft carries no step markers; the trailer is the only comment Mel takes out.
+    @Test func draftWithTrailer() throws {
+        let draft = try result("draft")
+        #expect(draft.hasPrefix("# Requirements\n"))
+        #expect(!draft.contains("mel:step"))
         let trailer = try #require(draft.firstMatch(of: #/<!-- mel:questions\n(.*)\n-->$/#.dotMatchesNewlines()))
         let questions = try #require(JSONSerialization.jsonObject(with: Data(trailer.1.utf8)) as? [[String: Any]])
         #expect((1...3).contains(questions.count))

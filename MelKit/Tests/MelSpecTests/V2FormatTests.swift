@@ -150,7 +150,6 @@ struct V2FormatTests {
          {"id":"r2-2","title":"A"},{"id":"r2-3","title":"B"},{"id":"r2-4","title":"C"}]
         -->
         """
-        #expect(DraftText.step(in: reply) == 2)
         #expect(DraftText.strippingMarkers(reply) == "# Requirements\n\n## 1. Book\n- 1.1 THE APP SHALL book.\n")
         let questions = DraftText.questions(in: reply, kind: .requirements)
         #expect(questions.map(\.id) == ["r2-1", "r2-2", "r2-3"])
@@ -160,7 +159,6 @@ struct V2FormatTests {
 
     @Test func streamingHidesAHalfWrittenMarker() {
         #expect(DraftText.strippingMarkers("# Product\n\nText.\n<!-- mel:st") == "# Product\n\nText.\n")
-        #expect(DraftText.step(in: "<!-- mel:step 3 -->\n<!-- mel:step 1") == 3)
     }
 
     @Test func openQuestionsComeFromCallouts() {

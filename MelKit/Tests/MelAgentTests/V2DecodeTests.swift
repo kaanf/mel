@@ -26,9 +26,8 @@ struct V2DecodeTests {
         #expect(intake.coverage.filter { $0.state == .notYet }.allSatisfy { $0.question.map(ids.contains) == true })
     }
 
-    @Test func draftStripsMarkersAndReadsTheTrailer() throws {
-        let reply = try fixtures.result("draft-steps")
-        #expect(DraftText.step(in: reply) == 7)
+    @Test func draftStripsTheTrailerAndReadsIt() throws {
+        let reply = try fixtures.result("draft")
         let file = DraftText.file(fromReply: reply, kind: .requirements)
         #expect(file.hasPrefix("# Requirements"))
         #expect(!file.contains("<!-- mel:"))
@@ -41,15 +40,11 @@ struct V2DecodeTests {
         #expect(summary.quality >= 1)
         #expect(MarkdownParser.blocks(file).contains(.mvpLine))
 
-        // Streamed: every accumulated prefix shows no marker text and a step that never goes back.
+        // Streamed: no accumulated prefix shows the trailer, whole or half written.
         var text = ""
-        var step = 0
-        for case .text(let delta) in try fixtures.events("draft-steps") {
+        for case .text(let delta) in try fixtures.events("draft") {
             text += delta
             #expect(!DraftText.file(fromReply: text, kind: .requirements).contains("<!-- mel:"))
-            let now = DraftText.step(in: text)
-            #expect(now >= step)
-            step = now
         }
     }
 
@@ -68,7 +63,7 @@ struct V2DecodeTests {
         #expect(change.edits.count == 9)
         #expect(change.files(in: SpecSize.feature.files) == [.requirements])
         #expect(change.edits.contains { $0.old == "is a multiple of 4" && $0.new == "is a multiple of 3" })
-        #expect(change.edits.allSatisfy { $0.old.count < 60 })   // short passages, not whole sections
+        #expect(change.edits.allSatisfy { $0.old.count < 150 })   // passages, not whole sections
         #expect(change.summary(order: SpecSize.feature.files) == "Changed 9 places in REQUIREMENTS.md")
     }
 

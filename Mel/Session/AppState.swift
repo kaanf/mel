@@ -206,7 +206,7 @@ import MelSystem
     /// the board then calls `start()` on the session. Without a project (New product only) a new
     /// project folder is made under `parent`, by default `~/Developer` (created if missing), and
     /// becomes the current project. Name it `Spec.untitledName` to let intake name it.
-    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, parent: URL? = nil, buildsOn: [String] = [], fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession {
+    func createSpec(name: String, idea: String, size: SpecSize, project: Project?, parent: URL? = nil, fillGaps: Bool = true, files: [URL] = [], logs: [String] = []) throws -> SpecSession {
         let isNew = project == nil
         let project = try project ?? createProject(name: name, parent: parent ?? developerFolder)
         if isNew {
@@ -214,7 +214,7 @@ import MelSystem
             projectID = project.id
         }
         let folder = SpecStore.freeFolder(name: name, in: project.folder.appending(path: "specs", directoryHint: .isDirectory))
-        let spec = Spec(name: name, idea: idea, size: size, folder: folder, buildsOn: buildsOn, fillGaps: fillGaps, language: specLanguage)
+        let spec = Spec(name: name, idea: idea, size: size, folder: folder, fillGaps: fillGaps, language: specLanguage)
         try SpecStore.create(spec)
         specs.append(spec)
         selection = spec.id

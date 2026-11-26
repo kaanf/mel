@@ -47,9 +47,8 @@ Deleting `.mel/` loses the pipeline state, never the spec itself.
 
 ## Draft stream markers
 
-Mel strips these from the reply before it writes the file:
+Mel strips this from the reply before it writes the file (and `<!-- mel:step N -->` lines, which drafts wrote before 0.5):
 
-- `<!-- mel:step N -->` on its own line when the agent reaches step N of the file's fixed checklist (`DocKind.draftSteps`). Markers can arrive split across text deltas and back to back. The board doesn't show the checklist; the markers are only stripped.
 - An optional trailer at the very end, up to 3 questions the draft couldn't settle. Each becomes a card in "Mel needs you":
 
 ```

@@ -11,8 +11,6 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var docs: [DocKind: DocStatus]
     public var questions: [Question]
     public var coverage: [CoverageItem]
-    /// B1 "Builds on" chips (Feature): module names from `structure.md`, or "Something new".
-    public var buildsOn: [String]
     public var attachments: [Attachment]
     public var analyze: AnalyzeStatus
     public var analysis: AnalyzeResult?
@@ -33,7 +31,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var sessionID: String?
 
     /// A new spec starts with the intake questions and every file of its size waiting.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil, sessionID: String? = nil) {
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil, sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -43,7 +41,6 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.docs = docs ?? size.allLocked
         self.questions = questions
         self.coverage = coverage
-        self.buildsOn = buildsOn
         self.attachments = attachments
         self.analyze = analyze
         self.analysis = analysis
@@ -100,7 +97,7 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
         }
     }
 
-    /// B1 "Mel will ask about" chips; also the intake's starting coverage list.
+    /// The intake's starting topics. Those no question covers are left for the drafts to settle.
     public var topics: [String] {
         switch self {
         case .quickFix: ["What breaks today", "Expected behavior", "How to verify"]
@@ -140,7 +137,7 @@ public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hash
     public var fileName: String { rawValue.uppercased() + ".md" }
     public var title: String { rawValue.capitalized }
 
-    /// B3's checklist, fixed in the prompt; the agent emits `<!-- mel:step N -->` as it reaches step N.
+    /// What a draft of this file works through, listed in its prompt under "Steps".
     public var draftSteps: [String] {
         switch self {
         case .product: ["Read the idea and your answers", "Describe the problem and the goal", "Name the users and roles", "Set the scope and what is out of scope", "Define how success is measured", "Mark anything you didn’t confirm as an assumption"]

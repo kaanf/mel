@@ -41,7 +41,7 @@ public enum Prompt: String, CaseIterable, Sendable {
 
 // Prompt text for `{{steps}}`, `{{files}}` and `{{kinds}}`.
 extension DocKind {
-    /// B3's steps as a numbered list; the agent marks each with `<!-- mel:step N -->`.
+    /// The file's steps as a numbered list.
     public var stepsText: String {
         draftSteps.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
     }

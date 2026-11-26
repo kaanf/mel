@@ -13,12 +13,12 @@ struct PromptTests {
         try #require(text.split(separator: "\n").first { $0.hasPrefix(start) }).description
     }
 
-    private static let drafting: Set<String> = ["project", "name", "idea", "files", "buildsOn", "attachments", "answers", "decide", "approved", "steps", "rules"]
+    private static let drafting: Set<String> = ["project", "name", "idea", "files", "attachments", "answers", "decide", "approved", "steps", "rules"]
 
     @Test func placeholdersPerPrompt() {
         for kind in DocKind.allCases { #expect(placeholders(Prompt(drafting: kind)) == Self.drafting) }
         #expect(placeholders(.project) == ["mode"])
-        #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
+        #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "attachments", "topics", "count", "kinds"])
         #expect(placeholders(.rewrite) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
         #expect(placeholders(.change) == ["files", "reading", "project", "name", "idea", "requests", "attachments", "current", "kinds", "rules"])
         #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds"])
@@ -38,7 +38,8 @@ struct PromptTests {
         let text = Prompt(drafting: kind).build([:])
         #expect(text.contains("You are writing \(kind.fileName)"))
         #expect(text.contains("# \(kind.title)\n"))
-        #expect(text.contains("write `<!-- mel:step N -->` on its own line"))
+        #expect(text.contains("## Steps"))
+        #expect(!text.contains("mel:step"))   // no markers: the board shows no checklist
         #expect(text.contains("Never write TBD, TODO or placeholders."))
     }
 

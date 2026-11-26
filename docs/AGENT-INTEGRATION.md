@@ -97,14 +97,13 @@ Unplaced: nothing changes. `Spec.unplacedChange` keeps the reply and names the f
 
 ### Streaming Markdown stages (drafting, rewrite)
 
-The agent outputs only the file's Markdown; Mel shows the text deltas live and saves the final `result`. Two kinds of comment, both stripped before saving:
+The agent outputs only the file's Markdown; Mel shows the text deltas live and saves the final `result`. One comment is stripped before saving (and `<!-- mel:step N -->` lines, which drafts wrote before 0.5):
 
-- **Step markers** `<!-- mel:step N -->` on their own line, N counting from 1, before each step of the file kind's fixed checklist (`DocKind.draftSteps`, listed in the prompt). The board doesn't show the checklist; the markers are stripped. Verified: all 7 markers arrive in order, but two can come back to back (steps 2 and 3 written together), so never assume one marker per section.
 - **Gap questions**: at most one trailing `<!-- mel:questions` + newline + JSON array of up to 3 questions (shape above; the model may leave out `shapes`, which then defaults to the file's kind) + newline + `-->` at the very end. Absent when there are no gaps. They become cards in "Mel needs you", next to one card per `[!OPEN QUESTION]` callout left in the file.
 
-Markers and the trailer are **split across text deltas** (recorded: `"<!-- mel:"` + `"step 1 -->"`, `"<!-"` + `"- mel:questions\n["`). Strip from the accumulated text, never per delta, and hold back a trailing partial `<!--` from the live preview until it closes.
+The trailer is **split across text deltas** (recorded: `"<!-"` + `"- mel:questions\n["`). Strip from the accumulated text, never per delta, and hold back a trailing partial `<!--` from the live preview until it closes.
 
-The v1 plan line (`5 stories`) is gone; progress is the step markers.
+The prompt lists the file kind's steps (`DocKind.draftSteps`) as a writing checklist; nothing reports progress through them.
 
 ### Attachments
 
