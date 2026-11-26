@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-0 · Start (v2: replaces A1 Welcome, A1x No agent, A2 Pick a project, A3 Project context and A4x First spec)
+Purpose: first launch in one screen. Agents found on this Mac are shown as a status line, not a step.
+  Pick a repo Mel found, drop a folder, or start from an idea. Start goes straight to V2-1 New.
+  Mel reads the project once in the background (about 1 minute); the context files are reviewed later in Settings › Specs, not here.
+  Prop agentsFound = false shows the no-agent state (install commands, Check Again) inline; Start stays off until one is found.
+Goes to: V2-1 New (Start) · V2-6 Settings (Change, Choose path).
+Variant on the canvas: V2-0b (no agent found).
+-->
+<title>Start (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased; display: flex; align-items: center; justify-content: center">
+<div style="width: 100%; max-width: 620px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 14px">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+
+<div style="padding: 8px 40px 32px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<svg width="56" height="56" viewBox="0 0 56 56" role="img" aria-label="Mel">
+<rect width="56" height="56" rx="13" fill="#fff8ec"></rect>
+<path d="M28 9l8 4.6v9.2L28 27.4l-8-4.6v-9.2z" fill="#e8a23a"></path>
+<path d="M18 26.4l8 4.6v9.2L18 44.8l-8-4.6V31z" fill="#e8a23a"></path>
+<path d="M38 26.4l8 4.6v9.2L38 44.8l-8-4.6V31z" fill="#e8a23a"></path>
+<path d="M28 29.6l5.2 3v6L28 41.6l-5.2-3v-6z" fill="#fde7bd"></path>
+</svg>
+<h1 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.02em">Welcome to Mel</h1>
+<p style="margin: 0; max-width: 440px; font-size: 14px; line-height: 21px; color: #3a3a3c">Describe what you want. Mel asks a few questions and writes a plan your coding agent can build, step by step.</p>
+</div>
+
+<sc-if value="{{found}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: #f5f5f7; flex-wrap: wrap">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">Your agents</span>
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); font-size: 12px; line-height: 16px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>Claude Code</span>
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); font-size: 12px; line-height: 16px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>Codex</span>
+<span style="flex: 1; min-width: 120px; font-size: 11px; line-height: 14px; color: #6e6e73">Mel uses them with your own accounts.</span>
+<a href="V2-6-Settings-Specs.dc.html" style="font-size: 12px; line-height: 16px">Change</a>
+</div>
+</sc-if>
+
+<sc-if value="{{missing}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">Mel needs a coding agent on this Mac</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">Mel doesn’t run its own AI. Install one in Terminal and sign in once. Mel looks again when you come back to this window.</span>
+<sc-for list="{{installs}}" as="i" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1)">
+<span style="flex: 0 0 92px; font-size: 12px; line-height: 16px; font-weight: 600">{{i.name}}</span>
+<code style="flex: 1; min-width: 0; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; color: #3a3a3c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{i.cmd}}</code>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: rgba(0,0,0,0.05); font: inherit; font-size: 11px; line-height: 14px; color: #1d1d1f">Copy</button>
+</div>
+</sc-for>
+<div style="display: flex; gap: 12px; align-items: center">
+<button onClick="{{checkAgain}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Check Again</button>
+<a href="V2-6-Settings-Specs.dc.html" style="font-size: 12px; line-height: 16px">Installed somewhere else? Choose path…</a>
+</div>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">What will you work on?</span>
+<div role="radiogroup" aria-label="Project" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="4">
+<button role="radio" aria-checked="{{p.checked}}" onClick="{{p.pick}}" style="{{p.style}}">
+<span style="{{p.radio}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; font-weight: 500">{{p.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{p.meta}}</span>
+</span>
+</button>
+</sc-for>
+</div>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">Or drop a project folder anywhere on this window.</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<span style="flex: 1; min-width: 200px; font-size: 12px; line-height: 17px; color: #6e6e73">{{footNote}}</span>
+<a href="V2-1-New.dc.html" aria-disabled="{{startDisabled}}" style="{{startStyle}}">Start<span style="font-size: 11px; line-height: 14px; font-weight: 400; opacity: 0.85">↩</span></a>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"agentsFound":{"editor":"boolean","default":true},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { pick: 'yoga', found: props.agentsFound ?? true };
+}
+renderVals() {
+const s = this.state;
+const list = [
+{ id: 'yoga', name: 'yoga-studio-booking', meta: '~/Developer · Kotlin Multiplatform · edited today' },
+{ id: 'habits', name: 'habit-tracker', meta: '~/Developer · Android · edited last week' },
+{ id: 'portfolio', name: 'portfolio-site', meta: '~/Developer · Astro · edited last month' },
+{ id: 'idea', name: 'No code yet, start from an idea', meta: 'Mel makes a new folder for it' }
+];
+const projects = list.map((p) => {
+const on = s.pick === p.id;
+return {
+name: p.name, meta: p.meta, checked: on ? 'true' : 'false',
+pick: () => this.setState({ pick: p.id }),
+style: 'min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius: 10px; font: inherit; text-align: left; color: #1d1d1f; ' + (on ? 'background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.14)'),
+radio: 'flex: 0 0 16px; width: 16px; height: 16px; border-radius: 50%; box-sizing: border-box; ' + (on ? 'border: 5px solid #007aff; background: #ffffff' : 'border: 1px solid rgba(0,0,0,0.3); background: #ffffff')
+};
+});
+const can = s.found;
+const isIdea = s.pick === 'idea';
+return {
+found: s.found, missing: !s.found,
+installs: [{ name: 'Claude Code', cmd: 'npm install -g @anthropic-ai/claude-code' }, { name: 'Codex', cmd: 'npm install -g @openai/codex' }],
+checkAgain: () => this.setState({ found: true }),
+projects: projects,
+footNote: !can ? 'Start works once an agent is found.' : (isIdea ? 'Mel learns your project from your first spec.' : 'Mel reads the project once in the background, about a minute. You can start writing right away.'),
+startDisabled: can ? 'false' : 'true',
+startStyle: 'height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (can ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (can ? 'auto' : 'none')
+};
+}
+}
+</script>
+</body>
+</html>

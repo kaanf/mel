@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-1 · New (simplified, replaces B1 in the v2 proposal)
+Purpose: one box. The user describes the work and presses Start. Mel infers the size (Quick fix, Feature, Product) and shows it as one chip the user can change. Project defaults to the last one. Agent, save path, "Builds on" and "fill small gaps" are defaults, not questions.
+Goes to: V2-2 Board (Start).
+-->
+<title>New (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+textarea::placeholder{color:#aeaeb2}
+textarea:focus{outline:none}
+.box:focus-within{box-shadow:0 0 0 0.5px #007aff,0 0 0 3.5px rgba(0,122,255,0.3)!important}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Mel knows this project</span>
+</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Needs you</span>
+<span style="padding: 2px 8px; font-size: 12px; line-height: 16px; color: #8e8e93">Nothing waiting for you</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Building</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Filter schedule by teacher</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Task 3 of 7</span></span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Done</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Double booking on fast taps</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Merged yesterday</span></span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<span style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: rgba(0,122,255,0.1); font-size: 13px; line-height: 18px; font-weight: 600; color: #0058b9">New<span style="font-size: 11px; line-height: 14px; font-weight: 400">⌘N</span></span>
+<a href="Native-Settings-Agents.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1">Claude Code · Ready</span>
+</a>
+</div>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 32px">
+<div style="width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 16px">
+<h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em; text-align: center">What do you want to build?</h1>
+<p style="margin: 0 0 8px; font-size: 14px; line-height: 20px; color: #6e6e73; text-align: center">Plain words are fine. Mel asks a few questions, then writes the plan for your agent.</p>
+
+<div class="box" style="display: flex; flex-direction: column; border-radius: 16px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.16), 0 2px 10px rgba(0,0,0,0.06)">
+<label for="v2-idea" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Describe the work</label>
+<textarea id="v2-idea" rows="5" value="{{idea}}" onChange="{{onIdea}}" placeholder="A new app, a feature, or a bug. Paste an issue link or drop a log." style="box-sizing: border-box; width: 100%; resize: none; padding: 16px 18px 8px; border: 0; background: transparent; font: inherit; font-size: 15px; line-height: 23px; color: #1d1d1f"></textarea>
+<div style="min-height: 52px; display: flex; align-items: center; gap: 8px; padding: 8px 10px 10px 12px; flex-wrap: wrap">
+<button aria-label="Add files" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: rgba(0,0,0,0.05); color: #3a3a3c">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 7.5l-5.6 5.6a3.2 3.2 0 0 1-4.5-4.5l5.9-5.9a2.1 2.1 0 0 1 3 3l-5.9 5.9a1 1 0 0 1-1.5-1.5l5.3-5.3"></path></svg>
+</button>
+<sc-if value="{{hasIdea}}" hint-placeholder-val="{{true}}">
+<button onClick="{{cycleSize}}" aria-label="{{sizeAria}}" style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(0,122,255,0.08); box-shadow: inset 0 0 0 1px rgba(0,122,255,0.35); font: inherit; font-size: 12px; line-height: 16px; color: #0058b9">
+<span style="font-weight: 600">{{sizeLabel}}</span><span>· {{sizeNote}}</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</sc-if>
+<span style="flex: 1"></span>
+<a href="V2-2-Board.dc.html" aria-disabled="{{startDisabled}}" style="{{startStyle}}">Start<span style="font-size: 11px; line-height: 14px; font-weight: 400; opacity: 0.85">⌘↩</span></a>
+</div>
+</div>
+
+<sc-if value="{{hasIdea}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; font-size: 12px; line-height: 17px; color: #6e6e73; text-align: center">{{guessWhy}} Click the chip if it’s wrong.</p>
+</sc-if>
+
+<sc-if value="{{noIdea}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 8px">
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">Or try one</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center">
+<sc-for list="{{examples}}" as="e" hint-placeholder-count="3">
+<button onClick="{{e.use}}" style="height: 30px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{e.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</main>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { idea: 'Members can filter the weekly schedule by teacher and see a short teacher profile on each class.', size: null };
+}
+guess(t) {
+const x = (t || '').toLowerCase();
+if (/(bug|crash|broken|wrong|double|fails|error|fix)/.test(x)) return 'quick';
+if (/(an app|new app|a platform|for my|from scratch|website for)/.test(x)) return 'product';
+return 'feature';
+}
+renderVals() {
+const s = this.state;
+const has = s.idea.trim().length > 0;
+const guessed = this.guess(s.idea);
+const size = s.size || guessed;
+const order = ['quick', 'feature', 'product'];
+const info = {
+quick: { label: 'Quick fix', note: '1 question, 1 file', why: 'Sounds like a bug in yoga-studio-booking, so Mel keeps it to one short spec.' },
+feature: { label: 'Feature', note: 'in yoga-studio-booking', why: 'Sounds like a change to yoga-studio-booking, so Mel plans it on top of your code.' },
+product: { label: 'New product', note: 'new folder', why: 'Sounds like a new app, so Mel also plans the screens.' }
+}[size];
+const examples = [
+{ label: 'A new app idea', text: 'An app for my yoga studio where members book classes, buy class packs and get reminders.' },
+{ label: 'A feature', text: 'Members can filter the weekly schedule by teacher and see a short teacher profile on each class.' },
+{ label: 'A bug', text: 'Two quick taps on Book create two bookings and take two credits.' }
+].map((e) => ({ label: e.label, use: () => this.setState({ idea: e.text, size: null }) }));
+return {
+idea: s.idea,
+onIdea: (e) => this.setState({ idea: e.target.value, size: null }),
+hasIdea: has,
+noIdea: !has,
+sizeLabel: info.label,
+sizeNote: info.note,
+sizeAria: 'Planned as ' + info.label + '. Click to change.',
+guessWhy: s.size ? 'You picked ' + info.label + '.' : info.why,
+cycleSize: () => this.setState({ size: order[(order.indexOf(size) + 1) % 3] }),
+examples: examples,
+startDisabled: has ? 'false' : 'true',
+startStyle: 'height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (has ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (has ? 'auto' : 'none')
+};
+}
+}
+</script>
+</body>
+</html>

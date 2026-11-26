@@ -5,7 +5,7 @@
 <!--
 MEL SCREEN C3 · Home, no specs yet
 Lane: C Other states (main window with zero specs)
-Purpose: the main window when a project exists but has no specs. Empty sidebar with placeholder rows, four-step "how it works", three start cards (Fix a bug, Add a feature, Plan a new app) with file count and time.
+Purpose: the main window when the selected project has no specs. Same sidebar as every spec screen, with all three groups empty. Empty sidebar with placeholder rows, four-step "how it works", three start cards (Fix a bug, Add a feature, Plan a new app) with file count and time.
 Comes from: reopening the app with no specs · cancelling B1 New Spec · deleting the last spec.
 Goes to: B1 New Spec with the matching size preselected (start cards, New Spec, Cmd+N). With no project at all it opens A4x instead.
 Map of all screens: FLOW.md
@@ -25,30 +25,62 @@ a{color:#0066d6}a:hover{color:#0066d6}
 <div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
 <div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
 
-<nav aria-label="Specs" style="flex: 0 0 232px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
-<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<nav aria-label="Project" style="position: relative; flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
 </div>
-<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px 6px; height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" aria-expanded="false" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">P</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">portfolio-site</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">main</span>
+</span>
+<span aria-label="Another project needs you" role="img" style="width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px; min-height: 32px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5L8 2.5l5.5 4v6.25a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">yoga-studio-booking</span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Ready</span>
+<span style="flex: 1; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px">Project context</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Up to date · read today</span>
+</span>
 </a>
-<div style="padding: 4px 18px 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Specs</div>
-<div style="flex: 1; padding: 6px 18px; display: flex; flex-direction: column; gap: 6px">
-<span style="font-size: 12px; line-height: 16px; color: #6e6e73">No specs yet. Each spec you start shows up here with its files.</span>
-<div aria-hidden="true" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; opacity: 0.5">
-<span style="height: 8px; width: 70%; border-radius: 4px; background: rgba(0,0,0,0.08)"></span>
-<span style="height: 8px; width: 55%; margin-left: 14px; border-radius: 4px; background: rgba(0,0,0,0.06)"></span>
-<span style="height: 8px; width: 60%; margin-left: 14px; border-radius: 4px; background: rgba(0,0,0,0.06)"></span>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Needs you</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73"></span>
+</div>
+<span style="padding: 2px 8px; font-size: 12px; line-height: 16px; color: #aeaeb2">Nothing waiting for you</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Agent working</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73"></span>
+</div>
+<span style="padding: 2px 8px; font-size: 12px; line-height: 16px; color: #aeaeb2">No agent running</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Done</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73"></span>
+</div>
+<span style="padding: 2px 8px; font-size: 12px; line-height: 16px; color: #aeaeb2">Nothing finished yet</span>
 </div>
 </div>
-<div style="padding: 10px 12px; border-top: 0.5px solid rgba(0,0,0,0.08)">
-<a href="Native-1-NewSpec.dc.html" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 13px; line-height: 18px; color: #6e6e73; text-decoration: none">
-<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
-<span>New Spec</span>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="Native-1-NewSpec.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+New Spec<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span>
+</a>
+<a href="Native-Settings-Agents.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1">Claude Code · Ready</span>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2"></circle><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"></path></svg>
 </a>
 </div>
 </nav>
@@ -105,7 +137,7 @@ steps: [
 ],
 starts: [
 { title: 'Fix a bug', text: 'Paste a log or describe what breaks.', meta: '1 file · about 2 min' },
-{ title: 'Add a feature', text: 'Extend yoga-studio-booking.', meta: '3 files · about 6 min' },
+{ title: 'Add a feature', text: 'Extend portfolio-site.', meta: '3 files · about 6 min' },
 { title: 'Plan a new app', text: 'From an idea, with screens.', meta: '5 files · about 12 min' }
 ]
 };

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-0b · Start, no agent found (v2)
+No Claude Code or Codex on this Mac: install commands and Check Again inline. Start stays off until one is found.
+Same component as V2-0-Start.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Start, no agent found (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-0-Start" agents-found="{{ false }}" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

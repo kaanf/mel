@@ -118,6 +118,22 @@ Gate G6: all three merged; tests green; every v2 screen has previews; side-by-si
 
 Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Product spec end to end.
 
+## Wave 8 · Simplified flow and token budget (target: [V2.md](V2.md) §0)
+
+Single session on `main`. Steps 8.1–8.2 also help the current flow and can ship as v0.4.x. 8.3 onward ships once as **v0.5**, with no half flow. Open questions #26–#30 are settled before the step that needs them.
+
+| Step | Work |
+|---|---|
+| **8.1 Patch engine** | `revise.md` → reply `{"edits":[{"old","new"}]}`; `MelSpec` applies them (pure, tested: exact match once, else unplaced). Refine, open questions, round 2 and analyze fixes use it. Unplaced → offer whole-file rewrite (OQ #25). Re-record fixtures for the new reply. |
+| **8.2 Token readout** | Read `usage` from each run's `result` (`MelAgent`), sum per spec and step in `state.json` (OQ #26). Show it in the current toolbar to get real numbers before 8.3. |
+| **8.3 Cheaper checks** | Analyze coverage in Swift (criterion → task, Q → task, screen → criterion by ID); the agent only looks for contradictions, with a short JSON reply. Removing a story: Swift finds its IDs in later files, a patch run removes the prose. |
+| **8.4 Pipeline** | `Pipeline.swift`: no `review`/`approve`; draft → cards → next file when the earlier files' cards are answered, or on "Write it now". One card model for intake questions, round 2, open questions and analyze issues, with free answers. Scope moves as a direct edit of the priority marker. Tell Mel = one patch run against the current files. Project context in the background. |
+| **8.5 Screens** | V2-0 Start (+0b), V2-1 New (local size guess, OQ #27), V2-2 Board (+4, 5, 7, 8, 9), V2-3 Ready (Build with Claude Code, OQ #28), V2-6 Settings › Specs. Sidebar groups Needs you / Building / Done. Retire the A1–C3 views. Pixel-exact, `#Preview` per state. |
+| **8.6 Docs** | REQUIREMENTS, UI, DESIGN, SPEC-FORMAT, AGENT-INTEGRATION from V2.md §0. Invariant wording (OQ #29) in CLAUDE.md and DESIGN.md. |
+| **8.7 Ship** | End-to-end tests with the fake script (Quick fix, Feature, Product: gating, Tell Mel, remove, unplaced → rewrite, stop + resume). Real run on this Mac, token total compared with v0.4. Cut v0.5. |
+
+Gate G8: a Product spec uses fewer tokens than the same spec on v0.4; a Tell Mel change and a Remove run without rewriting a whole file; v0.5 updates in-app from v0.4.
+
 ## Status (2026-11-26)
 
 - Waves 0–3 merged to `main`. G0–G2 passed (G2's fake-script part covered by core's 5.1 EndToEndTests).
@@ -143,7 +159,8 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - 2026-11-26: multi-agent setup retired (worktrees, `agent/*` branches and `agents/` removed; layer rules moved to DESIGN.md › Project conventions).
 - 2026-11-26: spec language (English/Türkçe) on A1 + Settings › Specs, stored per spec, appended to every spec prompt (`language.md`); OQ #5 decided.
 - v0.4 published 2026-11-26 (build 409, notarized DMG); spec language selection and assumption confirmation fix. appcast.xml updated for in-app updates.
-- Next: the user reports problems from v0.4.
+- 2026-11-26: canvas V2 simplified flow chosen as the next target (OQ #23–25), with expressiveness and token budget as product rules. `docs/design/v2/` synced from the canvas (V2-0…V2-9, D1, updated Native-*). Wave 8 planned; OQ #26–30 open.
+- Next: Wave 8 step 8.1 (patch engine). Problems the user reports from v0.4 come first.
 
 ## Risks
 

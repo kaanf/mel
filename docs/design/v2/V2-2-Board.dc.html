@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-2 · Board (v2: replaces B2 Intake, D1 Spec board, C1 Refine and C2 Agent stopped)
+Purpose: one screen for the whole spec loop. Two rules hold everywhere: the user can say anything in their own words and
+  change or remove anything at any time, and Mel never spends more tokens than doing it by hand (every change is a small
+  patch to the passages it touches; a file is only rewritten from scratch when the user explicitly chooses it).
+Inbox ("Mel needs you"):
+  1. Before the draft: up to 3 questions, one at a time, each with "Something else…" for a free answer.
+     "Skip, write the plan now" turns the rest into guesses.
+  2. After each file is written: its decision cards, one style, each with 2 or 3 one-tap answers plus "Something else…"
+     (inline text field). A real contradiction gets the red "These disagree" card. Answered cards show the answer and Change.
+Files are written one at a time, gated: the next file starts only when the cards of the files before it are answered, so a
+  later answer never forces a rewrite. The waiting file shows "ARCHITECTURE.md starts after 2 answers" in Files and in the
+  toolbar pill, with a quiet "Write it now" (unanswered cards become guesses, same rule as Skip).
+  File states: Ready (green dot), Writing (blue ring), Needs you (blue dot), Waiting (grey ring, not started).
+Center: Plan (first version, later, must also). New products also get Screens and Build order.
+  Story cards drag between "First version" and "Later" (or use the Later / First button): it changes at once, no agent run.
+  Each story card has a ··· menu with Remove…: a confirmation lists what goes with it (requirements, screens, tasks).
+  Removed items are logged in DECISIONS.md and can be restored there.
+Tell Mel (under the center, also when a file is open): one free-text field, long text and attachments. One request at a
+  time against the current files, no chat history. States (prop tell):
+  - working: "Placing your change…" in the pill.
+  - result: "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md, 1 task in TASKS.md", changed passages highlighted
+    in the open file, Undo next to it. The change and its reason (the user's words) go to DECISIONS.md.
+  - unplaced: "Mel couldn't find where this goes in ARCHITECTURE.md." Rewrite ARCHITECTURE.md (shows its token cost) or Cancel.
+Token use: a neutral toolbar button with the spec's total ("41k tokens"); click opens a popover by step (project context,
+  questions, each file, checks, changes). Hidden when Settings › Specs › "Show token use on the board" is off (prop showTokens).
+Files: the Files button lists the Markdown files with their state. Clicking one opens it in the center (Formatted or
+  Markdown, Open in Editor, Reveal in Finder, Edit). Settings › Specs › "Show spec files in the sidebar" also lists them
+  under the open spec (prop sidebarFiles).
+Edit after it's written (was C1): saving a change shows a banner: which files were built on it, Update or Keep, and a reason saved to DECISIONS.md.
+Agent stopped (was C2): a banner over the center; finished files and answers are untouched (prop scenario = "stopped").
+Comes from: V2-1 New. Goes to: V2-3 Ready (Start Building), V2-6 Settings (agent status, token popover).
+States on the canvas (same component, props only): V2-4 (a file open, Tell Mel result highlighted), V2-5 (agent stopped,
+  files in the sidebar), V2-7 (change couldn't be placed), V2-8 (Remove confirmation), V2-9 (waiting for answers, Files and
+  token popover open).
+-->
+<title>Board (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Mel knows this project</span>
+</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Needs you</span>
+<button onClick="{{closeFile}}" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border: 0; border-radius: 8px; background: rgba(0,0,0,0.08); font: inherit; text-align: left; color: #1d1d1f">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: {{sideDot}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">Yoga Studio Booking</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{sideMeta}}</span></span>
+</button>
+<sc-if value="{{showSideFiles}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 1px; padding: 2px 0 4px 22px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="5">
+<button onClick="{{f.open}}" aria-current="{{f.current}}" style="{{f.sideStyle}}">
+<span style="flex: 1; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px">{{f.name}}</span>
+<span style="{{f.dot}}"></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Building</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Filter schedule by teacher</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Task 3 of 7</span></span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Done</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Double booking on fast taps</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Merged yesterday</span></span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="V2-1-New.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">New<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span></a>
+<a href="V2-6-Settings-Specs.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: {{agentDot}}"></span>
+<span style="flex: 1">{{agentWord}}</span>
+</a>
+</div>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+<div style="min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 20px; flex-wrap: wrap">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 150px">
+<span style="font-size: 15px; line-height: 19px; font-weight: 600">Yoga Studio Booking</span>
+<span style="height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.05); font-size: 11px; line-height: 14px; color: #3a3a3c">New product</span>
+</div>
+<div style="flex: 1; min-width: 180px; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap">
+<span role="status" style="height: 28px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 14px; background: rgba(0,0,0,0.04); font-size: 12px; line-height: 16px; color: #3a3a3c">
+<span style="{{pillDot}}"></span>{{pill}}
+</span>
+<sc-if value="{{gated}}" hint-placeholder-val="{{false}}">
+<button onClick="{{writeNow}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Write it now</button>
+</sc-if>
+</div>
+<sc-if value="{{showTokens}}" hint-placeholder-val="{{true}}">
+<div style="position: relative">
+<button onClick="{{toggleTokens}}" aria-haspopup="dialog" aria-expanded="{{tokensOpen}}" style="height: 30px; display: inline-flex; align-items: center; padding: 0 12px; border: 0; border-radius: 15px; background: {{tokensBtnBg}}; font: inherit; font-size: 12px; line-height: 16px; color: #3a3a3c; font-variant-numeric: tabular-nums">{{tokenTotal}} tokens</button>
+<sc-if value="{{tokensOpenBool}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-label="Token use by step" style="position: absolute; top: 36px; right: 0; z-index: 10; width: 300px; box-sizing: border-box; padding: 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.14); display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="flex: 1; font-size: 13px; line-height: 18px; font-weight: 600">Token use for this spec</span>
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; font-variant-numeric: tabular-nums">{{tokenTotal}}</span>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">From your Claude Code usage. Changes are small edits to the passages they touch, so they stay cheap.</span>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{tokenRows}}" as="r" hint-placeholder-count="8">
+<div style="min-height: 26px; display: flex; align-items: center; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.06)">
+<span style="flex: 1; font-size: 12px; line-height: 16px; color: #1d1d1f; {{r.font}}">{{r.label}}</span>
+<span style="font-size: 12px; line-height: 16px; color: {{r.color}}; font-variant-numeric: tabular-nums">{{r.value}}</span>
+</div>
+</sc-for>
+</div>
+<a href="V2-6-Settings-Specs.dc.html" style="font-size: 11px; line-height: 14px; color: #0066d6; text-decoration: none">Hide token use in Settings</a>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<button onClick="{{toggleFiles}}" aria-expanded="{{filesOpen}}" style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 15px; background: {{filesBtnBg}}; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5l3.25 3.25v9.25H4z"></path><path d="M9 1.75V5h3.25"></path></svg>
+Files
+</button>
+<a href="V2-3-Ready.dc.html" aria-disabled="{{ctaDisabled}}" style="{{ctaStyle}}">Start Building</a>
+</div>
+
+<sc-if value="{{filesOpenBool}}" hint-placeholder-val="{{false}}">
+<div style="margin: 0 20px 8px; padding: 10px 12px; border-radius: 12px; background: #f5f5f7; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
+<span style="flex: 1; font-size: 12px; line-height: 16px; color: #3a3a3c">{{filesNote}}</span>
+<sc-if value="{{gated}}" hint-placeholder-val="{{false}}">
+<button onClick="{{writeNow}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Write it now</button>
+</sc-if>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘1 to ⌘5 open a file · Esc goes back</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="5">
+<button onClick="{{f.open}}" style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); font: inherit; color: #1d1d1f">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px">{{f.name}}</span>
+<span style="{{f.dot}}"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{f.word}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{stopped}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="margin: 0 20px 10px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35); display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">Claude Code stopped while writing ARCHITECTURE.md</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">Your Claude plan’s usage limit was reached. That’s a limit on your account, not a problem with the plan. Your answers and the 3 finished files are safe; ARCHITECTURE.md is saved up to section 2.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button onClick="{{resume}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Continue with Codex</button>
+<button onClick="{{resume}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Resume at 18:00 when the limit resets</button>
+<button onClick="{{openArch}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Finish it myself</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasEdit}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="margin: 0 20px 10px; padding: 12px 14px; border-radius: 12px; background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 0.5px rgba(0,122,255,0.35); display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">You changed {{editFile}}. {{downText}}</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">Update rewrites only the parts that depend on your change. Anything that needs your call comes back as a question on the right.</span>
+<label for="v2-why" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Why did you change it? Saved to DECISIONS.md so agents know.</label>
+<input id="v2-why" type="text" value="{{why}}" onChange="{{onWhy}}" placeholder="For example: studio policy changed" style="height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button onClick="{{applyEdit}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">{{updateLabel}}</button>
+<button onClick="{{keepEdit}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Keep them as they are</button>
+<button onClick="{{undoEdit}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Undo my change</button>
+</div>
+</div>
+</sc-if>
+
+<div style="flex: 1; padding: 4px 20px 16px">
+
+<sc-if value="{{reading}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 780px">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button onClick="{{closeFile}}" style="height: 28px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px 0 6px; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"></path></svg>Plan</button>
+<span style="font-size: 12px; line-height: 16px; color: #aeaeb2">›</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600">{{doc.name}}</span>
+<span style="{{doc.dot}}"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{doc.word}}</span>
+<span style="flex: 1"></span>
+<div role="tablist" aria-label="View" style="height: 28px; display: flex; padding: 2px; gap: 2px; box-sizing: border-box; border-radius: 14px; background: rgba(0,0,0,0.06)">
+<sc-for list="{{viewTabs}}" as="v" hint-placeholder-count="2">
+<button role="tab" aria-selected="{{v.selected}}" onClick="{{v.pick}}" style="{{v.style}}">{{v.label}}</button>
+</sc-for>
+</div>
+<button style="height: 28px; padding: 0 10px; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Open in VS Code</button>
+<button aria-label="Reveal in Finder" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); color: #3a3a3c">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.25h4.5l1.5 1.5h6.5v7.5H1.75z"></path></svg>
+</button>
+<sc-if value="{{canEdit}}" hint-placeholder-val="{{true}}">
+<button onClick="{{startEdit}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; font-weight: 500; color: #1d1d1f">Edit</button>
+</sc-if>
+</div>
+
+<sc-if value="{{readOnlyNote}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{readOnlyText}}</span>
+</sc-if>
+
+<sc-if value="{{showFormatted}}" hint-placeholder-val="{{true}}">
+<article style="display: flex; flex-direction: column; gap: 8px; padding: 20px 24px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12)">
+<sc-for list="{{doc.blocks}}" as="b" hint-placeholder-count="6">
+<div style="{{b.wrap}}">
+<sc-if value="{{b.isH1}}" hint-placeholder-val="{{false}}"><h2 style="margin: 0 0 4px; font-size: 22px; line-height: 28px; font-weight: 700">{{b.text}}</h2></sc-if>
+<sc-if value="{{b.isH2}}" hint-placeholder-val="{{false}}"><h3 style="margin: 10px 0 0; font-size: 15px; line-height: 20px; font-weight: 700">{{b.text}}</h3></sc-if>
+<sc-if value="{{b.isP}}" hint-placeholder-val="{{true}}"><p style="margin: 0; font-size: 13px; line-height: 20px; color: #3a3a3c">{{b.text}}</p></sc-if>
+<sc-if value="{{b.isLi}}" hint-placeholder-val="{{false}}"><div style="display: flex; gap: 8px; padding-left: 4px"><span aria-hidden="true" style="color: #aeaeb2">•</span><span style="font-size: 13px; line-height: 20px">{{b.text}}</span></div></sc-if>
+<sc-if value="{{b.isRm}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: center; gap: 8px; padding-left: 4px"><span aria-hidden="true" style="color: #aeaeb2">•</span><span style="flex: 1; font-size: 13px; line-height: 20px; color: #6e6e73">{{b.text}}</span><button onClick="{{b.restore}}" style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Restore</button></div></sc-if>
+</div>
+</sc-for>
+</article>
+</sc-if>
+
+<sc-if value="{{showRaw}}" hint-placeholder-val="{{false}}">
+<pre style="margin: 0; padding: 16px 18px; border-radius: 12px; background: #f5f5f7; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 19px; color: #1d1d1f; white-space: pre-wrap">{{doc.raw}}</pre>
+</sc-if>
+
+<sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="v2-md" style="font-size: 12px; line-height: 16px; color: #3a3a3c">Editing {{doc.name}}. Your edits are never overwritten by the agent.</label>
+<textarea id="v2-md" rows="16" value="{{draft}}" onChange="{{onDraft}}" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 14px 16px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.5); font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 19px; color: #1d1d1f"></textarea>
+<div style="display: flex; gap: 8px">
+<button onClick="{{saveEdit}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: #007aff; font: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff">Save</button>
+<button onClick="{{cancelEdit}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: rgba(0,0,0,0.05); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{asking}}" hint-placeholder-val="{{false}}">
+<div style="max-width: 680px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #f5f5f7">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Your idea</span>
+<span style="font-size: 14px; line-height: 21px">An app for my yoga studio where members book classes, buy class packs and get reminders. Teachers should see who is coming to each class.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">Mel understands so far</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{known}}" as="k" hint-placeholder-count="3">
+<span style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 13px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px">
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>{{k.label}}</span>
+</sc-for>
+</div>
+</div>
+<div aria-hidden="true" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px">
+<span style="height: 12px; width: 30%; border-radius: 6px; background: rgba(0,0,0,0.07)"></span>
+<span style="height: 56px; border-radius: 12px; background: rgba(0,0,0,0.04)"></span>
+<span style="height: 56px; border-radius: 12px; background: rgba(0,0,0,0.04)"></span>
+<span style="height: 56px; border-radius: 12px; background: rgba(0,0,0,0.04)"></span>
+</div>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">The plan appears here after your answers. Mel writes the files one at a time.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{planning}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div role="tablist" aria-label="Plan views" style="width: fit-content; height: 30px; display: flex; padding: 2px; gap: 2px; box-sizing: border-box; border-radius: 15px; background: rgba(0,0,0,0.06)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button role="tab" aria-selected="{{t.selected}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+
+<sc-if value="{{isPlan}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 760px">
+<div onDragOver="{{allowDrop}}" onDrop="{{dropFirst}}" style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
+<h3 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">First version</h3>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{aboveCount}}</span>
+<span style="flex: 1"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Drag a story between groups. It changes at once.</span>
+</div>
+<sc-for list="{{above}}" as="s" hint-placeholder-count="3">
+<div draggable="true" onDragStart="{{s.dragStart}}" style="{{s.box}}">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="8" height="14" viewBox="0 0 8 14" fill="#aeaeb2" aria-hidden="true"><circle cx="2" cy="2" r="1.2"></circle><circle cx="6" cy="2" r="1.2"></circle><circle cx="2" cy="7" r="1.2"></circle><circle cx="6" cy="7" r="1.2"></circle><circle cx="2" cy="12" r="1.2"></circle><circle cx="6" cy="12" r="1.2"></circle></svg>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-size: 14px; line-height: 19px; font-weight: 600">{{s.title}}</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{s.line}}</span>
+</span>
+<button aria-label="{{s.moveLabel}}" onClick="{{s.move}}" style="height: 26px; padding: 0 10px; border: 0; border-radius: 13px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Later</button>
+<button aria-label="More for {{s.title}}" aria-haspopup="menu" aria-expanded="{{s.menuOpen}}" onClick="{{s.toggleMenu}}" style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; background: rgba(0,0,0,0.05); color: #3a3a3c">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.4"></circle><circle cx="8" cy="8" r="1.4"></circle><circle cx="13" cy="8" r="1.4"></circle></svg>
+</button>
+</div>
+<sc-if value="{{s.menuBool}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="{{s.title}}" style="position: absolute; top: 46px; right: 12px; z-index: 5; min-width: 190px; padding: 4px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.14); display: flex; flex-direction: column">
+<button role="menuitem" onClick="{{s.move}}" style="min-height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; line-height: 18px; text-align: left; color: #1d1d1f">Move to Later</button>
+<button role="menuitem" onClick="{{s.askRemove}}" style="min-height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; line-height: 18px; text-align: left; color: #b8000f">Remove…</button>
+</div>
+</sc-if>
+<sc-if value="{{s.confirmBool}}" hint-placeholder-val="{{false}}">
+<div role="alertdialog" aria-label="Remove {{s.title}}" style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #f5f5f7">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Remove “{{s.title}}”?</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{s.also}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">You can restore it from DECISIONS.md.</span>
+<div style="display: flex; gap: 8px">
+<button onClick="{{s.doRemove}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #d70015; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Remove</button>
+<button onClick="{{s.cancelRemove}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{aboveEmpty}}" hint-placeholder-val="{{false}}">
+<div style="padding: 14px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font-size: 12px; line-height: 16px; color: #6e6e73; text-align: center">Drag a story here to build it first.</div>
+</sc-if>
+</div>
+<div onDragOver="{{allowDrop}}" onDrop="{{dropLater}}" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<h3 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700; color: #6e6e73">Later</h3>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{belowCount}}</span>
+</div>
+<sc-for list="{{below}}" as="s" hint-placeholder-count="2">
+<div draggable="true" onDragStart="{{s.dragStart}}" style="{{s.box}}">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="8" height="14" viewBox="0 0 8 14" fill="#aeaeb2" aria-hidden="true"><circle cx="2" cy="2" r="1.2"></circle><circle cx="6" cy="2" r="1.2"></circle><circle cx="2" cy="7" r="1.2"></circle><circle cx="6" cy="7" r="1.2"></circle><circle cx="2" cy="12" r="1.2"></circle><circle cx="6" cy="12" r="1.2"></circle></svg>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-size: 14px; line-height: 19px; font-weight: 600; color: #3a3a3c">{{s.title}}</span>
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73">{{s.line}}</span>
+</span>
+<button aria-label="{{s.moveLabel}}" onClick="{{s.move}}" style="height: 26px; padding: 0 10px; border: 0; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">First</button>
+<button aria-label="More for {{s.title}}" aria-haspopup="menu" aria-expanded="{{s.menuOpen}}" onClick="{{s.toggleMenu}}" style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); color: #3a3a3c">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.4"></circle><circle cx="8" cy="8" r="1.4"></circle><circle cx="13" cy="8" r="1.4"></circle></svg>
+</button>
+</div>
+<sc-if value="{{s.menuBool}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="{{s.title}}" style="position: absolute; top: 46px; right: 12px; z-index: 5; min-width: 190px; padding: 4px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.14); display: flex; flex-direction: column">
+<button role="menuitem" onClick="{{s.move}}" style="min-height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; line-height: 18px; text-align: left; color: #1d1d1f">Move to first version</button>
+<button role="menuitem" onClick="{{s.askRemove}}" style="min-height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; line-height: 18px; text-align: left; color: #b8000f">Remove…</button>
+</div>
+</sc-if>
+<sc-if value="{{s.confirmBool}}" hint-placeholder-val="{{false}}">
+<div role="alertdialog" aria-label="Remove {{s.title}}" style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #ffffff">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Remove “{{s.title}}”?</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{s.also}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">You can restore it from DECISIONS.md.</span>
+<div style="display: flex; gap: 8px">
+<button onClick="{{s.doRemove}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #d70015; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Remove</button>
+<button onClick="{{s.cancelRemove}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{belowEmpty}}" hint-placeholder-val="{{false}}">
+<div style="padding: 14px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font-size: 12px; line-height: 16px; color: #6e6e73; text-align: center">Drag a story here to leave it for later.</div>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">It must also</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="height: 26px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: 13px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px">Open the schedule in under 1 second</span>
+<span style="height: 26px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: 13px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px">Never keep card details on the phone</span>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isScreens}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 860px">
+<p style="margin: 0; font-size: 13px; line-height: 19px; color: #3a3a3c">How a member books a class.</p>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{flow}}" as="n" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 8px">
+<div style="width: 150px; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)">
+<div aria-hidden="true" style="height: 78px; border-radius: 8px; background: #f5f5f7; display: flex; flex-direction: column; gap: 5px; padding: 8px; box-sizing: border-box">
+<span style="height: 6px; width: 60%; border-radius: 3px; background: rgba(0,0,0,0.12)"></span>
+<span style="height: 14px; border-radius: 4px; background: rgba(0,0,0,0.07)"></span>
+<span style="height: 14px; border-radius: 4px; background: rgba(0,0,0,0.07)"></span>
+<span style="height: 10px; width: 40%; margin-top: auto; border-radius: 5px; background: rgba(0,122,255,0.35)"></span>
+</div>
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">{{n.name}}</span>
+</div>
+<sc-if value="{{n.arrow}}" hint-placeholder-val="{{true}}">
+<svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="#aeaeb2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 5h17M14 1.5L18 5l-4 3.5"></path></svg>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isOrder}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+<sc-for list="{{columns}}" as="col" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; background: #f5f5f7">
+<span style="font-size: 12px; line-height: 16px; font-weight: 700; color: #3a3a3c">{{col.title}}</span>
+<sc-for list="{{col.tasks}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{t.title}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Checked by: {{t.check}}</span>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{showTell}}" hint-placeholder-val="{{true}}">
+<div style="margin: 0 20px 20px; display: flex; flex-direction: column; gap: 8px; max-width: 780px">
+<sc-if value="{{tellResult}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: rgba(36,138,61,0.08); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+<span style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{tellLine}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #3a3a3c">{{tellSub}}</span>
+</span>
+<button onClick="{{undoTell}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Undo</button>
+<button onClick="{{dismissTell}}" aria-label="Dismiss" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: transparent; color: #6e6e73">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button>
+</div>
+</sc-if>
+<sc-if value="{{tellUnplaced}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">Mel couldn’t find where this goes in ARCHITECTURE.md.</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">“{{tellAsked}}” changes how every booking is confirmed (D-05), and no single passage covers that. Nothing was changed.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{rewrite}}" style="height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Rewrite ARCHITECTURE.md<span style="font-size: 11px; line-height: 14px; color: #6e6e73">about 8k tokens</span></button>
+<button onClick="{{cancelTell}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Cancel</button>
+</div>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)">
+<label for="v2-tell" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Tell Mel</label>
+<textarea id="v2-tell" rows="2" value="{{tellText}}" onChange="{{onTell}}" placeholder="Tell Mel what to change, add or remove…" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 19px; color: #1d1d1f"></textarea>
+<sc-if value="{{hasAttach}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{attach}}" as="a" hint-placeholder-count="1">
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 6px; background: #f5f5f7; font-size: 11px; line-height: 14px; color: #1d1d1f">{{a.name}}
+<button onClick="{{a.remove}}" aria-label="Remove {{a.name}}" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: #6e6e73">
+<svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button></span>
+</sc-for>
+</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button onClick="{{addAttach}}" style="height: 26px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; border: 0; border-radius: 13px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 7.5l-5.2 5.2a3 3 0 0 1-4.3-4.3L9 3a2 2 0 0 1 2.9 2.9l-5.4 5.4a1 1 0 0 1-1.4-1.4L10 5"></path></svg>Attach</button>
+<span style="flex: 1; min-width: 160px; font-size: 11px; line-height: 14px; color: #6e6e73">One request at a time. Mel edits only the passages it touches and logs why in DECISIONS.md.</span>
+<button onClick="{{sendTell}}" aria-disabled="{{sendDisabled}}" style="{{sendStyle}}">{{sendLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+</main>
+
+<aside aria-label="Mel needs you" style="flex: 1 1 300px; max-width: 100%; box-sizing: border-box; padding: 16px; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">{{inboxTitle}}</h2>
+
+<sc-if value="{{asking}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06)">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Question {{qNum}} of 3</span>
+<span style="font-size: 15px; line-height: 20px; font-weight: 600">{{q.text}}</span>
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73">{{q.why}}</span>
+<div role="radiogroup" aria-label="{{q.text}}" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{q.options}}" as="o" hint-placeholder-count="3">
+<button role="radio" aria-checked="false" onClick="{{o.pick}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); font: inherit; text-align: left; color: #1d1d1f">
+<span style="flex: 0 0 20px; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; color: #6e6e73">{{o.key}}</span>
+<span style="flex: 1; font-size: 13px; line-height: 18px">{{o.label}}</span>
+<sc-if value="{{o.suggested}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; line-height: 14px; color: #0058b9">Likely</span></sc-if>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{freeQClosed}}" hint-placeholder-val="{{true}}">
+<button onClick="{{openFreeQ}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); font: inherit; text-align: left; color: #1d1d1f">
+<span style="flex: 0 0 20px; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; color: #6e6e73">{{freeKey}}</span>
+<span style="flex: 1; font-size: 13px; line-height: 18px; color: #3a3a3c">Something else…</span>
+</button>
+</sc-if>
+<sc-if value="{{freeQOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="v2-freeq" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Your answer, in your own words</label>
+<textarea id="v2-freeq" rows="3" value="{{freeQText}}" onChange="{{onFreeQ}}" placeholder="For example: at the desk for now, in the app from spring" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 8px 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.5); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f"></textarea>
+<div style="display: flex; gap: 8px">
+<button onClick="{{useFreeQ}}" aria-disabled="{{freeQDisabled}}" style="{{freeQStyle}}">Use this answer</button>
+<button onClick="{{closeFreeQ}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+<button onClick="{{skip}}" style="align-self: flex-start; padding: 4px 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Skip, write the plan now</button>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Skipped questions become guesses you can check later.</span>
+</sc-if>
+
+<sc-if value="{{planning}}" hint-placeholder-val="{{true}}">
+<sc-for list="{{cards}}" as="c" hint-placeholder-count="3">
+<div style="{{c.box}}">
+<sc-if value="{{c.conflict}}" hint-placeholder-val="{{false}}">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 14px; font-weight: 600; color: #b8000f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #d70015"></span>These disagree</span>
+</sc-if>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{c.where}}</span>
+<span style="font-size: 13px; line-height: 18px">{{c.q}}</span>
+<sc-if value="{{c.open}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{c.options}}" as="o" hint-placeholder-count="2">
+<button onClick="{{o.pick}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{o.label}}</button>
+</sc-for>
+<button onClick="{{c.openFree}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #3a3a3c">Something else…</button>
+</div>
+</sc-if>
+<sc-if value="{{c.freeOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="v2-free-card" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Your answer, in your own words</label>
+<textarea id="v2-free-card" rows="2" value="{{c.freeText}}" onChange="{{c.onFreeText}}" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 8px 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.5); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f"></textarea>
+<div style="display: flex; gap: 8px">
+<button onClick="{{c.saveFree}}" aria-disabled="{{c.freeDisabled}}" style="{{c.freeStyle}}">Save answer</button>
+<button onClick="{{c.closeFree}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Cancel</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{c.done}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 6px">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; flex: 1">{{c.answer}}</span>
+<button onClick="{{c.undo}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{waitNote}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73">{{waitText}}</span>
+</sc-if>
+<div style="margin-top: 4px; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)">
+<button onClick="{{restart}}" style="display: flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<span style="font-size: 12px; line-height: 16px; flex: 1">{{answersLine}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #0066d6">Edit</span>
+</button>
+<button style="display: flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<span style="font-size: 12px; line-height: 16px; flex: 1">{{guessLine}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #0066d6">Show</span>
+</button>
+<button onClick="{{openDecisions}}" style="display: flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<span style="font-size: 12px; line-height: 16px; flex: 1">{{decisionsLine}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #0066d6">Open</span>
+</button>
+</div>
+</sc-if>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"scenario":{"editor":"enum","options":["normal","stopped"],"default":"normal"},"sidebarFiles":{"editor":"boolean","default":false},"openFile":{"editor":"enum","options":["","PRODUCT.md","REQUIREMENTS.md","EXPERIENCE.md","ARCHITECTURE.md","TASKS.md","DECISIONS.md"],"default":""},"tell":{"editor":"enum","options":["","result","unplaced"],"default":""},"confirmRemove":{"editor":"enum","options":["","book","pack","cancel","attendance","reminders"],"default":""},"start":{"editor":"enum","options":["intake","plan"],"default":"intake"},"filesOpen":{"editor":"boolean","default":false},"tokensOpen":{"editor":"boolean","default":false},"showTokens":{"editor":"boolean","default":true},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+const stopped = props.scenario === 'stopped';
+const file = props.openFile || '';
+const tell = props.tell || '';
+const remove = props.confirmRemove || '';
+const full = !!file || !!tell || !!remove;
+const plan = props.start === 'plan';
+const jump = stopped || full || plan;
+const all = { conflict: '12 hours', studio: 'Give back and notify', waitlist: 'First on the waitlist', errors: 'Add it' };
+this.state = {
+step: jump ? 3 : 0,
+answers: jump ? ['Class packs in the app', 'iOS and Android', 'Cancel up to 12 h before'] : [],
+skipped: false,
+decisions: (stopped || full) ? all : (plan ? { conflict: '12 hours' } : {}),
+guesses: {}, forced: false,
+written: full ? 5 : (stopped ? 3 : (plan ? 2 : 0)),
+tab: 'plan', later: { reminders: true, attendance: true }, removed: {}, removedOrder: [], menu: '', confirm: remove,
+filesOpen: !!props.filesOpen, tokensOpen: !!props.tokensOpen,
+stopped: stopped, openFile: file, view: 'formatted', editing: false, draft: '', edit: null, why: '', applied: [],
+freeQ: false, freeQText: '', freeCard: '', freeText: '',
+tellText: '', tellAsked: tell === 'unplaced' ? this.offlineAsk() : (tell === 'result' ? this.teacherAsk() : ''),
+tellPhase: tell || 'idle', tellApplied: tell === 'result', tellKind: 'patch', tellCount: tell === 'result' ? 1 : 0, rewrites: 0,
+attach: []
+};
+}
+offlineAsk() { return 'Members can book while offline, and the bookings sync when they’re back online.'; }
+teacherAsk() { return 'Let teachers cancel a class from the app. Members get a push notification and their credit back.'; }
+names() { return ['PRODUCT.md', 'REQUIREMENTS.md', 'EXPERIENCE.md', 'ARCHITECTURE.md', 'TASKS.md']; }
+defs() {
+return [
+{ id: 'conflict', file: 1, conflict: true, where: 'REQUIREMENTS.md · your answer and old-schedule.jpg' },
+{ id: 'studio', file: 1, where: 'REQUIREMENTS.md · about cancelling', q: 'If the studio cancels a class, what happens to members’ credits?', options: ['Give them back', 'Give back and notify'] },
+{ id: 'waitlist', file: 1, where: 'REQUIREMENTS.md · about full classes', q: 'When a spot frees up, who gets it?', options: ['First on the waitlist', 'Teacher picks'] },
+{ id: 'errors', file: 2, where: 'EXPERIENCE.md · about screens', q: '2 screens don’t say what happens when loading fails. Add a “Try again” state?', options: ['Add it', 'Skip'] }
+];
+}
+isAsking(s) { return !s.skipped && s.step < 3; }
+answered(s, id) { return !!(s.decisions[id] || s.guesses[id]); }
+openCount(s, upto) { return this.defs().filter((d) => d.file < upto && !this.answered(s, d.id)).length; }
+gateOpen(s) { return s.forced || this.openCount(s, s.written) === 0; }
+canAdvance(s) { return !this.isAsking(s) && !s.stopped && s.written < 5 && this.gateOpen(s); }
+componentDidMount() { this.tick(); }
+componentDidUpdate() { this.tick(); }
+componentWillUnmount() { clearTimeout(this.timer); clearTimeout(this.tellTimer); this.timer = null; }
+tick() {
+if (this.timer || !this.canAdvance(this.state)) return;
+this.timer = setTimeout(() => {
+this.timer = null;
+if (this.canAdvance(this.state)) this.setState({ written: this.state.written + 1 });
+}, 1400);
+}
+docs() {
+const s = this.state;
+const t = s.tellApplied && s.tellKind === 'patch';
+const hl = s.tellPhase === 'result' && s.tellKind === 'patch';
+const B = (k, x, o) => Object.assign({ k: k, x: x }, o || {});
+const d = {
+'PRODUCT.md': [
+B('h1', 'Product'),
+B('p', 'A booking app for one yoga studio. Members book classes and buy class packs; teachers see who is coming.'),
+B('h2', 'Users'),
+B('li', 'Members: book, cancel, buy packs, get reminders'),
+B('li', 'Teachers: see bookings and the waitlist per class', { story: 'attendance' }),
+B('h2', 'Success'),
+B('li', 'Most bookings happen in the app within 3 months'),
+B('li', 'Fewer no-shows thanks to reminders', { story: 'reminders' })
+],
+'REQUIREMENTS.md': [
+B('h1', 'Requirements'),
+B('h2', '1. Book a class'),
+B('li', '1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot and deduct one credit.', { story: 'book' }),
+B('li', '1.2 WHEN a class is full, THE APP SHALL offer the waitlist instead.', { story: 'book' }),
+B('li', '1.3 WHEN a member cancels at least 12 hours before class, THE APP SHALL return the credit.', { story: 'cancel' }),
+B('h2', '2. Buy a class pack', { story: 'pack' }),
+B('li', '2.1 WHEN a member completes payment, THE APP SHALL add the credits and email a receipt.', { story: 'pack' })
+].concat(t ? [
+B('h2', '3. The studio cancels a class', { chg: hl }),
+B('li', '3.1 WHEN a teacher cancels a class, THE APP SHALL return the credit to every booked member.', { chg: hl }),
+B('li', '3.2 WHEN a class is cancelled, THE APP SHALL send each booked member a push notification.', { chg: hl })
+] : []),
+'EXPERIENCE.md': [
+B('h1', 'Experience'),
+B('h2', 'Flow 1 · Book a class'),
+B('li', 'Schedule: loading, empty week, offline (last loaded schedule), error with Try again', { story: 'book' }),
+B('li', 'Class detail: free spots, full (waitlist), no credits (buy a pack)', { story: 'book' }),
+B('li', 'Confirm booking: confirming, booked, failed with Try again'),
+B('h2', 'Flow 2 · Buy a class pack', { story: 'pack' }),
+B('li', 'Choose a pack: 5, 10 or 20 classes, price per class', { story: 'pack' }),
+B('li', 'Checkout: paying, paid with receipt, card declined with Try again', { story: 'pack' }),
+B('h2', 'Visual direction'),
+B('p', 'Calm and light, one accent from the studio logo, large tap targets.')
+],
+'ARCHITECTURE.md': [
+B('h1', 'Architecture'),
+B('p', 'Kotlin Multiplatform. Shared booking logic, native screens on iOS and Android. Written from REQUIREMENTS.md, EXPERIENCE.md and the project context.'),
+B('h2', 'Modules'),
+B('li', t ? 'shared/booking: booking rules, credits, waitlist, and studio cancellations that refund credits and send a push. Extends feature/schedule instead of replacing it.' : 'shared/booking: booking rules, credits, waitlist. Extends feature/schedule instead of replacing it.', { chg: t && hl }),
+B('li', 'shared/payments: class pack checkout through the payment provider.', { story: 'pack' }),
+B('li', 'androidApp, iosApp: the screens in EXPERIENCE.md.'),
+B('h2', 'Data'),
+B('li', 'Member: id, credits, bookings'),
+B('li', 'ClassSession: id, teacher, start, capacity, waitlist'),
+B('li', 'Booking: member, session, status (booked, cancelled, waitlisted)'),
+B('h2', 'Decisions'),
+B('li', 'D-03 Card details are never stored on the device; the provider keeps them.', { story: 'pack' }),
+B('li', s.rewrites > 0 ? 'D-05 Bookings made offline wait in a local queue; the server confirms them when the phone is back online.' : 'D-05 The server confirms every booking, so two fast taps can’t book twice.')
+],
+'TASKS.md': [
+B('h1', 'Tasks'),
+B('li', '1. Booking data and local store. Builds 1.1, 1.2. Verify: ./gradlew :shared:allTests --tests "*Booking*"', { story: 'book' }),
+B('li', '2. Schedule and class screens. Builds 1.1, Q1. Verify: ./gradlew :androidApp:connectedCheck', { story: 'book' }),
+B('li', '3. Class pack checkout. Builds 2.1, Q2. Verify: ./gradlew :shared:allTests --tests "*Checkout*"', { story: 'pack' }),
+B('li', '4. Cancel a booking. Builds 1.3.', { story: 'cancel' }),
+B('li', '5. Waitlist. Builds 1.2.')
+].concat(t ? [B('li', '6. The studio cancels a class. Builds 3.1, 3.2. Verify: ./gradlew :shared:allTests --tests "*StudioCancel*"', { chg: hl })] : [])
+};
+let n = 6;
+const log = [
+B('h1', 'Decisions'),
+B('p', 'Every answer and change, with the reason. Agents read this before they change the plan.'),
+B('li', 'D-01 Payments: class packs bought in the app (your answer)'),
+B('li', 'D-02 Phones: iOS and Android first (your answer)'),
+B('li', 'D-04 Free cancelling: 12 hours before class (you settled a conflict)')
+];
+if (t) { log.push(B('li', 'D-0' + n + ' Teachers can cancel a class; members get their credit back and a push. Reason, in your words: “' + this.teacherAsk() + '” (Tell Mel)', { chg: hl })); n++; }
+if (s.rewrites > 0) { log.push(B('li', 'D-0' + n + ' Rewrote ARCHITECTURE.md for offline booking. You chose a full rewrite.')); n++; }
+s.removedOrder.forEach((id) => {
+if (!s.removed[id]) return;
+log.push(B('rm', 'D-0' + n + ' Removed: ' + this.storyTitle(id) + ' (and what was built on it)', { restore: () => this.restore(id) }));
+n++;
+});
+d['DECISIONS.md'] = log;
+Object.keys(d).forEach((k) => { d[k] = d[k].filter((b) => !(b.story && s.removed[b.story])); });
+return d;
+}
+stories() {
+return [
+{ id: 'book', title: 'Book a class', line: 'Members pick a class with free spots and book it with one credit.', also: 'Also removes requirements 1.1 and 1.2, 2 screens in EXPERIENCE.md and tasks 1 and 2.' },
+{ id: 'pack', title: 'Buy a class pack', line: 'Members pay in the app and get credits and a receipt.', also: 'Also removes requirement 2.1, 2 screens in EXPERIENCE.md, the payments module in ARCHITECTURE.md and task 3.' },
+{ id: 'cancel', title: 'Cancel a booking', line: 'Cancel early enough and the credit comes back.', also: 'Also removes requirement 1.3 and task 4.' },
+{ id: 'attendance', title: 'Teachers see who is coming', line: 'Each class shows the booked members and the waitlist.', also: 'Also removes 1 line in PRODUCT.md. It has no tasks yet.' },
+{ id: 'reminders', title: 'Class reminders', line: 'A reminder the evening before and one hour before class.', also: 'Also removes 1 line in PRODUCT.md. It has no tasks yet.' }
+];
+}
+storyTitle(id) { const f = this.stories().filter((x) => x.id === id)[0]; return f ? f.title : id; }
+restore(id) {
+const r = Object.assign({}, this.state.removed);
+delete r[id];
+this.setState({ removed: r, removedOrder: this.state.removedOrder.filter((x) => x !== id) });
+}
+renderVals() {
+const s = this.state;
+const sidebarFiles = this.props.sidebarFiles ?? false;
+const showTokens = this.props.showTokens ?? true;
+const names = this.names();
+const qs = [
+{ text: 'How do members pay?', why: 'Decides whether the plan covers checkout, refunds and receipts.', short: ['Class packs in the app', 'Paid at the desk', 'Monthly membership', 'Not sure yet'], options: ['Class packs bought in the app', 'Paid at the desk, the app only books', 'Monthly membership', 'Not sure yet'], likely: 0 },
+{ text: 'Which phones first?', why: 'Decides which screens and tests the agents build first.', short: ['iOS and Android', 'iOS only', 'Android only'], options: ['iOS and Android', 'iOS only', 'Android only'], likely: 0 },
+{ text: 'Can members cancel a booking?', why: 'Decides when a credit comes back.', short: ['Cancel up to 12 h before', 'Cancel up to 24 h before', 'No cancelling'], options: ['Yes, up to 12 hours before', 'Yes, up to 24 hours before', 'No cancelling'], likely: -1 }
+];
+const asking = this.isAsking(s);
+const q = asking ? qs[s.step] : qs[0];
+const answer = (txt) => this.setState({ step: s.step + 1, answers: s.answers.concat([txt]), freeQ: false, freeQText: '' });
+const qView = { text: q.text, why: q.why, options: q.options.map((o, i) => ({ label: o, key: String(i + 1), suggested: i === q.likely, pick: () => answer(q.short[i]) })) };
+const known = [{ label: 'Members book classes' }, { label: 'Teachers see who is coming' }, { label: 'Reminders' }].concat(s.answers.map((a) => ({ label: a })));
+const said = s.answers[2] || '';
+const hours = said.indexOf('24') >= 0 ? '24' : '12';
+const other = hours === '12' ? '24' : '12';
+const texts = { conflict: { q: 'You said members can cancel up to ' + hours + ' hours before class. The schedule photo you added says ' + other + ' hours. Which one?', options: [hours + ' hours', other + ' hours'] } };
+const defs = this.defs().map((d) => Object.assign({}, d, texts[d.id] || {}));
+const visible = defs.filter((d) => d.file < s.written);
+const left = visible.filter((d) => !this.answered(s, d.id)).length;
+const pending = this.openCount(s, s.written);
+const gateOpen = this.gateOpen(s);
+const pillStyle = (on) => 'height: 28px; padding: 0 12px; border: 0; border-radius: 14px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; background: ' + (on ? '#007aff' : '#aeaeb2');
+const freeOk = s.freeText.trim().length > 0;
+const cards = visible.map((d) => {
+const a = s.decisions[d.id];
+const g = s.guesses[d.id];
+const isFree = s.freeCard === d.id;
+const done = !!(a || g);
+const base = 'display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; ';
+const look = done ? 'background: transparent; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.1); opacity: 0.75' : (d.conflict ? 'background: #ffffff; box-shadow: inset 0 0 0 1px rgba(215,0,21,0.45), 0 2px 6px rgba(0,0,0,0.06)' : 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06)');
+return {
+conflict: !!d.conflict && !done, where: d.where, q: d.q, box: base + look,
+open: !done && !isFree, freeOpen: !done && isFree, done: done,
+answer: a ? a : (g ? 'Mel guessed: ' + g : ''),
+options: d.options.map((o) => ({ label: o, pick: () => this.setState({ decisions: Object.assign({}, s.decisions, { [d.id]: o }), freeCard: '' }) })),
+openFree: () => this.setState({ freeCard: d.id, freeText: '' }),
+saveFree: () => { if (!freeOk) return; this.setState({ decisions: Object.assign({}, s.decisions, { [d.id]: s.freeText.trim() }), freeCard: '', freeText: '' }); },
+freeText: s.freeText, onFreeText: (e) => this.setState({ freeText: e.target.value }), closeFree: () => this.setState({ freeCard: '', freeText: '' }), freeDisabled: freeOk ? 'false' : 'true', freeStyle: pillStyle(freeOk),
+undo: () => { const n = Object.assign({}, s.decisions); const gg = Object.assign({}, s.guesses); delete n[d.id]; delete gg[d.id]; this.setState({ decisions: n, guesses: gg }); }
+};
+});
+const toStory = (st, isLater) => ({
+title: st.title, line: st.line, also: st.also,
+box: 'position: relative; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; cursor: grab; ' + (isLater ? 'background: #fbfbfd; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)' : 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)'),
+moveLabel: (isLater ? 'Move to first version: ' : 'Move to later: ') + st.title,
+move: () => this.setState({ later: Object.assign({}, s.later, { [st.id]: !isLater }), menu: '' }),
+menuOpen: s.menu === st.id ? 'true' : 'false', menuBool: s.menu === st.id,
+toggleMenu: () => this.setState({ menu: s.menu === st.id ? '' : st.id, confirm: '' }),
+confirmBool: s.confirm === st.id,
+askRemove: () => this.setState({ confirm: st.id, menu: '' }),
+cancelRemove: () => this.setState({ confirm: '' }),
+doRemove: () => this.setState({ removed: Object.assign({}, s.removed, { [st.id]: true }), removedOrder: s.removedOrder.concat([st.id]), confirm: '' }),
+dragStart: (e) => { this.dragId = st.id; if (e && e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', st.id); } }
+});
+const live = this.stories().filter((st) => !s.removed[st.id]);
+const above = live.filter((st) => !s.later[st.id]).map((st) => toStory(st, false));
+const below = live.filter((st) => s.later[st.id]).map((st) => toStory(st, true));
+const dropTo = (toLater) => (e) => { if (e) e.preventDefault(); const id = this.dragId; this.dragId = null; if (!id) return; this.setState({ later: Object.assign({}, this.state.later, { [id]: toLater }) }); };
+const pill2 = (on) => 'height: 24px; padding: 0 12px; border: 0; border-radius: 12px; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f; ' + (on ? 'background: #ffffff; font-weight: 600; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'background: transparent');
+const tabBase = 'height: 26px; padding: 0 16px; border: 0; border-radius: 13px; font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f; ';
+const tabs = [{ id: 'plan', label: 'Plan' }, { id: 'screens', label: 'Screens' }, { id: 'order', label: 'Build order' }].map((t) => ({
+label: t.label, selected: t.id === s.tab ? 'true' : 'false', pick: () => this.setState({ tab: t.id }),
+style: tabBase + (t.id === s.tab ? 'background: #ffffff; font-weight: 600; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'background: transparent')
+}));
+const flow = ['Schedule', 'Class detail', 'Confirm booking', 'Booked'].map((n, i, arr) => ({ name: n, arrow: i < arr.length - 1 }));
+const columns = [
+{ title: '1 · First', tasks: [{ title: 'Booking data and local store', check: 'unit tests' }] },
+{ title: '2 · At the same time', tasks: [{ title: 'Schedule and class screens', check: 'UI test: book a class' }, { title: 'Class pack checkout', check: 'test payment, no card stored' }] },
+{ title: '3 · Then', tasks: [{ title: 'Cancel a booking', check: 'credit returns in time' }, { title: 'Waitlist', check: 'first in line gets the spot' }] }
+];
+const deps = { 'PRODUCT.md': ['REQUIREMENTS.md', 'EXPERIENCE.md', 'ARCHITECTURE.md', 'TASKS.md'], 'REQUIREMENTS.md': ['EXPERIENCE.md', 'ARCHITECTURE.md', 'TASKS.md'], 'EXPERIENCE.md': ['ARCHITECTURE.md', 'TASKS.md'], 'ARCHITECTURE.md': ['TASKS.md'], 'TASKS.md': [], 'DECISIONS.md': [] };
+const outdated = s.edit ? deps[s.edit] : [];
+const busy = s.tellPhase === 'working' || s.tellPhase === 'unplaced';
+const ready = !asking && s.written === 5 && left === 0 && !s.stopped && !s.edit && !busy;
+const gated = !asking && !s.stopped && s.written < 5 && !gateOpen;
+const answersWord = (n) => n + (n === 1 ? ' answer' : ' answers');
+const stateOf = (n) => {
+const i = names.indexOf(n);
+if (asking) return 'waiting';
+if (s.edit && outdated.indexOf(n) >= 0) return 'you';
+if (s.stopped && n === 'ARCHITECTURE.md') return 'you';
+if (i < s.written) return defs.filter((d) => d.file === i && !this.answered(s, d.id)).length > 0 ? 'you' : 'ready';
+if (i === s.written && gateOpen && !s.stopped) return 'writing';
+return 'waiting';
+};
+const st = { ready: ['Ready', 'background: #248a3d'], writing: ['Writing', 'border: 1.5px solid #007aff'], you: ['Needs you', 'background: #007aff'], waiting: ['Waiting', 'border: 1.5px solid #aeaeb2'] };
+const nextName = names[s.written] || '';
+const wordOf = (n, k) => (k === 'waiting' && gated && n === nextName) ? 'Starts after ' + answersWord(pending) : st[k][0];
+const files = names.map((n) => {
+const k = stateOf(n);
+const cur = s.openFile === n;
+return {
+name: n, word: wordOf(n, k), current: cur ? 'page' : 'false',
+dot: 'flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; box-sizing: border-box; ' + st[k][1],
+open: () => this.setState({ openFile: n, view: 'formatted', editing: false, filesOpen: false }),
+sideStyle: 'height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 6px; font: inherit; text-align: left; color: #3a3a3c; background: ' + (cur ? 'rgba(0,0,0,0.08)' : 'transparent')
+};
+});
+const docs = this.docs();
+const fname = s.openFile;
+const kind = fname === 'DECISIONS.md' ? 'ready' : (fname ? stateOf(fname) : 'ready');
+const notYet = !!fname && kind === 'waiting' && !(s.stopped && fname === 'ARCHITECTURE.md');
+const blocks = fname && !notYet ? docs[fname] : [];
+const raw = blocks.map((b) => (b.k === 'h1' ? '# ' : b.k === 'h2' ? '\n## ' : (b.k === 'li' || b.k === 'rm') ? '- ' : '\n') + b.x).join('\n').trim();
+const doc = {
+name: fname, word: fname ? wordOf(fname, kind) : '',
+dot: 'width: 7px; height: 7px; border-radius: 50%; box-sizing: border-box; ' + st[kind][1],
+raw: raw,
+blocks: blocks.map((b) => ({ text: b.x, isH1: b.k === 'h1', isH2: b.k === 'h2', isP: b.k === 'p', isLi: b.k === 'li', isRm: b.k === 'rm', restore: b.restore || null, wrap: b.chg ? 'margin: 0 -8px; padding: 2px 8px; border-radius: 6px; background: rgba(0,122,255,0.1)' : '' }))
+};
+const writingNow = !asking && kind === 'writing';
+const viewTabs = [{ id: 'formatted', label: 'Formatted' }, { id: 'raw', label: 'Markdown' }].map((v) => ({ label: v.label, selected: s.view === v.id ? 'true' : 'false', style: pill2(s.view === v.id), pick: () => this.setState({ view: v.id, editing: false }) }));
+const reading = !!fname;
+const downCount = outdated.length;
+const guessed = s.skipped ? (qs.length - s.answers.length) : 0;
+const guessCount = Object.keys(s.guesses).length;
+const removedCount = s.removedOrder.filter((id) => s.removed[id]).length;
+const cost = { 'PRODUCT.md': 4.8, 'REQUIREMENTS.md': 7.4, 'EXPERIENCE.md': 6.9, 'ARCHITECTURE.md': 8.1, 'TASKS.md': 3.6 };
+const kfmt = (x) => (x >= 10 ? Math.round(x) : x.toFixed(1)) + 'k';
+const mono = "font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px";
+const rows = [{ label: 'Project context', v: 6.2 }, { label: 'Questions', v: s.answers.length * 0.7 }];
+names.forEach((n, i) => {
+if (i < s.written) rows.push({ label: n, v: cost[n], mono: true });
+else if (s.stopped && n === 'ARCHITECTURE.md') rows.push({ label: n, v: 3.9, mono: true, note: 'stopped' });
+else rows.push({ label: n, v: 0, mono: true, note: stateOf(n) === 'writing' ? 'Writing' : 'Not started' });
+});
+rows.push({ label: 'Checks', v: s.written === 5 ? 1.9 : 0, note: s.written === 5 ? '' : 'After the last file' });
+const changes = s.tellCount * 1.8 + s.rewrites * 8.4 + s.applied.length * 0.6 + removedCount * 0.4;
+rows.push({ label: 'Changes', v: changes, note: changes > 0 ? '' : 'None yet' });
+const total = rows.reduce((a, r) => a + r.v, 0);
+const tokenRows = rows.map((r) => ({ label: r.label, font: r.mono ? mono : '', value: r.v > 0 ? kfmt(r.v) : r.note, color: r.v > 0 ? '#1d1d1f' : '#6e6e73' }));
+const tellOk = s.tellText.trim().length > 0 && s.tellPhase !== 'working';
+const pill = s.stopped ? 'Stopped · usage limit' : (asking ? 'Waiting for your answer' : (s.tellPhase === 'working' ? 'Placing your change…' : (s.edit ? 'Waiting: update or keep?' : (ready ? 'Plan is ready' : (gated ? nextName + ' starts after ' + answersWord(pending) : (s.written < 5 ? 'Writing ' + nextName : 'Waiting for ' + answersWord(left)))))));
+const pillColor = s.stopped ? 'background: #c93400' : (ready ? 'background: #248a3d' : (gated ? 'box-sizing: border-box; border: 1.5px solid #aeaeb2' : 'background: #007aff'));
+const sideMeta = s.stopped ? 'Agent stopped' : (asking ? 'Question ' + (s.step + 1) + ' of 3' : (s.edit ? downCount + ' files to update' : (ready ? 'Ready to build' : (left > 0 ? left + (left === 1 ? ' question' : ' questions') : 'Writing ' + nextName))));
+return {
+asking: asking && !reading, planning: !asking && !reading, reading: reading,
+q: qView, qNum: String(s.step + 1), known: known,
+freeKey: String(q.options.length + 1),
+freeQClosed: !s.freeQ, freeQOpen: !!s.freeQ, freeQText: s.freeQText,
+openFreeQ: () => this.setState({ freeQ: true, freeQText: '' }),
+closeFreeQ: () => this.setState({ freeQ: false, freeQText: '' }),
+onFreeQ: (e) => this.setState({ freeQText: e.target.value }),
+useFreeQ: () => { const v = s.freeQText.trim(); if (v) answer(v); },
+freeQDisabled: s.freeQText.trim() ? 'false' : 'true', freeQStyle: pillStyle(!!s.freeQText.trim()),
+freeText: s.freeText, onFreeText: (e) => this.setState({ freeText: e.target.value }),
+closeFree: () => this.setState({ freeCard: '', freeText: '' }),
+freeDisabled: freeOk ? 'false' : 'true', freeStyle: pillStyle(freeOk),
+skip: () => this.setState({ skipped: true, freeQ: false }),
+restart: () => this.setState({ step: 0, answers: [], skipped: false, openFile: '', written: 0, decisions: {}, guesses: {}, forced: false }),
+cards: cards, above: above, below: below, tabs: tabs, flow: flow, columns: columns,
+aboveEmpty: above.length === 0, belowEmpty: below.length === 0,
+allowDrop: (e) => { if (e) e.preventDefault(); },
+dropFirst: dropTo(false), dropLater: dropTo(true),
+isPlan: s.tab === 'plan', isScreens: s.tab === 'screens', isOrder: s.tab === 'order',
+aboveCount: above.length + (above.length === 1 ? ' story' : ' stories'),
+belowCount: below.length + (below.length === 1 ? ' story' : ' stories'),
+inboxTitle: asking ? 'Mel needs you' : (left > 0 ? 'Mel needs you · ' + left : (s.written < 5 ? 'All answered so far' : 'All answered')),
+waitNote: !asking && s.written < 5 && !s.stopped,
+waitText: gated ? nextName + ' starts after ' + answersWord(pending) + ' above. Writing files in order means a later answer never rewrites a finished file.' : 'Mel is writing ' + nextName + '. Its questions appear here when it’s done.',
+answersLine: s.answers.length + (s.answers.length === 1 ? ' answer you gave' : ' answers you gave'),
+guessLine: (4 + guessed + guessCount) + ' small things Mel guessed',
+decisionsLine: (3 + s.applied.length + (s.tellApplied ? 1 : 0) + s.rewrites + removedCount) + ' decisions with reasons',
+openDecisions: () => this.setState({ openFile: 'DECISIONS.md', view: 'formatted', editing: false }),
+sideMeta: sideMeta,
+sideDot: s.stopped ? '#c93400' : '#007aff',
+showSideFiles: sidebarFiles && !asking,
+agentDot: s.stopped ? '#c93400' : '#248a3d',
+agentWord: s.stopped ? 'Claude Code · Usage limit' : 'Claude Code · Ready',
+pill: pill,
+pillDot: 'width: 8px; height: 8px; border-radius: 50%; ' + pillColor,
+gated: gated,
+writeNow: () => {
+const gg = Object.assign({}, s.guesses);
+defs.forEach((d) => { if (!this.answered(s, d.id)) gg[d.id] = d.options[0]; });
+this.setState({ guesses: gg, forced: true });
+},
+showTokens: showTokens,
+tokenTotal: kfmt(total), tokenRows: tokenRows,
+tokensOpen: s.tokensOpen ? 'true' : 'false', tokensOpenBool: !!s.tokensOpen,
+tokensBtnBg: s.tokensOpen ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)',
+toggleTokens: () => this.setState({ tokensOpen: !s.tokensOpen }),
+stopped: !!s.stopped,
+resume: () => this.setState({ stopped: false }),
+openArch: () => this.setState({ openFile: 'ARCHITECTURE.md', view: 'formatted', editing: false }),
+files: files,
+filesNote: asking ? 'Mel writes these after your answers, one at a time. You don’t have to read them; the plan is their summary.' : 'Written one at a time: the next file starts when the questions about the one before are answered. You don’t have to read them; the plan is their summary.',
+filesOpen: s.filesOpen ? 'true' : 'false',
+filesOpenBool: !!s.filesOpen,
+filesBtnBg: s.filesOpen || reading ? 'rgba(0,122,255,0.12)' : 'rgba(0,0,0,0.05)',
+toggleFiles: () => this.setState({ filesOpen: !s.filesOpen }),
+closeFile: () => this.setState({ openFile: '', editing: false }),
+doc: doc, viewTabs: viewTabs,
+showFormatted: reading && !notYet && !s.editing && s.view === 'formatted',
+showRaw: reading && !notYet && !s.editing && s.view === 'raw',
+editing: reading && s.editing,
+canEdit: reading && !notYet && !s.editing && !writingNow && fname !== 'DECISIONS.md',
+readOnlyNote: reading && (notYet || writingNow || fname === 'DECISIONS.md'),
+readOnlyText: fname === 'DECISIONS.md' ? 'Mel keeps this log. Change a decision from its card; restore a removed story here.' : (notYet ? 'Not written yet. ' + (gated && fname === nextName ? 'It starts after ' + answersWord(pending) + '.' : 'It starts after the files before it.') : 'Mel is still writing this file. You can read it now; Edit opens when it’s ready.'),
+draft: s.draft || raw,
+onDraft: (e) => this.setState({ draft: e.target.value }),
+startEdit: () => this.setState({ editing: true, draft: raw }),
+cancelEdit: () => this.setState({ editing: false, draft: '' }),
+saveEdit: () => this.setState({ editing: false, edit: fname, draft: '' }),
+hasEdit: !!s.edit,
+editFile: s.edit || '',
+downText: downCount === 0 ? 'Nothing else was built on it.' : (downCount === 1 ? outdated[0] + ' was built on it.' : downCount + ' files were built on it: ' + outdated.join(', ') + '.'),
+updateLabel: downCount === 0 ? 'Done' : (downCount === 1 ? 'Update ' + outdated[0] : 'Update ' + downCount + ' files'),
+why: s.why, onWhy: (e) => this.setState({ why: e.target.value }),
+applyEdit: () => this.setState({ edit: null, why: '', applied: s.applied.concat([s.edit]) }),
+keepEdit: () => this.setState({ edit: null, why: '', applied: s.applied.concat([s.edit]) }),
+undoEdit: () => this.setState({ edit: null, why: '' }),
+showTell: !asking && !s.editing && !s.stopped,
+tellText: s.tellText, onTell: (e) => this.setState({ tellText: e.target.value }),
+tellAsked: s.tellAsked,
+tellResult: s.tellPhase === 'result', tellUnplaced: s.tellPhase === 'unplaced',
+tellLine: s.tellKind === 'rewrite' ? 'Rewrote ARCHITECTURE.md' : 'Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md, 1 task in TASKS.md',
+tellSub: s.tellKind === 'rewrite' ? 'You chose a full rewrite. Saved to DECISIONS.md with your words as the reason. 8.4k tokens.' : 'Highlighted in the files. Saved to DECISIONS.md with your words as the reason. 1.8k tokens.',
+undoTell: () => this.setState(s.tellKind === 'rewrite' ? { tellPhase: 'idle', rewrites: Math.max(0, s.rewrites - 1) } : { tellPhase: 'idle', tellApplied: false }),
+dismissTell: () => this.setState({ tellPhase: 'idle' }),
+cancelTell: () => this.setState({ tellPhase: 'idle', tellText: s.tellAsked }),
+rewrite: () => {
+this.setState({ tellPhase: 'working' });
+clearTimeout(this.tellTimer);
+this.tellTimer = setTimeout(() => this.setState({ tellPhase: 'result', tellKind: 'rewrite', rewrites: this.state.rewrites + 1 }), 1600);
+},
+hasAttach: s.attach.length > 0,
+attach: s.attach.map((n) => ({ name: n, remove: () => this.setState({ attach: s.attach.filter((x) => x !== n) }) })),
+addAttach: () => { if (s.attach.indexOf('studio-cancel-policy.pdf') < 0) this.setState({ attach: s.attach.concat(['studio-cancel-policy.pdf']) }); },
+sendDisabled: tellOk ? 'false' : 'true',
+sendLabel: s.tellPhase === 'working' ? 'Placing…' : 'Send',
+sendStyle: 'height: 28px; padding: 0 14px; border: 0; border-radius: 14px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; background: ' + (tellOk ? '#007aff' : '#aeaeb2'),
+sendTell: () => {
+const txt = s.tellText.trim();
+if (!txt || s.tellPhase === 'working') return;
+const off = /offline/i.test(txt);
+this.setState({ tellPhase: 'working', tellAsked: txt, tellText: '', attach: [] });
+clearTimeout(this.tellTimer);
+this.tellTimer = setTimeout(() => this.setState(off ? { tellPhase: 'unplaced' } : { tellPhase: 'result', tellKind: 'patch', tellApplied: true, tellCount: this.state.tellCount + 1 }), 1200);
+},
+ctaDisabled: ready ? 'false' : 'true',
+ctaStyle: 'height: 32px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 16px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (ready ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (ready ? 'auto' : 'none')
+};
+}
+}
+</script>
+</body>
+</html>

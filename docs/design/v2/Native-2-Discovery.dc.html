@@ -7,7 +7,7 @@ MEL SCREEN B2 · Intake (questions)
 Lane: B Write a spec · step 2
 Purpose: the agent asks a few multiple-choice questions that shape the draft. Right column: coverage list (Goal, Users, Platforms, Payments, Scope, Constraints, Privacy/speed/offline, Integrations, Data, Edge cases). Data and edge cases come back as round 2 after the draft.
 Comes from: B1 New Spec (Start) · A4x (Start) · B4 Review (Answer 2 Questions, Answer Now: round 2 or an open question).
-Goes to: B3 Drafting (Continue after the last question, or Draft Now).
+Goes to: D1 Spec board (Continue after the last question, or Draft Now). The agent drafts in the background there. B3 Drafting is kept only as reference.
 Map of all screens: FLOW.md
 -->
 <title>Discovery form</title>
@@ -28,64 +28,87 @@ input:focus{outline:none;box-shadow:0 0 0 0.5px #007aff,0 0 0 3.5px rgba(0,122,2
 <div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
 <div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
 
-<nav aria-label="Specs" style="flex: 0 0 232px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
-<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<nav aria-label="Project" style="position: relative; flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
 </div>
-<div style="padding: 8px 18px 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Specs</div>
-<div style="flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 1px">
-<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg>
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5H13a1.25 1.25 0 0 1 1.25 1.25v6.25A1.25 1.25 0 0 1 13 13.5H3a1.25 1.25 0 0 1-1.25-1.25z"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">Yoga Studio Booking</span>
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" aria-expanded="false" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">main</span>
+</span>
+<span aria-label="Another project needs you" role="img" style="width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px; min-height: 32px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5L8 2.5l5.5 4v6.25a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z"></path></svg>
+<span style="flex: 1; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px">Project context</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Up to date · read 2 days ago</span>
+</span>
 </a>
-<a href="#" aria-current="page" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4a1.5 1.5 0 0 1 1.5-1.5h8A1.5 1.5 0 0 1 13.5 4v5.5A1.5 1.5 0 0 1 12 11H6.5l-3 2.5V11A1.5 1.5 0 0 1 2.5 9.5z"></path></svg>
-<span style="font-size: 13px; line-height: 18px; font-weight: 500; flex: 1">Discovery</span>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Needs you</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">1</span>
+</div>
+<a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; background: rgba(0,0,0,0.08); font-weight: 500">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Yoga Studio Booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Product · question 2 of 5</span>
+</span>
 </a>
-<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">PRODUCT.md</span>
-<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Draft</span>
-</a>
-<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">REQUIREMENTS.md</span>
-<span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Waiting</span>
-</a>
-<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">EXPERIENCE.md</span>
-<span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Queued</span>
-</a>
-<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">ARCHITECTURE.md</span>
-<span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Queued</span>
-</a>
-<a class="srow" href="#" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 1.5H4.5a1.5 1.5 0 0 0-1.5 1.5v10a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5V5z"></path><path d="M9.5 1.5V5H13"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">TASKS.md</span>
-<span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Queued</span>
-</a>
-<a class="srow" href="Native-3c-Analyze.dc.html" style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 26px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14M5.25 7l1.25 1.25L9 5.75"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">Analyze</span>
-<span style="width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #6e6e73"></span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Queued</span>
+<div style="display: flex; flex-direction: column; gap: 1px; padding: 2px 0 4px 22px">
+<button aria-expanded="false" style="height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #6e6e73; text-align: left">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"></path></svg>
+<span style="flex: 1">Markdown files</span>
+<span>5</span>
+</button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Agent working</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">1</span>
+</div>
+<a href="#" aria-current="false" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; background: transparent">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Filter schedule by teacher</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Feature · building task 3 of 7</span>
+</span>
 </a>
 </div>
-<div style="padding: 10px 12px; border-top: 0.5px solid rgba(0,0,0,0.08)">
-<a href="Native-1-NewSpec.dc.html" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 13px; line-height: 18px; color: #6e6e73; text-decoration: none">
-<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
-<span>New Spec</span>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Done</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">1</span>
+</div>
+<a href="#" aria-current="false" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; background: transparent">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Double booking on fast taps</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Quick fix · merged yesterday</span>
+</span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="Native-1-NewSpec.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+New Spec<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span>
+</a>
+<a href="Native-Settings-Agents.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1">Claude Code · Ready</span>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2"></circle><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"></path></svg>
 </a>
 </div>
 </nav>
@@ -103,7 +126,7 @@ input:focus{outline:none;box-shadow:0 0 0 0.5px #007aff,0 0 0 3.5px rgba(0,122,2
 <span style="font-size: 11px; line-height: 14px; color: #6e6e73">2 of 5</span>
 </div>
 </div>
-<a href="Native-2b-Drafting.dc.html" title="Skip the remaining questions. The agent fills gaps and marks each one as an assumption." style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: 16px; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.08); font-size: 13px; line-height: 18px; color: #1d1d1f; text-decoration: none; white-space: nowrap">
+<a href="Native-D1-SpecBoard.dc.html" title="Skip the remaining questions. The agent fills gaps and marks each one as an assumption." style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: 16px; background: rgba(255,255,255,0.8); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.08); font-size: 13px; line-height: 18px; color: #1d1d1f; text-decoration: none; white-space: nowrap">
 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"></path></svg>
 <span>Draft Now</span>
 </a>
@@ -198,7 +221,7 @@ input:focus{outline:none;box-shadow:0 0 0 0.5px #007aff,0 0 0 3.5px rgba(0,122,2
 <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap">
 <span style="font-size: 11px; line-height: 14px; color: #6e6e73; flex: 1; padding-left: 12px">Press 1 to 4 to choose. Answers can be changed later.</span>
 <button style="height: 28px; padding: 0 16px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Decide Later</button>
-<a href="Native-2b-Drafting.dc.html" style="height: 28px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 14px; background: #007aff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.12); font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; gap: 8px">Continue<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">↩</span></a>
+<a href="Native-D1-SpecBoard.dc.html" style="height: 28px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 14px; background: #007aff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.12); font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; gap: 8px">Continue<span style="font-size: 11px; line-height: 14px; font-weight: 500; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.22)">↩</span></a>
 </div>
 
 </div>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-3 · Ready (simplified, replaces B7 in the v2 proposal)
+Purpose: one primary action, "Build with Claude Code". Per-task prompts, verify commands and spec files are one click away, closed by default.
+AGENTS.md, keep-in-sync and commit are defaults set in Settings › Specs, shown as one line.
+The summary also states the spec's total token use ("Written with 41k tokens"), the same number as the board's token button
+  (hidden when Settings › Specs › Show token use on the board is off).
+Comes from: V2-2 Board (Start Building).
+-->
+<title>Ready (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Mel knows this project</span>
+</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Needs you</span>
+<a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">Yoga Studio Booking</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Ready to build</span></span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Building</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Filter schedule by teacher</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Task 3 of 7</span></span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Done</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Double booking on fast taps</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Merged yesterday</span></span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="V2-1-New.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">New<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span></a>
+<a href="Native-Settings-Agents.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1">Claude Code · Ready</span>
+</a>
+</div>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; align-items: center; padding: 64px 32px 40px">
+<div style="width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<span aria-hidden="true" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(36,138,61,0.12); display: flex; align-items: center; justify-content: center">
+<svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+</span>
+<h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em">Ready to build</h1>
+<p style="margin: 0; font-size: 14px; line-height: 21px; color: #3a3a3c">3 stories in the first version, 2 for later. 7 tasks, and every task says how it will be checked. Written with 41k tokens of your Claude Code usage.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<button style="height: 44px; display: inline-flex; align-items: center; gap: 10px; padding: 0 24px; border: 0; border-radius: 22px; background: #007aff; font: inherit; font-size: 15px; line-height: 20px; font-weight: 600; color: #ffffff; box-shadow: 0 1px 3px rgba(0,122,255,0.35)">
+Build with Claude Code<span style="font-size: 12px; line-height: 16px; font-weight: 400; opacity: 0.85">⌘↩</span>
+</button>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">Opens Terminal and starts with task 1. <a href="#">Use Codex instead</a></span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 12px; background: #f5f5f7">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">What happens next</span>
+<sc-for list="{{next}}" as="n" hint-placeholder-count="3">
+<div style="display: flex; gap: 10px; align-items: flex-start">
+<span style="flex: 0 0 20px; height: 20px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; font-weight: 600">{{n.n}}</span>
+<span style="font-size: 13px; line-height: 19px">{{n.text}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; border-radius: 12px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)">
+<button onClick="{{toggleTasks}}" aria-expanded="{{tasksOpen}}" style="min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{tasksChev}}"><path d="M6 3l5 5-5 5"></path></svg>
+<span style="flex: 1; font-size: 13px; line-height: 18px; font-weight: 500">Task prompts and checks</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">7 tasks</span>
+</button>
+<sc-if value="{{tasksOpenBool}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 0 14px 14px">
+<sc-for list="{{tasks}}" as="t" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1)">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; flex: 1">{{t.n}}. {{t.title}}</span>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: rgba(0,0,0,0.05); font: inherit; font-size: 11px; line-height: 14px; color: #1d1d1f">Copy Prompt</button>
+</div>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; color: #3a3a3c">{{t.verify}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<div style="height: 0.5px; background: rgba(0,0,0,0.1)"></div>
+<button onClick="{{toggleFiles}}" aria-expanded="{{filesOpen}}" style="min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="{{filesChev}}"><path d="M6 3l5 5-5 5"></path></svg>
+<span style="flex: 1; font-size: 13px; line-height: 18px; font-weight: 500">Spec files</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">specs/yoga-studio-booking</span>
+</button>
+<sc-if value="{{filesOpenBool}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 14px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="5">
+<a href="#" style="height: 28px; display: inline-flex; align-items: center; padding: 0 10px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #1d1d1f; text-decoration: none">{{f}}</a>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73; text-align: center">Mel also writes AGENTS.md and commits the spec to Git. <a href="V2-6-Settings-Specs.dc.html">Change in Settings</a></span>
+</div>
+</main>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { tasks: false, files: false };
+}
+renderVals() {
+const s = this.state;
+const chev = (on) => 'transition: transform 150ms ease; transform: rotate(' + (on ? '90deg' : '0deg') + ')';
+return {
+next: [
+{ n: '1', text: 'Claude Code builds the tasks in order and runs each check before moving on.' },
+{ n: '2', text: 'If it hits something the plan didn’t expect, it asks you here first. Then the code follows.' },
+{ n: '3', text: 'When the first version is done, this spec moves to Done.' }
+],
+tasks: [
+{ n: '1', title: 'Booking data and local store', verify: './gradlew :shared:allTests --tests "*Booking*"' },
+{ n: '2', title: 'Schedule and class screens', verify: './gradlew :androidApp:connectedCheck' },
+{ n: '3', title: 'Class pack checkout', verify: './gradlew :shared:allTests --tests "*Checkout*"' }
+],
+files: ['PRODUCT.md', 'REQUIREMENTS.md', 'EXPERIENCE.md', 'ARCHITECTURE.md', 'TASKS.md', 'DECISIONS.md'],
+tasksOpen: s.tasks ? 'true' : 'false', tasksOpenBool: !!s.tasks, toggleTasks: () => this.setState({ tasks: !s.tasks }), tasksChev: chev(s.tasks),
+filesOpen: s.files ? 'true' : 'false', filesOpenBool: !!s.files, toggleFiles: () => this.setState({ files: !s.files }), filesChev: chev(s.files)
+};
+}
+}
+</script>
+</body>
+</html>

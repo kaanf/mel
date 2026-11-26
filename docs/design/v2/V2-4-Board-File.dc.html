@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-4 · Board, a file open (v2)
+Purpose: ARCHITECTURE.md opened from Files: Formatted or Markdown, Open in VS Code, Reveal in Finder, Edit. Saving an edit shows the update banner (was C1). The inbox stays on the right.
+State shown: a Tell Mel request was just applied ("Let teachers cancel a class from the app…"). The result line under the file reads
+  "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md, 1 task in TASKS.md" with Undo; the changed passage in the open file is
+  highlighted, and the change with its reason is in DECISIONS.md. The Tell Mel box stays available below the file.
+Exits: Plan (back to the board), Undo (reverts the patch and its DECISIONS.md line), Files › another file, Start Building › V2-3.
+Same component as V2-2-Board.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Board, a file open, change applied (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-2-Board" open-file="ARCHITECTURE.md" tell="result" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

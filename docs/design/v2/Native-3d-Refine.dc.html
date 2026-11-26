@@ -6,8 +6,8 @@
 MEL SCREEN C1 · Refine after editing an approved file
 Lane: C Other states (conditional)
 Purpose: the user changed a file that was already approved (shown: REQUIREMENTS.md, 12h to 24h). Banner, diff of the change, list of affected downstream files and parts (marked Out of date in the sidebar), "Why did this change?" saved as a decision. Inspector: Decisions log (DECISIONS.md), newest first, replaced decisions faded.
-Comes from: editing any approved file in B4/B5, or an agent proposing a spec change while building (keep-in-sync).
-Goes to: B3 Drafting then B4 for each affected file (Refine 3 Files) · back to the file with downstream marked checked (Keep Them as They Are) · B6 Analyze (Rerun).
+Comes from: editing a written Markdown file from the sidebar, changing an answered decision on D1, or an agent proposing a spec change while building (keep-in-sync).
+Goes to: D1 Spec board (Refine 3 Files: the agent updates the affected parts in the background; new cards appear if it needs a decision) · back to the file with downstream marked checked (Keep Them as They Are).
 Map of all screens: FLOW.md
 -->
 <title>Edit after approval: refine downstream</title>
@@ -26,26 +26,112 @@ textarea:focus{outline:none}
 <div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
 <div style="position: relative; max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
 
-<nav aria-label="Specs" style="flex: 0 0 232px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
-<div class="tl" style="height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<nav aria-label="Project" style="position: relative; flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
 <span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
 </div>
-<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px 6px; height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" aria-expanded="false" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 13px; color: #6e6e73">main</span>
+</span>
+<span aria-label="Another project needs you" role="img" style="width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<a href="Native-0b-ProjectSetup.dc.html" style="margin: 0 8px; min-height: 32px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5L8 2.5l5.5 4v6.25a.75.75 0 0 1-.75.75h-9.5a.75.75 0 0 1-.75-.75z"></path></svg>
-<span style="font-size: 13px; line-height: 18px; flex: 1">Project context</span>
+<span style="flex: 1; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px">Project context</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Up to date · read 2 days ago</span>
+</span>
 </a>
-<div style="padding: 4px 18px 4px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Specs</div>
-<div style="flex: 1; padding: 0 8px; display: flex; flex-direction: column; gap: 1px">
-<div style="height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 4px"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"></path></svg><span style="font-size: 13px; line-height: 18px">Yoga Studio Booking</span></div>
-<sc-for list="{{side}}" as="r" hint-placeholder-count="7">
-<a href="{{r.href}}" aria-current="{{r.current}}" style="{{r.style}}">
-<span style="font-size: 13px; line-height: 18px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.name}}</span>
-<span style="{{r.dot}}"></span>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{r.word}}</span>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Needs you</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">1</span>
+</div>
+<a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; background: rgba(0,0,0,0.08); font-weight: 500">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Yoga Studio Booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Product · 3 files out of date</span>
+</span>
 </a>
-</sc-for>
+<div style="display: flex; flex-direction: column; gap: 1px; padding: 2px 0 4px 22px">
+<button aria-expanded="true" style="height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #6e6e73; text-align: left">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(90deg)"><path d="M6 3l5 5-5 5"></path></svg>
+<span style="flex: 1">Markdown files</span>
+<span>5</span>
+</button>
+<a href="#" title="Written" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 24px; border-radius: 6px; color: #3a3a3c; text-decoration: none">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; flex: 1">PRODUCT.md</span>
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+</a>
+<a href="#" title="Edited" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 24px; border-radius: 6px; color: #3a3a3c; text-decoration: none">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; flex: 1">REQUIREMENTS.md</span>
+<span style="font-size: 10px; line-height: 13px; color: #6e6e73">Edited</span>
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #007aff"></span>
+</a>
+<a href="#" title="Out of date" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 24px; border-radius: 6px; color: #3a3a3c; text-decoration: none">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; flex: 1">EXPERIENCE.md</span>
+<span style="font-size: 10px; line-height: 13px; color: #6e6e73">Out of date</span>
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #b25000"></span>
+</a>
+<a href="#" title="Out of date" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 24px; border-radius: 6px; color: #3a3a3c; text-decoration: none">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; flex: 1">ARCHITECTURE.md</span>
+<span style="font-size: 10px; line-height: 13px; color: #6e6e73">Out of date</span>
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #b25000"></span>
+</a>
+<a href="#" title="Out of date" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 8px 0 24px; border-radius: 6px; color: #3a3a3c; text-decoration: none">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; flex: 1">TASKS.md</span>
+<span style="font-size: 10px; line-height: 13px; color: #6e6e73">Out of date</span>
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #b25000"></span>
+</a>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Agent working</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">1</span>
+</div>
+<a href="#" aria-current="false" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; background: transparent">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Filter schedule by teacher</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Feature · building task 3 of 7</span>
+</span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 8px 2px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; flex: 1">Done</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">1</span>
+</div>
+<a href="#" aria-current="false" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; background: transparent">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Double booking on fast taps</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Quick fix · merged yesterday</span>
+</span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="Native-1-NewSpec.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+New Spec<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span>
+</a>
+<a href="Native-Settings-Agents.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1">Claude Code · Ready</span>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2"></circle><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"></path></svg>
+</a>
 </div>
 </nav>
 
@@ -64,8 +150,8 @@ textarea:focus{outline:none}
 <div role="status" style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
 <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#b25000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 18px; margin-top: 1px"><path d="M8 2.25l6.25 11H1.75z"></path><path d="M8 6.5v3M8 11.5v.1"></path></svg>
 <div style="display: flex; flex-direction: column; gap: 2px">
-<span style="font-size: 13px; line-height: 18px; font-weight: 600">You changed an approved file. 3 files were built on it.</span>
-<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">They are marked out of date. Refine rewrites only the affected parts, and you review each change like any other suggestion.</span>
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">You changed a finished file. 3 files were built on it.</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">They are marked out of date. Refine rewrites only the affected parts. Anything that needs your call comes back as a card on the Spec board.</span>
 </div>
 </div>
 
@@ -106,7 +192,7 @@ textarea:focus{outline:none}
 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
 <span style="flex: 1; min-width: 220px; font-size: 12px; line-height: 16px; color: #6e6e73">Agents building from TASKS.md pause on out-of-date tasks until you refine or keep them.</span>
 <button style="height: 34px; padding: 0 16px; border: 0; border-radius: 17px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Keep Them as They Are</button>
-<button style="height: 34px; padding: 0 18px; border: 0; border-radius: 17px; background: #007aff; font: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12)">Refine 3 Files</button>
+<a href="Native-D1-SpecBoard.dc.html" style="height: 34px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 17px; background: #007aff; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12)">Refine 3 Files</a>
 </div>
 
 </div>
@@ -147,20 +233,6 @@ done: 'width: 8px; height: 8px; border-radius: 50%; background: #248a3d',
 edited: 'width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #1d1d1f',
 stale: 'width: 8px; height: 8px; border-radius: 50%; background: #b25000'
 };
-const side = [
-{ name: 'Discovery', word: '5 of 5', st: 'done', href: 'Native-2-Discovery.dc.html' },
-{ name: 'PRODUCT.md', word: 'Approved', st: 'done', href: '#' },
-{ name: 'REQUIREMENTS.md', word: 'Edited', st: 'edited', href: '#', cur: true },
-{ name: 'EXPERIENCE.md', word: 'Out of date', st: 'stale', href: 'Native-3b-Experience.dc.html' },
-{ name: 'ARCHITECTURE.md', word: 'Out of date', st: 'stale', href: '#' },
-{ name: 'TASKS.md', word: 'Out of date', st: 'stale', href: '#' },
-{ name: 'Analyze', word: 'Rerun', st: 'stale', href: 'Native-3c-Analyze.dc.html' }
-].map((r) => ({
-name: r.name, word: r.word, href: r.href,
-current: r.cur ? 'page' : 'false',
-dot: dots[r.st],
-style: rowBase + (r.cur ? 'background: rgba(0,0,0,0.08); font-weight: 500' : 'background: transparent')
-}));
 const impact = [
 { file: 'EXPERIENCE.md', what: 'Copy on Confirm booking and Upcoming › Late cancel', count: '2 places' },
 { file: 'ARCHITECTURE.md', what: 'Cancellation rule in BookingPolicy', count: '1 section' },
@@ -176,7 +248,7 @@ const decisions = [
 id: d.id, title: d.title, why: d.why, meta: d.meta,
 box: box + (d.isNew ? 'background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 0.5px rgba(0,122,255,0.3)' : d.old ? 'background: transparent; opacity: 0.6; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)' : 'background: #f5f5f7')
 }));
-return { side, impact, decisions };
+return { impact, decisions };
 }
 }
 </script>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-7 · Board, change couldn't be placed (v2)
+Purpose: the user told Mel "Members can book while offline, and the bookings sync when they're back online." That changes how every
+  booking is confirmed (D-05) and no single passage in ARCHITECTURE.md covers it, so Mel changes nothing and says:
+  "Mel couldn't find where this goes in ARCHITECTURE.md."
+Actions: Rewrite ARCHITECTURE.md (shows its cost, about 8k tokens; the only way Mel rewrites a whole file, always the user's explicit
+  choice; the result is logged in DECISIONS.md) or Cancel (puts the request back in the Tell Mel box to rephrase).
+Exits: back to V2-2 Board either way.
+Same component as V2-2-Board.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Board, change couldn’t be placed (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-2-Board" tell="unplaced" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

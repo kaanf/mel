@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-6 · Settings › Specs (new in v2)
+Purpose: where the defaults v2 stopped asking about live. Everything here was a field or step on an older screen:
+  Show spec files in the sidebar (off by default; on = D1-style file list under the open spec, see V2-5) · Open files in (editor)
+  Show token use on the board (on by default; the toolbar button and its popover on V2-2, the total on V2-3)
+  Let Mel guess small details (was the B1 toggle) · Save specs to (was B1 Save to) · Default agent (was B1 Agent)
+  Write AGENTS.md, Commit the spec, Ask before an agent changes the plan (were B7 toggles)
+  Project context and rules every agent follows (were A3 Project setup and principles.md)
+Comes from: app menu › Settings (⌘,), sidebar agent status, V2-0 Change, V2-3 Change in Settings, V2-2 token popover (Hide token use in Settings).
+-->
+<title>Settings: Specs (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased; display: flex; justify-content: center; align-items: flex-start">
+<div style="width: 100%; max-width: 680px; display: flex; flex-direction: column; background: #ececec; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 14px 8px; background: #f6f6f6; border-bottom: 0.5px solid rgba(0,0,0,0.12)">
+<div style="align-self: stretch; height: 14px; display: flex; gap: 8px; align-items: center">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+<span style="flex: 1; text-align: center; font-size: 13px; line-height: 16px; font-weight: 600; margin-right: 52px">Specs</span>
+</div>
+<nav aria-label="Settings" style="display: flex; gap: 4px">
+<a href="#" style="width: 72px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; font-size: 11px; line-height: 14px; color: #3a3a3c; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2"></circle><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"></path></svg>General</a>
+<a href="Native-Settings-Agents.dc.html" style="width: 72px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; font-size: 11px; line-height: 14px; color: #3a3a3c; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="9" rx="1.5"></rect><path d="M5 7l1.5 1.5L5 10M8.5 10H11"></path></svg>Agents</a>
+<a href="#" aria-current="page" style="width: 72px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; background: rgba(0,0,0,0.07); font-size: 11px; line-height: 14px; color: #0058b9; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5l3.25 3.25v9.25H4z"></path><path d="M9 1.75V5h3.25M6 8.5h4M6 11h4"></path></svg>Specs</a>
+<a href="#" style="width: 72px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; font-size: 11px; line-height: 14px; color: #3a3a3c; text-decoration: none">
+<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10"></path><circle cx="6" cy="4" r="1.3" fill="#ececec"></circle><circle cx="10" cy="8" r="1.3" fill="#ececec"></circle><circle cx="5" cy="12" r="1.3" fill="#ececec"></circle></svg>Advanced</a>
+</nav>
+</div>
+
+<div style="padding: 20px 24px 28px; display: flex; flex-direction: column; gap: 20px">
+
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<section style="display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0 0 0 4px; font-size: 12px; line-height: 16px; font-weight: 600; color: #6e6e73">{{g.title}}</h2>
+<div style="display: flex; flex-direction: column; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1)">
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2">
+<div style="{{r.rowStyle}}">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px">{{r.label}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{r.note}}</span>
+</span>
+<sc-if value="{{r.isToggle}}" hint-placeholder-val="{{true}}">
+<button role="switch" aria-checked="{{r.on}}" aria-label="{{r.label}}" onClick="{{r.toggle}}" style="{{r.track}}"><span style="{{r.knob}}"></span></button>
+</sc-if>
+<sc-if value="{{r.isValue}}" hint-placeholder-val="{{false}}">
+<button aria-label="{{r.label}}: {{r.value}}" style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18), 0 1px 1px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{r.value}}
+<svg width="8" height="10" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg></button>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+
+<section style="display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0 0 0 4px; font-size: 12px; line-height: 16px; font-weight: 600; color: #6e6e73">Project: yoga-studio-booking</h2>
+<div style="display: flex; flex-direction: column; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1)">
+<div style="min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.08)">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px">What Mel knows about this project</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Read 2 days ago · product, tech, structure · in .mel/project/</span>
+</span>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Show Files</button>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Read Again</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px">
+<span style="font-size: 13px; line-height: 18px">Rules every agent follows</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Saved in principles.md. Every spec and every task reads them first.</span>
+<sc-for list="{{rules}}" as="u" hint-placeholder-count="3">
+<div style="display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 6px; background: #f5f5f7">
+<span style="flex: 1; font-size: 12px; line-height: 17px">{{u.text}}</span>
+<button aria-label="Remove rule: {{u.text}}" onClick="{{u.remove}}" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: #6e6e73">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button>
+</div>
+</sc-for>
+<button onClick="{{addRule}}" style="align-self: flex-start; height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Add Rule</button>
+</div>
+</div>
+</section>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = {
+on: { sidebar: false, guess: true, tokens: true, agents: true, commit: true, ask: true },
+rules: ['Reuse existing modules before adding new ones. Name the module you extend.', 'No new dependency without a short reason in ARCHITECTURE.md.', 'Every check in the plan gets a test before a task counts as done.']
+};
+}
+renderVals() {
+const s = this.state;
+const sw = (on) => ({
+track: 'flex: 0 0 32px; width: 32px; height: 18px; border: 0; padding: 0; border-radius: 9px; position: relative; background: ' + (on ? '#007aff' : 'rgba(0,0,0,0.14)'),
+knob: 'position: absolute; top: 2px; left: ' + (on ? '16px' : '2px') + '; width: 14px; height: 14px; border-radius: 7px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: left 150ms ease'
+});
+const toggle = (id, label, note) => {
+const on = !!s.on[id];
+const k = sw(on);
+return { label: label, note: note, isToggle: true, isValue: false, on: on ? 'true' : 'false', track: k.track, knob: k.knob, toggle: () => this.setState({ on: Object.assign({}, s.on, { [id]: !on }) }) };
+};
+const value = (label, note, v) => ({ label: label, note: note, isToggle: false, isValue: true, value: v, on: 'false', track: '', knob: '', toggle: null });
+const groups = [
+{ title: 'Files', rows: [
+toggle('sidebar', 'Show spec files in the sidebar', s.on.sidebar ? 'The Markdown files are always listed under the open spec.' : 'Off: open them from Files on the board. Most people never need them.'),
+value('Open files in', 'Used by Open in Editor on the board.', 'VS Code')
+] },
+{ title: 'Writing a spec', rows: [
+toggle('guess', 'Let Mel guess small details', 'Each guess is listed on the board so you can check it.'),
+toggle('tokens', 'Show token use on the board', 'A small total in the board toolbar. Click it to see each step.'),
+value('Default agent', 'Who writes the spec. Set up agents in Agents.', 'Claude Code'),
+value('Save specs to', 'Inside the project folder.', 'specs/')
+] },
+{ title: 'When you start building', rows: [
+toggle('agents', 'Write AGENTS.md', 'Points every agent at the project, this spec and the task prompts.'),
+toggle('commit', 'Commit the spec to Git', 'One commit with all spec files before the first task.'),
+toggle('ask', 'Ask me before an agent changes the plan', 'If an agent hits a blocker, it proposes a change here first.')
+] }
+].map((g) => ({ title: g.title, rows: g.rows.map((r, i) => Object.assign(r, { rowStyle: 'min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; ' + (i < g.rows.length - 1 ? 'border-bottom: 0.5px solid rgba(0,0,0,0.08)' : '') })) }));
+const rules = s.rules.map((t, i) => ({ text: t, remove: () => this.setState({ rules: s.rules.filter((x, j) => j !== i) }) }));
+return {
+groups: groups, rules: rules,
+addRule: () => this.setState({ rules: s.rules.concat(['New rule. Click to write it.']) })
+};
+}
+}
+</script>
+</body>
+</html>

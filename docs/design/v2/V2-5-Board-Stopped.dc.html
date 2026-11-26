@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-5 · Board, agent stopped (v2)
+Claude Code hit a usage limit mid-file (was C2): banner over the center, Continue with Codex, Resume later, or Finish it myself. Also shows Settings › Specs › Show spec files in the sidebar turned on.
+Same component as V2-2-Board.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Board, agent stopped (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-2-Board" scenario="stopped" sidebar-files="{{ true }}" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
