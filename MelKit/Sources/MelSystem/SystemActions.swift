@@ -29,9 +29,18 @@ public enum SystemActions {
         "'" + s.replacingOccurrences(of: "'", with: #"'\''"#) + "'"
     }
 
-    /// Opens a file in the app macOS uses for it (the board's "Open in Editor").
-    public static func open(_ url: URL) {
-        NSWorkspace.shared.open(url)
+    /// The board's "Open in Editor": in `app` (Settings › Specs › Open files in), or the app macOS uses for the file.
+    public static func open(_ url: URL, with app: URL? = nil) {
+        guard let app else { NSWorkspace.shared.open(url); return }
+        NSWorkspace.shared.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    /// The apps on this Mac that open Markdown, by name.
+    public static func markdownEditors() -> [URL] {
+        let sample = FileManager.default.temporaryDirectory.appending(path: "mel.md")
+        if !FileManager.default.fileExists(atPath: sample.path) { try? Data().write(to: sample) }
+        return NSWorkspace.shared.urlsForApplications(toOpen: sample)
+            .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
     }
 
     public static func showInFinder(_ url: URL) {

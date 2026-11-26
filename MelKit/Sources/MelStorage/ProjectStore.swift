@@ -36,7 +36,7 @@ public enum ProjectStore {
         var sources: [String: String]
     }
 
-    /// A3 "Add Rule": appends `- rule` to `principles.md`.
+    /// Settings › Specs "Add Rule": appends `- rule` to `principles.md`.
     public static func addRule(_ rule: String, project: URL) throws {
         let url = contextFolder(project: project).appending(path: "principles.md")
         var text = (try? String(contentsOf: url, encoding: .utf8)) ?? "# Principles\n"
@@ -46,7 +46,16 @@ public enum ProjectStore {
         try Data(text.utf8).write(to: url, options: .atomic)
     }
 
-    /// True for a folder with nothing but dotfiles: A3 picks "New project, no code yet".
+    /// Settings › Specs: takes the first `- rule` line with this text out of `principles.md`.
+    public static func removeRule(_ rule: String, project: URL) throws {
+        let url = contextFolder(project: project).appending(path: "principles.md")
+        var lines = try String(contentsOf: url, encoding: .utf8).split(omittingEmptySubsequences: false, whereSeparator: \.isNewline).map(String.init)
+        guard let i = lines.firstIndex(of: "- \(rule)") else { return }
+        lines.remove(at: i)
+        try Data(lines.joined(separator: "\n").utf8).write(to: url, options: .atomic)
+    }
+
+    /// True for a folder with nothing but dotfiles: there is no code to read yet.
     public static func isEmpty(project: URL) -> Bool {
         let items = (try? FileManager.default.contentsOfDirectory(atPath: project.path)) ?? []
         return items.allSatisfy { $0.hasPrefix(".") }

@@ -1,17 +1,16 @@
 import Foundation
 
 /// Prompt templates bundled from `Prompts/*.md`, filled by plain `{{placeholder}}` replacement.
-/// Drafting, revise and rewrite prompts share the rules through `{{rules}}`, which `build` fills itself:
+/// Drafting, change and rewrite prompts share the rules through `{{rules}}`, which `build` fills itself:
 /// `rules.md`, or `rules-no-gaps.md` when the user turned "Let Mel fill small gaps" off.
 /// With a `language`, `language.md` is appended so every prompt of a spec writes in it.
 public enum Prompt: String, CaseIterable, Sendable {
     case project, intake
-    case discovery                  // v1, until SpecSession runs the intake (Wave 7)
     case product, requirements, experience, architecture, tasks, spec
-    /// `revise` replies with a `Patch`; `rewrite` streams the whole file, only after an unplaced patch (OQ #25).
-    case revise, rewrite, analyze, impact
-    /// Board: one patch run across the written files; replies with a `Change`.
+    /// One patch run across the written files; replies with a `Change`.
     case change
+    /// Streams a whole file again, only after a change couldn't be placed (OQ #25).
+    case rewrite, analyze
     case `continue`
 
     public init(drafting kind: DocKind) {

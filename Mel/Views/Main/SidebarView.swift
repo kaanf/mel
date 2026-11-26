@@ -2,37 +2,66 @@ import SwiftUI
 import MelSpec
 import UniformTypeIdentifiers
 
-/// Library sidebar, design/v2 variant drawn on B5–C3: per project a Project context row,
-/// "Specs", and each spec with Discovery, its size's files and Analyze. Rows are drawn here
-/// (not a List) to match the design's selection; ↑/↓ move the selection.
+/// The V2 sidebar (drawn on V2-1, V2-2, V2-3): the project, its specs as Needs you / Building /
+/// Done, New and the agent's status. Settings › Specs can list the open spec's files under it (V2-5).
 struct SidebarView: View {
     @Environment(AppState.self) private var state
-    @Binding var selection: SidebarItem?
-    let onNewSpec: () -> Void
-    @State private var collapsed: Set<Spec.ID> = []
+    @Environment(\.openSettings) private var openSettings
+    @AppStorage("settingsTab") private var settingsTab = SettingsView.Pane.agents
+    @AppStorage("showSidebarFiles") private var showsFiles = false
+    @Binding var isShowingNew: Bool
+    /// The file open in the board's center.
+    @Binding var openFile: BoardFile?
     @FocusState private var isFocused: Bool
+    @State private var isAdding = false
     /// A missing project being located.
     @State private var locating: URL?
-    @State private var locateError: String?
+    @State private var error: String?
+
+    private var project: Project? { state.currentProject }
+    private var specs: [Spec] { project.map(state.specs) ?? [] }
+    private var selection: Spec.ID? { isShowingNew ? nil : state.selection }
+
+    private static let groups: [(title: String, build: BuildState?, empty: String)] = [
+        ("Needs you", nil, "Nothing waiting for you"), ("Building", .building, "Nothing is being built"), ("Done", .done, "Nothing done yet"),
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
+            projectButton
+                .padding(EdgeInsets(top: Theme.Size.sidebarTop, leading: Theme.Space.x8, bottom: Theme.Space.x8, trailing: Theme.Space.x8))
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(state.projects) { project in
-                        projectSection(project)
-                    }
-                    ForEach(state.missingFolders, id: \.self) { folder in
-                        missingRow(folder)
+                VStack(alignment: .leading, spacing: Theme.Space.x10) {
+                    ForEach(Self.groups, id: \.title) { group in
+                        let rows = specs.filter { $0.build == group.build }
+                        VStack(alignment: .leading, spacing: Theme.Space.x1) {
+                            Text(group.title)
+                                .textStyle(Theme.Text.captionBold)
+                                .foregroundStyle(Theme.Colors.secondaryLabel)
+                                .padding(EdgeInsets(top: 0, leading: Theme.Space.x8, bottom: Theme.Space.x2, trailing: Theme.Space.x8))
+                                .accessibilityAddTraits(.isHeader)
+                            if rows.isEmpty {
+                                Text(group.empty)
+                                    .textStyle(Theme.Text.callout)
+                                    .foregroundStyle(Theme.Colors.emptyGroup)
+                                    .padding(.vertical, Theme.Space.x2)
+                                    .padding(.horizontal, Theme.Space.x8)
+                            }
+                            ForEach(rows) { spec in
+                                row(spec)
+                                if showsFiles, selection == spec.id, spec.stage == .board { files(of: spec) }
+                            }
+                        }
                     }
                 }
-                .padding(.top, Theme.Size.titleBar)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(EdgeInsets(top: Theme.Space.x6, leading: Theme.Space.x8, bottom: Theme.Space.x8, trailing: Theme.Space.x8))
             }
             .scrollIndicators(.never)
             footer
         }
         // The design's sidebar is a panel inset 8 pt in a white window, not the system's flush column.
-        .frame(width: Theme.Size.sidebarWidth)
+        .frame(width: Theme.Size.boardSidebar)
         .surface(Theme.Colors.sidebarPanel, .sidebar, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x8, bottom: Theme.Space.x8, trailing: 0))
         .background(Theme.Colors.background)
@@ -43,362 +72,276 @@ struct SidebarView: View {
         .onKeyPress(.upArrow) { move(by: -1) }
         .onKeyPress(.downArrow) { move(by: 1) }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .navigationSplitViewColumnWidth(Theme.Size.sidebarWidth + Theme.Space.x8)
+        .navigationSplitViewColumnWidth(Theme.Size.boardSidebar + Theme.Space.x8)
         .toolbar(removing: .sidebarToggle)
-        .fileImporter(isPresented: Binding(get: { locating != nil }, set: { if !$0 { locating = nil } }), allowedContentTypes: [.folder]) { result in
-            guard let missing = locating, case .success(let folder) = result else { return }
-            do { try state.locate(missing, at: folder) } catch { locateError = error.localizedDescription }
+        .fileImporter(isPresented: Binding(get: { isAdding || locating != nil }, set: { if !$0 { isAdding = false; locating = nil } }), allowedContentTypes: [.folder]) { result in
+            guard case .success(let folder) = result else { return }
+            do {
+                if let missing = locating { try state.locate(missing, at: folder) } else { try state.startProject(folder) }
+                state.selection = nil
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
-        .alert("Couldn’t Add the Folder", isPresented: Binding(get: { locateError != nil }, set: { if !$0 { locateError = nil } })) {
+        .alert("Couldn’t Add the Folder", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
         } message: {
-            Text(locateError ?? "")
+            Text(error ?? "")
         }
     }
 
-    /// A project folder that moved or was deleted since the last launch (not drawn; the project row's look).
-    private func missingRow(_ folder: URL) -> some View {
-        Button { locating = folder } label: {
-            HStack(spacing: Theme.Space.x6) {
-                DesignIcon(glyph: .house, size: Theme.Size.projectIcon)
-                Text(folder.lastPathComponent)
-                    .textStyle(Theme.Text.body)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text("Missing").textStyle(Theme.Text.caption).fixedSize()
+    // MARK: Project
+
+    private var projectButton: some View {
+        Menu {
+            ForEach(state.projects) { other in
+                Toggle(other.name, isOn: Binding(get: { other.id == project?.id }, set: { _ in
+                    state.projectID = other.id
+                    state.selection = nil
+                }))
             }
-            .foregroundStyle(Theme.Colors.secondaryLabel)
-            .padding(.leading, Theme.Space.x8)
-            .padding(.trailing, Theme.Space.x8)
-            .frame(height: Theme.Size.sidebarRow)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .padding(.horizontal, Theme.Space.x8)
-        .padding(.top, Theme.Space.x6)
-        .help("\(folder.path(percentEncoded: false)) is missing. Click to locate it.")
-        .accessibilityLabel("\(folder.lastPathComponent), Missing")
-        .accessibilityHint("Locate the moved folder")
-        .contextMenu {
-            Button("Locate…") { locating = folder }
-            Button("Remove from List") { state.removeMissing(folder) }
-        }
-    }
-
-    // MARK: Sections
-
-    @ViewBuilder
-    private func projectSection(_ project: Project) -> some View {
-        let specs = state.specs(in: project)
-        SidebarRow(
-            item: .project(project.id), selection: $selection, isFocused: $isFocused,
-            label: project.name, status: (project.isMissing ? "Missing" : project.hasContext ? "Ready" : "No context", nil), leading: Theme.Space.x8
-        ) {
-            DesignIcon(glyph: .house, size: Theme.Size.projectIcon)
-                .foregroundStyle(Theme.Colors.secondaryLabel)
-        }
-        .padding(.horizontal, Theme.Space.x8)
-        .padding(.bottom, Theme.Space.x6)
-        .help(project.folder.path(percentEncoded: false))
-        .contextMenu {
-            Button("Remove from List") { state.removeProject(project) }
-        }
-
-        Text("Specs")
-            .textStyle(Theme.Text.captionBold)
-            .foregroundStyle(Theme.Colors.secondaryLabel)
-            .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x18, bottom: Theme.Space.x4, trailing: Theme.Space.x18))
-
-        if specs.isEmpty {
-            emptySpecs
-        } else {
-            VStack(alignment: .leading, spacing: Theme.Space.x1) {
-                ForEach(specs) { spec in
-                    specHeader(spec)
-                    if !collapsed.contains(spec.id) {
-                        ForEach(rows(of: spec), id: \.item) { row in
-                            SidebarRow(item: row.item, selection: $selection, isFocused: $isFocused, label: row.name, status: (row.word, row.dot), leading: Theme.Space.x26) {
-                                EmptyView()
-                            }
-                        }
-                    }
-                }
+            ForEach(state.missingFolders, id: \.self) { folder in
+                Button("Locate \(folder.lastPathComponent)…") { locating = folder }
             }
-            .padding(.horizontal, Theme.Space.x8)
-        }
-    }
-
-    private func specHeader(_ spec: Spec) -> some View {
-        Button {
-            withAnimation(.snappy(duration: 0.2)) {
-                if collapsed.contains(spec.id) { collapsed.remove(spec.id) } else { collapsed.insert(spec.id) }
+            Divider()
+            Button("Add Project…") { isAdding = true }
+            if let project {
+                Button("Remove \(project.name) from the List") { state.removeProject(project) }
+            }
+            ForEach(state.missingFolders, id: \.self) { folder in
+                Button("Remove \(folder.lastPathComponent) from the List") { state.removeMissing(folder) }
             }
         } label: {
-            HStack(spacing: Theme.Space.x6) {
-                DesignIcon(glyph: .chevronDown, size: Theme.Size.chevron)
-                    .rotationEffect(.degrees(collapsed.contains(spec.id) ? -90 : 0))
+            HStack(spacing: Theme.Space.x8) {
+                Text((project?.name.first.map(String.init) ?? "?").uppercased())
+                    .textStyle(Theme.Text.tileLetter)
+                    .foregroundStyle(Theme.Colors.projectTileText)
+                    .frame(width: Theme.Size.projectTile, height: Theme.Size.projectTile)
+                    .background(Theme.Colors.projectTile, in: RoundedRectangle(cornerRadius: Theme.Radius.field))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(project?.name ?? "No project").textStyle(Theme.Text.sidebarProject).lineLimit(1).truncationMode(.tail)
+                    Text(projectNote).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                DesignIcon(glyph: .popUp, size: Theme.Size.popUpHeight, weight: 1.6)
+                    .frame(width: Theme.Size.popUpWidth)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
-                Text(spec.name)
-                    .textStyle(Theme.Text.body)
-                    .foregroundStyle(Theme.Colors.label)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
             }
-            .padding(.leading, Theme.Space.x4)
-            .padding(.trailing, Theme.Space.x8)
-            .frame(height: Theme.Size.sidebarRow)
+            .foregroundStyle(Theme.Colors.label)
+            .padding(.vertical, Theme.Space.x6)
+            .padding(.horizontal, Theme.Space.x8)
+            .frame(minHeight: Theme.Size.projectButton)
+            .surface(Theme.Colors.background, .sidebarButton, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.box))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .help(project?.folder.path(percentEncoded: false).abbreviatingHome ?? "")
+        .accessibilityLabel("Project: \(project?.name ?? "none"). \(projectNote)")
+    }
+
+    private var projectNote: String {
+        guard let project else { return "Add or locate a project" }
+        if state.readingContext.contains(project.id) { return "Mel is reading this project" }
+        if project.hasContext { return "Mel knows this project" }
+        return state.contextErrors[project.id] != nil ? "Couldn’t read the project" : "Not read yet"
+    }
+
+    // MARK: Specs
+
+    private func row(_ spec: Spec) -> some View {
+        let isSelected = selection == spec.id
+        return Button {
+            select(spec.id)
+        } label: {
+            HStack(spacing: Theme.Space.x8) {
+                spec.sidebarDot
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(spec.name).textStyle(isSelected ? Theme.Text.bodyMedium : Theme.Text.body).lineLimit(1).truncationMode(.tail)
+                    Text(spec.sidebarNote).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .foregroundStyle(Theme.Colors.label)
+            .padding(.vertical, Theme.Space.x4)
+            .padding(.horizontal, Theme.Space.x8)
+            .frame(minHeight: Theme.Size.specRow)
+            .background {
+                if isSelected { RoundedRectangle(cornerRadius: Theme.Radius.row).fill(Theme.Colors.selectionFill) }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .accessibilityLabel(spec.name)
-        .accessibilityValue(collapsed.contains(spec.id) ? "Collapsed" : "Expanded")
+        .accessibilityLabel("\(spec.name), \(spec.sidebarNote)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .contextMenu {
+            if spec.stage == .done {
+                // Mel can't see the coding agent work: the user moves a built spec on.
+                if spec.build != .building { Button("Move to Building") { state.session(for: spec.id).setBuild(.building) } }
+                if spec.build != .done { Button("Mark as Done") { state.session(for: spec.id).setBuild(.done) } }
+                Divider()
+            }
             Button("Remove from List") { state.removeFromLibrary(spec.id) }
         }
     }
 
-    /// C3: a project without specs.
-    private var emptySpecs: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.x6) {
-            Text("No specs yet. Each spec you start shows up here with its files.")
-                .textStyle(Theme.Text.callout)
-                .foregroundStyle(Theme.Colors.secondaryLabel)
-            VStack(alignment: .leading, spacing: Theme.Space.x6) {
-                placeholderBar(width: 0.7, fill: Theme.Colors.selectionFill)
-                placeholderBar(width: 0.55, fill: Theme.Colors.badgeFill).padding(.leading, Theme.Space.x14)
-                placeholderBar(width: 0.6, fill: Theme.Colors.badgeFill).padding(.leading, Theme.Space.x14)
+    /// The open spec's Markdown files (Settings › Specs › Show spec files in the sidebar).
+    private func files(of spec: Spec) -> some View {
+        VStack(spacing: Theme.Space.x1) {
+            ForEach(spec.size.files, id: \.self) { kind in
+                fileRow(.doc(kind), state: spec.fileState(kind))
+                    .disabled(spec.fileState(kind) == .waiting && spec.halted?.file != kind)   // not started yet
             }
-            .padding(.top, Theme.Space.x6)
-            .opacity(0.5)
-            .accessibilityHidden(true)
+            fileRow(.decisions, state: nil)
         }
-        .padding(EdgeInsets(top: Theme.Space.x6, leading: Theme.Space.x18, bottom: Theme.Space.x6, trailing: Theme.Space.x18))
+        .padding(EdgeInsets(top: Theme.Space.x2, leading: Theme.Space.x22, bottom: Theme.Space.x4, trailing: 0))
     }
 
-    private func placeholderBar(width: CGFloat, fill: Color) -> some View {
-        GeometryReader { proxy in
-            RoundedRectangle(cornerRadius: Theme.Radius.keyHint).fill(fill)
-                .frame(width: proxy.size.width * width)
+    private func fileRow(_ file: BoardFile, state: FileState?) -> some View {
+        Button { openFile = file } label: {
+            HStack(spacing: Theme.Space.x6) {
+                Text(file.name).textStyle(Theme.Text.codeCaption).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                if let state { FileStateDot(state: state) }
+            }
+            .foregroundStyle(Theme.Colors.bodyLabel)
+            .padding(.horizontal, Theme.Space.x8)
+            .frame(height: Theme.Size.sidebarFileRow)
+            .background {
+                if openFile == file { RoundedRectangle(cornerRadius: Theme.Radius.code).fill(Theme.Colors.selectionFill) }
+            }
+            .contentShape(Rectangle())
         }
-        .frame(height: Theme.Size.statusDot)
+        .buttonStyle(.plain)
+        .focusable(false)
+        .accessibilityLabel(state.map { "\(file.name), \($0.word)" } ?? file.name)
+        .accessibilityAddTraits(openFile == file ? .isSelected : [])
     }
+
+    private func select(_ id: Spec.ID) {
+        state.selection = id
+        isShowingNew = false
+        isFocused = true
+    }
+
+    /// ↑/↓ through the rows as listed.
+    private func move(by step: Int) -> KeyPress.Result {
+        let order = Self.groups.flatMap { group in specs.filter { $0.build == group.build }.map(\.id) }
+        guard !order.isEmpty else { return .ignored }
+        let index = selection.flatMap(order.firstIndex).map { min(max($0 + step, 0), order.count - 1) } ?? 0
+        select(order[index])
+        return .handled
+    }
+
+    // MARK: Footer
 
     private var footer: some View {
-        HStack {
-            Button(action: onNewSpec) {
+        VStack(spacing: Theme.Space.x8) {
+            Button { isShowingNew = true } label: {
                 HStack(spacing: Theme.Space.x6) {
-                    DesignIcon(glyph: .plus, size: Theme.Size.plusIcon)
-                    Text("New Spec").textStyle(Theme.Text.body)
+                    Text("New").textStyle(isShowingNew ? Theme.Text.bodyBold : Theme.Text.bodyMedium)
+                    Text("⌘N").textStyle(Theme.Text.caption).foregroundStyle(isShowingNew ? Theme.Colors.likely : Theme.Colors.secondaryLabel)
                 }
-                .foregroundStyle(Theme.Colors.secondaryLabel)
-                .padding(.horizontal, Theme.Space.x6)
-                .frame(height: Theme.Size.buttonMini)
+                .foregroundStyle(isShowingNew ? Theme.Colors.likely : Theme.Colors.label)
+                .frame(maxWidth: .infinity)
+                .frame(height: Theme.Size.sidebarNew)
+                .surface(isShowingNew ? Theme.Colors.newActiveFill : Theme.Colors.background, isShowingNew ? .init() : .sidebarButton, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+                .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.row))
+            }
+            .buttonStyle(.plain)
+            .focusable(false)
+            .accessibilityLabel("New")
+            Button {
+                settingsTab = .agents
+                openSettings()
+            } label: {
+                HStack(spacing: Theme.Space.x6) {
+                    Circle().fill(agentColor).frame(width: Theme.Size.topicDot, height: Theme.Size.topicDot)
+                    Text(agentLine).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, Theme.Space.x4)
+                .frame(height: Theme.Size.sidebarAgentLine)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(!state.agent.isReady)
-            Spacer(minLength: 0)
+            .focusable(false)
+            .help("Open Settings › Agents")
         }
-        .padding(EdgeInsets(top: Theme.Space.x10, leading: Theme.Space.x12, bottom: Theme.Space.x10, trailing: Theme.Space.x12))
+        .padding(Theme.Space.x10)
         .overlay(alignment: .top) {
             Rectangle().fill(Theme.Colors.separatorLight).frame(height: Theme.Size.hairline)
         }
     }
 
-    // MARK: Rows and statuses
-
-    struct Row {
-        let item: SidebarItem
-        let name: String
-        let word: String
-        let dot: StatusDot.Style
+    /// The open spec's usage limit shows here too, as drawn on V2-5.
+    private var hitLimit: Bool {
+        guard state.agent.isReady, let spec = specs.first(where: { $0.id == selection }), case .usageLimit = spec.halted?.reason else { return false }
+        return true
     }
 
-    private func rows(of spec: Spec) -> [Row] {
-        var rows = [Row(item: .discovery(spec.id), name: "Discovery", word: coverage(spec), dot: spec.stage == .discovery ? .ring(Theme.Colors.label) : .filled(Theme.Colors.success))]
-        for kind in spec.size.files {
-            let (word, dot) = Self.status(spec.docs[kind] ?? .locked, intake: spec.stage == .discovery)
-            rows.append(Row(item: .doc(spec.id, kind), name: kind.fileName, word: word, dot: dot))
-        }
-        if spec.size.hasAnalyze {
-            let (word, dot) = Self.status(spec.analyze, intake: spec.stage == .discovery)
-            rows.append(Row(item: .analyze(spec.id), name: "Analyze", word: word, dot: dot))
-        }
-        return rows
-    }
+    private var agentLine: String { "Claude Code · " + (hitLimit ? "Usage limit" : state.agent.word) }
 
-    /// Word and dot per file status (V2 §7). Drawn in the design: Approved, Review, Edited, Locked,
-    /// Out of date. Not drawn, same scheme: Drafting (B3's purple), Stopped (#C93400), Queued (Locked dot).
-    static func status(_ status: DocStatus, intake: Bool) -> (String, StatusDot.Style) {
-        switch status {
-        case .locked: (intake ? "Queued" : "Locked", .dashed)
-        case .writing: ("Drafting", .running)
-        case .stopped: ("Stopped", .filled(Theme.Colors.caution))
-        case .review: ("Review", .ring(Theme.Colors.label))
-        case .approved: ("Approved", .filled(Theme.Colors.success))
-        case .edited: ("Edited", .ring(Theme.Colors.label))
-        case .stale: ("Out of date", .filled(Theme.Colors.warning))
+    private var agentColor: Color {
+        if hitLimit { return Theme.Colors.caution }
+        switch state.agent {
+        case .ready: return Theme.Colors.success
+        case .checking: return Theme.Colors.tertiary
+        default: return Theme.Colors.caution
         }
-    }
-
-    /// Analyze row: Queued / Locked / Running / n issues / Passed / Rerun.
-    static func status(_ status: AnalyzeStatus, intake: Bool) -> (String, StatusDot.Style) {
-        switch status {
-        case .locked: (intake ? "Queued" : "Locked", .dashed)
-        case .running: ("Running", .running)
-        case .issues(let count): (count == 1 ? "1 issue" : "\(count) issues", .filled(Theme.Colors.caution))
-        case .passed: ("Passed", .filled(Theme.Colors.success))
-        case .stale: ("Rerun", .filled(Theme.Colors.warning))
-        }
-    }
-
-    private func coverage(_ spec: Spec) -> String {
-        "\(spec.coverage.count { $0.state == .covered }) of \(spec.coverage.count)"
-    }
-
-    /// Visible rows in order, for ↑/↓.
-    private var order: [SidebarItem] {
-        state.projects.flatMap { project in
-            [SidebarItem.project(project.id)] + state.specs(in: project).flatMap { spec in
-                collapsed.contains(spec.id) ? [] : rows(of: spec).map(\.item)
-            }
-        }
-    }
-
-    private func move(by step: Int) -> KeyPress.Result {
-        let order = order
-        guard !order.isEmpty else { return .ignored }
-        guard let current = selection, let index = order.firstIndex(of: current) else {
-            selection = order.first
-            return .handled
-        }
-        selection = order[min(max(index + step, 0), order.count - 1)]
-        return .handled
     }
 }
 
-/// One selectable sidebar row: 28 pt, name, optional dot and status word (design/v2 `rowBase`).
-private struct SidebarRow<Icon: View>: View {
-    let item: SidebarItem
-    @Binding var selection: SidebarItem?
-    var isFocused: FocusState<Bool>.Binding
-    let label: String
-    let status: (word: String, dot: StatusDot.Style?)?
-    /// Leading padding inside the row: 8 for Project context, 26 for a spec's files.
-    let leading: CGFloat
-    @ViewBuilder let icon: Icon
-
-    private var isSelected: Bool { selection == item }
-
-    var body: some View {
-        Button {
-            selection = item
-            isFocused.wrappedValue = true
-        } label: {
-            HStack(spacing: Theme.Space.x6) {
-                icon
-                Text(label)
-                    .textStyle(isSelected ? Theme.Text.bodyMedium : Theme.Text.body)
-                    .foregroundStyle(Theme.Colors.label)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if let status {
-                    if let dot = status.dot { StatusDot(style: dot) }
-                    Text(status.word)
-                        .textStyle(isSelected ? Theme.Text.captionMedium : Theme.Text.caption)
-                        .foregroundStyle(Theme.Colors.secondaryLabel)
-                        .fixedSize()
-                }
-            }
-            .padding(.leading, leading)
-            .padding(.trailing, Theme.Space.x8)
-            .frame(height: Theme.Size.sidebarRow)
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: Theme.Radius.row).fill(Theme.Colors.selectionFill)
-                }
-            }
-            .contentShape(Rectangle())
+extension Spec {
+    /// The line under a spec's name in the sidebar: what it waits for, or what Mel is doing.
+    var sidebarNote: String {
+        switch build {
+        case .building: return "Building with Claude Code"
+        case .done: return "Built"
+        case nil: break
         }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .accessibilityLabel(status.map { "\(label), \($0.word)" } ?? label)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        if let halted { return halted.reason == .user ? "Paused" : "Agent stopped" }
+        if stage == .discovery {
+            let asked = questions.filter { $0.round == .intake }
+            guard let open = asked.firstIndex(where: { $0.answer == nil }) else { return "Reading your idea" }
+            return "Question \(open + 1) of \(asked.count)"
+        }
+        if stage == .done || isReady { return "Ready to build" }
+        if docs.values.contains(.edited) { return builtOnEdit.isEmpty ? "Edited by you" : "\(builtOnEdit.count) \(builtOnEdit.count == 1 ? "file" : "files") to update" }
+        if unplacedChange != nil { return "Rewrite or cancel?" }
+        let open = openCards.count
+        if open > 0 { return "\(open) \(open == 1 ? "question" : "questions")" }
+        if let next = size.files.first(where: { !written.contains($0) }) { return "Writing \(next.fileName)" }
+        return analyze == .stale ? "Check didn’t finish" : "Checking the files"
+    }
+
+    /// Needs you: blue dot (#C93400 while stopped). Building: blue ring. Done: green dot.
+    @ViewBuilder var sidebarDot: some View {
+        switch build {
+        case .building: StatusDot(style: .ring(Theme.Colors.accent))
+        case .done: StatusDot(style: .filled(Theme.Colors.success))
+        case nil: StatusDot(style: .filled(halted != nil && halted?.reason != .user ? Theme.Colors.caution : Theme.Colors.accent))
+        }
     }
 }
 
-#Preview("Spec in review") {
-    @Previewable @State var selection: SidebarItem? = .doc(PreviewData.review.id, .requirements)
+#Preview("Needs you, building, done") {
+    @Previewable @State var isShowingNew = false
+    @Previewable @State var openFile: BoardFile?
     NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
+        SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
         Color.white
     }
-    .environment(PreviewData.appState([PreviewData.review]))
+    .environment(PreviewData.appState(PreviewData.library))
     .frame(width: 900, height: 600)
 }
 
-#Preview("Intake") {
-    @Previewable @State var selection: SidebarItem? = .discovery(PreviewData.discovery.id)
+#Preview("New, no specs") {
+    @Previewable @State var isShowingNew = true
+    @Previewable @State var openFile: BoardFile?
     NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
-    } detail: {
-        Color.white
-    }
-    .environment(PreviewData.appState([PreviewData.discovery]))
-    .frame(width: 900, height: 600)
-}
-
-#Preview("Drafting") {
-    @Previewable @State var selection: SidebarItem? = .doc(PreviewData.drafting.id, .requirements)
-    NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
-    } detail: {
-        Color.white
-    }
-    .environment(PreviewData.appState([PreviewData.drafting]))
-    .frame(width: 900, height: 600)
-}
-
-#Preview("Edited, out of date") {
-    @Previewable @State var selection: SidebarItem? = .doc(PreviewData.edited.id, .requirements)
-    NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
-    } detail: {
-        Color.white
-    }
-    .environment(PreviewData.appState([PreviewData.edited]))
-    .frame(width: 900, height: 600)
-}
-
-#Preview("Analyze issues") {
-    @Previewable @State var selection: SidebarItem? = .analyze(PreviewData.analyzeIssues.id)
-    NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
-    } detail: {
-        Color.white
-    }
-    .environment(PreviewData.appState([PreviewData.analyzeIssues]))
-    .frame(width: 900, height: 600)
-}
-
-#Preview("Stopped") {
-    @Previewable @State var selection: SidebarItem? = .doc(PreviewData.usageLimit.id, .architecture)
-    NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
-    } detail: {
-        Color.white
-    }
-    .environment(PreviewData.appState([PreviewData.usageLimit]))
-    .frame(width: 900, height: 600)
-}
-
-#Preview("No specs") {
-    @Previewable @State var selection: SidebarItem?
-    NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
+        SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
         Color.white
     }
@@ -406,13 +349,26 @@ private struct SidebarRow<Icon: View>: View {
     .frame(width: 900, height: 600)
 }
 
-#Preview("Missing project") {
-    @Previewable @State var selection: SidebarItem?
+#Preview("Stopped, usage limit") {
+    @Previewable @State var isShowingNew = false
+    @Previewable @State var openFile: BoardFile?
     NavigationSplitView {
-        SidebarView(selection: $selection, onNewSpec: {})
+        SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
     } detail: {
         Color.white
     }
-    .environment(PreviewData.appState([PreviewData.review], missing: [URL(filePath: "/Users/me/Developer/old-portfolio")]))
+    .environment(PreviewData.appState([PreviewData.boardStopped]))
+    .frame(width: 900, height: 600)
+}
+
+#Preview("Missing project") {
+    @Previewable @State var isShowingNew = false
+    @Previewable @State var openFile: BoardFile?
+    NavigationSplitView {
+        SidebarView(isShowingNew: $isShowingNew, openFile: $openFile)
+    } detail: {
+        Color.white
+    }
+    .environment(PreviewData.appState([], projects: [], missing: [URL(filePath: "/Users/me/Developer/old-portfolio")]))
     .frame(width: 900, height: 600)
 }

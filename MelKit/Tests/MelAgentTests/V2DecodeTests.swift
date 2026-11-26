@@ -53,16 +53,13 @@ struct V2DecodeTests {
         }
     }
 
-    @Test func analyzeAndImpactDecode() throws {
+    @Test func analyzeDecodes() throws {
         // The planted contradiction (`config.json` in REQUIREMENTS, `settings.json` in the other two) comes first.
         let contradictions = try AnalyzeResult.contradictions(in: fixtures.result("analyze"))
         #expect(contradictions.first?.text.contains("settings.json") == true)
         #expect(contradictions.first?.ids?.contains("5.1") == true)
         #expect(contradictions.allSatisfy { $0.actions.count == 2 })
         #expect(Set(contradictions.flatMap(\.actions).flatMap(\.files)).isSubset(of: [.requirements, .architecture, .tasks]))
-        let impact = try ImpactResult.decode(fixtures.result("impact"))
-        #expect(impact.items.map(\.kind) == [.tasks])
-        #expect(!impact.title.isEmpty)
     }
 
     /// The recorded change run had two requests against REQUIREMENTS, ARCHITECTURE and TASKS; only REQUIREMENTS states them.
@@ -75,7 +72,7 @@ struct V2DecodeTests {
         #expect(change.summary(order: SpecSize.feature.files) == "Changed 9 places in REQUIREMENTS.md")
     }
 
-    /// The recorded revise run answered a round-2 question and an open question about this file.
+    /// A recorded one-file patch run: it answered a question and an open question about this file.
     @Test func revisePatchDecodesAndPlacesEveryEdit() throws {
         let file = """
         # Requirements

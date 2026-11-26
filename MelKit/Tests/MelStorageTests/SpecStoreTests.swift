@@ -53,9 +53,9 @@ final class SpecStoreTests {
     @Test func stateWritesAreDebouncedToTheLatest() async throws {
         var spec = try newSpec()
         let store = SpecStore(folder: spec.folder, debounce: .milliseconds(50))
-        spec.apply(.discoveryFinished)
+        spec.startBoard()
         await store.saveState(spec)
-        spec.apply(.draftFinished)
+        spec.begin(.draft(.product))
         await store.saveState(spec)
         #expect(try SpecStore.loadState(in: spec.folder).stage == .discovery)
 
@@ -66,10 +66,10 @@ final class SpecStoreTests {
     @Test func flushWritesImmediately() async throws {
         var spec = try newSpec()
         let store = SpecStore(folder: spec.folder, debounce: .seconds(60))
-        spec.apply(.discoveryFinished)
+        spec.startBoard()
         await store.saveState(spec)
         try await store.flushState()
-        #expect(try SpecStore.loadState(in: spec.folder).stage == .drafting(.product))
+        #expect(try SpecStore.loadState(in: spec.folder).stage == .board)
     }
 
     @Test func stateJSONUsesReadableKeys() throws {

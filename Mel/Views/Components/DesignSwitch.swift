@@ -1,11 +1,14 @@
 import SwiftUI
 
-/// The design's switch (B1 "Let Mel fill small gaps", B7, C4): 32 × 18 track, 14 pt white knob.
+/// The design's switch (Settings): 32 × 18 track, 14 pt white knob.
 struct DesignSwitchStyle: ToggleStyle {
+    /// Track when off: 0.12 as drawn on the older screens, 0.14 in Settings › Specs.
+    var offFill = Theme.Colors.switchOffFill
+
     func makeBody(configuration: Configuration) -> some View {
         Button { configuration.isOn.toggle() } label: {
             Capsule()
-                .fill(configuration.isOn ? Theme.Colors.accent : Theme.Colors.switchOffFill)
+                .fill(configuration.isOn ? Theme.Colors.accent : offFill)
                 .frame(width: Theme.Size.switchWidth, height: Theme.Size.switchHeight)
                 .overlay(alignment: configuration.isOn ? .trailing : .leading) {
                     Color.clear

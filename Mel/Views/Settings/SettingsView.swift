@@ -10,11 +10,62 @@ struct UpdateSettings {
     var check: () -> Void
 }
 
-/// C4 Settings › Agents (design/v2 Native-Settings-Agents): Claude Code's card, detection paths, Scan Now,
-/// plus Specs (spec language) and Updates. Hidden in v0.3: the General/Specs/Advanced tabs, Codex and per-agent on/off (V2 §2),
-/// and the scan-on-launch switch (Mel always scans at launch).
+/// Settings (⌘,): General, Agents and Specs. Advanced is drawn as a tab but has nothing in it yet, so it is hidden.
 struct SettingsView: View {
+    enum Pane: String { case general, agents, specs }
+
     let updates: UpdateSettings
+    /// Remembered, and set by the links that open Settings on a pane ("Change in Settings").
+    @AppStorage("settingsTab") private var pane = Pane.agents
+
+    var body: some View {
+        TabView(selection: $pane) {
+            Tab("General", systemImage: "gearshape", value: Pane.general) { GeneralSettings(updates: updates) }
+            Tab("Agents", systemImage: "apple.terminal", value: Pane.agents) { AgentSettings() }
+            Tab("Specs", systemImage: "doc.text", value: Pane.specs) { SpecsSettings() }
+        }
+    }
+}
+
+/// Settings › General: updates (not drawn; the Agents pane's look).
+struct GeneralSettings: View {
+    let updates: UpdateSettings
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x6) {
+            Text("Updates").textStyle(Theme.Text.bodyBold).padding(.horizontal, Theme.Space.x12).accessibilityAddTraits(.isHeader)
+            VStack(spacing: 0) {
+                HStack(spacing: Theme.Space.x8) {
+                    Text("Version \(updates.version)").textStyle(Theme.Text.body).frame(maxWidth: .infinity, alignment: .leading)
+                    Button("Check for Updates…", action: updates.check)
+                        .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.buttonTiny, leading: Theme.Space.x10, trailing: Theme.Space.x10, text: Theme.Text.callout))
+                        .disabled(!updates.canCheck)
+                }
+                .padding(.horizontal, Theme.Space.x12)
+                .frame(height: Theme.Size.upNextRow)
+                Rectangle().fill(Theme.Colors.separator).frame(height: Theme.Size.hairline).padding(.leading, Theme.Space.x12)
+                HStack(spacing: Theme.Space.x8) {
+                    Text("Automatically check for updates").textStyle(Theme.Text.body).frame(maxWidth: .infinity, alignment: .leading)
+                    Toggle("Automatically check for updates", isOn: updates.automaticallyChecks)
+                        .toggleStyle(DesignSwitchStyle())
+                        .labelsHidden()
+                }
+                .padding(.horizontal, Theme.Space.x12)
+                .frame(height: Theme.Size.upNextRow)
+            }
+            .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+        }
+        .foregroundStyle(Theme.Colors.label)
+        .padding(EdgeInsets(top: Theme.Space.x20, leading: Theme.Space.x24, bottom: Theme.Space.x24, trailing: Theme.Space.x24))
+        .frame(width: Theme.Size.settingsWidth)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(Theme.Colors.background)
+    }
+}
+
+/// Settings › Agents (design/v2 Native-Settings-Agents): Claude Code's card, detection paths, Scan Now.
+/// Hidden: Codex, per-agent on/off and the scan-on-launch switch (Mel always scans at launch).
+struct AgentSettings: View {
     @Environment(AppState.self) private var state
     @State private var picking: Pick?
     @State private var selectedPath: Int?
@@ -25,8 +76,6 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: Theme.Space.x20) {
             agentCard
             group("Detection") { searchPaths }
-            group("Specs") { SpecLanguageRow(language: Bindable(state).specLanguage) }
-            group("Updates") { updatesBox }
             HStack {
                 Spacer()
                 Button("Scan Now") { Task { await state.scanForAgent() } }
@@ -39,7 +88,6 @@ struct SettingsView: View {
         .frame(width: Theme.Size.settingsWidth)
         .fixedSize(horizontal: false, vertical: true)
         .background(Theme.Colors.background)
-        .navigationTitle("Agents")
         .fileImporter(
             isPresented: Binding(get: { picking != nil }, set: { if !$0 { picking = nil } }),
             allowedContentTypes: picking == .folder ? [.folder] : [.unixExecutable]
@@ -79,7 +127,7 @@ struct SettingsView: View {
                     } else {
                         StatusDot(style: .ring(Theme.Colors.secondaryLabel))
                     }
-                    Text(statusWord).textStyle(Theme.Text.callout)
+                    Text(state.agent.word).textStyle(Theme.Text.callout)
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -115,15 +163,6 @@ struct SettingsView: View {
         .padding(.leading, Theme.Size.agentDetailIndent)
         .padding(.trailing, Theme.Space.x12)
         .frame(height: Theme.Size.agentDetailRow)
-    }
-
-    private var statusWord: String {
-        switch state.agent {
-        case .ready: "Ready"
-        case .notSignedIn: "Not signed in"
-        case .checking: "Checking"
-        default: "Not found"
-        }
     }
 
     private var account: String {
@@ -189,45 +228,28 @@ struct SettingsView: View {
             .frame(width: Theme.Size.pathButton, height: Theme.Size.pathFooter)
             .contentShape(.rect)
     }
-
-    // MARK: Updates (not drawn; same look as Detection)
-
-    private var updatesBox: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: Theme.Space.x8) {
-                Text("Version \(updates.version)").textStyle(Theme.Text.body).frame(maxWidth: .infinity, alignment: .leading)
-                Button("Check for Updates…", action: updates.check)
-                    .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.buttonTiny, leading: Theme.Space.x10, trailing: Theme.Space.x10, text: Theme.Text.callout))
-                    .disabled(!updates.canCheck)
-            }
-            .padding(.horizontal, Theme.Space.x12)
-            .frame(height: Theme.Size.upNextRow)
-            separator.padding(.leading, Theme.Space.x12)
-            HStack(spacing: Theme.Space.x8) {
-                Text("Automatically check for updates").textStyle(Theme.Text.body).frame(maxWidth: .infinity, alignment: .leading)
-                Toggle("Automatically check for updates", isOn: updates.automaticallyChecks)
-                    .toggleStyle(DesignSwitchStyle())
-                    .labelsHidden()
-            }
-            .padding(.horizontal, Theme.Space.x12)
-            .frame(height: Theme.Size.upNextRow)
-        }
-    }
 }
 
-#Preview("Ready") {
-    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState(agent: PreviewData.ready))
+#Preview("Agents, ready") {
+    AgentSettings().environment(PreviewData.appState(agent: PreviewData.ready))
 }
 
-#Preview("Not signed in") {
-    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState(agent: PreviewData.notSignedIn))
+#Preview("Agents, not signed in") {
+    AgentSettings().environment(PreviewData.appState(agent: PreviewData.notSignedIn))
 }
 
-#Preview("Not found") {
-    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState(agent: .missing))
+#Preview("Agents, not found") {
+    AgentSettings().environment(PreviewData.appState(agent: .missing))
 }
 
-#Preview("Checking for Updates") {
-    SettingsView(updates: PreviewData.updates(canCheck: false, automaticallyChecks: false))
-        .environment(PreviewData.appState(agent: PreviewData.ready))
+#Preview("General") {
+    GeneralSettings(updates: PreviewData.updates())
+}
+
+#Preview("General, checking for updates") {
+    GeneralSettings(updates: PreviewData.updates(canCheck: false, automaticallyChecks: false))
+}
+
+#Preview("Tabs") {
+    SettingsView(updates: PreviewData.updates()).environment(PreviewData.appState([], contexts: [PreviewData.project.id: PreviewData.context]))
 }

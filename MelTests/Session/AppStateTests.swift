@@ -37,11 +37,11 @@ struct AppStateTests {
     @Test func specWithoutProjectMakesOneUnderTheParent() throws {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!)
-        let expected = app.specFolder(name: "Yoga Studio", size: .product, project: nil, parent: folder)
+        let expected = folder.appending(path: "yoga-studio/specs/yoga-studio", directoryHint: .isDirectory)
         let session = try app.createSpec(name: "Yoga Studio", idea: "Book classes.", size: .product, project: nil, parent: folder)
         #expect(session.spec.folder.standardizedFileURL.path == expected.standardizedFileURL.path)
-        #expect(expected.path.hasSuffix("/yoga-studio/specs/yoga-studio"))
         #expect(app.projects.map(\.name) == ["yoga-studio"])
+        #expect(app.currentProject?.name == "yoga-studio")   // the sidebar follows the new folder
         #expect(app.selection == session.spec.id)
         #expect(FileManager.default.fileExists(atPath: expected.appending(path: ".mel/state.json").path))
 
@@ -82,6 +82,29 @@ struct AppStateTests {
         let renamed = try app.rename(added.spec.id, to: "Bakery Orders")
         #expect(renamed.path.hasSuffix("/bakery-orders/specs/bakery-orders-2"))
         #expect(app.projects.map(\.name) == ["untitled-spec", "bakery-orders"])
+    }
+
+    @Test func currentProjectIsRememberedAndRulesAreEdited() throws {
+        let defaults = UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!
+        let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults)
+        var projects: [Project] = []
+        for name in ["yoga", "bakery"] {
+            let folder = folder.appending(path: name, directoryHint: .isDirectory)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            projects.append(try app.addProject(folder))
+        }
+        #expect(app.currentProject == projects[0])
+        app.projectID = projects[1].id
+        #expect(AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults).currentProject?.name == "bakery")
+
+        try app.addRule("No new dependency without a reason.", to: projects[1])
+        try app.addRule("Every check gets a test.", to: projects[1])
+        #expect(app.contexts[projects[1].id]?.rules == ["No new dependency without a reason.", "Every check gets a test."])
+        try app.removeRule("No new dependency without a reason.", from: projects[1])
+        #expect(app.contexts[projects[1].id]?.rules == ["Every check gets a test."])
+
+        app.removeProject(projects[1])
+        #expect(app.currentProject == projects[0])
     }
 
     @Test func addedProjectKnowsItsBranch() throws {

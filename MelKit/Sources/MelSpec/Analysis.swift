@@ -215,39 +215,3 @@ public struct AnalyzeResult: Codable, Hashable, Sendable {
         }
     }
 }
-
-/// C1 "What this affects": one entry per stale file.
-public struct ImpactResult: Codable, Hashable, Sendable {
-    /// One line on what changed ("Late cancel window is 12 hours"); the saved decision's title. Empty if the reply has none.
-    public var title: String
-    public var items: [Item]
-
-    public init(title: String = "", items: [Item]) {
-        self.title = title
-        self.items = items
-    }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
-        items = try c.decode([Item].self, forKey: .items)
-    }
-
-    public struct Item: Codable, Hashable, Sendable {
-        public var kind: DocKind
-        /// "Copy on Confirm booking and Upcoming › Late cancel".
-        public var what: String
-        /// "2 places".
-        public var count: String
-
-        public init(kind: DocKind, what: String, count: String) {
-            self.kind = kind
-            self.what = what
-            self.count = count
-        }
-    }
-
-    public static func decode(_ reply: String) throws -> ImpactResult {
-        try JSONDecoder().decode(ImpactResult.self, from: jsonObject(in: reply))
-    }
-}

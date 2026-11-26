@@ -71,42 +71,4 @@ public enum DraftText {
         let body = kept.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         return body.isEmpty ? "" : body + "\n\n"
     }
-
-    /// Confirm: removes the callout wrapper and keeps its text. Nil when there is no such assumption.
-    public static func confirmAssumption(_ index: Int, in text: String) -> String? {
-        replaceAssumption(index, in: text) { $0 }
-    }
-
-    /// Change: replaces the callout with `newText`, without the wrapper.
-    public static func changeAssumption(_ index: Int, to newText: String, in text: String) -> String? {
-        replaceAssumption(index, in: text) { _ in
-            newText.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: "\n", omittingEmptySubsequences: false).map { $0[...] }
-        }
-    }
-
-    /// Finds the `index`-th `> [!ASSUMPTION]` callout the way `MarkdownParser.blocks` counts them.
-    private static func replaceAssumption(_ index: Int, in text: String, with replacement: ([Substring]) -> [Substring]) -> String? {
-        var lines = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
-        var inCode = false
-        var found = 0
-        var i = 0
-        while i < lines.count {
-            let trimmed = lines[i].trimming(while: \.isWhitespace)
-            if trimmed.hasPrefix("```") { inCode.toggle() }
-            guard !inCode, trimmed.hasPrefix(">"), MarkdownParser.quoteContent(trimmed).uppercased() == "[!ASSUMPTION]" else {
-                i += 1
-                continue
-            }
-            var end = i + 1
-            while end < lines.count, lines[end].trimming(while: \.isWhitespace).hasPrefix(">") { end += 1 }
-            if found == index {
-                let body = lines[(i + 1)..<end].map { MarkdownParser.quoteContent($0.trimming(while: \.isWhitespace)) }
-                lines.replaceSubrange(i..<end, with: replacement(body))
-                return lines.joined(separator: "\n")
-            }
-            found += 1
-            i = end
-        }
-        return nil
-    }
 }

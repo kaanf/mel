@@ -89,7 +89,7 @@ struct BoardFileView: View {
                 }
                 .padding(Theme.Space.x2)
                 .background(Theme.Colors.badgeFill, in: Capsule())
-                Button("Open in Editor") { session.openInEditor(kind) }
+                Button("Open in Editor") { session.openInEditor(kind.fileName) }
                     .buttonStyle(BoardPillStyle(kind: .quiet, padding: Theme.Space.x10))
                 Button { session.showInFinder(kind) } label: {
                     DesignIcon(glyph: .folderOpen, size: Theme.Size.paperclipIcon)

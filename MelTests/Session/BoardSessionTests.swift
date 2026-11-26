@@ -115,7 +115,7 @@ final class BoardSessionTests {
     /// No intake questions → three files → check with no contradictions → ready.
     private func readyFeature(check: String? = nil) async throws -> (SpecSession, ScriptedRunner) {
         let (session, runner) = try makeSession([[.done(result: noQuestions)], file(requirements, session: "s1"), file(architecture), file(tasks), [.done(result: check ?? agree)]])
-        await session.start(board: true)
+        await session.start()
         return (session, runner)
     }
 
@@ -138,7 +138,7 @@ final class BoardSessionTests {
             change((.requirements, "> [!OPEN QUESTION]\n> How long is a spot held?\n", "- 1.2 THE APP SHALL hold a spot for 10 minutes.\n"), (.requirements, "reserve a spot.", "reserve a spot or offer the waitlist.")),
             file(architecture), file(tasks), [.done(result: agree)],
         ])
-        await session.start(board: true)
+        await session.start()
         #expect(session.spec.intakeCard?.text == "How do members pay?")
         #expect(runner.requests.count == 1)
         await session.answerIntake(.option(0, note: nil))
@@ -183,7 +183,7 @@ final class BoardSessionTests {
             [.text(requirements + openQuestion), .text("\n" + trailer), .done(result: "")],
             file(architecture), file(tasks), [.done(result: agree)],
         ])
-        await session.start(board: true)
+        await session.start()
         await session.skipIntake()
         #expect(runner.requests[1].prompt.contains("- How do members pay? You decide"))
         #expect(session.spec.openCards.count == 2)
@@ -381,7 +381,7 @@ final class BoardSessionTests {
             [.text("## Data\n\nBookings.\n"), .done(result: "")],
             file(tasks), [.done(result: agree)],
         ])
-        await session.start(board: true)
+        await session.start()
         #expect(session.spec.halted == Halt(reason: .usageLimit(resetsAt: nil), file: .architecture))
         #expect(session.spec.fileState(.architecture) == .needsYou)
         #expect(session.spec.fileState(.requirements) == .ready)
@@ -398,7 +398,7 @@ final class BoardSessionTests {
 
     @Test func userStopHaltsAndUnreadableAnswersHalt() async throws {
         let (session, runner) = try makeSession([[.done(result: noQuestions)], [.text(requirements), .text("\n" + trailer), .done(result: "")], [], [.done(result: "Done!")], change()])
-        await session.start(board: true)
+        await session.start()
         let answering = Task { await session.answerCard("requirements-waitlist", .option(1, note: nil)) }
         try await wait { runner.hasOpenRun }
         await session.stop()
@@ -417,10 +417,77 @@ final class BoardSessionTests {
 
     @Test func quickFixIsOneFileAndNoCheck() async throws {
         let (session, runner) = try makeSession([[.done(result: noQuestions)], file("# Fix\n\n## What breaks\n\nIt crashes.\n")], size: .quickFix)
-        await session.start(board: true)
+        await session.start()
         #expect(runner.requests.count == 2)
         #expect(session.spec.isReady)
         try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
         #expect(session.spec.stage == .done)
+    }
+
+    // MARK: - Tokens, conflicts, attachments
+
+    @Test func tokensAreSummedPerStep() async throws {
+        let (session, runner) = try makeSession([
+            [.usage(tokens: 900), .done(result: noQuestions)],
+            [.text(requirements), .usage(tokens: 4_000), .done(result: "")],
+            [.text(architecture), .usage(tokens: 3_000), .done(result: "")],
+            [.text(tasks), .usage(tokens: 2_000), .done(result: "")],
+            [.usage(tokens: 1_500), .done(result: agree)],
+            change((.tasks, "Gift mail", "Gift card mail"), tokens: 800),
+            [.usage(tokens: 1_000), .failed(.timeout)],
+        ])
+        await session.start()
+        #expect(await session.tell("Call task 2 Gift card mail."))
+        #expect(await session.tell("Add a waitlist.") == false)   // tokens of a run that failed still count
+        #expect(runner.requests.count == 7)
+        #expect(session.spec.tokens == [.questions: 900, .requirements: 4_000, .architecture: 3_000, .tasks: 2_000, .checks: 1_500, .changes: 1_800])
+        #expect(session.spec.tokenTotal == 13_200)
+        #expect(session.lastChange == nil)
+        let state = try await onDisk(session, ".mel/state.json")
+        #expect(state.contains(#""changes" : 1800"#))
+    }
+
+    @Test func externalEditWithUnsavedTextIsAConflict() async throws {
+        let (session, _) = try await readyFeature()
+        await session.flush()
+        session.save("# Requirements\n\nMine\n", for: .requirements)
+        try "# Requirements\n\nTheirs\n".write(to: session.spec.folder.appending(path: "REQUIREMENTS.md"), atomically: true, encoding: .utf8)
+        try await wait { session.conflict != nil }
+        #expect(session.conflict == .requirements)
+
+        session.resolveConflict(keepMine: false)
+        #expect(session.conflict == nil)
+        #expect(session.documents[.requirements] == "# Requirements\n\nTheirs\n")
+    }
+
+    @Test func attachmentsAreListedInThePrompts() async throws {
+        let (session, runner) = try makeSession([[.done(result: noQuestions)], file(requirements), file(architecture), file(tasks), [.done(result: agree)]])
+        try await session.attachLog("crash at launch")
+        await session.start()
+        let name = try #require(session.spec.attachments.first?.fileName)
+        for request in runner.requests.prefix(2) { #expect(request.prompt.contains("specs/yoga-studio/.mel/attachments/\(name)")) }
+    }
+
+    @Test func aSpecFromBeforeTheBoardOpensOnIt() async throws {
+        // 0.4 left REQUIREMENTS.md in review with a round-2 question open.
+        let (session, runner) = try makeSession([change((.requirements, "reserve a spot", "reserve a spot or offer the waitlist")), file(architecture), file(tasks), [.done(result: agree)]])
+        let folder = session.spec.folder
+        try requirements.write(to: folder.appending(path: "REQUIREMENTS.md"), atomically: true, encoding: .utf8)
+        var object = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: folder.appending(path: ".mel/state.json"))) as? [String: Any])
+        object["stage"] = ["review": ["_0": "requirements"]]
+        object["docs"] = ["requirements": "review", "architecture": "locked", "tasks": "locked"]
+        object["questions"] = [["id": "requirements-waitlist", "title": "Is there a waitlist?", "why": "", "shapes": "requirements", "round": 2, "options": [["label": "Yes", "note": "", "suggested": true]]] as [String: Any]]
+        try JSONSerialization.data(withJSONObject: object).write(to: folder.appending(path: ".mel/state.json"))
+
+        let old = SpecSession(spec: try SpecStore.loadState(in: folder), app: try #require(app))
+        #expect(old.spec.stage == .board)
+        #expect(old.spec.openCards.map(\.text) == ["Is there a waitlist?"])
+        _ = session
+        app?.specs.removeAll()   // only the reloaded session runs
+        app?.specs.append(old.spec)
+        await old.answerCard("requirements-waitlist", .option(0, note: nil))
+        #expect(runner.requests.count == 4)
+        #expect(old.documents[.requirements]?.contains("offer the waitlist") == true)
+        #expect(old.spec.isReady)
     }
 }

@@ -79,7 +79,7 @@ struct BoardInbox: View {
         } else if let error = session.lastError {
             Text(error).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.cautionText)
             HStack(spacing: Theme.Space.x8) {
-                Button("Try Again") { Task { await session.start(board: true) } }.buttonStyle(BoardPillStyle())
+                Button("Try Again") { Task { await session.start() } }.buttonStyle(BoardPillStyle())
                 Button("Skip, write the plan now") { Task { await session.skipIntake() } }.buttonStyle(DesignLinkStyle())
             }
         } else {

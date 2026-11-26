@@ -18,6 +18,13 @@ struct ModelsTests {
         #expect(Spec(name: "Fix", idea: "x", folder: URL(filePath: "/p/specs/fix/")).project.path == "/p")
     }
 
+    @Test func sizeIsGuessedFromTheWords() {
+        #expect(SpecSize.guess(from: "Two quick taps on Book create two bookings. Fix it.", hasProject: true) == .quickFix)
+        #expect(SpecSize.guess(from: "An app for my yoga studio where members book classes.", hasProject: true) == .product)
+        #expect(SpecSize.guess(from: "Members can filter the weekly schedule by teacher.", hasProject: true) == .feature)
+        #expect(SpecSize.guess(from: "The login screen crashes.", hasProject: false) == .product)   // nothing to fix without code
+    }
+
     @Test func projectFoldersCompareEqualWithOrWithoutSlash() {
         let spec = Spec(name: "S", idea: "x", folder: URL(filePath: "/Users/me/app/specs/s/"))
         #expect(spec.project == Project(folder: URL(filePath: "/Users/me/app")).folder)

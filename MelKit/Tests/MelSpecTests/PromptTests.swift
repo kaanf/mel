@@ -19,13 +19,10 @@ struct PromptTests {
         for kind in DocKind.allCases { #expect(placeholders(Prompt(drafting: kind)) == Self.drafting) }
         #expect(placeholders(.project) == ["mode"])
         #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "buildsOn", "attachments", "topics", "count", "kinds"])
-        #expect(placeholders(.revise) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "rules"])
         #expect(placeholders(.rewrite) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
         #expect(placeholders(.change) == ["files", "reading", "project", "name", "idea", "requests", "attachments", "current", "kinds", "rules"])
         #expect(placeholders(.analyze) == ["name", "approved", "earlier", "kinds"])
-        #expect(placeholders(.impact) == ["file", "before", "after", "later", "kinds"])
         #expect(placeholders(.continue) == ["file", "partial"])
-        #expect(placeholders(.discovery) == ["name", "idea", "answers", "coverage"])
     }
 
     @Test(arguments: Prompt.allCases)
@@ -80,13 +77,10 @@ struct PromptTests {
         #expect(intake.coverage.map(\.state) == [.covered, .notYet, .later])
     }
 
-    @Test func analyzeImpactAndProjectSamplesDecode() throws {
+    @Test func analyzeAndProjectSamplesDecode() throws {
         let analyze = try AnalyzeResult.contradictions(in: sample(Prompt.analyze.build([:]), startingWith: #"{"issues":[{"#))
         #expect(analyze.first?.actions.count == 2)
         #expect(analyze.first?.ids == ["1.3"])
-        let impact = try ImpactResult.decode(sample(Prompt.impact.build([:]), startingWith: #"{"title""#))
-        #expect(impact.title == "Late cancel window is 12 hours")
-        #expect(impact.items.map(\.kind) == [.experience, .tasks])
         let context = try ProjectContext.decode(sample(Prompt.project.build([:]), startingWith: #"{"product""#))
         #expect(context.modules == [Module(name: "Booking", path: "Sources/Booking")])
         #expect(context.read.first == ReadItem(label: "README.md", source: "Product summary"))
@@ -99,12 +93,6 @@ struct PromptTests {
         #expect(SpecSize.quickFix.kindsText == "`spec`")
     }
 
-    @Test func discoveryV1SampleStillDecodes() throws {
-        let line = try sample(Prompt.discovery.build([:]), startingWith: #"{"coverage""#)
-        let turn = try DiscoveryTurn.decode(line)
-        #expect(turn.coverage.map(\.phase) == [.product, .requirements, .requirements, .experience])
-    }
-
     @Test func valuesAreNotExpandedTwice() {
         let text = Prompt.continue.build(["file": "TASKS.md", "partial": "Uses {{file}} literally"])
         #expect(text.contains("Uses {{file}} literally"))
@@ -115,8 +103,8 @@ struct PromptTests {
         #expect(Prompt.continue.build([:]).contains("{{partial}}"))
     }
 
-    /// Analyze and impact run without tools; the prompt must say so or Claude tries to read (platform finding).
+    /// Analyze runs without tools; the prompt must say so or Claude tries to read (platform finding).
     @Test func noToolsPromptsForbidReading() {
-        for prompt in [Prompt.analyze, .impact] { #expect(prompt.build([:]).contains("Do not read any files.")) }
+        #expect(Prompt.analyze.build([:]).contains("Do not read any files."))
     }
 }

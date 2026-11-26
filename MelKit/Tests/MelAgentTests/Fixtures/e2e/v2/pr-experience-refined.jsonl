@@ -1,2 +1,0 @@
-{"type":"system","subtype":"init","session_id":"e2e00000-0000-4000-8000-000000000020","tools":[],"mcp_servers":[],"permissionMode":"default","apiKeySource":"none","claude_code_version":"2.1.311"}
-{"type":"result","subtype":"success","is_error":false,"result":"{\"edits\": [{\"old\": \"2. Confirm booking (1.1)\", \"new\": \"2. Confirm booking, two spots (1.1)\"}]}","session_id":"e2e00000-0000-4000-8000-000000000020"}

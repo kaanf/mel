@@ -5,15 +5,12 @@ import MelAgent
 struct MelApp: App {
     @State private var state = Self.makeState()
     @State private var updater = Updater()
-    #if DEBUG
-    @State private var isShowingNewSpec = DebugScreen.current?.newSpecDraft != nil
-    #else
-    @State private var isShowingNewSpec = false
-    #endif
+    /// V2-1 New in the main window's detail; ⌘N and the sidebar's New set it.
+    @State private var isShowingNew = Self.startsOnNew
 
     var body: some Scene {
         WindowGroup {
-            MainView(isShowingNewSpec: $isShowingNewSpec)
+            MainView(isShowingNew: $isShowingNew)
                 .environment(state)
                 .task {
                     #if DEBUG
@@ -24,7 +21,7 @@ struct MelApp: App {
         }
         .defaultSize(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
         .commands {
-            MelCommands(isShowingNewSpec: $isShowingNewSpec, canCreateSpec: state.agent.isReady && !(state.projects.isEmpty && state.missingFolders.isEmpty), updater: updater)
+            MelCommands(isShowingNew: $isShowingNew, canCreateSpec: state.currentProject != nil, updater: updater)
         }
 
 
@@ -37,6 +34,14 @@ struct MelApp: App {
             ))
                 .environment(state)
         }
+    }
+
+    private static var startsOnNew: Bool {
+        #if DEBUG
+        DebugScreen.current == .new || DebugScreen.current == .newEmpty
+        #else
+        false
+        #endif
     }
 
     private static func makeState() -> AppState {

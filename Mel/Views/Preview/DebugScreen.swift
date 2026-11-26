@@ -5,52 +5,21 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case welcome, noAgent, pickProject, projectSetup, firstSpec, newSpec, newSpecNoContext, newSpecQuickFix, newSpecProduct, newSpecEmpty, intake, drafting, review, experience, edited, analyze, ready, stopped, failure, settings, home, board, boardAsking, boardWaiting, boardStopped, boardUnplaced, boardChanged, boardEdited
+    case start, noAgent, new, newEmpty, ready, settings, specsSettings, board, boardAsking, boardWaiting, boardStopped, boardUnplaced, boardChanged, boardEdited
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
     }
 
-    /// Lane A screens start the setup flow at this step.
-    var setupStep: SetupFlow.Step? {
-        switch self {
-        case .pickProject: .pickProject
-        case .projectSetup: .projectSetup(PreviewData.project)
-        case .firstSpec: .firstSpec
-        default: nil
-        }
-    }
-
-    /// B1 screens open New Spec with this draft.
-    var newSpecDraft: NewSpecView.Draft? {
-        switch self {
-        case .newSpec: PreviewData.featureDraft
-        case .newSpecNoContext: PreviewData.featureDraftNoContext
-        case .newSpecQuickFix: PreviewData.quickFixDraft
-        case .newSpecProduct: NewSpecView.Draft(size: .product)
-        case .newSpecEmpty: NewSpecView.Draft()
-        default: nil
-        }
-    }
-
     var state: AppState {
         switch self {
-        case .welcome: PreviewData.appState([], projects: [])
-        case .noAgent: PreviewData.appState([], agent: .missing, projects: [])
-        case .pickProject: PreviewData.appState([], projects: [], foundRepositories: PreviewData.repositories)
-        case .firstSpec: PreviewData.appState([], projects: [])
-        case .projectSetup: PreviewData.appState([], projects: [], projectSetup: PreviewData.projectSetup)
-        case .newSpec, .newSpecNoContext, .newSpecQuickFix, .newSpecProduct, .newSpecEmpty: PreviewData.newSpecState
-        case .intake: PreviewData.appState([PreviewData.intake])
-        case .drafting: PreviewData.appState([PreviewData.drafting], sessions: [PreviewData.draftingSession])
-        case .review: PreviewData.appState([PreviewData.reviewRoundTwo], sessions: [PreviewData.reviewSession])
-        case .experience: PreviewData.appState([PreviewData.reviewExperience], sessions: [PreviewData.experienceSession])
-        case .edited: PreviewData.appState([PreviewData.edited], sessions: [PreviewData.editedSession])
-        case .analyze: PreviewData.appState([PreviewData.analyzeIssues])
-        case .ready: PreviewData.appState([PreviewData.done], sessions: [PreviewData.doneSession])
-        case .stopped, .failure: PreviewData.appState([PreviewData.usageLimit], sessions: [PreviewData.stoppedSession])
-        case .home, .settings: PreviewData.appState([])
-        case .board: PreviewData.appState([PreviewData.board], sessions: [PreviewData.boardSession])
+        case .start: PreviewData.appState([], projects: [], foundRepositories: PreviewData.repositories)
+        case .noAgent: PreviewData.appState([], agent: .missing, projects: [], foundRepositories: PreviewData.repositories)
+        case .new, .newEmpty: PreviewData.appState(PreviewData.others)
+        case .ready: PreviewData.appState([PreviewData.done] + PreviewData.others, sessions: [PreviewData.doneSession])
+        case .settings: PreviewData.appState([])
+        case .specsSettings: PreviewData.appState([], contexts: [PreviewData.project.id: PreviewData.context])
+        case .board: PreviewData.appState([PreviewData.board] + PreviewData.others, sessions: [PreviewData.boardSession])
         case .boardAsking: PreviewData.appState([PreviewData.boardAsking], sessions: [PreviewData.boardAskingSession])
         case .boardWaiting: PreviewData.appState([PreviewData.boardWaiting], sessions: [PreviewData.boardWaitingSession])
         case .boardStopped: PreviewData.appState([PreviewData.boardStopped], sessions: [PreviewData.boardStoppedSession])

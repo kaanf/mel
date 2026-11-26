@@ -1,7 +1,7 @@
 import SwiftUI
 import MelSpec
 
-/// Fixtures for `#Preview`s: one yoga studio spec in every stage.
+/// Fixtures for `#Preview`s and `-screen`: one yoga studio spec in every state of the board.
 enum PreviewData {
     static let project = Project(folder: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer/yoga-studio-booking"), hasContext: true)
     static let folder = project.folder.appending(path: "specs/yoga-studio-booking")
@@ -54,12 +54,6 @@ enum PreviewData {
         ),
     ]
 
-    /// Unanswered open question: no options, so the card shows a text field and Skip.
-    static let openQuestion = Question(
-        id: "q5", title: "What should the reminder message say?",
-        why: "The wording sets the studio's tone; there is no right option to pick from.", shapes: .architecture, options: []
-    )
-
     static let coverage: [CoverageItem] = [
         CoverageItem(label: "Who uses it", phase: .product, state: .covered),
         CoverageItem(label: "Payments", phase: .product, state: .covered),
@@ -91,46 +85,7 @@ enum PreviewData {
     static let locked = SpecSize.product.allLocked
 
     static let discovery = spec(.discovery, locked, questions: questions)
-    /// B2 as drawn: question 2 of 5, platforms answered, the mock's coverage list.
-    static let intake: Spec = {
-        let pending = ["Who books for whom?", "What must work offline?", "What is out of scope?"].enumerated().map { i, title in
-            Question(id: "i\(i + 3)", title: title, why: "", shapes: .requirements, options: [Option(label: "Yes", note: ""), Option(label: "No", note: "")])
-        }
-        let questions = [
-            Question(id: "i1", title: "Which platforms first?", why: "", shapes: .product,
-                     options: [Option(label: "iOS and Android", note: ""), Option(label: "iOS only", note: "")], answer: .option(0, note: nil)),
-            Question(id: "i2", title: "How do members pay?", why: "Decides whether the spec covers checkout, refunds and receipts.", shapes: .requirements, options: [
-                Option(label: "Class packs bought in the app", note: "You mentioned buying class packs in your idea", suggested: true),
-                Option(label: "Paid at the desk, app only books", note: "No checkout in the app; staff adds credits"),
-                Option(label: "Monthly membership with auto-renew", note: "Subscription, unlimited booking"),
-                Option(label: "Not sure yet", note: "Kept as an open question in the spec"),
-            ]),
-        ] + pending
-        let coverage = [
-            ("Goal and success metric", CoverageState.covered), ("Users and roles", .covered), ("Platforms", .covered), ("Payments", .asking),
-            ("Scope and out of scope", .notYet), ("Constraints and existing code", .notYet), ("Privacy, speed, offline", .notYet),
-            ("Integrations", .notYet), ("Data the app keeps", .later), ("Edge cases", .later),
-        ].map { CoverageItem(label: $0, state: $1) }
-        return Spec(name: "Yoga Studio Booking", idea: "An app for my yoga studio where members book classes, buy class packs and get reminders. Teachers should see who is coming to each class.",
-                    folder: folder, stage: .discovery, docs: locked, questions: questions, coverage: coverage)
-    }()
-    static let discoveryOpen = spec(.discovery, locked, questions: Array(questions.prefix(5)) + [openQuestion])
-    static let discoveryThinking = spec(.discovery, locked, questions: Array(questions.prefix(5)))
-    static let drafting = spec(.drafting(.requirements), docs(.approved, .writing))
-    static let stoppedByUser = spec(.stopped(.requirements, .user), docs(.approved, .stopped))
-    static let usageLimit = spec(
-        .stopped(.architecture, .usageLimit(resetsAt: Date(timeIntervalSince1970: 1_795_000_000))),
-        docs(.approved, .approved, .approved, .stopped)
-    )
-    static let crashed = spec(.stopped(.architecture, .crashed("claude exited with status 1")), usageLimit.docs)
-    static let review = spec(.review(.requirements), docs(.approved, .review))
-    static let analyzeIssues: Spec = {
-        var result = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .issues(4))
-        result.analysis = analysis
-        return result
-    }()
-    static let analyzeRunning = spec(.analyze, docs(.approved, .approved, .approved, .approved, .approved), analyze: .running)
-    /// B6 as drawn.
+    /// The check's result as drawn on the old Analyze screen; the board takes its issues as cards.
     static let analysis = AnalyzeResult(
         stats: [
             .init(value: "14 of 15", label: "requirements have a task"), .init(value: "7 of 7", label: "screens trace to a requirement"),
@@ -159,7 +114,6 @@ enum PreviewData {
             return AnalyzeResult.CoverageRow(id: id, text: text, screen: mark(m[0]), architecture: mark(m[1]), task: mark(m[2]), test: mark(m[3]))
         }
     )
-    static let edited = spec(.review(.requirements), docs(.approved, .edited, .stale, .stale, .stale), analyze: .stale)
     static var tokens: Spec {
         var spec = done
         spec.tokens = [.questions: 2_140, .product: 5_300, .requirements: 11_800, .experience: 7_950, .architecture: 8_400, .tasks: 6_200, .checks: 3_100, .changes: 1_820]
@@ -168,18 +122,22 @@ enum PreviewData {
 
     static let done = spec(.done, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
 
-    static let requirementsMarkdown = """
-        # Requirements
+    /// The other rows of the drawn sidebar: one spec being built, one done.
+    static let others: [Spec] = [("Filter schedule by teacher", SpecSize.feature, BuildState.building), ("Double booking on fast taps", .quickFix, .done)].map { name, size, build in
+        var spec = Spec(name: name, idea: "", size: size, folder: project.folder.appending(path: "specs/\(name.lowercased().replacing(" ", with: "-"))"), stage: .done,
+                        docs: Dictionary(uniqueKeysWithValues: size.files.map { ($0, DocStatus.approved) }))
+        spec.build = build
+        return spec
+    }
+    static let library = [board] + others
+    static let featureIdea = "Members can filter the weekly schedule by teacher and see a short teacher profile on each class."
 
-        ## Story 1: Book a class
-
-        As a member, I want to book a class from the schedule, so that I have a spot.
-
-        1. WHEN a member taps Book on a class with free spots, THE system SHALL reserve one spot for that member.
-        2. IF the class is full, THEN THE system SHALL show "Full" and offer the waiting list.
-
-        > Assumption: Members can cancel up to 12 hours before class.
-        """
+    /// Past Start: previews of the main window open on the library.
+    static var startedDefaults: UserDefaults {
+        let defaults = UserDefaults(suiteName: "preview-started")!
+        defaults.set(true, forKey: "didShowWelcome")
+        return defaults
+    }
 
     static let requirementsBlocks: [Block] = [
         .heading(level: 1, text: "Requirements"),
@@ -199,29 +157,6 @@ enum PreviewData {
         .code("POST /bookings { classID, memberID }"),
     ]
 
-    static let confirmedBlocks: [Block] = requirementsBlocks.filter {
-        if case .assumption = $0 { false } else { true }
-    }
-
-    static let activity: [ActivityLine] = [
-        ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_000), text: "read PRODUCT.md and 7 answers"),
-        ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_030), text: "wrote story 1 \"Book a class\" (3 criteria)"),
-        ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_065), text: "wrote story 2 \"Cancel a booking\" (2 criteria)"),
-        ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_090), text: "writing story 3 of 5"),
-    ]
-
-    static func session(_ spec: Spec, isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil) -> SpecSession {
-        SpecSession.preview(
-            spec,
-            documents: [.product: "# Product", .requirements: requirementsMarkdown],
-            liveText: requirementsMarkdown,
-            activity: activity,
-            isRunning: isRunning,
-            lastError: lastError,
-            conflict: conflict
-        )
-    }
-
     static func updates(canCheck: Bool = true, automaticallyChecks: Bool = true) -> UpdateSettings {
         UpdateSettings(version: "0.2 (build 123)", canCheck: canCheck, automaticallyChecks: .constant(automaticallyChecks), check: {})
     }
@@ -238,7 +173,7 @@ enum PreviewData {
         product: "# Product\n\nMembers book yoga classes. Sign-in and schedule are live; do not change their behavior.",
         tech: "# Tech\n\nKotlin Multiplatform, Compose Multiplatform, Ktor, SQLDelight, Koin.",
         structure: "# Structure\n\nFeature-first packages under shared/feature/<name>. One ViewModel per screen.\n\n## Modules\n\n- Sign-in — feature/auth\n- Schedule — feature/schedule\n- Class detail — feature/schedule/detail",
-        principles: "# Principles\n\n1. Reuse existing modules before adding new ones. Name the module you extend.\n2. No new dependency without a short reason in ARCHITECTURE.md.\n3. Every acceptance criterion gets a test before the task counts as done.",
+        principles: "# Principles\n\n- Reuse existing modules before adding new ones. Name the module you extend.\n- No new dependency without a short reason in ARCHITECTURE.md.\n- Every check in the plan gets a test before a task counts as done.",
         read: [
             ReadItem(label: "README and docs folder", source: "README.md, docs/"),
             ReadItem(label: "Build files and dependencies", source: "build.gradle.kts"),
@@ -248,67 +183,14 @@ enum PreviewData {
         sources: ["product.md": "From README", "tech.md": "Detected", "structure.md": "Detected"]
     )
 
-    static let readLines = ["README and docs folder", "Build files and dependencies", "3 modules: shared, androidApp, iosApp", "2 features already built: sign-in, schedule"]
-        .enumerated().map { ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_000 + Double($0.offset)), text: $0.element) }
-
-    static let projectSetup = ProjectSetup(project: project, isNewProject: false, isRunning: false, activity: readLines, context: context, lastError: nil, branch: "main", fileCount: 214)
-    static let projectSetupRunning = ProjectSetup(project: project, isNewProject: false, isRunning: true, activity: Array(readLines.prefix(2)), context: nil, lastError: nil, branch: "main", fileCount: 214)
-
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], projectSetup: ProjectSetup? = nil, branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, projectSetup: projectSetup, branches: branches, sessions: sessions)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], readingContext: Set<Project.ID> = [], branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], missing: [URL] = []) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, readingContext: readingContext, branches: branches, sessions: sessions)
         state.missingFolders = missing
         return state
     }
 
-    // B1 New Spec
     static let habitTracker = Project(folder: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer/habit-tracker"))
-    static let newSpecState = appState([], projects: [project, habitTracker], contexts: [project.id: context], projectSetup: projectSetup, branches: [project.id: "main", habitTracker.id: "develop"])
-    static let featureDraft = NewSpecView.Draft(
-        size: .feature, project: project, name: "Filter schedule by teacher",
-        idea: "Members can filter the weekly schedule by teacher and see a short teacher profile on each class.",
-        buildsOn: ["Schedule"]
-    )
-    static let featureDraftNoContext = NewSpecView.Draft(size: .feature, project: habitTracker, name: featureDraft.name, idea: featureDraft.idea)
-    static let quickFixDraft = NewSpecView.Draft(
-        size: .quickFix, project: project, name: "Double booking on fast taps",
-        happensNow: "Two quick taps on Book create two bookings and take two credits.",
-        shouldHappen: "One booking, one credit. The second tap does nothing.",
-        location: "Class detail › Book button",
-        files: [URL(filePath: "/tmp/crash-1123.log"), URL(filePath: "/tmp/double-tap.mov")]
-    )
-
-    // B3 Drafting as drawn: REQUIREMENTS.md at step 3, story 3 being written.
-    static let liveRequirements = """
-        # Requirements
-
-        ## 1. Book a class
-
-        As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
-
-        - 1.1 WHEN a member taps Book on a class with free spots, THE system SHALL reserve one spot.
-        - 1.2 IF the class is full, THEN THE system SHALL offer the waiting list.
-        - 1.3 WHEN a booking is made, THE system SHALL send a confirmation.
-
-        ## 2. Buy a class pack
-
-        As a member, I want to buy a pack of classes in the app, so that I can book without paying each time.
-
-        - 2.1 WHEN a member buys a pack, THE system SHALL add its credits to the account.
-        - 2.2 IF the payment fails, THEN THE system SHALL keep the credits unchanged.
-
-        ## 3. Cancel a booking
-
-        As a member, I want to cancel a booking I can’t make, so that
-        """
-    static let draftingActivity = [
-        "read specs/PRODUCT.md (approved)", "read 5 answers, 1 left open", "wrote story 1 “Book a class” (3 criteria)",
-        "wrote story 2 “Buy a class pack” (2 criteria)", "writing story 3 “Cancel a booking”",
-    ].enumerated().map { ActivityLine(at: Date(timeIntervalSince1970: 1_795_000_000 + Double($0.offset * 20)), text: $0.element) }
-    static let draftingSession = SpecSession.preview(
-        drafting, documents: [.product: "# Product"], liveText: liveRequirements, activity: draftingActivity, isRunning: true, draftStep: 3
-    )
-
-    // B4 Review as drawn: REQUIREMENTS.md with round-2 gaps, an assumption and an open question.
+    // REQUIREMENTS.md with an assumption and an open question.
     static let reviewMarkdown = """
         # Requirements
 
@@ -354,14 +236,6 @@ enum PreviewData {
         - Two members book the last spot at the same moment: one gets it, the other is offered the waitlist.
         - Payment succeeds but the app closes before credits show: credits appear on next open.
         """
-    static let reviewRoundTwo: Spec = {
-        var spec = review
-        spec.questions += ["Can members book for a friend?", "Do teachers see payment status?"].enumerated().map { i, title in
-            Question(id: "r\(i + 1)", title: title, why: "Found while drafting REQUIREMENTS.md.", shapes: .requirements, round: .draft,
-                     options: [Option(label: "Yes", note: ""), Option(label: "No", note: "")])
-        }
-        return spec
-    }()
     // MARK: Board (V2)
 
     private static let boardDocuments: [DocKind: String] = [.product: "# Product\n\nA booking app for one yoga studio.\n", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture\n\n## Modules\n\n- shared/booking: booking rules, credits, waitlist.\n", .tasks: tasksMarkdown]
@@ -437,9 +311,7 @@ enum PreviewData {
     /// The edit banner: REQUIREMENTS.md was changed by hand.
     static let boardEditedSession = SpecSession.preview(spec(.board, docs(.approved, .edited, .stale, .stale, .stale), analyze: .passed), documents: boardDocuments, decisions: boardDecisions)
 
-    static let reviewSession = SpecSession.preview(reviewRoundTwo, documents: [.product: "# Product", .requirements: reviewMarkdown])
-
-    // B5 Review EXPERIENCE.md as drawn.
+    // EXPERIENCE.md as drawn.
     static let experienceMarkdown = """
         # Experience
 
@@ -474,10 +346,7 @@ enum PreviewData {
         > [!ASSUMPTION]
         > Calm and light, one accent taken from the studio logo, large tap targets for use right before class. Platform-native controls on iOS and Android.
         """
-    static let reviewExperience = spec(.review(.experience), docs(.approved, .approved, .review), questions: allAnswered)
-    static let experienceSession = SpecSession.preview(reviewExperience, documents: [.product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown])
-
-    // B7 Spec ready as drawn.
+    // TASKS.md as drawn on Ready.
     static let tasksMarkdown = """
         # Tasks
 
@@ -499,41 +368,16 @@ enum PreviewData {
           - Verify: `./gradlew :shared:allTests --tests "*Checkout*"`
           - Parallel with: 2
         """
-    static let doneSession = SpecSession.preview(done, documents: [
-        .product: "# Product", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture", .tasks: tasksMarkdown,
-    ])
+    static let doneSession = SpecSession.preview(tokens, documents: boardDocuments)
 
-    // C1 Refine as drawn: 1.3 edited from 12 to 24 hours.
-    static let editedSession: SpecSession = {
-        let before = """
-            # Requirements
-
-            ## 1. Book a class
-
-            - 1.3 WHEN a member cancels at least 12 hours before class,
-              THE APP SHALL return the credit.
-            """
-        let after = before.replacingOccurrences(of: "12 hours", with: "24 hours")
-        let date = Date.now
-        return SpecSession.preview(
-            edited, documents: [.product: "# Product", .requirements: after],
-            impact: ImpactResult(items: [
-                .init(kind: .experience, what: "Copy on Confirm booking and Upcoming › Late cancel", count: "2 places"),
-                .init(kind: .architecture, what: "Cancellation rule in BookingPolicy", count: "1 section"),
-                .init(kind: .tasks, what: "Task 4 “Cancel booking” and task 7 “Credit refund tests”", count: "2 tasks"),
-            ]),
-            snapshots: [.requirements: before],
-            decisions: [
-                Decision(id: "D-03", title: "Cancellation window 12 hours", reason: "Your first answer in review.", source: "You", date: date.addingTimeInterval(-86_400), affects: ["1.3"]),
-                Decision(id: "D-04", title: "Class packs bought in the app", reason: "Mentioned in the idea. Desk payments stay possible, staff adds credits.", source: "Discovery Q2", date: date.addingTimeInterval(-90_000), affects: ["2.1"]),
-                Decision(id: "D-06", title: "Waitlist is first come, first served", reason: "Confirmed assumption. Simple to explain at the desk.", source: "You", date: date.addingTimeInterval(-3_600), affects: ["1.2"]),
-                Decision(id: "D-07", title: "Cancellation window 24 hours", reason: "Studio policy changed. Teachers need a full day to offer freed spots to the waitlist.", source: "You", date: date, replaces: "D-03", affects: ["1.3"]),
-            ]
-        )
+    /// V2-3 after Build with Claude Code.
+    static let buildingSession: SpecSession = {
+        var spec = tokens
+        spec.build = .building
+        return SpecSession.preview(spec, documents: boardDocuments)
     }()
-
-    // C2 Agent stopped as drawn: ARCHITECTURE.md stopped at step 3.
-    static let stoppedSession = SpecSession.preview(
-        usageLimit, documents: [.product: "# Product", .requirements: reviewMarkdown, .architecture: "# Architecture"], activity: draftingActivity, draftStep: 3
+    static let quickFixDoneSession = SpecSession.preview(
+        Spec(name: "Double booking on fast taps", idea: "Two quick taps on Book create two bookings.", size: .quickFix, folder: project.folder.appending(path: "specs/double-booking"), stage: .done, docs: [.spec: .approved]),
+        documents: [.spec: "# Spec\n\n## What breaks\n\nTwo quick taps on Book create two bookings.\n"]
     )
 }

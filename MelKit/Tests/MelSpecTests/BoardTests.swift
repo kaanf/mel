@@ -291,11 +291,14 @@ struct BoardTests {
 
         // state.json from 0.4: none of the board's keys.
         var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        for key in ["halted", "unplacedChange", "tokens", "rewriting"] { object[key] = nil }
+        for key in ["halted", "unplacedChange", "tokens", "build"] { object[key] = nil }
+        object["stage"] = ["review": ["_0": "requirements"]]
+        object["queue"] = ["tasks"]
         object["questions"] = [["id": "q", "title": "t", "why": "", "shapes": "requirements", "round": 2, "options": [[String: Any]]()] as [String: Any]]
         let old = try JSONDecoder().decode(Spec.self, from: JSONSerialization.data(withJSONObject: object))
         #expect(old.halted == nil)
         #expect(old.questions[0].about == nil)
+        #expect(old.stage == .board)   // the lane stages open on the board
     }
 }
 

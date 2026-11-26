@@ -20,12 +20,6 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var fillGaps: Bool
     /// What the agent writes in (A1, Settings); nil for specs made before 0.4, written in the idea's language.
     public var language: SpecLanguage?
-    /// Files waiting for a revise run, in order (analyze fixes, refine).
-    public var queue: [DocKind]
-    /// The pending revise instruction per file (an answer, an analyze fix, a refine); cleared when its revise ends.
-    public var instructions: [DocKind: String]
-    /// The file "Rewrite FILE" is writing whole, until that run ends.
-    public var rewriting: DocKind?
     /// Board: the agent stopped; nothing runs until the user resumes.
     public var halted: Halt?
     /// Board: a change that couldn't be placed, waiting for "Rewrite FILE" or Cancel.
@@ -34,10 +28,12 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var removedStories: [RemovedStory]?
     /// Tokens used per step, from each run's `result.usage` (OQ #26); nil before the first counted run.
     public var tokens: [TokenStep: Int]?
+    /// After "Build with Claude Code": the sidebar's Building and Done groups. Nil while it is planned.
+    public var build: BuildState?
     public var sessionID: String?
 
-    /// A new spec starts in Discovery with every file of its size locked.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil, queue: [DocKind] = [], instructions: [DocKind: String] = [:], sessionID: String? = nil) {
+    /// A new spec starts with the intake questions and every file of its size waiting.
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil, sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -53,24 +49,19 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.analysis = analysis
         self.fillGaps = fillGaps
         self.language = language
-        self.queue = queue
-        self.instructions = instructions
         self.sessionID = sessionID
     }
 
     /// The project folder: `folder` is `<project>/specs/<slug>/`.
     public var project: URL { folder.deletingLastPathComponent().deletingLastPathComponent().normalizedFolder }
 
-    /// B1's name when the user types none; intake then names the spec.
+    /// A new spec's name until the intake names it.
     public static let untitledName = "Untitled Spec"
-
-    /// Files whose revise reply couldn't be placed: nothing changed, the instruction waits for
-    /// "Rewrite FILE" or Cancel (OQ #25).
-    public var unplaced: [DocKind] { size.files.filter { instructions[$0] != nil && docs[$0] == .review && !queue.contains($0) } }
-
-    /// C1: approved files a user edit made out of date, waiting for Refine or Keep.
-    public var outOfDate: [DocKind] { size.files.filter { docs[$0] == .stale } }
 }
+
+/// Where a spec is once its plan is handed to the coding agent. Mel can't see the agent work:
+/// the user marks it done.
+public enum BuildState: String, Codable, Hashable, Sendable { case building, done }
 
 /// The language Mel asks the agent to write a spec in. The app's UI stays English.
 public enum SpecLanguage: String, Codable, CaseIterable, Hashable, Sendable {
@@ -118,11 +109,21 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
         }
     }
 
-    /// Quick fix goes straight to Spec ready.
+    /// Quick fix has one file: nothing to check against.
     public var hasAnalyze: Bool { self != .quickFix }
 
-    /// Only Product works without a project (A4x).
+    /// Only a new product works without a project: it gets a new folder.
     public var needsProject: Bool { self != .product }
+
+    /// V2-1's guess from the user's words (OQ #27): a bug is a Quick fix, a new app a New
+    /// product, anything else a Feature. Without a project it is always a New product.
+    public static func guess(from idea: String, hasProject: Bool) -> SpecSize {
+        guard hasProject else { return .product }
+        let text = idea.lowercased()
+        if text.contains(/bug|crash|broken|wrong|double|fails|error|fix/) { return .quickFix }
+        if text.contains(/an app|new app|a platform|for my|from scratch|website for/) { return .product }
+        return .feature
+    }
 
     /// The file drafted after `kind`, or nil after the last one.
     public func file(after kind: DocKind) -> DocKind? {
@@ -153,22 +154,25 @@ public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hash
 }
 
 public enum Stage: Codable, Hashable, Sendable {
+    /// The intake questions, before any file.
     case discovery
-    /// The V2 board (Board.swift): files are written one at a time between the user's answers.
-    /// It replaces `drafting`, `review`, `stopped` and `analyze`, which go with the lane A–C views.
+    /// The board (Board.swift): files are written one at a time between the user's answers.
     case board
-    case drafting(DocKind)
-    case review(DocKind)
-    case stopped(DocKind, StopReason)
-    /// B6: the analyze run, or its result waiting for Fix / Hand Off Anyway.
-    case analyze
+    /// After "Start Building".
     case done
+
+    /// A spec from before 0.5 that was drafting, in review, stopped or in Analyze opens on the board.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self = c.contains(.discovery) ? .discovery : c.contains(.done) ? .done : .board
+    }
 }
 
-/// V2.md §7. `edited`: the user changed an approved file; `stale`: a file after an edited one ("Out of date").
+/// `approved`: written (`review` in specs from before 0.5 means the same). `edited`: the user
+/// changed a written file; `stale`: a file built on an edited one.
 public enum DocStatus: String, Codable, Hashable, Sendable { case locked, writing, stopped, review, approved, edited, stale }
 
-/// The sidebar's Analyze row: Queued / Locked, running, n issues, Passed, Rerun (stale).
+/// The check after the last file: not run yet, running, n open issues, passed, or `stale` when its reply couldn't be read.
 public enum AnalyzeStatus: Codable, Hashable, Sendable {
     case locked
     case running

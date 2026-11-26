@@ -62,12 +62,7 @@ struct V2FormatTests {
         #expect(context.modules.map(\.name) == ["FocusTimer", "Core"])
     }
 
-    @Test func impactAndProjectContextDecode() throws {
-        let impact = try ImpactResult.decode(#"{"items":[{"kind":"tasks","what":"Task 4","count":"1 task"}]}"#)
-        #expect(impact.items == [.init(kind: .tasks, what: "Task 4", count: "1 task")])
-        #expect(impact.title == "")
-        #expect(try ImpactResult.decode(#"{"title":"Late cancel window is 12 hours","items":[]}"#).title == "Late cancel window is 12 hours")
-
+    @Test func projectContextDecodes() throws {
         let context = try ProjectContext.decode(##"Here: {"product":"P","tech":"T","structure":"# Structure\n\n## Modules\n\n- Booking — `Sources/Booking`\n- Payments — Sources/Payments\n\n## Tests\n\n- Unit — Tests","principles":"R"}"##)
         #expect(context.modules == [Module(name: "Booking", path: "Sources/Booking"), Module(name: "Payments", path: "Sources/Payments")])
         #expect(context.promptText.hasPrefix("### .mel/project/product.md\n\nP\n\n### .mel/project/tech.md"))

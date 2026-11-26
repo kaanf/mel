@@ -1,32 +1,5 @@
 import Foundation
 
-/// One Discovery reply from the agent (AGENT-INTEGRATION.md › Structured (JSON) stages).
-/// Coverage items carry their phase; a question with no options is an open question.
-public struct DiscoveryTurn: Hashable, Sendable {
-    public var coverage: [CoverageItem]
-    public var next: Question?
-    public var done: Bool
-
-    public init(coverage: [CoverageItem], next: Question?, done: Bool) {
-        self.coverage = coverage
-        self.next = next
-        self.done = done
-    }
-
-    /// Decodes the JSON object in `reply`. Text around the object (a stray code fence) is ignored.
-    public static func decode(_ reply: String) throws -> DiscoveryTurn {
-        let wire = try JSONDecoder().decode(Wire.self, from: jsonObject(in: reply))
-        let next = wire.next?.question(round: .intake, shapes: .product)
-        return DiscoveryTurn(coverage: wire.coverage, next: next, done: wire.done ?? (next == nil))
-    }
-
-    private struct Wire: Decodable {
-        var coverage: [CoverageItem]
-        var next: WireQuestion?
-        var done: Bool?
-    }
-}
-
 /// The one-shot intake reply (V2.md §5 Intake): every round-1 question and the coverage list.
 public struct Intake: Hashable, Sendable {
     /// A short Title Case name for the spec, used when the user typed none.

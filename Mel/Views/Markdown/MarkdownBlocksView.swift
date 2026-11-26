@@ -6,14 +6,11 @@ import MelSpec
     (MarkdownParser.blocks(text), MarkdownParser.summary(text, kind: kind))
 }
 
-/// Renders parsed spec blocks as the B4 article: title, stories with priority badges, EARS criteria,
-/// assumption and open-question boxes, the MVP line. Actions are optional: without them boxes are read-only.
+/// Renders parsed spec blocks as an article: title, stories with priority badges, EARS criteria,
+/// assumption and open-question boxes, the MVP line. Read-only: open questions are answered from their cards.
 struct MarkdownBlocksView: View {
     let blocks: [Block]
-    var onConfirm: ((Int) -> Void)?
-    var onChange: ((Int, String) -> Void)?
-    var onAnswer: ((Int, String) -> Void)?
-    /// EXPERIENCE.md (B5): numbered steps draw as a flow diagram with their branches; the screens table as state chips.
+    /// EXPERIENCE.md: numbered steps draw as a flow diagram with their branches; the screens table as state chips.
     var isExperience = false
     /// Board (V2-4): passages the last change wrote. Blocks that hold one get the blue ground.
     var highlights: [String] = []
@@ -218,9 +215,9 @@ struct MarkdownBlocksView: View {
                 }
             }
         case .assumption(let index, let text):
-            assumptionBox(index: index, text: text).id(Self.anchor("assumption", index, text))
+            assumptionBox(text: text).id(Self.anchor("assumption", index, text))
         case .openQuestion(let index, let text):
-            openQuestionBox(index: index, text: text).id(Self.anchor("open-question", index, text))
+            openQuestionBox(text: text).id(Self.anchor("open-question", index, text))
         case .covers(let ids):
             Text("Covers \(ids.joined(separator: ", "))").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
         case .mvpLine:
@@ -376,35 +373,21 @@ struct MarkdownBlocksView: View {
             .frame(maxWidth: .infinity)
     }
 
-    private func assumptionBox(index: Int, text: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: Theme.Space.x4) {
-                HStack(spacing: Theme.Space.x6) {
-                    DesignIcon(glyph: .star, size: Theme.Size.alertIcon, weight: 1.4)
-                    Text("Assumption").textStyle(Theme.Text.bodyBold)
-                }
-                Text(inline(text)).textStyle(Theme.Text.body)
+    private func assumptionBox(text: String) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x4) {
+            HStack(spacing: Theme.Space.x6) {
+                DesignIcon(glyph: .star, size: Theme.Size.alertIcon, weight: 1.4)
+                Text("Assumption").textStyle(Theme.Text.bodyBold)
             }
-            .padding(.vertical, Theme.Space.x10)
-            .padding(.horizontal, Theme.Space.x12)
-            if let onConfirm, let onChange {
-                Rectangle().fill(Theme.Colors.separator).frame(height: Theme.Size.hairline).padding(.leading, Theme.Space.x12)
-                HStack(spacing: Theme.Space.x8) {
-                    Spacer()
-                    Button("Change…") { onChange(index, text) }
-                        .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.buttonMini, leading: Theme.Space.x12, trailing: Theme.Space.x12, text: Theme.Text.callout))
-                    Button("Confirm") { onConfirm(index) }
-                        .buttonStyle(DesignButtonStyle(role: .secondary, height: Theme.Size.buttonMini, leading: Theme.Space.x12, trailing: Theme.Space.x12, text: Theme.Text.calloutMedium))
-                }
-                .padding(.vertical, Theme.Space.x8)
-                .padding(.horizontal, Theme.Space.x12)
-            }
+            Text(inline(text)).textStyle(Theme.Text.body)
         }
+        .padding(.vertical, Theme.Space.x10)
+        .padding(.horizontal, Theme.Space.x12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
 
-    private func openQuestionBox(index: Int, text: String) -> some View {
+    private func openQuestionBox(text: String) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.x4) {
             HStack(spacing: Theme.Space.x6) {
                 DesignIcon(glyph: .question, size: Theme.Size.alertIcon)
@@ -412,10 +395,6 @@ struct MarkdownBlocksView: View {
                 Text("Left for later").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
             }
             Text(inline(text)).textStyle(Theme.Text.body)
-            if let onAnswer {
-                Button("Answer Now…") { onAnswer(index, text) }
-                    .buttonStyle(DesignLinkStyle(text: Theme.Text.body))
-            }
         }
         .padding(.vertical, Theme.Space.x10)
         .padding(.horizontal, Theme.Space.x12)
@@ -476,14 +455,14 @@ extension DocSummary {
 
 #Preview("Requirements") {
     ScrollView {
-        MarkdownBlocksView(blocks: PreviewData.requirementsBlocks, onConfirm: { _ in }, onChange: { _, _ in }, onAnswer: { _, _ in })
+        MarkdownBlocksView(blocks: PreviewData.requirementsBlocks)
             .padding(Theme.Space.x24)
     }
     .frame(width: 620, height: 700)
     .background(Theme.Colors.background)
 }
 
-#Preview("Read only") {
+#Preview("Narrow") {
     ScrollView {
         MarkdownBlocksView(blocks: PreviewData.requirementsBlocks)
             .padding(Theme.Space.x24)

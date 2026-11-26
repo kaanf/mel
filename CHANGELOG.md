@@ -7,9 +7,17 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 ## [Unreleased]
 
 ### Added
+- **One board instead of thirteen screens.** Write what you want in one box and press Start. Mel asks up to three questions, then writes the files one at a time. You answer its questions in one place, "Mel needs you", and read a plan instead of approving files. The Markdown files are still there, one click away under Files.
+- **Tell Mel.** One field under the plan: say what to change, add or remove in your own words. Mel changes only the passages it touches, logs why in DECISIONS.md, and you can undo it.
+- **Remove and move stories.** Remove a story with everything built on it, or move it between First version and Later at once, with no agent run.
+- **Ready.** One button, Build with Claude Code, opens Terminal with task 1. Task prompts and the files are below it.
+- **Settings › Specs.** The defaults Mel no longer asks about: guessing small details, token use, the editor for Open in Editor, AGENTS.md, the Git commit, spec files in the sidebar, and the rules every agent follows.
 - **Token use.** The toolbar shows how many tokens a spec has used so far. Click it to see the split: questions, each file, checks and changes.
 
 ### Changed
+- **Start in one screen.** Pick a repo, drop a folder or start from an idea. Mel reads the project in the background while you write.
+- **Sidebar.** Specs of the current project in three groups: Needs you, Building and Done. Switch projects from the menu at the top.
+- **No approval step.** Specs from 0.4 that were in review or in Analyze open on the board with their files and open questions.
 - **Faster Analyze.** Mel now checks by itself that every P1 criterion and quality requirement has a task and that screens trace to a criterion. Claude Code only looks for contradictions between files, so the check takes about half the time and tokens. Criteria of P2 and P3 stories no longer need a task, and "possible scope creep" is no longer reported.
 - **Changes are patches.** When you answer a question in review, fix an Analyze issue or refine files after an edit, Claude Code now sends only the passages that change and Mel puts them in place. The rest of the file stays word for word, and the run is shorter and uses fewer tokens. If Mel can't find where a change goes, nothing is changed and you can choose to rewrite the file.
 

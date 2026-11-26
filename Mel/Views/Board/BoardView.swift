@@ -6,8 +6,9 @@ import MelSpec
 /// screen. Center: the plan, or an open file; right: "Mel needs you"; below: Tell Mel.
 struct BoardView: View {
     let session: SpecSession
+    /// The file open in the center; nil shows the plan. The sidebar's file rows set it too.
+    @Binding var openFile: BoardFile?
 
-    @State private var openFile: BoardFile?
     @State private var showsFiles = false
     @State private var isEditing = false
     @State private var why = ""
@@ -31,7 +32,7 @@ struct BoardView: View {
         .navigationSubtitle(spec.size.boardLabel)
         .toolbar { toolbar }
         .background { shortcuts }
-        .task(id: spec.id) { if isAsking { await session.start(board: true) } }
+        .task(id: spec.id) { if isAsking { await session.start() } }
     }
 
     private var main: some View {
@@ -347,12 +348,14 @@ struct BoardPillStyle: ButtonStyle {
     var height: CGFloat = Theme.Size.button
     var padding: CGFloat = Theme.Space.x12
     var elevation: Theme.Elevation = .pill
+    /// 11/14 on the 24 pt Copy buttons; otherwise 12/16, semibold on a filled pill.
+    var text: Theme.TextStyle?
 
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .textStyle(kind == .accent || kind == .destructive ? Theme.Text.calloutBold : Theme.Text.callout)
+            .textStyle(text ?? (kind == .accent || kind == .destructive ? Theme.Text.calloutBold : Theme.Text.callout))
             .foregroundStyle(kind == .accent || kind == .destructive ? Theme.Colors.onAccent : Theme.Colors.label)
             .padding(.horizontal, padding)
             .frame(height: height)
@@ -485,36 +488,36 @@ struct BoardSkeleton: View {
 }
 
 #Preview("Board, cards") {
-    NavigationStack { BoardView(session: PreviewData.boardSession) }
+    NavigationStack { BoardView(session: PreviewData.boardSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }
 
 #Preview("Asking") {
-    NavigationStack { BoardView(session: PreviewData.boardAskingSession) }
+    NavigationStack { BoardView(session: PreviewData.boardAskingSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }
 
 #Preview("Waiting for answers") {
-    NavigationStack { BoardView(session: PreviewData.boardWaitingSession) }
+    NavigationStack { BoardView(session: PreviewData.boardWaitingSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }
 
 #Preview("Stopped") {
-    NavigationStack { BoardView(session: PreviewData.boardStoppedSession) }
+    NavigationStack { BoardView(session: PreviewData.boardStoppedSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }
 
 #Preview("Change couldn't be placed") {
-    NavigationStack { BoardView(session: PreviewData.boardUnplacedSession) }
+    NavigationStack { BoardView(session: PreviewData.boardUnplacedSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }
 
 #Preview("Change applied") {
-    NavigationStack { BoardView(session: PreviewData.boardChangedSession) }
+    NavigationStack { BoardView(session: PreviewData.boardChangedSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }
 
 #Preview("Edited by hand") {
-    NavigationStack { BoardView(session: PreviewData.boardEditedSession) }
+    NavigationStack { BoardView(session: PreviewData.boardEditedSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
 }

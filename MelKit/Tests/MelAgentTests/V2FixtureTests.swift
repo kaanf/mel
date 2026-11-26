@@ -68,21 +68,15 @@ struct V2FixtureTests {
         #expect(issues.allSatisfy { ($0["actions"] as? [Any])?.count == 2 })
     }
 
-    @Test func impact() throws {
-        let items = try #require(try object("impact")["items"] as? [[String: String]])
-        #expect(items.map { $0["kind"] } == ["tasks"])  // unaffected files are left out
-        #expect(items.allSatisfy { Set($0.keys) == ["kind", "what", "count"] })
-    }
-
     /// Recorded with `allowsTools: false` (`--tools ""`): files are inline, so one turn and no steps.
-    @Test func analyzeImpactReviseAndChangeRunWithoutTools() throws {
-        for name in ["analyze", "impact", "revise", "change"] {
+    @Test func analyzeAndChangeRunWithoutTools() throws {
+        for name in ["analyze", "revise", "change"] {
             #expect(try fixtureText("claude-2.1.311-\(name).jsonl").contains(#""tools":[]"#))
             #expect(try events(name).allSatisfy { if case .step = $0 { false } else { true } })
         }
     }
 
-    /// `result.usage` of the revise run: output 1364 + input 2 + cache creation 2957; its 649 cache-read tokens don't count (OQ #26).
+    /// `result.usage` of a patch run: output 1364 + input 2 + cache creation 2957; its 649 cache-read tokens don't count (OQ #26).
     @Test func usageCountsOutputAndUncachedInput() throws {
         let events = try events("revise")
         #expect(events.dropLast().last == .usage(tokens: 4_323))

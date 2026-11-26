@@ -712,6 +712,86 @@ extension Theme.Elevation {
     static let sidebarButton = Theme.Elevation(ring: .black.opacity(0.12), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.06)))
 }
 
+// MARK: - V2 screens (design/v2/V2-0-Start, V2-1-New, V2-3-Ready, V2-6-Settings-Specs and the V2 sidebar)
+
+extension Theme.Colors {
+    /// #8E8E93 · an empty sidebar group ("Nothing waiting for you").
+    static let emptyGroup = Color(hex: 0x8E8E93)
+    /// rgba(0,122,255,0.1) · the sidebar's New button while New is open; its text is `likely` (#0058B9).
+    static let newActiveFill = Color(hex: 0x007AFF, opacity: 0.1)
+    /// rgba(36,138,61,0.12) · the check's disc on Ready.
+    static let readyDisc = Color(hex: 0x248A3D, opacity: 0.12)
+    /// rgba(0,122,255,0.35) · glow under "Build with Claude Code".
+    static let buildGlow = Color(hex: 0x007AFF, opacity: 0.35)
+    /// rgba(0,122,255,0.3) · 3 pt halo of the focused idea box on New.
+    static let focusHalo = Color(hex: 0x007AFF, opacity: 0.3)
+    /// #ECECEC · Settings › Specs window content.
+    static let settingsBackground = Color(hex: 0xECECEC)
+    /// rgba(0,0,0,0.14) · switch track off in Settings › Specs.
+    static let settingsSwitchOff = Color.black.opacity(0.14)
+}
+
+extension Theme.Text {
+    /// 14/20 · New's line under the title.
+    static let introTight = Theme.TextStyle(size: 14, weight: .regular, lineHeight: 20)
+    /// 15/20 semibold · "Build with Claude Code".
+    static let buildButton = Theme.TextStyle(size: 15, weight: .semibold, lineHeight: 20)
+}
+
+extension Theme.Size {
+    /// Start: column 620 with 40 pt sides, 56 pt logo, text max 440, bar 40; project rows min 48 with a 16 pt radio
+    /// (5 pt ring when on); agent chips 24; install rows with a 92 pt name.
+    static let startWidth: CGFloat = 620
+    static let startLogo: CGFloat = 56
+    static let startTextWidth: CGFloat = 440
+    static let startBar: CGFloat = 40
+    static let startRow: CGFloat = 48
+    static let startRadio: CGFloat = 16
+    static let startRadioRing: CGFloat = 5
+    static let installName: CGFloat = 92
+    /// New: column 680; idea box of 5 lines with a 52 pt bottom row; 32 pt attach button with a 15 pt clip.
+    static let newWidth: CGFloat = 680
+    static let newIdeaLines = 5
+    static let newBoxFooter: CGFloat = 52
+    static let attachButton: CGFloat = 32
+    static let attachIcon: CGFloat = 15
+    /// V2 sidebar: 40 pt top for the traffic lights; file rows 24; New 30; agent line 22.
+    static let sidebarTop: CGFloat = 40
+    static let sidebarFileRow: CGFloat = 24
+    static let sidebarNew: CGFloat = 30
+    static let sidebarAgentLine: CGFloat = 22
+    /// Ready: column 640, 64 from the top; 48 pt disc with a 22 pt check; 44 pt build button; 20 pt step numbers;
+    /// disclosure rows 44 with a 10 pt chevron.
+    static let readyWidth: CGFloat = 640
+    static let readyTop: CGFloat = 64
+    static let readyDisc: CGFloat = 48
+    static let readyDiscCheck: CGFloat = 22
+    static let buildButton: CGFloat = 44
+    static let nextNumber: CGFloat = 20
+    static let disclosureRow: CGFloat = 44
+    /// Settings › Specs: window 680; rows min 52; a rule's remove button 20.
+    static let specsSettingsWidth: CGFloat = 680
+    static let specsSettingsRow: CGFloat = 52
+    static let ruleRemove: CGFloat = 20
+}
+
+extension Theme.Elevation {
+    /// New's idea box: ring 0.16 + 0 2 10 0.06; focused: 0.5 pt accent ring (its 3 pt halo is drawn apart).
+    static let ideaBox = Theme.Elevation(ring: .black.opacity(0.16), drop: Theme.Drop(y: 2, blur: 10, color: .black.opacity(0.06)))
+    static let ideaBoxFocused = Theme.Elevation(ring: Theme.Colors.accent, drop: Theme.Drop(y: 2, blur: 10, color: .black.opacity(0.06)))
+    /// New's size chip: 1 pt inset accent ring at 0.35.
+    static let sizeChip = Theme.Elevation(ring: Theme.Colors.accentRing, ringWidth: 1, insetRing: true)
+    /// Start's radio, off: 1 pt inset ring at 0.3.
+    static let startRadioOff = Theme.Elevation(ring: .black.opacity(0.3), ringWidth: 1, insetRing: true)
+    /// "Build with Claude Code": 0 1 3 accent glow.
+    static let buildButton = Theme.Elevation(drop: Theme.Drop(y: 1, blur: 3, color: Theme.Colors.buildGlow))
+    /// Ready's disclosure box: inset ring 0.12.
+    static let disclosure = Theme.Elevation(ring: .black.opacity(0.12), insetRing: true)
+    /// Settings › Specs: a value pop-up (ring 0.18 + 0 1 1 0.06) and a small button (ring 0.18).
+    static let settingsValue = Theme.Elevation(ring: .black.opacity(0.18), drop: Theme.Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
+    static let settingsButton = Theme.Elevation(ring: .black.opacity(0.18))
+}
+
 extension View {
     /// Font, tracking and exact line height of a design text style, glyphs placed like CSS.
     func textStyle(_ style: Theme.TextStyle) -> some View {

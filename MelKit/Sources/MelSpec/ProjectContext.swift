@@ -51,7 +51,12 @@ public struct ProjectContext: Codable, Hashable, Sendable {
         return modules
     }
 
-    /// Decodes the A3 run's JSON reply: `{"product": …, "tech": …, "structure": …, "principles": …}`.
+    /// The `- rule` lines of `principles.md`: Settings › Specs "Rules every agent follows".
+    public var rules: [String] {
+        principles.split(whereSeparator: \.isNewline).filter { $0.hasPrefix("- ") }.map { String($0.dropFirst(2)) }
+    }
+
+    /// Decodes the project run's JSON reply: `{"product": …, "tech": …, "structure": …, "principles": …}`.
     public static func decode(_ reply: String) throws -> ProjectContext {
         try JSONDecoder().decode(ProjectContext.self, from: jsonObject(in: reply))
     }
