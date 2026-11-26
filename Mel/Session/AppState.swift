@@ -10,6 +10,10 @@ import MelSystem
     var extraSearchPaths: [String] {
         didSet { defaults.set(extraSearchPaths, forKey: Self.searchPathsKey) }
     }
+    /// A1 and Settings: the language new specs are written in.
+    var specLanguage: SpecLanguage {
+        didSet { defaults.set(specLanguage.rawValue, forKey: Self.specLanguageKey) }
+    }
     /// Every spec of every project, found by scanning `specs/*/.mel/state.json`.
     var specs: [Spec] = []
     /// Library projects whose folder is gone; row title = folder name.
@@ -42,6 +46,7 @@ import MelSystem
     /// Projects made by `createSpec` this launch; intake's name renames their folder.
     @ObservationIgnored private var ideaProjects: Set<Project.ID> = []
     private static let searchPathsKey = "extraSearchPaths"
+    private static let specLanguageKey = "specLanguage"
 
     /// Composition root passes `ClaudeCode()` and `{ AgentRunner(adapter: ClaudeCode(), executable: $0) }`;
     /// tests and previews pass fakes. Restores the project library and scans each project's specs.
@@ -51,6 +56,7 @@ import MelSystem
         self.defaults = defaults
         library = Library(defaults: defaults, key: "projects")
         extraSearchPaths = defaults.stringArray(forKey: Self.searchPathsKey) ?? []
+        specLanguage = defaults.string(forKey: Self.specLanguageKey).flatMap(SpecLanguage.init) ?? .english
         for item in library.load() {
             if item.isMissing {
                 missingFolders.append(item.folder)
@@ -178,7 +184,7 @@ import MelSystem
         let project = try project ?? createProject(name: name, parent: parent ?? developerFolder)
         if isNew { ideaProjects.insert(project.id) }
         let folder = SpecStore.freeFolder(name: name, in: project.folder.appending(path: "specs", directoryHint: .isDirectory))
-        let spec = Spec(name: name, idea: idea, size: size, folder: folder, buildsOn: buildsOn, fillGaps: fillGaps)
+        let spec = Spec(name: name, idea: idea, size: size, folder: folder, buildsOn: buildsOn, fillGaps: fillGaps, language: specLanguage)
         try SpecStore.create(spec)
         specs.append(spec)
         selection = spec.id

@@ -15,6 +15,7 @@
 | 20 | Target design | **v2 canvas** https://claude.ai/artifact/EoySYJYRhntvx3G6u19EFd (copy in `docs/design/v2/`), including the honeycomb logo. Built **pixel-exact**: colors, spacing, padding, radii, type as drawn. Items deferred in #7, #15, #17 stay deferred (Codex, Link Issue, Pause, inspector/suggestions/History, time estimates) | 2026-11-23 |
 | 21 | Dark mode? | **No.** Light mode only (Aqua forced) | 2026-11-23 |
 | 22 | Window chrome | **Real macOS window** (traffic lights, title bar, corners, shadow); only the content is pixel-exact | 2026-11-23 |
+| 5 | Language of the app UI and of generated specs | **UI English.** Spec language asked on A1 Welcome (English or Türkçe, also in Settings › Specs), stored per spec; every prompt of the spec asks for it, Mel's markers stay English | 2026-11-26 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open
@@ -23,7 +24,6 @@ Each has a recommended default that the other docs already assume; change the do
 
 | # | Question | Recommended default | Why it matters |
 |---|---|---|---|
-| 5 | Language of the app UI and of generated specs? | UI English (as designed); spec language follows the idea's language | Localization (e.g. Turkish) adds a String Catalog task |
 | 9 | Keep `.mel/` in Git? | **No** (excluded from the spec commit by pathspec) | App state is noise in the repo; the four files are the spec |
 | 10 | Should "Save in" create `<folder>/<slug>/specs` or allow an existing project folder? | Both: if the chosen folder is an existing repo, use `<folder>/specs` | Developers will point it at an existing repo |
 | 11 | Does the Jojo design system linked to the canvas matter for the native app? | **No**, use system components and semantic colors | None of the native screens use Jojo tokens |

@@ -11,7 +11,7 @@ struct UpdateSettings {
 }
 
 /// C4 Settings › Agents (design/v2 Native-Settings-Agents): Claude Code's card, detection paths, Scan Now,
-/// plus Updates. Hidden in v0.3: the General/Specs/Advanced tabs, Codex and per-agent on/off (V2 §2),
+/// plus Specs (spec language) and Updates. Hidden in v0.3: the General/Specs/Advanced tabs, Codex and per-agent on/off (V2 §2),
 /// and the scan-on-launch switch (Mel always scans at launch).
 struct SettingsView: View {
     let updates: UpdateSettings
@@ -25,6 +25,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: Theme.Space.x20) {
             agentCard
             group("Detection") { searchPaths }
+            group("Specs") { SpecLanguageRow(language: Bindable(state).specLanguage) }
             group("Updates") { updatesBox }
             HStack {
                 Spacer()

@@ -63,6 +63,7 @@ Artboard `Native-0-Welcome`. Centered window ~600 pt wide, no toolbar.
 - App icon, "Welcome", subtitle: "Specs are written by the coding agent already on your Mac, using your own account. Here is what we found."
 - Section "Coding Agent" with trailing "Scan Again" link button.
 - Grouped list (inset, rounded) with one row: icon, "Claude Code", monospaced path, trailing status: Ready (green check) / Checking (pulsing dot) / Not signed in + "Sign In…" button / Not found + "Choose File…".
+- Row "Spec language" with a segmented English | Türkçe control (added after v0.3, not in the v2 design; OQ #5). New specs keep the language they were made with; also in Settings › Specs.
 - Footnote: "Sign In opens Terminal with Claude Code's own login command. Not installed? Install it, then Scan Again, or choose the file manually."
 - Footer: "You can change this later in Settings › Agents." + prominent "Continue" (enabled only when Ready; otherwise "Continue Without Agent" lets the user look around with New Spec disabled).
 

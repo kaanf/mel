@@ -50,6 +50,17 @@ struct AppStateTests {
         #expect(second.spec.folder.lastPathComponent == "yoga-studio-2")
     }
 
+    @Test func newSpecsTakeTheChosenLanguage() throws {
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let defaults = UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!
+        let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults)
+        #expect(app.specLanguage == .english)
+        app.specLanguage = .turkish
+        let session = try app.createSpec(name: "Yoga Studio", idea: "Ders rezervasyonu.", size: .product, project: nil, parent: folder)
+        #expect(session.spec.language == .turkish)
+        #expect(AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults).specLanguage == .turkish)
+    }
+
     @Test func ideaSpecsGoUnderDeveloperAndTakeIntakesName() throws {
         let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!)
         app.developerFolder = folder.appending(path: "Developer", directoryHint: .isDirectory)

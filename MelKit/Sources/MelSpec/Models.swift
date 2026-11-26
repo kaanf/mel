@@ -18,6 +18,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var analysis: AnalyzeResult?
     /// B1 "Let Mel fill small gaps". Off: no assumptions; gaps become open questions.
     public var fillGaps: Bool
+    /// What the agent writes in (A1, Settings); nil for specs made before 0.4, written in the idea's language.
+    public var language: SpecLanguage?
     /// Files waiting for a revise run, in order (analyze fixes, refine).
     public var queue: [DocKind]
     /// The pending revise instruction per file (an answer, an analyze fix, a refine); cleared when its revise ends.
@@ -25,7 +27,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var sessionID: String?
 
     /// A new spec starts in Discovery with every file of its size locked.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, queue: [DocKind] = [], instructions: [DocKind: String] = [:], sessionID: String? = nil) {
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], buildsOn: [String] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil, queue: [DocKind] = [], instructions: [DocKind: String] = [:], sessionID: String? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -40,6 +42,7 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.analyze = analyze
         self.analysis = analysis
         self.fillGaps = fillGaps
+        self.language = language
         self.queue = queue
         self.instructions = instructions
         self.sessionID = sessionID
@@ -53,6 +56,22 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
 
     /// C1: approved files a user edit made out of date, waiting for Refine or Keep.
     public var outOfDate: [DocKind] { size.files.filter { docs[$0] == .stale } }
+}
+
+/// The language Mel asks the agent to write a spec in. The app's UI stays English.
+public enum SpecLanguage: String, Codable, CaseIterable, Hashable, Sendable {
+    case english, turkish
+
+    /// The language's own name, for the picker.
+    public var name: String {
+        switch self {
+        case .english: "English"
+        case .turkish: "Türkçe"
+        }
+    }
+
+    /// The language's English name, for `language.md`.
+    public var promptName: String { rawValue.capitalized }
 }
 
 /// V2.md §4. The size fixes the files and their order.

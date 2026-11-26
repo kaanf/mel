@@ -3,6 +3,7 @@ import Foundation
 /// Prompt templates bundled from `Prompts/*.md`, filled by plain `{{placeholder}}` replacement.
 /// Drafting and revise prompts share the rules through `{{rules}}`, which `build` fills itself:
 /// `rules.md`, or `rules-no-gaps.md` when the user turned "Let Mel fill small gaps" off.
+/// With a `language`, `language.md` is appended so every prompt of a spec writes in it.
 public enum Prompt: String, CaseIterable, Sendable {
     case project, intake
     case discovery                  // v1, until SpecSession runs the intake (Wave 7)
@@ -16,7 +17,7 @@ public enum Prompt: String, CaseIterable, Sendable {
 
     /// The template with each `{{key}}` replaced by `values[key]` in one pass, so values that
     /// contain `{{…}}` themselves are left alone. Unknown keys stay as written.
-    public func build(_ values: [String: String], fillGaps: Bool = true) -> String {
+    public func build(_ values: [String: String], fillGaps: Bool = true, language: SpecLanguage? = nil) -> String {
         let values = values.merging(["rules": Self.load(fillGaps ? "rules" : "rules-no-gaps")]) { mine, _ in mine }
         var output = ""
         var rest = Self.load(rawValue)[...]
@@ -25,7 +26,9 @@ public enum Prompt: String, CaseIterable, Sendable {
             output += values[String(rest[open.upperBound..<close.lowerBound])] ?? String(rest[open.lowerBound..<close.upperBound])
             rest = rest[close.upperBound...]
         }
-        return output + rest
+        output += rest
+        guard let language else { return output }
+        return output + "\n\n" + Self.load("language").replacing("{{language}}", with: language.promptName)
     }
 
     static func load(_ name: String) -> String {

@@ -7,7 +7,8 @@ struct WelcomeView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        ZStack(alignment: .top) {
+        @Bindable var state = state
+        return ZStack(alignment: .top) {
             Image(.logo)
                 .resizable()
                 .interpolation(.high)
@@ -28,8 +29,12 @@ struct WelcomeView: View {
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: Theme.Size.welcomeTextWidth)
                 }
-                SetupAgentRow(status: state.agent, onSignIn: state.signIn)
-                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                VStack(spacing: Theme.Space.x8) {
+                    SetupAgentRow(status: state.agent, onSignIn: state.signIn)
+                        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                    SpecLanguageRow(language: $state.specLanguage)
+                        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                }
                 VStack(spacing: Theme.Space.x8) {
                     Button("Continue", action: onContinue)
                         .buttonStyle(DesignButtonStyle(leading: Theme.Space.x22, trailing: Theme.Space.x14, keyHint: "↩"))
@@ -44,6 +49,28 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .setupChrome(stepLabel: "Setup", barHeight: Theme.Size.toolbar)
+    }
+}
+
+/// A1 and Settings › Specs: the language Claude Code writes new specs in. Not in the v2 design (added after v0.3).
+struct SpecLanguageRow: View {
+    @Binding var language: SpecLanguage
+
+    var body: some View {
+        HStack(spacing: Theme.Space.x10) {
+            Text("Spec language")
+                .textStyle(Theme.Text.bodyMedium)
+                .foregroundStyle(Theme.Colors.label)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Picker("Spec language", selection: $language) {
+                ForEach(SpecLanguage.allCases, id: \.self) { Text($0.name) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+        }
+        .padding(.horizontal, Theme.Space.x12)
+        .frame(height: Theme.Size.agentRow)
     }
 }
 
@@ -135,6 +162,14 @@ extension String {
 #Preview("Not signed in") {
     WelcomeView(onContinue: {})
         .environment(PreviewData.appState(agent: PreviewData.notSignedIn))
+        .frame(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight - Theme.Size.toolbar)
+}
+
+#Preview("Turkish specs") {
+    let state = PreviewData.appState(agent: PreviewData.ready)
+    state.specLanguage = .turkish
+    return WelcomeView(onContinue: {})
+        .environment(state)
         .frame(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight - Theme.Size.toolbar)
 }
 

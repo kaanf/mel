@@ -232,7 +232,7 @@ import MelSystem
         spec.apply(.resume)
         documents[kind] = partial
         write(partial, for: kind)
-        await write(kind, prompt: Prompt.continue.build(["file": kind.fileName, "partial": partial]), from: partial)
+        await write(kind, prompt: Prompt.continue.build(["file": kind.fileName, "partial": partial], language: spec.language), from: partial)
     }
 
     /// C2 "Resume Later": `resume()` waits for the reset and notifies.
@@ -247,7 +247,7 @@ import MelSystem
     }
 
     private func draft(_ kind: DocKind) async {
-        await write(kind, prompt: Prompt(drafting: kind).build(promptValues(drafting: kind), fillGaps: spec.fillGaps))
+        await write(kind, prompt: Prompt(drafting: kind).build(promptValues(drafting: kind), fillGaps: spec.fillGaps, language: spec.language))
     }
 
     private func revise(_ kind: DocKind, _ instruction: String) async {
@@ -256,7 +256,7 @@ import MelSystem
         values["instruction"] = instruction
         values["current"] = documents[kind] ?? ""
         values["approved"] = approvedText(except: kind)
-        await write(kind, prompt: Prompt.revise.build(values, fillGaps: spec.fillGaps))
+        await write(kind, prompt: Prompt.revise.build(values, fillGaps: spec.fillGaps, language: spec.language))
     }
 
     /// Streams `kind` into its file: fresh, or continuing `partial` in the stored Claude Code session.
@@ -513,7 +513,7 @@ import MelSystem
         let values = ["name": spec.name, "approved": approvedText(except: nil), "kinds": spec.size.kindsText,
                       "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n"),
                       "screen": spec.size.files.contains(.experience) ? "" : "This spec has no EXPERIENCE.md: `screen` is null in every row."]
-        let end = await run(Prompt.analyze.build(values), resume: nil, persist: false, tools: false)
+        let end = await run(Prompt.analyze.build(values, language: spec.language), resume: nil, persist: false, tools: false)
         guard spec.stage == .analyze else { return }
         switch end {
         case .done(let reply):
@@ -615,7 +615,7 @@ import MelSystem
         let values = ["file": kind.fileName, "before": snapshots[kind] ?? "", "after": documents[kind] ?? "",
                       "later": later.map { "### \($0.fileName)\n\n\(documents[$0] ?? "")" }.joined(separator: "\n\n"),
                       "kinds": later.map { "`\($0.rawValue)`" }.joined(separator: ", ")]
-        if case .done(let reply) = await run(Prompt.impact.build(values), resume: nil, persist: false, tools: false) {
+        if case .done(let reply) = await run(Prompt.impact.build(values, language: spec.language), resume: nil, persist: false, tools: false) {
             impact = try? ImpactResult.decode(reply)
         }
     }
@@ -713,7 +713,7 @@ import MelSystem
         values["topics"] = spec.size.topics.map { "- \($0)" }.joined(separator: "\n")
         values["count"] = String(spec.size.intakeQuestions)
         values["kinds"] = spec.size.kindsText
-        return Prompt.intake.build(values)
+        return Prompt.intake.build(values, language: spec.language)
     }
 
     private func promptValues(drafting kind: DocKind) -> [String: String] {

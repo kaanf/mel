@@ -118,7 +118,7 @@ Gate G6: all three merged; tests green; every v2 screen has previews; side-by-si
 
 Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Product spec end to end.
 
-## Status (2026-11-23)
+## Status (2026-11-26)
 
 - Waves 0–3 merged to `main`. G0–G2 passed (G2's fake-script part covered by core's 5.1 EndToEndTests).
 - v0.1 published as a GitHub **pre-release** (tag `v0.1`, notarized DMG). Install test on the user's own account (not a separate one): Gatekeeper ✓ (quarantine, offline), Claude Code found from Finder/Dock ✓, first spec end to end ✓ (`~/virtual-internet-cafe`, 4 approved files), notification ✓, handoff ✓. Steps 2–3 (no Claude Code / signed out) skipped; covered by previews.
@@ -141,6 +141,7 @@ Gate G7: v0.3 updates in-app from v0.2.1; the user runs one Feature and one Prod
 - v0.3 published 2026-11-24 (tag v0.3 at 9d718e7, build 389, notarized; appcast.xml on main 0a6e8d4). v0.2 → v0.2.1 in-app update confirmed by the user. ~/untitled-spec deleted.
 - Spec.untitledName and the a11y labels on B1 / intake merged after v0.3.
 - 2026-11-26: multi-agent setup retired (worktrees, `agent/*` branches and `agents/` removed; layer rules moved to DESIGN.md › Project conventions).
+- 2026-11-26: spec language (English/Türkçe) on A1 + Settings › Specs, stored per spec, appended to every spec prompt (`language.md`); OQ #5 decided.
 - Next: the user reports problems from v0.3.
 
 ## Risks

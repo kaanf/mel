@@ -51,6 +51,13 @@ struct PromptTests {
         #expect(!off.contains("[!ASSUMPTION]"))
     }
 
+    @Test func languageIsAppendedOnlyWhenSet() {
+        let turkish = Prompt.intake.build([:], language: .turkish)
+        #expect(turkish.contains("Write everything the user reads in Turkish"))
+        #expect(turkish.hasPrefix(Prompt.intake.build([:])))
+        #expect(!Prompt.intake.build([:]).contains("## Language"))
+    }
+
     @Test(arguments: [true, false])
     func trailerSampleDecodes(_ fillGaps: Bool) {
         let text = Prompt.tasks.build([:], fillGaps: fillGaps)
