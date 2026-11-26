@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.4] · 2026-11-26
+
 ### Added
 - **Spec language.** Welcome asks whether Claude Code should write your specs in English or Turkish; change it any time in Settings. Each spec keeps the language it was started in.
 
@@ -69,7 +71,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.3...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.4...HEAD
+[0.4]: https://github.com/kaanf/mel/compare/v0.3...v0.4
 [0.3]: https://github.com/kaanf/mel/releases/tag/v0.3
 [0.2.1]: https://github.com/kaanf/mel/releases/tag/v0.2.1
 [0.2]: https://github.com/kaanf/mel/releases/tag/v0.2
