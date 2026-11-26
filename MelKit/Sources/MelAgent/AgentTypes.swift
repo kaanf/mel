@@ -25,6 +25,7 @@ public enum AgentEvent: Sendable, Hashable {
     case text(String)                 // delta or whole message text
     case step(String)                 // "read specs/PRODUCT.md"
     case rateLimit(allowed: Bool, resetsAt: Date?)
+    case usage(tokens: Int)           // what the run counts on the board, just before done/failed
     case done(result: String)         // final result text
     case failed(StopReason)
 }

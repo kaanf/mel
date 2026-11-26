@@ -112,9 +112,11 @@ public struct ClaudeCode: AgentAdapter {
                                resetsAt: info.resetsAt.map { Date(timeIntervalSince1970: $0) })]
 
         case "result":
-            guard record.is_error == true else { return [.done(result: record.result ?? "")] }
+            // Output + uncached input (OQ #26): cache reads would inflate the count about 5×.
+            let usage: [AgentEvent] = record.usage.map { [.usage(tokens: $0.output_tokens + $0.input_tokens + ($0.cache_creation_input_tokens ?? 0))] } ?? []
+            guard record.is_error == true else { return usage + [.done(result: record.result ?? "")] }
             let message = record.result ?? record.errors?.joined(separator: "\n") ?? record.subtype ?? "error"
-            return [.failed(Self.reason(for: message))]
+            return usage + [.failed(Self.reason(for: message))]
 
         default:
             return []
@@ -152,6 +154,7 @@ public struct ClaudeCode: AgentAdapter {
         var is_error: Bool?
         var result: String?
         var errors: [String]?
+        var usage: Usage?
 
         struct Event: Decodable { var type: String; var delta: Delta? }
         struct Delta: Decodable { var type: String; var text: String? }
@@ -159,5 +162,6 @@ public struct ClaudeCode: AgentAdapter {
         struct Block: Decodable { var type: String; var name: String?; var input: Input? }
         struct Input: Decodable { var file_path: String?; var pattern: String? }
         struct RateLimit: Decodable { var status: String; var resetsAt: Double? }
+        struct Usage: Decodable { var input_tokens: Int; var output_tokens: Int; var cache_creation_input_tokens: Int? }
     }
 }

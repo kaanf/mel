@@ -110,7 +110,7 @@ import MelSystem
     func start() async {
         guard spec.stage == .discovery, !spec.questions.contains(where: { $0.round == .intake }) else { return }
         lastError = nil
-        let end = await run(intakePrompt, resume: nil, persist: false)
+        let end = await run(intakePrompt, step: .questions, resume: nil, persist: false)
         guard spec.stage == .discovery else { return }
         switch end {
         case .done(let reply):
@@ -279,7 +279,7 @@ import MelSystem
         draftStep = 0
         activity = []
         persist()
-        let end = await run(prompt, resume: nil, persist: false, tools: false)
+        let end = await run(prompt, step: .changes, resume: nil, persist: false, tools: false)
         liveText = ""
         switch end {
         case .done(let reply):
@@ -308,7 +308,7 @@ import MelSystem
         draftStep = 0
         activity = []
         persist()
-        let end = await run(prompt, resume: partial.isEmpty ? nil : spec.sessionID, persist: true)
+        let end = await run(prompt, step: spec.rewriting == kind ? .changes : TokenStep(file: kind), resume: partial.isEmpty ? nil : spec.sessionID, persist: true)
         draftKind = nil
         liveText = ""
         switch end {
@@ -358,7 +358,7 @@ import MelSystem
     // MARK: - Agent runs
 
     /// One agent run. Only one runs at a time across the app (`AppState.isAgentBusy`).
-    private func run(_ prompt: String, resume: String?, persist persistSession: Bool, tools: Bool = true) async -> RunEnd {
+    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true) async -> RunEnd {
         guard let app else { return .refused }
         guard !app.isAgentBusy else {
             lastError = "Another spec is running. Wait for it to finish or stop it."
@@ -388,6 +388,9 @@ import MelSystem
                         received(text)
                     case .step(let step):
                         activity.append(ActivityLine(at: .now, text: step))
+                    case .usage(let tokens):
+                        spec.addTokens(tokens, to: step)
+                        persist()
                     case .done(let result):
                         end = .done(result)
                         break loop
@@ -565,7 +568,7 @@ import MelSystem
         let values = ["name": spec.name, "approved": approvedText(except: nil), "kinds": spec.size.kindsText,
                       "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n"),
                       "screen": spec.size.files.contains(.experience) ? "" : "This spec has no EXPERIENCE.md: `screen` is null in every row."]
-        let end = await run(Prompt.analyze.build(values, language: spec.language), resume: nil, persist: false, tools: false)
+        let end = await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false)
         guard spec.stage == .analyze else { return }
         switch end {
         case .done(let reply):
@@ -667,7 +670,7 @@ import MelSystem
         let values = ["file": kind.fileName, "before": snapshots[kind] ?? "", "after": documents[kind] ?? "",
                       "later": later.map { "### \($0.fileName)\n\n\(documents[$0] ?? "")" }.joined(separator: "\n\n"),
                       "kinds": later.map { "`\($0.rawValue)`" }.joined(separator: ", ")]
-        if case .done(let reply) = await run(Prompt.impact.build(values, language: spec.language), resume: nil, persist: false, tools: false) {
+        if case .done(let reply) = await run(Prompt.impact.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false) {
             impact = try? ImpactResult.decode(reply)
         }
     }

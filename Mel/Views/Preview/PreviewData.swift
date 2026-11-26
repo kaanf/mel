@@ -160,6 +160,12 @@ enum PreviewData {
         }
     )
     static let edited = spec(.review(.requirements), docs(.approved, .edited, .stale, .stale, .stale), analyze: .stale)
+    static var tokens: Spec {
+        var spec = done
+        spec.tokens = [.questions: 2_140, .product: 5_300, .requirements: 11_800, .experience: 7_950, .architecture: 8_400, .tasks: 6_200, .checks: 3_100, .changes: 1_820]
+        return spec
+    }
+
     static let done = spec(.done, docs(.approved, .approved, .approved, .approved, .approved), analyze: .passed)
 
     static let requirementsMarkdown = """

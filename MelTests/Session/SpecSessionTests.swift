@@ -361,6 +361,30 @@ final class SpecSessionTests {
         #expect(session.tasks.count == 2)
     }
 
+    @Test func tokensAreSummedPerStep() async throws {
+        let (session, runner, _) = try makeSession([
+            [.usage(tokens: 900), .done(result: noQuestions)],
+            [.text(requirements), .usage(tokens: 4_000), .done(result: "")],
+            [.text(architecture), .usage(tokens: 3_000), .done(result: "")],
+            [.text(tasks), .usage(tokens: 2_000), .done(result: "")],
+            [.usage(tokens: 1_500), .done(result: issues)],
+            [.usage(tokens: 300), .done(result: "No JSON")],
+            [.text(tasks), .usage(tokens: 2_500), .done(result: "")],
+            [.usage(tokens: 1_000), .failed(.timeout)],
+        ])
+        await session.start()
+        await approveAll(session)
+        await session.fixIssues()
+        await session.rewrite(.tasks)
+        await session.approve(.tasks)
+        #expect(runner.requests.count == 8)
+        #expect(session.spec.tokens == [.questions: 900, .requirements: 4_000, .architecture: 3_000, .tasks: 2_000, .checks: 2_500, .changes: 2_800])
+        #expect(session.spec.tokenTotal == 15_200)
+        await session.flush()
+        let state = try String(contentsOf: session.spec.folder.appending(path: ".mel/state.json"), encoding: .utf8)
+        #expect(state.contains(#""changes" : 2800"#))
+    }
+
     @Test func unreadableAnalyzeShowsRerun() async throws {
         let (session, runner, _) = try approvedFeature(analyze: "No JSON here.")
         runner.add([[.done(result: passed)]])

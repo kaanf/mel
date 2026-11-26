@@ -83,6 +83,13 @@ struct V2FixtureTests {
         }
     }
 
+    /// `result.usage` of the revise run: output 1364 + input 2 + cache creation 2957; its 649 cache-read tokens don't count (OQ #26).
+    @Test func usageCountsOutputAndUncachedInput() throws {
+        let events = try events("revise")
+        #expect(events.dropLast().last == .usage(tokens: 4_323))
+        #expect(events.count { if case .usage = $0 { true } else { false } } == 1)
+    }
+
     /// Attachments under specs/<slug>/.mel/attachments/ open with Read under the read-only flags, images included.
     @Test func attachmentsAreReadable() throws {
         let events = try events("attachments")

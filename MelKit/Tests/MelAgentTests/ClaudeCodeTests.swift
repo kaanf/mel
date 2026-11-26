@@ -126,7 +126,7 @@ struct ClaudeCodeTests {
     /// Recorded with write tools Mel never grants; still checks thinking, permission_denied and tool results stay silent.
     @Test func editRunsGiveOnlyStepsAndResult() throws {
         let short = try events("claude-2.1.311-edit-run-short.jsonl")
-        #expect(short.count == 4)  // session, step, rate limit, done
+        #expect(short.count == 5)  // session, step, rate limit, usage, done
         #expect(short[1] == .step("write"))
         #expect(short.last == .done(result: "done"))
 

@@ -26,6 +26,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var instructions: [DocKind: String]
     /// The file "Rewrite FILE" is writing whole, until that run ends.
     public var rewriting: DocKind?
+    /// Tokens used per step, from each run's `result.usage` (OQ #26); nil before the first counted run.
+    public var tokens: [TokenStep: Int]?
     public var sessionID: String?
 
     /// A new spec starts in Discovery with every file of its size locked.

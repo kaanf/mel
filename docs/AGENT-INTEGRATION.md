@@ -58,7 +58,7 @@ Record mapping:
 - `stream_event` text deltas (if enabled) or `assistant` `text` blocks → `text`.
 - `assistant` `tool_use` blocks (`Read`, `Glob`, `Grep`) → `step("read specs/PRODUCT.md")`.
 - `rate_limit_event` → remember `rate_limit_info.resetsAt` (Unix seconds) for the usage-limit message.
-- `result` → `done`, or when `is_error`, classify (signed out, usage limit, other).
+- `result` → `done`, or when `is_error`, classify (signed out, usage limit, other). Before either, `result.usage` → `usage(tokens:)`: `output_tokens + input_tokens + cache_creation_input_tokens` (OQ #26; cache reads don't count). `SpecSession` adds it to `Spec.tokens[step]` in `state.json`; steps are `questions`, one per file, `checks` (analyze, impact) and `changes` (patch runs, rewrites). A run stopped before its `result` isn't counted.
 - An unknown `--resume` session fails at once with an error result: run fresh.
 - Ignore every other record type. Decode only the fields above.
 

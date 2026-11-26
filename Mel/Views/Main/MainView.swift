@@ -77,6 +77,11 @@ struct MainView: View {
         } detail: {
             if let item, item.specID.map({ id in state.specs.contains { $0.id == id } }) ?? true {
                 detail(item).id(item)
+                    .toolbar {
+                        if let spec = shownSpec, spec.tokenTotal > 0 {
+                            ToolbarItem { TokenReadout(spec: spec) }
+                        }
+                    }
             } else if state.specs.isEmpty {
                 HomeView { size in
                     newSpecSize = size
