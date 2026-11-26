@@ -38,8 +38,9 @@ struct ReviewView: View {
     /// Open items don't block: they stay marked in the file for the next agent.
     private var canApprove: Bool { spec.docs[kind] == .review }
     private var next: DocKind? { spec.size.file(after: kind) }
-    private var assumptions: [Int] { blocks.compactMap { if case .assumption(let i, _) = $0 { i } else { nil } } }
-    private var openQuestions: [Int] { blocks.compactMap { if case .openQuestion(let i, _) = $0 { i } else { nil } } }
+    /// Scroll anchors of the assumption and open-question boxes, in file order.
+    private var assumptions: [String] { blocks.compactMap { if case .assumption(let i, let t) = $0 { MarkdownBlocksView.anchor("assumption", i, t) } else { nil } } }
+    private var openQuestions: [String] { blocks.compactMap { if case .openQuestion(let i, let t) = $0 { MarkdownBlocksView.anchor("open-question", i, t) } else { nil } } }
     private var roundTwo: [Question] { spec.questions.filter { $0.round == .draft && $0.shapes == kind && $0.answer == nil } }
     private var compact: Bool { width < ToolbarStatus.fullTextWidth }
     private var isExperience: Bool { kind == .experience }
@@ -269,11 +270,11 @@ struct ReviewView: View {
             .buttonStyle(.plain)
         case .assumptions(let n):
             jumpRow(glyph: .star, text: n == 1 ? "1 assumption to confirm" : "\(n) assumptions to confirm") {
-                if let first = assumptions.first { withAnimation { proxy.scrollTo("assumption-\(first)", anchor: .top) } }
+                if let first = assumptions.first { withAnimation { proxy.scrollTo(first, anchor: .top) } }
             }
         case .openQuestions(let n):
             jumpRow(glyph: .question, text: n == 1 ? "1 open question" : "\(n) open questions") {
-                if let first = openQuestions.first { withAnimation { proxy.scrollTo("open-question-\(first)", anchor: .top) } }
+                if let first = openQuestions.first { withAnimation { proxy.scrollTo(first, anchor: .top) } }
             }
         }
     }

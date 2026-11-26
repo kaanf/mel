@@ -183,9 +183,9 @@ struct MarkdownBlocksView: View {
                 }
             }
         case .assumption(let index, let text):
-            assumptionBox(index: index, text: text).id("assumption-\(index)")
+            assumptionBox(index: index, text: text).id(Self.anchor("assumption", index, text))
         case .openQuestion(let index, let text):
-            openQuestionBox(index: index, text: text).id("open-question-\(index)")
+            openQuestionBox(index: index, text: text).id(Self.anchor("open-question", index, text))
         case .covers(let ids):
             Text("Covers \(ids.joined(separator: ", "))").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
         case .mvpLine:
@@ -387,6 +387,10 @@ struct MarkdownBlocksView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .surface(.clear, .outlineStrong, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
+
+    /// A box's scroll anchor. It includes the text: after a confirm the next boxes' indexes shift down, and an
+    /// index-only id made the lazy stack reuse the confirmed box's view for them.
+    static func anchor(_ prefix: String, _ index: Int, _ text: String) -> String { "\(prefix)-\(index)-\(text)" }
 
     private func inline(_ text: String) -> AttributedString { Self.inline(text) }
 

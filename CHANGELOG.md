@@ -9,6 +9,9 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 ### Added
 - **Spec language.** Welcome asks whether Claude Code should write your specs in English or Turkish; change it any time in Settings. Each spec keeps the language it was started in.
 
+### Fixed
+- Confirming an assumption no longer makes the assumptions below it show the confirmed text.
+
 ## [0.3] · 2026-11-24
 
 Mel v2: a new design for the whole app.
