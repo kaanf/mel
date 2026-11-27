@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.5.2] · 2026-11-27
+
 ### Added
 - **Move a project to the Trash.** The project menu has Move to Trash…: after you confirm, the whole folder, code included, goes to the Trash, where you can get it back.
 - **A Settings button** at the bottom of the sidebar, next to the Claude Code line.
@@ -112,7 +114,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/kaanf/mel/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/kaanf/mel/compare/v0.5...v0.5.1
 [0.5]: https://github.com/kaanf/mel/compare/v0.4...v0.5
 [0.4]: https://github.com/kaanf/mel/compare/v0.3...v0.4
