@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.7] · 2026-11-27
+
 ### Added
 - **Tell Mel while you build.** The Build screen has a Tell Mel box under the steps for what a task turned up: a missing state, a task that should be split, a wrong assumption. "Tell Mel about this" on a running or failed task says which task it came from. Mel patches the spec; a task whose prompt changed after you copied it says **Prompt changed · Copy again**, a finished task whose text changed says **Changed after done** and stays done until you reopen it, and new tasks show up in their step.
 
@@ -124,7 +126,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.6...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.7...HEAD
+[0.7]: https://github.com/kaanf/mel/compare/v0.6...v0.7
 [0.6]: https://github.com/kaanf/mel/compare/v0.5.2...v0.6
 [0.5.2]: https://github.com/kaanf/mel/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/kaanf/mel/compare/v0.5...v0.5.1
