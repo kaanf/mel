@@ -771,8 +771,8 @@ extension Theme.Size {
     static let newBoxFooter: CGFloat = 52
     static let attachButton: CGFloat = 32
     static let attachIcon: CGFloat = 15
-    /// V2 sidebar: 40 pt top for the traffic lights; file rows 24; New 30; agent line 22.
-    static let sidebarTop: CGFloat = 40
+    /// V2 sidebar: the system column already starts below the traffic lights, so no extra top; file rows 24; New 30; agent line 22.
+    static let sidebarTop: CGFloat = 0
     static let sidebarFileRow: CGFloat = 24
     static let sidebarNew: CGFloat = 30
     static let sidebarAgentLine: CGFloat = 22
