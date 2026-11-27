@@ -85,6 +85,8 @@ struct MainView: View {
             .animation(.easeInOut(duration: 0.18), value: shownSpec?.id)
             .animation(.board, value: shownSpec?.stage)
         }
+        // Full screen draws the toolbar as its own band with a line under it; the window doesn't.
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .onChange(of: state.selection) { _, id in
             openFile = nil
             if id != nil { isShowingNew = false }

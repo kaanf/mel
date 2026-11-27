@@ -27,11 +27,48 @@ struct SettingsView: View {
     }
 }
 
-/// Settings › General: updates (not drawn; the Agents pane's look).
+/// Settings › General › Appearance; App/ applies it to every window.
+enum Appearance: String, CaseIterable {
+    case system, light, dark
+
+    var name: String {
+        switch self {
+        case .system: "Same as the Mac"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+}
+
+/// Settings › General: appearance and updates (not drawn; the Agents pane's look).
 struct GeneralSettings: View {
     let updates: UpdateSettings
+    @AppStorage("appearance") private var appearance = Appearance.system
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x20) {
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                Text("Appearance").textStyle(Theme.Text.bodyBold).padding(.horizontal, Theme.Space.x12).accessibilityAddTraits(.isHeader)
+                settingsRow("Theme", "Light, Dark, or follow the Mac’s setting.") {
+                    Picker("Theme", selection: $appearance) {
+                        ForEach(Appearance.allCases, id: \.self) { Text($0.name).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                }
+                .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+            }
+            updatesGroup
+        }
+        .foregroundStyle(Theme.Colors.label)
+        .padding(EdgeInsets(top: Theme.Space.x20, leading: Theme.Space.x24, bottom: Theme.Space.x24, trailing: Theme.Space.x24))
+        .frame(width: Theme.Size.settingsWidth)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(Theme.Colors.background)
+    }
+
+    private var updatesGroup: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x6) {
             Text("Updates").textStyle(Theme.Text.bodyBold).padding(.horizontal, Theme.Space.x12).accessibilityAddTraits(.isHeader)
             VStack(spacing: 0) {
@@ -55,11 +92,6 @@ struct GeneralSettings: View {
             }
             .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
         }
-        .foregroundStyle(Theme.Colors.label)
-        .padding(EdgeInsets(top: Theme.Space.x20, leading: Theme.Space.x24, bottom: Theme.Space.x24, trailing: Theme.Space.x24))
-        .frame(width: Theme.Size.settingsWidth)
-        .fixedSize(horizontal: false, vertical: true)
-        .background(Theme.Colors.background)
     }
 }
 
@@ -75,6 +107,7 @@ struct AgentSettings: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x20) {
             agentCard
+            group("Models") { models }
             group("Detection") { searchPaths }
             HStack {
                 Spacer()
@@ -170,6 +203,29 @@ struct AgentSettings: View {
         case .ready: "Signed in through the CLI"
         case .notSignedIn: "Not signed in"
         default: "Unknown"
+        }
+    }
+
+    // MARK: Models
+
+    private var models: some View {
+        @Bindable var state = state
+        return VStack(spacing: 0) {
+            settingsRow("Writing and changes", "Drafts each file, places Tell Mel changes and rewrites. The next run uses it.") {
+                settingsValue(state.writingModel.name) {
+                    Picker("Writing and changes", selection: $state.writingModel) {
+                        ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
+                    }
+                }
+            }
+            separator.padding(.leading, Theme.Space.x12)
+            settingsRow("Questions and checks", "The first questions, the check for contradictions and reading the project. Short runs.") {
+                settingsValue(state.quickModel.name) {
+                    Picker("Questions and checks", selection: $state.quickModel) {
+                        ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
+                    }
+                }
+            }
         }
     }
 

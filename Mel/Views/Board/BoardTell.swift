@@ -16,6 +16,8 @@ struct BoardTell: View {
     @State private var isAttaching = false
     /// Build: the request just sent, shown above like a chat message; back in the box if the run fails.
     @State private var sent: (text: String, task: SpecTask?)?
+    /// The larger editor for a long request; the same text as the box.
+    @State private var isExpanded = false
     @FocusState private var isFocused: Bool
 
     private var spec: Spec { session.spec }
@@ -24,23 +26,37 @@ struct BoardTell: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
-            if building, let sent { message(sent.text, task: sent.task) }
-            if building, !session.isRunning, let error = session.lastError { errorLine(error) }
-            if let unplaced = spec.unplacedChange {
-                if building, session.isRunning { working(rewriting: unplaced.files.first) } else { unplacedBanner(unplaced) }
-            } else if building, session.isRunning {
-                working(rewriting: nil)
-            } else if let change = session.lastChange {
-                result(change)
+            if building {
+                // Like a chat: what was sent and its result scroll above; the box stays at the bottom.
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Theme.Space.x8) { thread }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .defaultScrollAnchor(.bottom)
+                .frame(maxHeight: .infinity)
+            } else {
+                thread
             }
-            // Build: the box sits at the bottom of the panel, like a chat's.
-            if building { Spacer(minLength: 0) }
             box
         }
         .frame(maxHeight: building ? .infinity : nil, alignment: .top)
         .onChange(of: task.wrappedValue) { _, new in if new != nil { isFocused = true } }
+        .sheet(isPresented: $isExpanded) { expanded }
         .fileImporter(isPresented: $isAttaching, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { files += urls.filter { !files.contains($0) } }
+        }
+    }
+
+    @ViewBuilder
+    private var thread: some View {
+        if building, let sent { message(sent.text, task: sent.task) }
+        if building, !session.isRunning, let error = session.lastError { errorLine(error) }
+        if let unplaced = spec.unplacedChange {
+            if building, session.isRunning { working(rewriting: unplaced.files.first) } else { unplacedBanner(unplaced) }
+        } else if building, session.isRunning {
+            working(rewriting: nil)
+        } else if let change = session.lastChange {
+            result(change)
         }
     }
 
@@ -233,12 +249,26 @@ struct BoardTell: View {
                 Text("Tell Mel").textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.bodyLabel)
             }
             if let task = task.wrappedValue { chip(task) }
-            TextField(building ? "What did you find while building?" : "Tell Mel what to change, add or remove…", text: $text, axis: .vertical)
-                .lineLimit(building ? Theme.Size.buildTellLines...12 : Theme.Size.tellLines...8)
-                .textFieldStyle(.plain)
-                .textStyle(Theme.Text.bodyLoose)
-                .focused($isFocused)
-                .accessibilityLabel("Tell Mel")
+            HStack(alignment: .top, spacing: Theme.Space.x6) {
+                // Return sends, ⌥Return starts a new line; past its last line the field scrolls.
+                TextField(building ? "What did you find while building?" : "Tell Mel what to change, add or remove…", text: $text, axis: .vertical)
+                    .lineLimit(building ? Theme.Size.buildTellLines...8 : Theme.Size.tellLines...6)
+                    .textFieldStyle(.plain)
+                    .textStyle(Theme.Text.bodyLoose)
+                    .focused($isFocused)
+                    .onSubmit { if canSend { send() } }
+                    .accessibilityLabel("Tell Mel")
+                Button { isExpanded = true } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: Theme.Size.expandIcon, weight: .medium))
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .frame(width: Theme.Size.buttonMini, height: Theme.Size.buttonMini)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Write in a larger box")
+                .help("Write in a larger box")
+            }
             if !files.isEmpty {
                 FlowLayout(spacing: Theme.Space.x6) {
                     ForEach(files, id: \.self) { file in
@@ -288,7 +318,38 @@ struct BoardTell: View {
     }
 
     private var hint: String {
-        building ? "Mel edits only the passages it touches. Prompts you already copied keep running; changed ones are marked." : "One request at a time. Mel edits only the passages it touches and logs why in DECISIONS.md."
+        building ? "Return sends, ⌥Return adds a line. Mel edits only the passages it touches; prompts you already copied keep running and changed ones are marked." : "Return sends, ⌥Return adds a line. Mel edits only the passages it touches and logs why in DECISIONS.md."
+    }
+
+    /// A long request: the same text in a larger editor, where Return adds a line and ⌘Return sends.
+    private var expanded: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x12) {
+            Text("Tell Mel").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
+            if let task = task.wrappedValue { chip(task) }
+            TextEditor(text: $text)
+                .textStyle(Theme.Text.bodyLoose)
+                .scrollContentBackground(.hidden)
+                .padding(Theme.Space.x8)
+                .surface(Theme.Colors.background, .storyCard, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                .accessibilityLabel("Tell Mel")
+            HStack(spacing: Theme.Space.x8) {
+                Text("⌘Return sends. Closing keeps your text in the box.").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+                Spacer(minLength: 0)
+                Button("Close") { isExpanded = false }
+                    .buttonStyle(BoardPillStyle())
+                    .keyboardShortcut(.cancelAction)
+                Button("Send") {
+                    isExpanded = false
+                    send()
+                }
+                .buttonStyle(BoardPillStyle(kind: .accent, padding: Theme.Space.x14))
+                .disabled(!canSend)
+                .keyboardShortcut(.return, modifiers: .command)
+            }
+        }
+        .padding(Theme.Space.x20)
+        .frame(width: Theme.Size.tellSheetWidth, height: Theme.Size.tellSheetHeight)
+        .background(Theme.Colors.fillSubtle)
     }
 
     private var attachButton: some View {
@@ -302,37 +363,38 @@ struct BoardTell: View {
     }
 
     private var sendButton: some View {
-        Button(building && session.isRunning ? "Changing…" : "Send") {
-            let (request, attached, about) = (self.request, files, task.wrappedValue)
-            if building {
-                // Chat-like: the request leaves the box at once and comes back only if the run fails.
-                sent = (request, about)
+        Button(building && session.isRunning ? "Changing…" : "Send", action: send)
+            .buttonStyle(BoardPillStyle(kind: .accent, padding: Theme.Space.x14))
+            .disabled(!canSend)
+            .keyboardShortcut(.return, modifiers: .command)
+    }
+
+    private func send() {
+        let (request, attached, about) = (self.request, files, task.wrappedValue)
+        if building {
+            // Chat-like: the request leaves the box at once and comes back only if the run fails.
+            sent = (request, about)
+            text = ""
+            files = []
+            task.wrappedValue = nil
+            Task {
+                guard await !session.tell(request, files: attached, task: about) else { return }
+                sent = nil
+                if text.isEmpty {
+                    text = request
+                    files = attached
+                    task.wrappedValue = about
+                }
+            }
+            return
+        }
+        Task {
+            // The request stays in the box until the run has finished.
+            if await session.tell(request, files: attached, task: about), text.trimmingCharacters(in: .whitespacesAndNewlines) == request {
                 text = ""
                 files = []
-                task.wrappedValue = nil
-                Task {
-                    guard await !session.tell(request, files: attached, task: about) else { return }
-                    sent = nil
-                    if text.isEmpty {
-                        text = request
-                        files = attached
-                        task.wrappedValue = about
-                    }
-                }
-                return
-            }
-            let sent = request
-            Task {
-                // The request stays in the box until the run has finished.
-                if await session.tell(sent, files: attached, task: about), text.trimmingCharacters(in: .whitespacesAndNewlines) == sent {
-                    text = ""
-                    files = []
-                    if task.wrappedValue == about { task.wrappedValue = nil }
-                }
+                if task.wrappedValue == about { task.wrappedValue = nil }
             }
         }
-        .buttonStyle(BoardPillStyle(kind: .accent, padding: Theme.Space.x14))
-        .disabled(!canSend)
-        .keyboardShortcut(.return, modifiers: .command)
     }
 }

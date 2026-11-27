@@ -136,7 +136,7 @@ import MelSystem
     func start() async {
         guard spec.stage == .discovery, !spec.questions.contains(where: { $0.round == .intake }) else { return }
         lastError = nil
-        let end = await run(intakePrompt, step: .questions, resume: nil, persist: false, model: .light)
+        let end = await run(intakePrompt, step: .questions, resume: nil, persist: false, quick: true)
         guard spec.stage == .discovery else { return }
         switch end {
         case .done(let reply):
@@ -215,7 +215,7 @@ import MelSystem
     }
 
     /// One agent run. Only one runs at a time across the app (`AppState.isAgentBusy`).
-    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true, model: AgentModel = .main) async -> RunEnd {
+    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true, quick: Bool = false) async -> RunEnd {
         guard let app else { return .refused }
         guard !app.isAgentBusy else {
             lastError = "Another spec is running. Wait for it to finish or stop it."
@@ -227,7 +227,7 @@ import MelSystem
         }
         lastError = nil
         app.requestNotificationsOnce()
-        let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools, model: model)
+        let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools, model: quick ? app.quickModel : app.writingModel)
         app.runningSpecID = spec.id
         self.runner = runner
         isRunning = true
@@ -896,7 +896,7 @@ import MelSystem
         persist()
         let values = ["name": spec.name, "approved": text(of: spec.written), "kinds": spec.size.kindsText,
                       "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n")]
-        switch await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false, model: .light) {
+        switch await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false, quick: true) {
         case .done(let reply):
             if let contradictions = try? AnalyzeResult.contradictions(in: reply) {
                 var result = AnalyzeResult.coverage(requirements: documents[.requirements] ?? "", experience: spec.size.files.contains(.experience) ? documents[.experience] ?? "" : nil, tasks: documents[.tasks] ?? "")

@@ -1,12 +1,6 @@
 import Foundation
 import MelSpec
 
-/// Which model a run uses; each adapter maps it to its own model ID.
-public enum AgentModel: Sendable {
-    case main                         // drafts and changes
-    case light                        // intake, check, project context
-}
-
 public struct AgentRequest: Sendable {
     public var prompt: String                // sent on stdin
     public var workingDirectory: URL         // project folder (parent of specs/)
@@ -17,7 +11,7 @@ public struct AgentRequest: Sendable {
     public var model: AgentModel
 
     public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool,
-                systemPrompt: String? = nil, allowsTools: Bool = true, model: AgentModel = .main) {
+                systemPrompt: String? = nil, allowsTools: Bool = true, model: AgentModel = .opus) {
         self.prompt = prompt
         self.workingDirectory = workingDirectory
         self.resumeSessionID = resumeSessionID

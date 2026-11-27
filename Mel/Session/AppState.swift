@@ -14,6 +14,13 @@ import MelSystem
     var specLanguage: SpecLanguage {
         didSet { defaults.set(specLanguage.rawValue, forKey: Self.specLanguageKey) }
     }
+    /// Settings › Agents › Models: drafts, changes and rewrites; and the quick runs (questions, the check, project context).
+    var writingModel: AgentModel {
+        didSet { defaults.set(writingModel.rawValue, forKey: Self.writingModelKey) }
+    }
+    var quickModel: AgentModel {
+        didSet { defaults.set(quickModel.rawValue, forKey: Self.quickModelKey) }
+    }
     /// Every spec of every project, found by scanning `specs/*/.mel/state.json`.
     var specs: [Spec] = []
     /// Library projects whose folder is gone; row title = folder name.
@@ -58,6 +65,8 @@ import MelSystem
     @ObservationIgnored private var ideaProjects: Set<Project.ID> = []
     private static let searchPathsKey = "extraSearchPaths"
     private static let specLanguageKey = "specLanguage"
+    private static let writingModelKey = "writingModel"
+    private static let quickModelKey = "quickModel"
     private static let currentProjectKey = "currentProject"
     private static let editorKey = "editorApp"
 
@@ -70,6 +79,8 @@ import MelSystem
         library = Library(defaults: defaults, key: "projects")
         extraSearchPaths = defaults.stringArray(forKey: Self.searchPathsKey) ?? []
         specLanguage = defaults.string(forKey: Self.specLanguageKey).flatMap(SpecLanguage.init) ?? .english
+        writingModel = defaults.string(forKey: Self.writingModelKey).flatMap(AgentModel.init) ?? .opus
+        quickModel = defaults.string(forKey: Self.quickModelKey).flatMap(AgentModel.init) ?? .sonnet
         projectID = defaults.string(forKey: Self.currentProjectKey).map { URL(filePath: $0).normalizedFolder }
         editor = defaults.string(forKey: Self.editorKey).map { URL(filePath: $0) }
         for item in library.load() {
@@ -157,7 +168,7 @@ import MelSystem
         readingContext.insert(project.id)
         defer { readingContext.remove(project.id) }
         let mode = "Read the code in this folder first: the README, the build files and the main source folders."
-        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false, model: .light)
+        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false, model: quickModel)
         var result: String?
         do {
             loop: for try await event in runner.run(request) {

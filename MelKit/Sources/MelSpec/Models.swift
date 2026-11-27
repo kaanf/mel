@@ -65,6 +65,21 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
 public enum BuildState: String, Codable, Hashable, Sendable { case building, done }
 
 /// The language Mel asks the agent to write a spec in. The app's UI stays English.
+/// The Claude model a run uses (Settings › Agents › Models); the raw value is Claude Code's `--model`.
+public enum AgentModel: String, Codable, CaseIterable, Hashable, Sendable {
+    case opus = "claude-opus-5-5"
+    case sonnet = "claude-sonnet-5-5"
+    case haiku = "claude-haiku-5-5"
+
+    public var name: String {
+        switch self {
+        case .opus: "Opus 5.5"
+        case .sonnet: "Sonnet 5.5"
+        case .haiku: "Haiku 5.5"
+        }
+    }
+}
+
 public enum SpecLanguage: String, Codable, CaseIterable, Hashable, Sendable {
     case english, turkish
 

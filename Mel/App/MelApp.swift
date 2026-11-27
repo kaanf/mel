@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import MelAgent
 
 @main
@@ -7,6 +8,8 @@ struct MelApp: App {
     @State private var updater = Updater()
     /// V2-1 New in the main window's detail; ⌘N and the sidebar's New set it.
     @State private var isShowingNew = Self.startsOnNew
+    /// Settings › General › Appearance, applied to every window (Settings too).
+    @AppStorage("appearance") private var appearance = Appearance.system
 
     var body: some Scene {
         WindowGroup {
@@ -17,6 +20,13 @@ struct MelApp: App {
                     if DebugScreen.current != nil { return }   // keep the fixture's agent
                     #endif
                     await state.scanForAgent()
+                }
+                .onChange(of: appearance, initial: true) { _, appearance in
+                    NSApp.appearance = switch appearance {
+                    case .system: nil
+                    case .light: NSAppearance(named: .aqua)
+                    case .dark: NSAppearance(named: .darkAqua)
+                    }
                 }
         }
         .defaultSize(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)

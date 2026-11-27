@@ -44,9 +44,9 @@ struct ClaudeCodeTests {
         #expect(args.filter { $0 == "--tools" }.count == 1)
     }
 
-    @Test func modelIsOpusUnlessLight() {
+    @Test func modelIsTheRequestsOpusByDefault() {
         let main = claude.arguments(for: AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false))
-        let light = claude.arguments(for: AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false, model: .light))
+        let light = claude.arguments(for: AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false, model: .sonnet))
         #expect(main[main.firstIndex(of: "--model")! + 1] == "claude-opus-5-5")
         #expect(light[light.firstIndex(of: "--model")! + 1] == "claude-sonnet-5-5")
     }

@@ -433,7 +433,7 @@ enum Theme {
         static let homeStartMin: CGFloat = 190
         /// C4: window 640; agent row 48 with a 26 pt tile (radius 6, 14 pt glyph), detail rows 36 indented 48 with a 72 pt label;
         /// search path rows 26, list footer 24 with 28 pt +/− buttons and 12 pt glyphs.
-        static let settingsWidth: CGFloat = 640
+        static let settingsWidth: CGFloat = 680
         static let agentCardRow: CGFloat = 48
         static let agentCardTile: CGFloat = 26
         static let agentDetailRow: CGFloat = 36
@@ -686,6 +686,10 @@ extension Theme.Size {
     /// 16 lines · the file editor; 2 · Tell Mel and a card's free answer; 3 · an intake free answer.
     static let editorLines = 16
     static let tellLines = 2
+    /// 640 × 440 · Tell Mel's larger editor; 11 · its expand glyph.
+    static let tellSheetWidth: CGFloat = 640
+    static let tellSheetHeight: CGFloat = 440
+    static let expandIcon: CGFloat = 11
 }
 
 extension Theme.Elevation {
@@ -773,8 +777,7 @@ extension Theme.Size {
     static let sidebarNew: CGFloat = 30
     static let sidebarAgentLine: CGFloat = 22
     static let buildButton: CGFloat = 44
-    /// Settings › Specs: window 680; rows min 52; a rule's remove button 20.
-    static let specsSettingsWidth: CGFloat = 680
+    /// Settings › Specs: rows min 52; a rule's remove button 20. Every pane is `settingsWidth` wide, so switching panes only changes the height.
     static let specsSettingsRow: CGFloat = 52
     static let ruleRemove: CGFloat = 20
 }
@@ -817,8 +820,8 @@ extension Theme.Text {
 extension Theme.Size {
     /// The steps column's max width.
     static let buildWidth: CGFloat = 820
-    /// "How building works".
-    static let buildAside: CGFloat = 280
+    /// "How building works" and Tell Mel on Build (drawn 280; as wide as the board's inbox so a request has room).
+    static let buildAside: CGFloat = 340
     /// A task card's basis in an "At the same time" step.
     static let taskCardMin: CGFloat = 260
     /// The progress bar's segments.

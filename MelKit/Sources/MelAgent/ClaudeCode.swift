@@ -58,7 +58,7 @@ public struct ClaudeCode: AgentAdapter {
             "--tools", request.allowsTools ? "Read,Glob,Grep" : "",
             "--permission-mode", "manual", "--permission-prompts", "none",
             "--disable-slash-commands", "--no-chrome",
-            "--model", request.model == .main ? "claude-opus-5-5" : "claude-sonnet-5-5",
+            "--model", request.model.rawValue,
         ]
         if let session = request.resumeSessionID { arguments += ["--resume", session] }
         if !request.persistSession { arguments.append("--no-session-persistence") }
