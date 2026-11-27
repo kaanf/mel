@@ -1078,7 +1078,20 @@ import MelSystem
         persist()
         let prompt = resume == nil ? task.runPrompt(slug: slug, of: tasks.count)
             : answer.map(task.answerPrompt) ?? "Go on with task \(task.number) from where you stopped; your changes are still there. End with the JSON object, as before."
-        let access = BuildAccess(folders: task.changes, commands: task.verify.isEmpty ? [] : [task.verify])
+        // The check as one command the run may call (Claude Code splits compound commands for its rules).
+        var commands: [String] = []
+        if !task.verify.isEmpty {
+            let script = task.checkScript(slug: slug)
+            let url = projectFolder.appending(path: script)
+            do {
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data((task.verify + "\n").utf8).write(to: url, options: .atomic)
+                commands = ["sh \(script)"]
+            } catch {
+                lastError = "Couldn’t write the task’s check: \(error.localizedDescription)"
+            }
+        }
+        let access = BuildAccess(folders: task.changes, commands: commands)
         let end = await run(prompt, step: .build, resume: resume, persist: true, build: (task.number, access))
         runningTask = nil
         switch end {

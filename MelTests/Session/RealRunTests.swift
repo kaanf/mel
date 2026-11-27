@@ -42,7 +42,7 @@ final class RealRunTests {
 
         // New: one box, size Feature.
         let idea = "A command-line script bin/tip.sh that takes a bill amount and a tip percent and prints the tip and the total with two decimals. A negative or non-numeric amount gets a clear error and exit code 1. Plain POSIX sh, tested by tests/test.sh."
-        let session = try app.createSpec(name: "", idea: idea, size: .feature, project: project)
+        let session = try app.createSpec(name: Spec.untitledName, idea: idea, size: .feature, project: project)
         await session.start()
         note("intake: \(session.spec.name) · \(session.spec.questions.count) questions")
         var guardCount = 0

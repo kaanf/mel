@@ -459,7 +459,7 @@ final class BoardSessionTests {
         await session.clearBlockedRun(commit: false)
         #expect(Git.branch(at: repo) == "mel/" + session.spec.folder.lastPathComponent)
         let request = try #require(runner.requests.last)
-        #expect(request.build == BuildAccess(folders: [], commands: ["swift test"]))
+        #expect(request.build == BuildAccess(folders: [], commands: ["sh " + store.checkScript(slug: session.spec.folder.lastPathComponent)]))
         #expect(request.model == nil)
         #expect(request.prompt.contains(#"{"works""#))
         let run = try #require(session.spec.runs?[1])

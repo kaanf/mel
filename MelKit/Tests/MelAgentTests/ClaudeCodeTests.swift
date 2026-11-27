@@ -185,6 +185,6 @@ struct ClaudeCodeTests {
         #expect(args[args.firstIndex(of: "--tools")! + 1] == "Read,Glob,Grep,Edit,Write,Bash")
         #expect(!args.contains("--model"))
         let allowed = Array(args[(args.firstIndex(of: "--allowedTools")! + 1)...])
-        #expect(allowed == ["Edit(./greet/**)", "Write(./greet/**)", "Bash(sh check.sh)", "Bash(git add *)", "Bash(git commit *)"])
+        #expect(allowed == ["Edit(./greet/**)", "Write(./greet/**)", "Bash(chmod +x greet/*)", "Bash(chmod +x ./greet/*)", "Bash(sh check.sh)", "Bash(git add *)", "Bash(git commit *)"])
     }
 }

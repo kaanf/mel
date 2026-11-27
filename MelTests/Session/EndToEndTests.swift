@@ -215,7 +215,8 @@ final class EndToEndTests {
         #expect(question.title == "How long is a freed spot held?")
         let build = try #require(script.claudeArguments.last)
         #expect(!build.contains("--model"))
-        #expect(build.contains("Bash(swift test --filter Waitlist)"))
+        #expect(build.contains("Bash(sh specs/waitlist/.mel/checks/task-1.sh)"))
+        #expect(try String(contentsOf: repo.appending(path: "specs/waitlist/.mel/checks/task-1.sh"), encoding: .utf8) == "swift test --filter Waitlist\n")
         #expect(Git.branch(at: repo) == "mel/waitlist")
 
         await session.answer(task, with: "2 hours")

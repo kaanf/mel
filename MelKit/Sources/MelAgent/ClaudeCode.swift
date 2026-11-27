@@ -62,7 +62,8 @@ public struct ClaudeCode: AgentAdapter {
         if let model = request.model { arguments += ["--model", model.rawValue] }
         // Anything not allowed here would ask, and nobody answers in --print: it is refused (fixture `build-run`).
         if let build = request.build {
-            let writes = build.folders.isEmpty ? ["Edit", "Write"] : build.folders.flatMap { ["Edit(./\($0)/**)", "Write(./\($0)/**)"] }
+            // A script it writes must be runnable: chmod +x only inside the task's folders.
+            let writes = build.folders.isEmpty ? ["Edit", "Write"] : build.folders.flatMap { ["Edit(./\($0)/**)", "Write(./\($0)/**)", "Bash(chmod +x \($0)/*)", "Bash(chmod +x ./\($0)/*)"] }
             arguments += ["--allowedTools"] + writes + build.commands.map { "Bash(\($0))" } + ["Bash(git add *)", "Bash(git commit *)"]
         }
         if let session = request.resumeSessionID { arguments += ["--resume", session] }
