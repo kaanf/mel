@@ -122,6 +122,9 @@ struct BuildView: View {
         }
         .padding(.horizontal, Theme.Space.x20)
         .frame(height: Theme.Size.columnHeader)
+        // Where the title bar was: the whole row moves the window.
+        .contentShape(Rectangle())
+        .gesture(WindowDragGesture())
     }
 
     /// Over Mel's column.
@@ -144,6 +147,9 @@ struct BuildView: View {
         }
         .padding(.horizontal, Theme.Space.x16)
         .frame(height: Theme.Size.columnHeader)
+        // Where the title bar was: the whole row moves the window.
+        .contentShape(Rectangle())
+        .gesture(WindowDragGesture())
     }
 
     private var failedCount: Int { tasks.count { if case .failed = session.status(of: $0) { true } else { false } } }

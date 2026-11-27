@@ -183,6 +183,9 @@ struct BoardView: View {
         }
         .padding(.horizontal, Theme.Space.x20)
         .frame(height: Theme.Size.columnHeader)
+        // Where the title bar was: the whole row moves the window.
+        .contentShape(Rectangle())
+        .gesture(WindowDragGesture())
     }
 
     /// Over the inbox: Files and Start Building.
@@ -208,6 +211,9 @@ struct BoardView: View {
         }
         .padding(.horizontal, Theme.Space.x16)
         .frame(height: Theme.Size.columnHeader)
+        // Where the title bar was: the whole row moves the window.
+        .contentShape(Rectangle())
+        .gesture(WindowDragGesture())
     }
 
     /// ⌘1 to ⌘5 open the files in order; Esc goes back to the plan.
