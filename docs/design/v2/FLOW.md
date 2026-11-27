@@ -35,6 +35,13 @@ Goal: before the agent starts, the user makes at most 2 decisions (write, press 
 | V2-14 | V2-14-Build-Unplaced.dc.html | Build, change couldn't be placed (tell = "unplaced") | new |
 | V2-15 | V2-15-Board-Roadmap.dc.html | Board, Roadmap tab: phases → tasks → covered criteria, every item shown (state of V2-2, props start = "ready", tab = "roadmap") | Build order tab |
 | V2-16 | V2-16-Board-Flow.dc.html | Board, Flow tab: each flow as screen cards with states and criteria, branches below, missing states red (state of V2-2, props start = "ready", tab = "flow") | Screens tab |
+| V2-17 | V2-17-Build-Run.dc.html | Build, Mel runs the tasks itself (proposal): Run instead of Copy prompt, Run the rest in the toolbar, the spec branch, one task at a time, tasks that can't run yet disabled with the reason, plain-language progress, Stop (prop scene = "running") | new |
+| V2-18 | V2-18-Build-Question.dc.html | Build, Claude Code stops for a question that changes what users see; the card in Mel's column with what each option means (scene = "question") | new |
+| V2-19 | V2-19-Build-Report.dc.html | Build, a task done: What works now, Decided while building (Change… → Tell Mel), Not done, check and commit (scene = "report") | new |
+| V2-20 | V2-20-Build-Dirty.dc.html | Build, Run refused over changes that aren't committed: Commit them / Put them aside, then run / Cancel (scene = "dirty") | new |
+| V2-21 | V2-21-Build-Stopped.dc.html | Build, a task stopped: its changes are uncommitted, Keep them (Run again goes on) / Undo them (scene = "stopped") | new |
+| V2-22 | V2-22-Build-Built.dc.html | Build, every task done on mel/<slug>: Merge into main / Open a pull request (scene = "built") | new |
+| V2-23 | V2-23-Build-Conflict.dc.html | Build, merge into main conflicts: the files, Let Claude Code resolve it / Open in Terminal / Cancel; nothing merged (scene = "conflict") | new |
 | V2-3 | V2-3-Ready.dc.html | Build: tasks in steps (run alone, at the same time, one after the other), Copy prompt, Check it, Done; back to the plan | B7 |
 | V2-6 | V2-6-Settings-Specs.dc.html | Settings › Specs: the defaults V2 stopped asking about | B1 fields, B7 toggles, A3 rules |
 

@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-17 · Build, Mel runs the tasks (proposal, 2026-11-27)
+Purpose: Mel runs each task with the user's Claude Code itself instead of handing out prompts, and turns what happens into
+  plain language. Same steps, states and checks as V2-3; Copy prompt becomes Run (Copy prompt stays as a quiet fallback).
+First version (proposal, step 1 and 2 of the orchestrator plan):
+  - One task at a time. Run starts it; other Run buttons wait ("Starts after task 2"). Parallel runs come later (worktrees).
+  - Running: what Mel is doing as plain lines (read the plan, writing the schedule screen, running the check), files changed,
+    time and tokens, Stop. "Show details" shows the raw file list.
+  - Claude Code may change files in the task's Changes folders, run the task's Verify command and commit. Anything else is
+    refused and named in the report. Settings › Specs holds this.
+  - A question: Claude Code stops only for something the user would see or that is hard to undo, as a card in Mel's column
+    with options and what each means for the user (same card as planning). The answer goes to DECISIONS.md and the spec,
+    then the same conversation goes on. The task shows "Needs you"; the sidebar lists the spec under Needs you.
+  - Done: the check passed and the commit exists. The report: What works now (plain sentences), Decided while building
+    (each with why and the alternative, Change… opens Tell Mel with a task chip), Not done, the check and the commit,
+    Show the changed files, Reopen. The decisions are added to DECISIONS.md.
+Git: Start Building opens a branch for the spec (mel/<slug>), shown in the toolbar. Tasks commit to it one after another, so
+  there is nothing to merge between tasks. Run refuses to start over changes that aren't committed: Commit them, Put them
+  aside (stash) or Cancel. Stop leaves the task's changes uncommitted: Keep them (Run again goes on from them) or Undo them.
+  When every task is done: Merge into main (fast-forward when main hasn't moved) or Open a pull request. A conflict lists the
+  files: Let Claude Code resolve it (one more run, with a report) or Open in Terminal; Mel never resolves it silently.
+Order: a task opens only when its step is open (the step before it is done) and no other task is running. Tasks that can't
+  run yet are disabled: greyed, a lock, Run off, and the reason ("Opens when step 2 is done", "Mel runs one task at a time").
+Run runs one task and stops. Run the rest (toolbar) runs the open tasks one after another, each once the one before it passed
+  its check and is committed; it stops at a question, a failed check or Stop. Settings › Specs › Run tasks: One at a time
+  (default); At the same time when possible comes later (git worktrees, merged into the spec branch as each task is done).
+Prop scene: "running" | "question" | "report" | "dirty" | "stopped" | "built" | "conflict".
+States on the canvas: V2-17 (running), V2-18 (question), V2-19 (report), V2-20 (dirty), V2-21 (stopped), V2-22 (built),
+  V2-23 (conflict).
+Comes from: V2-2 Board (Start Building). Goes to: V2-10 (Plan in the steps control), V2-6 Settings.
+-->
+<title>Build, Mel runs the tasks (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+.tl span{display:block}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Mel knows this project</span>
+</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Needs you</span>
+<sc-if value="{{asking}}" hint-placeholder-val="{{false}}"><a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none"><span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #007aff"></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">Yoga Studio Booking</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Task 2 asks a question</span></span></a></sc-if><sc-if value="{{notAsking}}" hint-placeholder-val="{{true}}"><span style="padding: 4px 8px; font-size: 12px; line-height: 16px; color: #6e6e73">Nothing waiting for you</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Building</span>
+<sc-if value="{{notAsking}}" hint-placeholder-val="{{true}}">
+<a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">Yoga Studio Booking</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{sideMeta}}</span></span>
+</a>
+</sc-if>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Filter schedule by teacher</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Task 3 of 7</span></span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Done</span>
+<sc-if value="{{allDone}}" hint-placeholder-val="{{false}}">
+<a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">Yoga Studio Booking</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">First version built</span></span>
+</a>
+</sc-if>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Double booking on fast taps</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Merged yesterday</span></span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="V2-1-New.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">New<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span></a>
+<a href="V2-6-Settings-Specs.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1">Claude Code · Ready</span>
+</a>
+</div>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; min-height: 0; max-height: 100%; display: flex; flex-direction: column">
+<div style="min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 20px; flex-wrap: wrap">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 150px">
+<span style="font-size: 15px; line-height: 19px; font-weight: 600">Yoga Studio Booking</span>
+<span style="height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.05); font-size: 11px; line-height: 14px; color: #3a3a3c">New product</span>
+</div>
+<div style="flex: 1; min-width: 180px; display: flex; justify-content: center">
+<nav aria-label="Steps" style="height: 30px; display: flex; align-items: center; gap: 2px; padding: 2px; box-sizing: border-box; border-radius: 15px; background: rgba(0,0,0,0.05)">
+<sc-for list="{{journey}}" as="j" hint-placeholder-count="3">
+<a href="{{j.href}}" aria-current="{{j.current}}" aria-disabled="{{j.disabled}}" style="{{j.style}}"><span aria-hidden="true" style="{{j.badge}}">{{j.mark}}</span>{{j.label}}</a>
+</sc-for>
+</nav>
+</div>
+<span title="Mel commits every task to this branch" style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 15px; background: rgba(0,0,0,0.05); font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #3a3a3c">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 2.5v11M4.5 9.5c0-3 7-2 7-5M11.5 2.5v2"></path></svg>mel/yoga-studio-booking</span>
+<span style="height: 30px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 15px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px; color: #3a3a3c; font-variant-numeric: tabular-nums">{{buildTokens}} tokens building</span>
+<sc-if value="{{showRest}}" hint-placeholder-val="{{true}}">
+<button onClick="{{runRest}}" aria-disabled="{{restDisabled}}" style="{{restStyle}}">Run the rest</button>
+</sc-if>
+</div>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 4px 20px 16px; display: flex; flex-direction: column; gap: 14px; max-width: 820px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{doneLine}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{nextLine}}</span>
+</div>
+<div aria-hidden="true" style="display: flex; gap: 4px">
+<sc-for list="{{segments}}" as="g" hint-placeholder-count="5">
+<span style="{{g.style}}"></span>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{isDirty}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">You have changes that aren’t committed</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">3 files in androidApp. Mel won’t start task 3 over them, so they don’t end up in its commit.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{clearDirty}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Commit them, then run</button>
+<button onClick="{{clearDirty}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Put them aside, then run</button>
+<button onClick="{{cancelDirty}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Cancel</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isBuilt}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: rgba(36,138,61,0.08); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
+<span style="font-size: 15px; line-height: 20px; font-weight: 700">The first version is built</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">All 5 tasks passed their checks and are committed on <span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px">mel/yoga-studio-booking</span>. 9 decisions were made while building; they’re in each task’s report and in DECISIONS.md.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{merge}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Merge into main</button>
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Open a pull request</button>
+<a href="V2-10-Board-Plan.dc.html" style="font-size: 12px; line-height: 16px; text-decoration: none; padding: 0 4px">Plan the 2 later stories</a>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isConflict}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">main changed while you built: 2 files conflict</span>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 16px; color: #3a3a3c">androidApp/AppNavigation.kt</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 16px; color: #3a3a3c">shared/booking/BookingStore.kt</span>
+</div>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">Nothing was merged. main and the spec branch are as they were.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; display: inline-flex; align-items: center; gap: 6px">Let Claude Code resolve it<span style="font-weight: 400; opacity: 0.85">about 6k tokens</span></button>
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Open in Terminal</button>
+<button onClick="{{cancelMerge}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Cancel</button>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Claude Code’s fix comes with a report like a task’s, and you merge after it.</span>
+</div>
+</sc-if>
+
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="3">
+<section aria-label="{{st.title}}" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: #f5f5f7">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<h2 style="margin: 0; font-size: 14px; line-height: 19px; font-weight: 700; color: {{st.titleColor}}">{{st.title}}</h2>
+<span style="flex: 1"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{st.count}}</span>
+</div>
+<sc-for list="{{st.tasks}}" as="t" hint-placeholder-count="2">
+<div style="{{t.box}}">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="{{t.dot}}"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{t.word}}</span>
+<span style="flex: 1"></span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">Task {{t.n}}</span>
+</div>
+<span style="font-size: 14px; line-height: 19px; font-weight: 600; color: {{t.titleColor}}">{{t.title}}</span>
+
+<sc-if value="{{t.isLocked}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; line-height: 17px; color: #8e8e93">{{t.plain}}</span>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button disabled aria-disabled="true" style="height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #aeaeb2">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7H11A1.5 1.5 0 0 1 12.5 8.5V12.5A1.5 1.5 0 0 1 11 14H5A1.5 1.5 0 0 1 3.5 12.5V8.5A1.5 1.5 0 0 1 5 7ZM5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>Run</button>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{t.lockText}}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{t.isStopped}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 8px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 12px; line-height: 17px; font-weight: 600; color: #6b2f00">Stopped at 2:14. 4 files changed, not committed.</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">Keep them and Run again goes on from where it stopped. Undo puts the files back as they were before task 2.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{t.keep}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Keep them</button>
+<button onClick="{{t.keep}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Undo them</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{t.isReady}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{t.plain}}</span>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button onClick="{{t.run}}" aria-disabled="{{t.runDisabled}}" style="{{t.runStyle}}">Run</button>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{t.runNote}}</span>
+<span style="flex: 1"></span>
+<button style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Copy prompt instead</button>
+</div>
+</sc-if>
+
+<sc-if value="{{t.isRunning}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div role="list" aria-label="What Mel is doing" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{t.activity}}" as="a" hint-placeholder-count="4">
+<div role="listitem" style="display: flex; align-items: flex-start; gap: 8px">
+<span style="{{a.mark}}"></span>
+<span style="flex: 1; min-width: 0; font-size: 12px; line-height: 17px; color: {{a.color}}">{{a.text}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 17px; color: #6e6e73">{{a.when}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 2px">
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73; font-variant-numeric: tabular-nums">4 files changed so far · 2:14 · 18k tokens</span>
+<span style="flex: 1"></span>
+<button onClick="{{t.toggleLog}}" aria-expanded="{{t.logOpen}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">{{t.logLabel}}</button>
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Stop</button>
+</div>
+<sc-if value="{{t.logOpen}}" hint-placeholder-val="{{false}}">
+<pre style="margin: 0; padding: 10px 12px; border-radius: 8px; background: #f5f5f7; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 16px; color: #3a3a3c; white-space: pre-wrap">Read specs/yoga-studio-booking/EXPERIENCE.md (Flow 1)
+Read shared/booking/BookingStore.kt
+Write androidApp/schedule/ScheduleScreen.kt (+142)
+Write androidApp/schedule/ScheduleViewModel.kt (+88)
+Edit androidApp/AppNavigation.kt (+6 −1)
+Write iosApp/Schedule/ScheduleView.swift (+120)</pre>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{t.isPaused}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 0.5px rgba(0,122,255,0.3)">
+<span style="flex: 1; font-size: 12px; line-height: 17px; color: #1d1d1f">Paused on a question that changes what members see. Answer it on the right and the task goes on where it stopped.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{t.hasReport}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+<span style="flex: 1; min-width: 160px; font-size: 12px; line-height: 16px; color: #3a3a3c">{{t.doneText}}</span>
+<button onClick="{{t.toggleReport}}" aria-expanded="{{t.reportOpen}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">{{t.reportLabel}}</button>
+</div>
+<sc-if value="{{t.reportOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 12px; padding-top: 4px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h3 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">What works now</h3>
+<sc-for list="{{t.works}}" as="w" hint-placeholder-count="2">
+<span style="font-size: 13px; line-height: 19px; color: #1d1d1f">{{w}}</span>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">{{t.decidedTitle}}</h3>
+<sc-for list="{{t.decisions}}" as="d" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: #f5f5f7">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="flex: 1; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600">{{d.title}}</span>
+<button onClick="{{d.change}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change…</button>
+</div>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{d.why}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Instead: {{d.instead}}</span>
+</div>
+</sc-for>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Saved in DECISIONS.md with the decisions from planning.</span>
+</div>
+<sc-if value="{{t.hasLeft}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h3 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">Not done</h3>
+<span style="font-size: 12px; line-height: 17px; color: #1d1d1f">{{t.left}}</span>
+</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 8px; border-radius: 8px; background: #f5f5f7">
+<span style="font-size: 11px; line-height: 14px; color: #248a3d; font-weight: 600">Check passed</span>
+<span style="flex: 1; min-width: 0; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; color: #3a3a3c; overflow-wrap: anywhere">{{t.verify}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{t.commit}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Show the 6 changed files</button>
+<button style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Reopen</button>
+</div>
+</div>
+</sc-if>
+</sc-if>
+</div>
+</sc-for>
+</section>
+</sc-for>
+</div>
+</main>
+
+<aside aria-label="Mel" style="max-height: 100%; flex: 1 1 300px; max-width: 100%; min-width: 0; box-sizing: border-box; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column">
+<div style="flex: 0 0 auto; padding: 16px 16px 10px; display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">{{melTitle}}</h2>
+<div role="status" style="min-height: 20px; display: flex; align-items: center; gap: 8px">
+<span style="{{pillDot}}"></span>
+<span style="flex: 1; min-width: 0; font-size: 12px; line-height: 16px; color: #3a3a3c">{{pill}}</span>
+</div>
+</div>
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px">
+
+<sc-if value="{{asking}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06)">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Task 2 · Schedule and class screens</span>
+<span style="font-size: 15px; line-height: 20px; font-weight: 600">What should members see without a connection?</span>
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73">The plan says the schedule opens in under a second, but not what happens offline. Members often open it on the way to class.</span>
+<div role="radiogroup" aria-label="What should members see without a connection?" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="2">
+<button role="radio" aria-checked="false" onClick="{{o.pick}}" style="display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); font: inherit; text-align: left; color: #1d1d1f">
+<span style="flex: 0 0 20px; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; color: #6e6e73">{{o.key}}</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px">{{o.label}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{o.means}}</span>
+</span>
+<sc-if value="{{o.suggested}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; line-height: 14px; color: #0058b9">Likely · ↩</span></sc-if>
+</button>
+</sc-for>
+</div>
+<button style="align-self: flex-start; padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Something else…</button>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Your answer goes into DECISIONS.md and the spec, then task 2 goes on.</span>
+</div>
+</sc-if>
+
+<h3 style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">How Mel builds</h3>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{how}}" as="h" hint-placeholder-count="3">
+<div style="display: flex; gap: 10px; align-items: flex-start">
+<span style="flex: 0 0 20px; height: 20px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; font-weight: 600">{{h.n}}</span>
+<span style="font-size: 12px; line-height: 17px; color: #1d1d1f">{{h.text}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">Tasks run one at a time</span>
+<span style="font-size: 11px; line-height: 15px; color: #3a3a3c">Run does one task. Run the rest does the open ones in order and stops when Mel needs you.</span>
+<span style="height: 0; border-top: 0.5px solid rgba(0,0,0,0.08); margin: 2px 0"></span>
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">What Claude Code may do here</span>
+<span style="font-size: 11px; line-height: 15px; color: #3a3a3c">Change files in the task’s folders · run the task’s check · commit. Anything else is refused, and the report says so.</span>
+<a href="V2-6-Settings-Specs.dc.html" style="font-size: 11px; line-height: 15px">Change in Settings</a>
+</div>
+</div>
+<div style="flex: 0 0 auto; padding: 10px 16px 16px; border-top: 0.5px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)">
+<label for="v17-tell" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Tell Mel</label>
+<sc-if value="{{hasChip}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 6px; background: rgba(0,122,255,0.1); font-size: 11px; line-height: 14px; color: #0058b9">{{chipLabel}}
+<button onClick="{{removeChip}}" aria-label="Remove {{chipLabel}}" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: #0058b9"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></span>
+</div>
+</sc-if>
+<textarea id="v17-tell" rows="3" value="{{tellText}}" onChange="{{onTell}}" placeholder="Tell Mel what to change…" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 19px; color: #1d1d1f"></textarea>
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="flex: 1; font-size: 11px; line-height: 15px; color: #6e6e73">Mel changes the spec, then reruns only the tasks it touches.</span>
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Send</button>
+</div>
+</div>
+</div>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"scene":{"editor":"enum","options":["running","question","report","dirty","stopped","built","conflict"],"default":"running"},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { scene: props.scene || 'running', logOpen: false, reportOpen: { 2: true }, chip: '', tellText: '' };
+}
+journey(cur, links) {
+return ['Idea', 'Plan', 'Build'].map((label, i) => {
+const on = i === cur, done = i < cur, link = links[i];
+return {
+label: label, mark: done ? '✓' : String(i + 1), href: link || '#',
+current: on ? 'step' : 'false', disabled: (!on && !link) ? 'true' : 'false',
+style: 'height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 5px; border-radius: 13px; font-size: 12px; line-height: 16px; text-decoration: none; ' + (on ? 'background: #ffffff; font-weight: 600; color: #1d1d1f; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'color: ' + (done || link ? '#3a3a3c' : '#8e8e93')) + '; pointer-events: ' + (link && !on ? 'auto' : 'none'),
+badge: 'width: 16px; height: 16px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 12px; font-weight: 700; ' + (on ? 'background: #007aff; color: #ffffff' : (done ? 'background: #248a3d; color: #ffffff' : 'background: rgba(0,0,0,0.08); color: #6e6e73'))
+};
+});
+}
+renderVals() {
+const s = this.state;
+const sc = s.scene;
+const running = sc === 'running', asking = sc === 'question', stopped = sc === 'stopped';
+const built = sc === 'built' || sc === 'conflict';
+const dot = (c, ring) => 'flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; ' + (ring ? 'border: 1.5px solid ' + c : 'background: ' + c);
+const btnPrimary = 'height: 28px; padding: 0 12px; border: 0; border-radius: 14px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; ';
+const change = (x) => () => this.setState({ chip: 'Task ' + x.n + ' · ' + x.task, tellText: x.text });
+// Each task's state per scene: done, running, paused, stopped, ready, locked.
+const states = {
+running: ['done', 'running', 'locked', 'locked', 'locked'],
+question: ['done', 'paused', 'locked', 'locked', 'locked'],
+stopped: ['done', 'stopped', 'locked', 'locked', 'locked'],
+report: ['done', 'done', 'ready', 'locked', 'locked'],
+dirty: ['done', 'done', 'ready', 'locked', 'locked'],
+built: ['done', 'done', 'done', 'done', 'done'],
+conflict: ['done', 'done', 'done', 'done', 'done']
+}[sc];
+const busy = running || asking;
+const lockWhy = (n) => n === 3 ? (busy ? 'Starts after task 2. Mel runs one task at a time.' : 'Starts after task 2 is done.') : (n === 4 || n === 5) ? (states[2] === 'ready' ? 'Opens when task 3 is done.' : 'Opens when step 2 is done.') : '';
+const report = (works, decisions, left) => ({ works: works, decisions: decisions, left: left });
+const defs = [
+Object.assign({ n: 1, title: 'Booking data and local store', plain: 'Bookings and credits are kept on the phone.', verify: './gradlew :shared:allTests --tests "*Booking*"', commit: 'a41c9e2 · 13:58', doneText: 'Done at 14:02 · 9 files · 2 decisions' },
+report(['A member can book a class with free spots for one credit.', 'Bookings are kept on the phone and are still there after a restart.'], [
+{ title: 'Each booking gets a random ID', why: 'Two phones booking at the same moment never clash, even offline.', instead: 'numbers handed out by the server; simpler to read, but booking would need a connection.' },
+{ title: 'A booking keeps the class time it was made for', why: 'If the studio moves a class, members see the old time until they open the app online.', instead: 'always look up the time; needs a connection to show a booking.' }], '')),
+Object.assign({ n: 2, title: 'Schedule and class screens', plain: 'Members see the week’s classes and open one to book it.', verify: './gradlew :androidApp:connectedCheck', commit: 'c7d0b13 · 14:21', doneText: 'Done at 14:21 · 6 files · 2 decisions' },
+report(['The schedule shows this week’s classes with free spots, on Android and iPhone.', 'Without a connection it shows the last schedule and when it was updated.'], [
+{ title: 'Offline: the last loaded schedule', why: 'Your answer during this task. Members see classes on the way to class; booking still needs a connection.', instead: 'a “You’re offline” screen.' },
+{ title: 'The week starts on Monday', why: 'The plan didn’t say. Most studios plan their week from Monday.', instead: 'start on today, or on Sunday.' }], 'The “Full” label on a class waits for task 5 (Waitlist).')),
+Object.assign({ n: 3, title: 'Class pack checkout', plain: 'Members buy a pack of classes in the app and get a receipt.', verify: './gradlew :shared:allTests --tests "*Checkout*"', commit: 'e19f4a0 · 14:40', doneText: 'Done at 14:40 · 7 files · 2 decisions' },
+report(['Members buy a 5 or 10 class pack and get a receipt by email.'], [
+{ title: 'Card details never touch the app', why: 'The payment provider’s own sheet takes the card, so the app never stores it.', instead: 'a card form in the app; more control over the look, more risk.' },
+{ title: 'Credits show after the payment is confirmed', why: 'No credits for a payment that later fails.', instead: 'show credits at once and take them back on failure.' }], '')),
+Object.assign({ n: 4, title: 'Cancel a booking', plain: 'Cancel up to 12 hours before and the credit comes back.', verify: './gradlew :shared:allTests --tests "*Cancel*"', commit: '5b2d8c1 · 14:52', doneText: 'Done at 14:52 · 3 files · 1 decision' },
+report(['Members cancel up to 12 hours before class and get the credit back.'], [
+{ title: 'The 12 hours count in the studio’s time zone', why: 'Members travelling see the same deadline as the studio.', instead: 'the phone’s time zone.' }], '')),
+Object.assign({ n: 5, title: 'Waitlist', plain: 'A freed spot goes to the first member waiting.', verify: './gradlew :shared:allTests --tests "*Waitlist*"', commit: '8ac3e77 · 15:06', doneText: 'Done at 15:06 · 4 files · 2 decisions' },
+report(['A full class offers the waitlist; the first member waiting gets a freed spot and a notification.'], [
+{ title: 'The spot is held for 2 hours', why: 'The member has time to see the notification before the spot moves on.', instead: 'give it at once, or let the first to tap take it.' },
+{ title: 'Waitlisted members aren’t charged', why: 'The credit is taken only when they get the spot.', instead: 'hold the credit while waiting.' }], ''))
+];
+const word = { done: 'Done', running: 'Running in Mel', paused: 'Needs you', stopped: 'Stopped', ready: 'Ready to run', locked: 'Can’t run yet' };
+const dots = { done: dot('#248a3d'), running: dot('#007aff', true), paused: dot('#007aff'), stopped: dot('#c25e00'), ready: dot('#007aff'), locked: dot('#aeaeb2', true) };
+const act = [
+{ text: 'Read the plan for the schedule (EXPERIENCE.md › Flow 1)', when: '0:04', st: 'done' },
+{ text: 'Wrote the schedule screen for Android', when: '0:51', st: 'done' },
+{ text: 'Wrote the schedule screen for iPhone', when: '1:40', st: 'done' },
+{ text: 'Running the check: the Android UI test', when: '2:14', st: 'now' }
+];
+const tasks = defs.map((d, i) => {
+const st = states[i];
+const open = !!s.reportOpen[d.n] && !built;
+return {
+n: d.n, title: d.title, word: word[st], dot: dots[st],
+titleColor: st === 'locked' ? '#8e8e93' : '#1d1d1f',
+box: 'display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; ' + (st === 'locked' ? 'background: rgba(255,255,255,0.55); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08)' : 'background: #ffffff; box-shadow: ' + (st === 'running' || st === 'paused' ? 'inset 0 0 0 1.5px rgba(0,122,255,0.55)' : (st === 'stopped' ? 'inset 0 0 0 1px rgba(178,80,0,0.4)' : '0 0 0 0.5px rgba(0,0,0,0.1)'))),
+isLocked: st === 'locked', lockText: lockWhy(d.n),
+isReady: st === 'ready', plain: d.plain,
+run: () => { if (sc === 'report') this.setState({ scene: 'dirty' }); },
+runDisabled: sc === 'dirty' ? 'true' : 'false',
+runStyle: btnPrimary + (sc === 'dirty' ? 'background: rgba(0,0,0,0.05); color: #aeaeb2' : 'background: #007aff; color: #ffffff'),
+runNote: sc === 'dirty' ? 'Waiting for your changes above.' : 'Runs with your Claude Code on mel/yoga-studio-booking.',
+isRunning: st === 'running', isPaused: st === 'paused', isStopped: st === 'stopped', keep: () => this.setState({ scene: 'running' }),
+activity: act.map((a) => ({ text: a.text, when: a.when, color: a.st === 'now' ? '#1d1d1f' : '#3a3a3c',
+  mark: 'flex: 0 0 8px; width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; box-sizing: border-box; ' + (a.st === 'now' ? 'border: 1.5px solid #007aff' : 'background: #248a3d') })),
+logOpen: s.logOpen, toggleLog: () => this.setState({ logOpen: !s.logOpen }), logLabel: s.logOpen ? 'Hide details' : 'Show details',
+hasReport: st === 'done', doneText: d.doneText, reportOpen: open,
+toggleReport: () => this.setState({ reportOpen: Object.assign({}, s.reportOpen, { [d.n]: !s.reportOpen[d.n] }) }),
+reportLabel: open ? 'Hide report' : 'What was done',
+works: d.works, decidedTitle: 'Decided while building · ' + d.decisions.length,
+decisions: d.decisions.map((x) => ({ title: x.title, why: x.why, instead: x.instead, change: change({ n: d.n, task: d.title, text: x.title + ': ' }) })),
+hasLeft: !!d.left, left: d.left, verify: d.verify, commit: d.commit
+};
+});
+const doneCount = states.filter((x) => x === 'done').length;
+const stepDone = (ts) => ts.filter((t) => t.word === 'Done').length;
+const steps = [
+{ title: 'Step 1', tasks: [tasks[0]] },
+{ title: 'Step 2', tasks: [tasks[1], tasks[2]] },
+{ title: 'Step 3', tasks: [tasks[3], tasks[4]] }
+].map((x) => ({ title: x.title, tasks: x.tasks, titleColor: x.tasks.every((t) => t.isLocked) ? '#8e8e93' : '#1d1d1f', count: stepDone(x.tasks) + ' of ' + x.tasks.length + ' done' }));
+const seg = (c) => 'flex: 1; height: 6px; border-radius: 3px; background: ' + c;
+const restOff = busy || sc === 'dirty';
+const next = { running: 'Mel is building task 2', question: 'Task 2 waits for your answer', stopped: 'Task 2 stopped', report: 'Next: task 3, Class pack checkout', dirty: 'Task 3 waits for your changes', built: 'All tasks done', conflict: 'Merging into main' }[sc];
+return {
+journey: this.journey(2, ['V2-1-New.dc.html', 'V2-10-Board-Plan.dc.html', null]),
+notDone: !built, allDone: built, asking: asking, notAsking: !asking,
+sideMeta: running ? 'Task 2 running' : (stopped ? 'Task 2 stopped' : doneCount + ' of 5 tasks done'),
+buildTokens: { running: '64k', question: '61k', stopped: '64k', report: '79k', dirty: '79k', built: '186k', conflict: '186k' }[sc],
+showRest: !built, runRest: () => { if (!restOff) this.setState({ scene: 'running' }); }, restDisabled: restOff ? 'true' : 'false',
+restStyle: 'height: 30px; padding: 0 14px; border: 0; border-radius: 15px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; ' + (restOff ? 'background: rgba(0,0,0,0.05); color: #aeaeb2' : 'background: #007aff; color: #ffffff'),
+isDirty: sc === 'dirty', clearDirty: () => this.setState({ scene: 'running' }), cancelDirty: () => this.setState({ scene: 'report' }),
+isBuilt: sc === 'built', isConflict: sc === 'conflict', merge: () => this.setState({ scene: 'conflict' }), cancelMerge: () => this.setState({ scene: 'built' }),
+doneLine: doneCount + ' of 5 tasks done', nextLine: next,
+segments: states.map((x) => ({ style: seg(x === 'done' ? '#248a3d' : (x === 'running' || x === 'paused' ? '#007aff' : (x === 'stopped' ? '#c25e00' : 'rgba(0,0,0,0.08)'))) })),
+steps: steps,
+melTitle: asking ? 'Mel needs you · 1' : { running: 'Mel is building', stopped: 'Stopped', report: 'Ready for task 3', dirty: 'Mel needs you · 1', built: 'Built', conflict: 'Mel needs you · 1' }[sc],
+pillDot: running ? dot('#007aff', true) : (asking || sc === 'dirty' || sc === 'conflict' ? dot('#007aff') : (stopped ? dot('#c25e00') : dot('#248a3d'))),
+pill: { running: 'Task 2 · running the check', question: 'Task 2 paused on a question', stopped: 'You stopped task 2', report: 'Task 2 passed its check and is committed', dirty: 'Commit or put aside your changes first', built: 'Every task is committed on the spec branch', conflict: 'Merge stopped: 2 files conflict' }[sc],
+options: [
+{ key: '1', label: 'Show the last loaded schedule', means: 'Members see classes on the subway; booking still needs a connection. About 1 more file.', suggested: true },
+{ key: '2', label: 'Show “You’re offline”', means: 'Simpler. Members see nothing until they’re back online.', suggested: false }
+].map((o) => Object.assign(o, { pick: () => this.setState({ scene: 'running' }) })),
+how: [
+{ n: '1', text: 'Run starts a task with your Claude Code. You see what it does in plain words.' },
+{ n: '2', text: 'It asks you only about what members would see or what is hard to undo.' },
+{ n: '3', text: 'When the check passes Mel commits, writes the report and opens the next task.' }
+],
+hasChip: !!s.chip, chipLabel: s.chip, removeChip: () => this.setState({ chip: '' }),
+tellText: s.tellText, onTell: (e) => this.setState({ tellText: e.target.value })
+};
+}
+}
+</script>
+</body>
+</html>

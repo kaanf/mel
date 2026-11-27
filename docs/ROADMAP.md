@@ -134,6 +134,21 @@ Single session on `main`. Steps 8.1–8.2 also help the current flow and can shi
 
 Gate G8: a Product spec uses fewer tokens than the same spec on v0.4; a Tell Mel change and a Remove run without rewriting a whole file; v0.5 updates in-app from v0.4.
 
+## Wave 9 · Mel runs the tasks (target: V2-17 to V2-23, OQ #39–43)
+
+Mel runs each Build task with the user's Claude Code instead of handing out prompts, and turns what happens into plain language. Token rule (OQ #42): a task run in Mel costs no more than the same prompt pasted into Claude Code. Each step ships on its own.
+
+| Step | Work |
+|---|---|
+| **9.1 Run one task** | `MelAgent`: a build run with tools limited to the task (`Changes` folders, `Verify`, `git commit`), no `--model`, a `--max-turns` ceiling; stream its tool events. `MelSpec`: the build prompt (Copy prompt + when to ask + the report's JSON shape) and the report parser (works, decisions with why and instead, not done, refused). `MelSystem`: the spec branch at Start Building, the clean-tree check (commit / stash), Keep or Undo after Stop. Session: Run, one task at a time, progress lines from tool events (Swift, no tokens), Check it on its own, the report on the card, decisions added to DECISIONS.md, Change… → Tell Mel with the task chip, tokens per task. Views: V2-17, V2-19, V2-20, V2-21; tasks that can't run yet disabled with the reason. Copy prompt stays as a fallback. Fixtures: a recorded build run. |
+| **9.2 Questions** | The agent stops with a question block (only for what users see or what is hard to undo); Mel shows it as a card in Mel's column (V2-18), the answer goes to DECISIONS.md and the spec, and the same session resumes. |
+| **9.3 Run the rest and merge** | Run the rest: the open tasks one after another, stopping at a question, a failed check or Stop. When every task is done: Merge into main / Open a pull request (V2-22); a conflict (V2-23): Let Claude Code resolve it or Open in Terminal. |
+| **9.4 Ship** | End-to-end tests with the fake script (run, question, failed check → fix, stop → keep / undo, merge, conflict). Real run on this Mac: one task in Mel against the same task pasted into Claude Code. Release. |
+
+Gate G9: a task run in Mel uses no more than 10% more tokens than the same prompt pasted into Claude Code; the user reads what was built and decided without opening a terminal; nothing reaches main without Merge.
+
+Later (OQ #43): tasks of one step at the same time, each in its own worktree.
+
 ## Status (2026-11-27)
 
 - Waves 0–3 merged to `main`. G0–G2 passed (G2's fake-script part covered by core's 5.1 EndToEndTests).
@@ -190,6 +205,7 @@ Gate G8: a Product spec uses fewer tokens than the same spec on v0.4; a Tell Mel
 - v0.8 published 2026-11-27 (build 447, notarized DMG; appcast.xml updated): Tell Mel in Build's right panel, done only once committed (`Mel-Task:`), same-time steps side by side. Fixed on the way: `.gitignore`'s `build/` hid `Mel/Views/Build/` on the case-insensitive disk, so `BuildView.swift` was missing from the repo since 0.6; now `/build/`, a clean clone builds.
 - 2026-11-27, after v0.8, from the user's first Tell Mel on Build (Kingdom and Dynasty): nothing changed and no feedback. The change reply was valid JSON followed by a `<!-- mel:questions -->` block; `jsonObject(in:)` cut from the first `{` to the last `}` (inside that block), so the reply was "unreadable" and the error showed only at the bottom of the steps. Now it takes the balanced object; change.md forbids the block; the panel shows the sent request as a message and any error, and puts the text back on failure. The reply's 3 edits all place in the real files. On `main`, not released.
 - v0.8.1 published 2026-11-27 (build 450, notarized DMG; appcast.xml updated): change replies with text after the JSON, Tell Mel on Build like a chat.
+- 2026-11-27: Mel will run the build tasks itself (OQ #39–42 decided, #43 open). Drawn as proposals V2-17 to V2-23 (running, question, report, uncommitted changes, stopped, built, merge conflict; tasks that can't run yet disabled) and synced. Wave 9 planned; nothing built yet.
 - 2026-11-27: the board's tabs are Plan / Flow / Roadmap (V2-15, V2-16, drawn on the canvas and synced). Roadmap replaces Build order: TASKS.md's `## N · Name` phases (`SpecTask.phase`, `RoadmapPhase`; no headings → by priority), each task with priority, covered criteria and check; Later stories without tasks in one line. Flow replaces Screens: `ExperienceFlow` reads flows, branches and the states table; missing states use the formatted view's chip (`StateChip`), a card opens EXPERIENCE.md. Both are Swift only, no agent run. tasks.md asks for phases; not re-recorded for real (the first real spec checks it). Not yet looked at in the Debug build. 275 tests green. On `main`, not released.
 
 ## Risks
