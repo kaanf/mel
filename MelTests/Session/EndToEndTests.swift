@@ -4,6 +4,7 @@ import Testing
 import MelAgent
 import MelSpec
 import MelStorage
+import MelSystem
 @testable import Mel
 
 /// The fixtures live in the MelAgentTests bundle; the app's tests read them from the source tree.
@@ -185,6 +186,65 @@ final class EndToEndTests {
         session.setBuild(.building)
         session.setBuild(.done)
         #expect(app.specs.first?.build == .done)
+    }
+
+    /// Wave 9 through the real runner and parser: Run on a Feature's first task stops on a question,
+    /// the answer resumes the session and ends with a report, git has the commit, the check passes.
+    @Test func featureBuildsInMel() async throws {
+        let (app, script) = makeApp([
+            ("e2e/v2/ft-intake.jsonl", []),
+            ("e2e/v2/ft-requirements.jsonl", []),
+            ("e2e/v2/ft-architecture.jsonl", []),
+            ("e2e/v2/ft-tasks.jsonl", []),
+            ("e2e/v2/ft-analyze.jsonl", []),
+            ("e2e/v2/ft-build-question.jsonl", []),
+            ("e2e/v2/ft-build-report.jsonl", []),
+        ])
+        let session = try newSpec(app, "Waitlist", size: .feature)
+        let repo = session.spec.project
+        for arguments in [["init", "--quiet"], ["add", "-A"], ["commit", "--quiet", "-m", "Start"]] { try git(repo, arguments) }
+        await session.start()
+        await session.skipIntake()
+        for _ in 0..<3 where !session.spec.isReady { await session.writeNow() }
+        #expect(session.spec.isReady)
+        try await session.startBuilding(commitToGit: true, writeAgentsFile: false)
+        let task = session.tasks[0]
+
+        await session.run(task)
+        guard case .asking(let question) = session.status(of: task) else { Issue.record("task 1 should ask"); return }
+        #expect(question.title == "How long is a freed spot held?")
+        let build = try #require(script.claudeArguments.last)
+        #expect(!build.contains("--model"))
+        #expect(build.contains("Bash(swift test --filter Waitlist)"))
+        #expect(Git.branch(at: repo) == "mel/waitlist")
+
+        await session.answer(task, with: "2 hours")
+        #expect(script.requests.last?.resumeSessionID == "e2e00000-0000-4000-8000-000000000020")
+        let run = try #require(session.spec.runs?[task.number])
+        #expect(run.report?.works == ["Members can join the waitlist for a full class."])
+        #expect(run.report?.refused == ["Bash: rm -rf .build"])
+        #expect(run.tokens == 2_910 + 3_510)
+        #expect(session.decisions.prefix(2).map(\.title) == ["The waitlist is kept on the phone", "How long is a freed spot held?"])
+        #expect(session.activity.map(\.text).contains("run swift test --filter Waitlist"))
+
+        // The fake agent commits nothing: Mel waits for the commit, then the check passes.
+        #expect(session.uncommitted == [task.number])
+        try git(repo, ["commit", "--quiet", "--allow-empty", "-m", "feat: waitlist store\n\n" + task.trailer(slug: "waitlist")])
+        app.runCheck = { _, _ in Check.Result(passed: true, output: "") }
+        await session.check(task)
+        if case .done = session.status(of: task) {} else { Issue.record("task 1 should be done") }
+        #expect(script.requests.count == 7)
+    }
+
+    private func git(_ repo: URL, _ arguments: [String]) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["-c", "user.name=Mel Tests", "-c", "user.email=tests@example.com"] + arguments
+        process.currentDirectoryURL = repo
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
     }
 
     /// A New product on the board: gating, one change run for an answer, Mel's own check as a card,
