@@ -306,7 +306,6 @@ struct BoardTell: View {
                     Text(hint)
                         .textStyle(Theme.Text.caption)
                         .foregroundStyle(Theme.Colors.secondaryLabel)
-                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     sendButton
                 }

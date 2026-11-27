@@ -6,6 +6,9 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Fixed
+- **The window fits the screen again.** With a spec's board open, the window could grow past the bottom of the screen and refuse to shrink, and full screen cut off the top and bottom. It now resizes freely and full screen shows everything.
+
 ## [0.9] · 2026-11-27
 
 ### Added
