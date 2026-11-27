@@ -419,13 +419,53 @@ final class BoardSessionTests {
         #expect(session.status(of: gifts) == .ready)
 
         // Gift mail has no Verify: done by hand, and the last task moves the spec to Done.
-        session.markDone(gifts)
+        await session.markDone(gifts)
         #expect(session.spec.build == .done)
         session.reopen(gifts)
         #expect(session.spec.build == .building)
         await session.flush()
         let saved = try JSONDecoder().decode(Spec.self, from: Data(contentsOf: session.spec.folder.appending(path: ".mel/state.json")))
         #expect(saved.runs?[1]?.state == .done)
+    }
+
+    @Test func aTaskIsDoneOnlyOnceGitHasItsCommit() async throws {
+        let (session, _) = try await readyFeature()
+        let repo = session.spec.project
+        func git(_ arguments: String...) throws {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["-c", "user.name=Mel Tests", "-c", "user.email=tests@example.com"] + arguments
+            process.currentDirectoryURL = repo
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try process.run()
+            process.waitUntilExit()
+        }
+        try git("init", "--quiet")
+        try git("commit", "--quiet", "--allow-empty", "-m", "Start")
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        let store = session.tasks[0]
+        session.copyPrompt(of: store)
+        for _ in 0..<100 where session.spec.runs?[1]?.base == nil { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(session.spec.runs?[1]?.base != nil)
+        #expect(session.prompt(of: store).contains(store.trailer(slug: session.spec.folder.lastPathComponent)))
+
+        var checks = 0
+        app?.runCheck = { _, _ in
+            await MainActor.run { checks += 1 }
+            return Check.Result(passed: true, output: "")
+        }
+        await session.check(store)
+        await session.markDone(store)
+        #expect(checks == 0)
+        #expect(session.uncommitted == [1])
+        #expect(session.status(of: store) == .running)
+
+        try git("commit", "--quiet", "--allow-empty", "-m", "feat: local store\n\n" + store.trailer(slug: session.spec.folder.lastPathComponent))
+        await session.check(store)
+        #expect(checks == 1)
+        #expect(session.uncommitted.isEmpty)
+        if case .done = session.status(of: store) {} else { Issue.record("task 1 should be done") }
     }
 
     @Test func planGoesBackToTheBoardAndStartBuildingReturns() async throws {

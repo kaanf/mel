@@ -3,8 +3,8 @@ import UniformTypeIdentifiers
 import MelSpec
 
 /// Tell Mel (V2-2, under the center): one request at a time against the current files, with the
-/// result line (V2-4) or the unplaced offer (V2-7) above the box. On Build (V2-11 to V2-14) it is
-/// pinned under the steps, carries the task a request came from and shows the working line itself.
+/// result line (V2-4) or the unplaced offer (V2-7) above the box. On Build it fills the right
+/// panel, stacked for its width, carries the task a request came from and shows the working line itself.
 struct BoardTell: View {
     let session: SpecSession
     var building = false
@@ -37,7 +37,33 @@ struct BoardTell: View {
         }
     }
 
+    @ViewBuilder
     private func result(_ change: SpecSession.ChangeResult) -> some View {
+        if building {
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+                    DesignIcon(glyph: .check, size: Theme.Size.checkIcon, weight: 2.2).foregroundStyle(Theme.Colors.success)
+                    Text(change.line).textStyle(Theme.Text.bodyBold).fixedSize(horizontal: false, vertical: true)
+                }
+                Text(sub(change))
+                    .textStyle(Theme.Text.captionLoose)
+                    .foregroundStyle(Theme.Colors.bodyLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Undo") { session.undoChange() }
+                    .buttonStyle(BoardPillStyle())
+                    .disabled(session.isRunning)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, Theme.Space.x10)
+            .padding(.horizontal, Theme.Space.x12)
+            .surface(Theme.Colors.resultFill, .result, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .accessibilityElement(children: .contain)
+        } else {
+            resultRow(change)
+        }
+    }
+
+    private func resultRow(_ change: SpecSession.ChangeResult) -> some View {
         HStack(spacing: Theme.Space.x10) {
             DesignIcon(glyph: .check, size: Theme.Size.checkIcon, weight: 2.2).foregroundStyle(Theme.Colors.success)
             VStack(alignment: .leading, spacing: Theme.Space.x2) {
@@ -93,15 +119,18 @@ struct BoardTell: View {
 
     /// V2-12: the board's working line, where the user is looking on Build.
     private func working(rewriting: DocKind?) -> some View {
-        HStack(spacing: Theme.Space.x8) {
-            StatusDot(style: .ring(Theme.Colors.accent))
-            if let rewriting {
-                Text(rewriting.fileName).textStyle(Theme.Text.codeBold)
+        HStack(alignment: .top, spacing: Theme.Space.x8) {
+            StatusDot(style: .ring(Theme.Colors.accent)).padding(.top, Theme.Space.x4)
+            VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                if let rewriting {
+                    Text(rewriting.fileName).textStyle(Theme.Text.codeBold)
+                }
+                Text(rewriting == nil ? "Changing the passages your request touches" : "Rewriting the whole file, as you chose")
+                    .textStyle(Theme.Text.callout)
+                    .foregroundStyle(Theme.Colors.bodyLabel)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text(rewriting == nil ? "Changing the passages your request touches" : "Rewriting the whole file, as you chose")
-                .textStyle(Theme.Text.callout)
-                .foregroundStyle(Theme.Colors.bodyLabel)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
             Button("Stop") { Task { await session.stop() } }
                 .buttonStyle(DesignLinkStyle())
                 .padding(.horizontal, Theme.Space.x4)
@@ -143,7 +172,7 @@ struct BoardTell: View {
             Text((unplaced.answers ? "Your answers don’t" : "“\(unplaced.request)” doesn’t") + " fit a single passage there. Nothing was changed.")
                 .textStyle(Theme.Text.calloutLoose)
                 .foregroundStyle(Theme.Colors.bodyLabel)
-            HStack(spacing: Theme.Space.x8) {
+            FlowLayout(spacing: Theme.Space.x8) {
                 Button { Task { await session.rewriteUnplaced() } } label: {
                     HStack(spacing: Theme.Space.x6) {
                         Text("Rewrite \(file?.fileName ?? "")")
@@ -166,10 +195,12 @@ struct BoardTell: View {
 
     private var box: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
-            Text("Tell Mel").textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.bodyLabel)
+            if !building {
+                Text("Tell Mel").textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.bodyLabel)
+            }
             if let task = task.wrappedValue { chip(task) }
-            TextField(building ? "Tell Mel what you found while building…" : "Tell Mel what to change, add or remove…", text: $text, axis: .vertical)
-                .lineLimit(Theme.Size.tellLines...8)
+            TextField(building ? "What did you find while building?" : "Tell Mel what to change, add or remove…", text: $text, axis: .vertical)
+                .lineLimit(building ? Theme.Size.buildTellLines...12 : Theme.Size.tellLines...8)
                 .textFieldStyle(.plain)
                 .textStyle(Theme.Text.bodyLoose)
                 .focused($isFocused)
@@ -195,37 +226,61 @@ struct BoardTell: View {
                     }
                 }
             }
-            HStack(spacing: Theme.Space.x8) {
-                Button { isAttaching = true } label: {
-                    HStack(spacing: Theme.Space.x5) {
-                        DesignIcon(glyph: .attach, size: Theme.Size.smallCheck)
-                        Text("Attach")
-                    }
-                }
-                .buttonStyle(BoardPillStyle(kind: .quiet, height: Theme.Size.buttonSmall, padding: Theme.Space.x10))
-                Text(building ? "Mel edits only the passages it touches. Prompts you already copied keep running; changed ones are marked." : "One request at a time. Mel edits only the passages it touches and logs why in DECISIONS.md.")
-                    .textStyle(Theme.Text.caption)
+            if building {
+                Text(hint)
+                    .textStyle(Theme.Text.captionLoose)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Button(building && session.isRunning ? "Changing…" : "Send") {
-                    let (sent, attached, about) = (request, files, task.wrappedValue)
-                    Task {
-                        // The request stays in the box until the run has finished.
-                        if await session.tell(sent, files: attached, task: about), text.trimmingCharacters(in: .whitespacesAndNewlines) == sent {
-                            text = ""
-                            files = []
-                            if task.wrappedValue == about { task.wrappedValue = nil }
-                        }
-                    }
+                HStack(spacing: Theme.Space.x8) {
+                    attachButton
+                    Spacer(minLength: 0)
+                    sendButton
                 }
-                .buttonStyle(BoardPillStyle(kind: .accent, padding: Theme.Space.x14))
-                .disabled(!canSend)
-                .keyboardShortcut(.return, modifiers: .command)
+            } else {
+                HStack(spacing: Theme.Space.x8) {
+                    attachButton
+                    Text(hint)
+                        .textStyle(Theme.Text.caption)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    sendButton
+                }
             }
         }
         .padding(.vertical, Theme.Space.x10)
         .padding(.horizontal, Theme.Space.x12)
         .surface(Theme.Colors.background, .storyCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    private var hint: String {
+        building ? "Mel edits only the passages it touches. Prompts you already copied keep running; changed ones are marked." : "One request at a time. Mel edits only the passages it touches and logs why in DECISIONS.md."
+    }
+
+    private var attachButton: some View {
+        Button { isAttaching = true } label: {
+            HStack(spacing: Theme.Space.x5) {
+                DesignIcon(glyph: .attach, size: Theme.Size.smallCheck)
+                Text("Attach")
+            }
+        }
+        .buttonStyle(BoardPillStyle(kind: .quiet, height: Theme.Size.buttonSmall, padding: Theme.Space.x10))
+    }
+
+    private var sendButton: some View {
+        Button(building && session.isRunning ? "Changing…" : "Send") {
+            let (sent, attached, about) = (request, files, task.wrappedValue)
+            Task {
+                // The request stays in the box until the run has finished.
+                if await session.tell(sent, files: attached, task: about), text.trimmingCharacters(in: .whitespacesAndNewlines) == sent {
+                    text = ""
+                    files = []
+                    if task.wrappedValue == about { task.wrappedValue = nil }
+                }
+            }
+        }
+        .buttonStyle(BoardPillStyle(kind: .accent, padding: Theme.Space.x14))
+        .disabled(!canSend)
+        .keyboardShortcut(.return, modifiers: .command)
     }
 }

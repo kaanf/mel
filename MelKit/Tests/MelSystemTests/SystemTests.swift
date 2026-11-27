@@ -92,6 +92,26 @@ struct GitTests {
         try text.write(to: url, atomically: true, encoding: .utf8)
     }
 
+    @Test func aTaskIsFoundByItsTrailerAfterTheCopy() throws {
+        defer { cleanUp() }
+        #expect(Git.head(at: folder) == nil)
+        try Git.initRepository(folder)
+        try Git.run(["config", "user.name", "Mel Tests"], in: folder)
+        try Git.run(["config", "user.email", "tests@example.com"], in: folder)
+        try write("a\n", "a.txt")
+        try Git.commit(paths: ["."], message: "feat: old\n\nMel-Task: yoga/3", in: folder)
+        let base = try #require(Git.head(at: folder))
+
+        #expect(Git.hasCommit(with: "Mel-Task: yoga/3", since: base, in: folder) == false)   // before the copy
+        try write("b\n", "a.txt")
+        try Git.commit(paths: ["."], message: "feat(booking): local store\n\nMel-Task: yoga/30", in: folder)
+        #expect(Git.hasCommit(with: "Mel-Task: yoga/3", since: base, in: folder) == false)
+        try write("c\n", "a.txt")
+        try Git.commit(paths: ["."], message: "feat(payments): checkout\n\nMel-Task: yoga/3", in: folder)
+        #expect(Git.hasCommit(with: "Mel-Task: yoga/3", since: base, in: folder) == true)
+        #expect(Git.hasCommit(with: "Mel-Task: yoga/3", since: "0000000", in: folder) == nil)
+    }
+
     @Test func v2SpecCommitTakesOneSpecAndProjectContext() throws {
         defer { cleanUp() }
         try Git.initRepository(folder)

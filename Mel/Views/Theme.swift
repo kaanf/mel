@@ -827,6 +827,8 @@ extension Theme.Size {
     static let howNumber: CGFloat = 20
     /// "New" on a task Tell Mel added (V2-13).
     static let newTag: CGFloat = 18
+    /// Tell Mel's text field in the right panel.
+    static let buildTellLines = 4
 }
 
 extension Theme.Radius {

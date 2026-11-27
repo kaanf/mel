@@ -17,6 +17,8 @@ import MelSystem
     private(set) var steps: [BuildStep] = []
     /// Tasks whose check is running now.
     private(set) var checking: Set<Int> = []
+    /// Tasks git has no commit for since their prompt was copied, after Check it or Mark done.
+    private(set) var uncommitted: Set<Int> = []
     private(set) var stories: [Story] = []
     private var summaries: [DocKind: DocSummary] = [:]
     private(set) var liveText: String
@@ -936,7 +938,25 @@ import MelSystem
     func copyPrompt(of task: SpecTask) {
         SystemActions.copy(prompt(of: task))
         spec.started(task.number, prompt: prompt(of: task))
+        uncommitted.remove(task.number)
         persist()
+        // The commit to look for the task's own after; outside a repo there is none and nothing is checked.
+        let folder = projectFolder
+        Task {
+            guard let head = await Task.detached(operation: { Git.head(at: folder) }).value else { return }
+            spec.based(task.number, on: head)
+            persist()
+        }
+    }
+
+    /// Git has a commit with the task's `Mel-Task:` line since its prompt was copied. True when git
+    /// can't tell (no repo, a run from before 0.7): only a known miss holds the task back.
+    private func isCommitted(_ task: SpecTask) async -> Bool {
+        guard let base = spec.runs?[task.number]?.base else { return true }
+        let (trailer, folder) = (task.trailer(slug: slug), projectFolder)
+        let found = await Task.detached { Git.hasCommit(with: trailer, since: base, in: folder) }.value
+        if found == false { uncommitted.insert(task.number) } else { uncommitted.remove(task.number) }
+        return found != false
     }
 
     /// Copy fix prompt: the failed check and its output; the task is Running again.
@@ -951,14 +971,19 @@ import MelSystem
     func check(_ task: SpecTask) async {
         guard let app, !task.verify.isEmpty, !checking.contains(task.number), tellingTask != task.number else { return }
         checking.insert(task.number)
+        guard await isCommitted(task) else {
+            checking.remove(task.number)
+            return
+        }
         let result = await app.runCheck(task.verify, projectFolder)
         checking.remove(task.number)
         spec.finished(task.number, passed: result.passed, output: result.output, prompt: prompt(of: task), of: tasks)
         persist()
     }
 
-    /// "Mark done without the check".
-    func markDone(_ task: SpecTask) {
+    /// "Mark done without the check": only once the task's commit is there.
+    func markDone(_ task: SpecTask) async {
+        guard await isCommitted(task) else { return }
         spec.finished(task.number, passed: true, byHand: true, prompt: prompt(of: task), of: tasks)
         persist()
     }

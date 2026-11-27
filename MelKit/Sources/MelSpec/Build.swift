@@ -53,13 +53,16 @@ public struct TaskRun: Codable, Hashable, Sendable {
     /// The task's prompt when it was copied or marked done. A Tell Mel change that makes it differ
     /// shows "Prompt changed" or "Changed after done" (V2-13).
     public var prompt: String?
+    /// HEAD when the prompt was first copied: the task is done only once git shows its folders changed since.
+    public var base: String?
 
-    public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil, prompt: String? = nil) {
+    public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil, prompt: String? = nil, base: String? = nil) {
         self.state = state
         self.at = at
         self.byHand = byHand
         self.output = output
         self.prompt = prompt
+        self.base = base
     }
 }
 
@@ -105,17 +108,17 @@ extension Spec {
         tasks.count { runs?[$0.number]?.state == .done }
     }
 
-    /// Copy prompt: Claude Code is on it, with `prompt`.
+    /// Copy prompt: Claude Code is on it, with `prompt`. A fix prompt keeps the first copy's commit.
     public mutating func started(_ task: Int, prompt: String) {
-        runs = (runs ?? [:]).merging([task: TaskRun(state: .running, prompt: prompt)]) { _, new in new }
+        runs = (runs ?? [:]).merging([task: TaskRun(state: .running, prompt: prompt, base: runs?[task]?.base)]) { _, new in new }
         if build == nil || build == .done { build = .building }
     }
 
     /// The check's result, or "Mark done without the check". The run keeps the prompt that was
     /// copied; `prompt` is the current one, for a task never copied. The last task done moves the spec to Done.
     public mutating func finished(_ task: Int, passed: Bool, output: String = "", byHand: Bool = false, at date: Date = .now, prompt: String, of tasks: [SpecTask]) {
-        let prompt = runs?[task]?.prompt ?? prompt
-        runs = (runs ?? [:]).merging([task: passed ? TaskRun(state: .done, at: date, byHand: byHand, prompt: prompt) : TaskRun(state: .failed, output: output, prompt: prompt)]) { _, new in new }
+        let (prompt, base) = (runs?[task]?.prompt ?? prompt, runs?[task]?.base)
+        runs = (runs ?? [:]).merging([task: passed ? TaskRun(state: .done, at: date, byHand: byHand, prompt: prompt, base: base) : TaskRun(state: .failed, output: output, prompt: prompt, base: base)]) { _, new in new }
         retasked(tasks)
     }
 
@@ -123,6 +126,12 @@ extension Spec {
     public mutating func retasked(_ tasks: [SpecTask]) {
         taskCount = tasks.count
         build = !tasks.isEmpty && doneCount(tasks) == tasks.count ? .done : .building
+    }
+
+    /// The commit HEAD was on when `task`'s prompt was first copied.
+    public mutating func based(_ task: Int, on commit: String) {
+        guard runs?[task] != nil, runs?[task]?.base == nil else { return }
+        runs?[task]?.base = commit
     }
 
     /// The prompt the user ran is no longer the task's prompt.
@@ -145,6 +154,9 @@ extension Spec {
 }
 
 extension SpecTask {
+    /// The line that ties a commit to this task; Check it and Mark done look for it in git.
+    public func trailer(slug: String) -> String { "Mel-Task: \(slug)/\(number)" }
+
     /// Copy prompt (V2-3): short, naming only the passages the task needs; AGENTS.md says where the spec is.
     public func buildPrompt(slug: String, of total: Int) -> String {
         var lines = ["Task \(number) of \(total) in specs/\(slug).",
@@ -152,6 +164,7 @@ extension SpecTask {
                      "Build: \(title)" + (covers.isEmpty ? "." : " (requirements \(covers.joined(separator: ", "))).")]
         if !changes.isEmpty { lines.append("Change only \(changes.joined(separator: ", ")).") }
         if !verify.isEmpty { lines.append("Done when this passes: \(verify)") }
+        lines.append("When it's done, commit with a Conventional Commits message (feat:, fix: …) whose last line is: \(trailer(slug: slug))")
         lines.append("If the plan doesn’t fit what you find, stop and say why instead of changing the plan.")
         return lines.joined(separator: "\n")
     }
@@ -159,7 +172,8 @@ extension SpecTask {
     /// Copy fix prompt: the failing check and its output.
     public func fixPrompt(slug: String, of total: Int, output: String) -> String {
         ["Task \(number) of \(total) in specs/\(slug): the check failed.", verify, output,
-         "Fix the code" + (changes.isEmpty ? "" : " in \(changes.joined(separator: ", "))") + " so the check passes. Don’t change the tests or the plan."]
+         "Fix the code" + (changes.isEmpty ? "" : " in \(changes.joined(separator: ", "))") + " so the check passes. Don’t change the tests or the plan.",
+         "Commit the fix with a Conventional Commits message whose last line is: \(trailer(slug: slug))"]
             .filter { !$0.isEmpty }
             .joined(separator: "\n")
     }

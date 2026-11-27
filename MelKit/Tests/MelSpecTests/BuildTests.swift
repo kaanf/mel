@@ -79,6 +79,14 @@ struct BuildTests {
         #expect(!spec.promptChanged(2, now: "two"))
         #expect(!spec.promptChanged(3, now: "anything"))
 
+        // The first copy's commit stays through a fix prompt and the check.
+        spec.started(3, prompt: "three")
+        spec.based(3, on: "abc")
+        spec.finished(3, passed: false, output: "x", prompt: "three", of: tasks)
+        spec.started(3, prompt: "three")
+        spec.based(3, on: "def")
+        #expect(spec.runs?[3]?.base == "abc")
+
         for task in tasks { spec.finished(task.number, passed: true, prompt: "", of: tasks) }
         #expect(spec.build == .done)
         let added = tasks + SpecTask.parse("- [ ] 6. Receipt email")
@@ -94,6 +102,7 @@ struct BuildTests {
         Build: Booking data and local store (requirements 1.1, 1.2).
         Change only shared/booking.
         Done when this passes: ./gradlew :shared:allTests --tests "*Booking*"
+        When it's done, commit with a Conventional Commits message (feat:, fix: …) whose last line is: Mel-Task: yoga/1
         If the plan doesn’t fit what you find, stop and say why instead of changing the plan.
         """)
         #expect(tasks[0].fixPrompt(slug: "yoga", of: 5, output: "BookingTest > spot FAILED") == """
@@ -101,6 +110,7 @@ struct BuildTests {
         ./gradlew :shared:allTests --tests "*Booking*"
         BookingTest > spot FAILED
         Fix the code in shared/booking so the check passes. Don’t change the tests or the plan.
+        Commit the fix with a Conventional Commits message whose last line is: Mel-Task: yoga/1
         """)
     }
 }

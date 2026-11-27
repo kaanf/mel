@@ -6,6 +6,11 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Changed
+- **Tell Mel opens next to the tasks.** "Tell Mel about this" now turns the right panel into Tell Mel, with the task already filled in. "Tell Mel something the plan missed" at the bottom of the panel opens it for anything else.
+- **A task is done when it's committed.** Each task's prompt asks Claude Code to commit with a Conventional Commits message ending in `Mel-Task: spec/3`. Check it and Mark done wait until git has that commit, so a task can't be marked done before the work is in.
+- **Wide windows and full screen** show the tasks of an "at the same time" step side by side, sharing the width.
+
 ## [0.7] · 2026-11-27
 
 ### Added

@@ -110,6 +110,19 @@ public enum Git {
         try run(["commit", "--quiet", "-m", message, "--"] + paths, in: directory)
     }
 
+    /// The commit HEAD points to; nil outside a repo or before the first commit.
+    public static func head(at repo: URL) -> String? {
+        (try? run(["rev-parse", "--verify", "--quiet", "HEAD"], in: repo))?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// V2-3: whether a commit after `commit` has the line `trailer` in its message (a task's
+    /// `Mel-Task: slug/3`). Nil when git can't tell (not a repo, unknown commit).
+    public static func hasCommit(with trailer: String, since commit: String, in repo: URL) -> Bool? {
+        let pattern = "^" + NSRegularExpression.escapedPattern(for: trailer) + "$"
+        guard let found = try? run(["log", "\(commit)..HEAD", "--extended-regexp", "--grep=\(pattern)", "--format=%H", "-n", "1"], in: repo) else { return nil }
+        return !found.isEmpty
+    }
+
     @discardableResult
     static func run(_ arguments: [String], in directory: URL) throws -> String {
         let process = Process()
