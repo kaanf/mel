@@ -146,6 +146,23 @@ Keep the matching strings in one table in the adapter, covered by fixture tests.
 - **Resume** (the stopped banner): a cut-off draft runs the `continue` prompt with `--resume <sessionID>` from its last complete section; an unknown session writes the file again. A stopped change or check runs again. For a usage limit with a known `resetsAt`, Resume waits for it and posts a notification then. No automatic runs.
 - **Finish it myself**: the cut-off file counts as written and opens for editing; the board goes on from there.
 
+## GitHub CLI (OQ #44)
+
+Mel reaches GitHub through the user's `gh` (found in `/opt/homebrew/bin`, `/usr/local/bin` or Settings › Agents' extra paths), never with a token of its own. Every call runs with `GH_PROMPT_DISABLED=1` and `NO_COLOR=1`, off the main actor (`MelSystem/GitHub.swift`); outputs are read by `MelSpec/GitHub.swift`, tested in `GitHubTests` and `GitHubCLITests` (shapes recorded from gh 2.96.0).
+
+| What | Call |
+|---|---|
+| Signed in? | `gh api user --jq .login` (empty or failing: signed out) |
+| Sign in (GH-1b) | `gh auth login --web --git-protocol https --hostname github.com`; without a terminal it prints `! First copy your one-time code: XXXX-XXXX` and waits; Mel shows the code and opens `https://github.com/login/device` |
+| Repos (GH-1) | `gh repo list --limit 30 --json nameWithOwner,isPrivate,isEmpty,primaryLanguage,updatedAt,url` |
+| Clone | `gh repo clone owner/name ~/Developer/name` |
+| New repo (GH-2, GH-3) | `git init` if needed, then `gh repo create name --private\|--public --source <folder> --remote origin` (`--push` once there is a commit) |
+| Existing empty repo (GH-3) | `git remote add origin <url>`, then a push of the current branch |
+| Push (GH-4) | `git -c credential.helper= -c credential.helper='!<gh> auth git-credential' push --quiet --set-upstream origin <branch>`: the base branch at Start Building, the spec branch after each task done |
+| Pull request | `gh pr create --head mel/<slug> --title <spec> --body <reports>`; the URL it prints gives the number |
+| Checks | `gh pr view N --json state,statusCheckRollup` (check runs: `conclusion`; status contexts: `state`) |
+| Merge | `gh pr merge N --squash --delete-branch [--auto]`; gh then checks out the default branch and pulls |
+
 ## Later: Codex
 
 Not in the MVP. When added, it is a `CodexAdapter` (verify flags then):

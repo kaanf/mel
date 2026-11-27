@@ -78,7 +78,7 @@ MelKit/                        (local package)
 │   ├── MelSpec/                domain: Models, Board, Change, Analysis, MarkdownParser, Prompts/ (*.md resources)  → Foundation only
 │   ├── MelStorage/             SpecStore, Library, FileWatcher                                     → MelSpec
 │   ├── MelAgent/               AgentTypes, ClaudeCode, AgentRunner, ShellPath                      → MelSpec
-│   └── MelSystem/              SystemActions, Git, Notifier                                        → (none)
+│   └── MelSystem/              SystemActions, Git, GitHubCLI, Check, Notifier                      → (none)
 └── Tests/
     ├── MelSpecTests/ MelStorageTests/
     └── MelAgentTests/ (+ Fixtures/) MelSystemTests/
