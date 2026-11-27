@@ -6,6 +6,10 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Added
+- **Move a project to the Trash.** The project menu has Move to Trash…: after you confirm, the whole folder, code included, goes to the Trash, where you can get it back.
+- **A Settings button** at the bottom of the sidebar, next to the Claude Code line.
+
 ### Changed
 - **Mel picks the model.** Files and changes are written with Claude Opus 5.5; the first questions, the check and reading your project use the faster Claude Sonnet 5.5. Your Claude Code default model no longer matters.
 

@@ -319,6 +319,8 @@ enum Theme {
         static let projectIcon: CGFloat = 15
         static let chevron: CGFloat = 12
         static let plusIcon: CGFloat = 14
+        /// 12 · the Settings gear at the end of the sidebar's agent line; not drawn.
+        static let sidebarGear: CGFloat = 12
         /// 14 · "Needs you" alert icon in the toolbar pill (B2).
         static let alertIcon: CGFloat = 14
         /// 96 · logo on A1 and A1x; 56 · its top on A1 (absolute, centered).

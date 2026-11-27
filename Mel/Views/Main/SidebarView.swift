@@ -20,6 +20,8 @@ struct SidebarView: View {
     /// The spec being renamed, and the name typed so far.
     @State private var renaming: Spec.ID?
     @State private var newName = ""
+    /// The project waiting for "Move to Trash" to be confirmed.
+    @State private var trashing: Project?
 
     private var project: Project? { state.currentProject }
     private var specs: [Spec] { project.map(state.specs) ?? [] }
@@ -90,7 +92,17 @@ struct SidebarView: View {
                 self.error = error.localizedDescription
             }
         }
-        .alert("Couldn’t Add the Folder", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+        .confirmationDialog("Move \(trashing?.name ?? "") to the Trash?", isPresented: Binding(get: { trashing != nil }, set: { if !$0 { trashing = nil } }), presenting: trashing) { project in
+            Button("Move to Trash", role: .destructive) {
+                Task {
+                    do { try await state.trashProject(project) } catch { self.error = error.localizedDescription }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { project in
+            Text("The whole folder goes to the Trash, code and specs included: \(project.folder.path). You can put it back from the Trash.")
+        }
+        .alert("Something Went Wrong", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
         } message: {
             Text(error ?? "")
         }
@@ -122,6 +134,8 @@ struct SidebarView: View {
             Button("Add Project…") { isAdding = true }
             if let project {
                 Button("Remove \(project.name) from the List") { state.removeProject(project) }
+                Button("Move \(project.name) to Trash…") { trashing = project }
+                    .disabled(state.isAgentBusy || state.readingContext.contains(project.id))
             }
             ForEach(state.missingFolders, id: \.self) { folder in
                 Button("Remove \(folder.lastPathComponent) from the List") { state.removeMissing(folder) }
@@ -285,12 +299,26 @@ struct SidebarView: View {
                     Text(agentLine).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.horizontal, Theme.Space.x4)
+                .padding(.trailing, Theme.Size.sidebarAgentLine)
                 .frame(height: Theme.Size.sidebarAgentLine)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .focusable(false)
             .help("Open Settings › Agents")
+            .overlay(alignment: .trailing) {
+                Button { openSettings() } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: Theme.Size.sidebarGear))
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .frame(width: Theme.Size.sidebarAgentLine, height: Theme.Size.sidebarAgentLine)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .focusable(false)
+                .help("Settings (⌘,)")
+                .accessibilityLabel("Settings")
+            }
         }
         .padding(Theme.Space.x10)
         .overlay(alignment: .top) {

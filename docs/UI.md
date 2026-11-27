@@ -59,7 +59,7 @@ A `TabView`: General (updates), Agents, Specs. Links that open Settings pick the
 
 ### Sidebar
 
-A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has Rename…, which changes the shown name only. The project button is a menu: the projects, "Locate …" for a missing one, Add Project…, Remove from the List. A spec row is 40 pt: dot, name, one line (`Spec.sidebarNote`). Dots: Needs you blue (#C93400 while stopped), Building blue ring, Done green. A row's menu moves a handed-off spec between Building and Done.
+A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has Rename…, which changes the shown name only. The project button is a menu: the projects, "Locate …" for a missing one, Add Project…, Remove from the List, Move to Trash… (confirmed; the whole folder, code included, goes to the Trash; off while an agent runs). A gear at the end of the agent line opens Settings. A spec row is 40 pt: dot, name, one line (`Spec.sidebarNote`). Dots: Needs you blue (#C93400 while stopped), Building blue ring, Done green. A row's menu moves a handed-off spec between Building and Done.
 
 ## What differs from the drawing
 

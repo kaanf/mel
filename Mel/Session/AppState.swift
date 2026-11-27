@@ -271,6 +271,13 @@ import MelSystem
         projectID = project.id
     }
 
+    /// Moves the whole project folder, code included, to the Trash and drops it from the list.
+    func trashProject(_ project: Project) async throws {
+        let folder = project.folder
+        try await Task.detached { try FileManager.default.trashItem(at: folder, resultingItemURL: nil) }.value
+        removeProject(project)
+    }
+
     func removeMissing(_ missing: URL) {
         missingFolders.removeAll { $0 == missing }
         saveLibrary()
