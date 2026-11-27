@@ -6,8 +6,10 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.8] · 2026-11-27
+
 ### Changed
-- **Tell Mel opens next to the tasks.** "Tell Mel about this" now turns the right panel into Tell Mel, with the task already filled in. "Tell Mel something the plan missed" at the bottom of the panel opens it for anything else.
+- **Tell Mel opens next to the tasks.** "Tell Mel about this" now turns the right panel into Tell Mel, with the task already filled in and the text box at the bottom, like a chat. "Tell Mel something the plan missed" at the bottom of the panel opens it for anything else.
 - **A task is done when it's committed.** Each task's prompt asks Claude Code to commit with a Conventional Commits message ending in `Mel-Task: spec/3`. Check it and Mark done wait until git has that commit, so a task can't be marked done before the work is in.
 - **Wide windows and full screen** show the tasks of an "at the same time" step side by side, sharing the width.
 
@@ -131,7 +133,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.7...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.8...HEAD
+[0.8]: https://github.com/kaanf/mel/compare/v0.7...v0.8
 [0.7]: https://github.com/kaanf/mel/compare/v0.6...v0.7
 [0.6]: https://github.com/kaanf/mel/compare/v0.5.2...v0.6
 [0.5.2]: https://github.com/kaanf/mel/compare/v0.5.1...v0.5.2
