@@ -112,6 +112,35 @@ struct GitTests {
         #expect(Git.hasCommit(with: "Mel-Task: yoga/3", since: "0000000", in: folder) == nil)
     }
 
+    /// V2-17 / V2-20: the spec's branch, what blocks Run (not the spec's own folder), commit or stash.
+    @Test func buildRunBranchAndUncommittedChanges() throws {
+        defer { cleanUp() }
+        try Git.initRepository(folder)
+        try Git.run(["config", "user.name", "Mel Tests"], in: folder)
+        try Git.run(["config", "user.email", "tests@example.com"], in: folder)
+        try write("a\n", "a.txt")
+        try Git.commit(paths: ["."], message: "init", in: folder)
+
+        try Git.switchTo(branch: "mel/yoga", in: folder)
+        #expect(Git.branch(at: folder) == "mel/yoga")
+        try Git.switchTo(branch: "mel/yoga", in: folder)   // again: stays
+
+        try write("{}", "specs/yoga/.mel/state.json")
+        #expect(Git.uncommitted(in: folder, excluding: ["specs/yoga"]) == [])
+        try write("b\n", "a.txt")
+        try write("new\n", "src/new.txt")
+        #expect(Git.uncommitted(in: folder, excluding: ["specs/yoga"])?.sorted() == ["a.txt", "src/new.txt"])
+
+        try Git.stash(message: "Mel: before task 1", excluding: ["specs/yoga"], in: folder)
+        #expect(Git.uncommitted(in: folder, excluding: ["specs/yoga"]) == [])
+        #expect(try Git.run(["stash", "list"], in: folder).contains("Mel: before task 1"))
+
+        try write("c\n", "a.txt")
+        try Git.commitAll(message: "chore: my changes", excluding: ["specs/yoga"], in: folder)
+        #expect(Git.uncommitted(in: folder, excluding: ["specs/yoga"]) == [])
+        #expect(try Git.run(["ls-files"], in: folder) == "a.txt\n")
+    }
+
     @Test func v2SpecCommitTakesOneSpecAndProjectContext() throws {
         defer { cleanUp() }
         try Git.initRepository(folder)

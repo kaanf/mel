@@ -130,16 +130,16 @@ struct ClaudeCodeTests {
         #expect(result.contains("questions"))
     }
 
-    /// Recorded with write tools Mel never grants; still checks thinking, permission_denied and tool results stay silent.
+    /// Recorded with write tools (build runs grant them now); thinking, permission_denied and tool results stay silent.
     @Test func editRunsGiveOnlyStepsAndResult() throws {
         let short = try events("claude-2.1.311-edit-run-short.jsonl")
         #expect(short.count == 5)  // session, step, rate limit, usage, done
-        #expect(short[1] == .step("write"))
+        #expect(short[1] == .step("write repo/hello.txt"))
         #expect(short.last == .done(result: "done"))
 
         let long = try events("claude-2.1.311-edit-run-long.jsonl")
         let steps = long.compactMap { if case .step(let s) = $0 { s } else { nil } }
-        #expect(steps == ["read src/lib.txt", "edit", "write", "write", "write", "read .git/config", "edit"])
+        #expect(steps == ["read src/lib.txt", "edit src/lib.txt", "write src/new.txt", "write c/outside.txt", "write tmp/jojo-m1-probe-outside.txt", "read .git/config", "edit .git/config"])
         #expect(text(long).isEmpty)
         guard case .done(let result) = long.last else { Issue.record("no done"); return }
         #expect(result.contains("Succeeded"))
@@ -176,5 +176,15 @@ struct ClaudeCodeTests {
         #expect(claude.parse(line: "not json") == [])
         #expect(claude.parse(line: #"{"type":"user","message":{"content":[]}}"#) == [])
         #expect(claude.parse(line: #"{"type":"system","subtype":"status","status":"requesting"}"#) == [])
+    }
+
+    /// A build run: the build tools, writes only in the task's folders, the check and git; no `--model`.
+    @Test func buildRunAllowsOnlyTheTask() {
+        let request = AgentRequest(prompt: "x", workingDirectory: folder, persistSession: true, build: BuildAccess(folders: ["greet"], commands: ["sh check.sh"]), model: nil)
+        let args = claude.arguments(for: request)
+        #expect(args[args.firstIndex(of: "--tools")! + 1] == "Read,Glob,Grep,Edit,Write,Bash")
+        #expect(!args.contains("--model"))
+        let allowed = Array(args[(args.firstIndex(of: "--allowedTools")! + 1)...])
+        #expect(allowed == ["Edit(./greet/**)", "Write(./greet/**)", "Bash(sh check.sh)", "Bash(git add *)", "Bash(git commit *)"])
     }
 }

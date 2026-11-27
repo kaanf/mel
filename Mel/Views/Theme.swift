@@ -822,6 +822,8 @@ extension Theme.Size {
     static let buildWidth: CGFloat = 820
     /// "How building works" and Tell Mel on Build (drawn 280; as wide as the board's inbox so a request has room).
     static let buildAside: CGFloat = 340
+    /// A task running in Mel shows its last 5 steps until "All steps".
+    static let runLines = 5
     /// A task card's basis in an "At the same time" step.
     static let taskCardMin: CGFloat = 260
     /// The progress bar's segments.

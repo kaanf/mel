@@ -123,6 +123,39 @@ public enum Git {
         return !found.isEmpty
     }
 
+    // MARK: Build runs (V2-17, OQ #41)
+
+    /// Every path but `excluded` (the spec's own folder, which Mel writes while building).
+    static func pathspec(excluding excluded: [String]) -> [String] {
+        ["--", "."] + excluded.map { ":(exclude)\($0)" }
+    }
+
+    /// Changes that aren't committed, outside `excluded`: Run won't start over them (V2-20). Nil outside a repo.
+    public static func uncommitted(in repo: URL, excluding excluded: [String]) -> [String]? {
+        guard let status = try? run(["status", "--porcelain", "--untracked-files=all"] + pathspec(excluding: excluded), in: repo) else { return nil }
+        return status.split(whereSeparator: \.isNewline).map { String($0.dropFirst(3)) }
+    }
+
+    /// The spec's branch, made from HEAD the first time.
+    public static func switchTo(branch: String, in repo: URL) throws {
+        if (try? run(["rev-parse", "--verify", "--quiet", "refs/heads/\(branch)"], in: repo)) != nil {
+            if Self.branch(at: repo) != branch { try run(["checkout", "--quiet", branch], in: repo) }
+        } else {
+            try run(["checkout", "--quiet", "-b", branch], in: repo)
+        }
+    }
+
+    /// "Commit them, then run": everything outside `excluded`, as one commit.
+    public static func commitAll(message: String, excluding excluded: [String], in repo: URL) throws {
+        try run(["add", "--all"] + pathspec(excluding: excluded), in: repo)
+        try run(["commit", "--quiet", "-m", message], in: repo)
+    }
+
+    /// "Put them aside" and Undo after Stop: a stash the user can get back, never a delete.
+    public static func stash(message: String, excluding excluded: [String], in repo: URL) throws {
+        try run(["stash", "push", "--include-untracked", "--quiet", "-m", message] + pathspec(excluding: excluded), in: repo)
+    }
+
     @discardableResult
     static func run(_ arguments: [String], in directory: URL) throws -> String {
         let process = Process()

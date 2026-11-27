@@ -443,6 +443,39 @@ enum PreviewData {
         spec.unplacedChange = UnplacedChange(request: "Receipts should come from the payment provider’s own emails, not from our server.", change: Change(edits: []), files: [.architecture])
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    // V2-17 to V2-21: tasks run in Mel.
+    static let buildReport = BuildReport(
+        works: ["A member can book a class with free spots for one credit.", "Bookings are kept on the phone and are still there after a restart."],
+        decisions: [.init(title: "Each booking gets a random ID", why: "Two phones booking at the same moment never clash, even offline.", instead: "numbers handed out by the server; simpler to read, but booking would need a connection."),
+                    .init(title: "A booking keeps the class time it was made for", why: "If the studio moves a class, members see the old time until they open the app online.", instead: "always look up the time; needs a connection to show a booking.")],
+        notDone: ["The “Full” label on a class waits for task 5 (Waitlist)."],
+        refused: ["Bash: mkdir -p build/tmp"])
+    /// V2-17: task 1 done in Mel with its report, task 2 running in Mel.
+    static let buildRunSession: SpecSession = {
+        var spec = tokens
+        spec.build = .building
+        spec.taskCount = 5
+        spec.runs = [1: TaskRun(state: .done, at: Calendar.current.date(bySettingHour: 14, minute: 2, second: 0, of: .now)), 2: TaskRun(state: .running)]
+        spec.runs?[1]?.report = buildReport
+        spec.runs?[1]?.tokens = 21_400
+        spec.runs?[2]?.tokens = 18_000
+        let steps = ["read specs/yoga-studio-booking/EXPERIENCE.md", "search Schedule", "write schedule/ScheduleScreen.kt", "write schedule/ScheduleViewModel.kt", "edit androidApp/AppNavigation.kt", "write Schedule/ScheduleView.swift", "run ./gradlew :androidApp:connectedCheck"]
+        return SpecSession.preview(spec, documents: boardDocuments, activity: steps.map { ActivityLine(at: .now, text: $0) }, isRunning: true, runningTask: 2)
+    }()
+    /// V2-19: task 1's report open (BuildView opens it in the preview).
+    static let buildReportSession: SpecSession = {
+        var spec = buildRunSession.spec
+        spec.runs?[2] = nil
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
+    /// V2-21: task 2 stopped in Mel.
+    static let buildStoppedSession: SpecSession = {
+        var spec = buildReportSession.spec
+        spec.runs?[2] = TaskRun(state: .stopped)
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
+    /// V2-20: Run on task 2 refused over uncommitted changes.
+    static let buildBlockedSession = SpecSession.preview(buildReportSession.spec, documents: boardDocuments, blockedRun: .init(task: 2, files: ["androidApp/AppNavigation.kt", "shared/booking/Booking.kt", "README.md", "notes.txt"]))
     /// V2-3 with every task done.
     static let builtSession: SpecSession = {
         var spec = tokens

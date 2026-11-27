@@ -53,7 +53,7 @@ struct BoardTell: View {
         if building, !session.isRunning, let error = session.lastError { errorLine(error) }
         if let unplaced = spec.unplacedChange {
             if building, session.isRunning { working(rewriting: unplaced.files.first) } else { unplacedBanner(unplaced) }
-        } else if building, session.isRunning {
+        } else if building, session.isRunning, session.runningTask == nil {
             working(rewriting: nil)
         } else if let change = session.lastChange {
             result(change)

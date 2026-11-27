@@ -37,7 +37,7 @@ Performance, speed and the least complexity that works come first. Prefer the si
 
 ## Invariants
 
-- Mel is the only writer of the spec files (`PRODUCT.md`, `REQUIREMENTS.md`, `EXPERIENCE.md`, `ARCHITECTURE.md`, `TASKS.md`, `SPEC.md`, `DECISIONS.md`). Claude Code runs without write or shell tools.
+- Mel is the only writer of the spec files (`PRODUCT.md`, `REQUIREMENTS.md`, `EXPERIENCE.md`, `ARCHITECTURE.md`, `TASKS.md`, `SPEC.md`, `DECISIONS.md`). Spec runs give Claude Code no write or shell tools; a build run (Run on Build, OQ #40) may change only the task's `Changes` folders, run its `Verify` command and `git commit`, and anything else is refused.
 - Never overwrite a user's edit; never change a Ready file without a user action: a card answer, Tell Mel, Remove, Update or Rewrite.
 - Every change to a written file is a patch. A whole file is rewritten only from "Rewrite FILE".
 - Token budget: no agent run for what Swift can do (scope moves, coverage by ID, guesses).

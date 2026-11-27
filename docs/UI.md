@@ -35,6 +35,7 @@ Settings          SettingsView (tabs)      GeneralSettings · AgentSettings · S
 | V2-3 | V2-3-Ready | `Views/Build/BuildView` | start, midway (done, running, checking, failed, waiting), all done; Quick fix; prompt shown |
 | V2-11 to V2-14 | V2-11-Build-Typing … V2-14-Build-Unplaced | `BuildView` + `Views/Board/BoardTell` (`building`) | telling Mel with a task chip, Mel changing files, change applied, unplaced (in the right panel, OQ #38) |
 | V2-15, V2-16 | V2-15-Board-Roadmap, V2-16-Board-Flow | `Views/Board/BoardPlan` (`tab`) | Roadmap with phases, without phases (by priority); Flow |
+| V2-17, V2-19 to V2-21 | V2-17-Build-Run, V2-19-Build-Report, V2-20-Build-Dirty, V2-21-Build-Stopped | `Views/Build/BuildView` (`runningInMel`, `reportView`, `blockedBanner`, `lockedRun`) | a task running in Mel (last 5 steps, files, tokens, Stop), its report under What was done, Run refused over uncommitted changes, stopped (Run again / Undo them), tasks that can't run yet with a locked Run and the reason |
 | V2-10 | V2-10-Board-Plan | `Views/Board/BoardView` | the board with the plan ready, after ‹ Plan (`Spec.reopenPlan`) |
 | V2-6 | V2-6-Settings-Specs | `Views/Settings/SpecsSettings` | project read, reading, not read, no project; adding a rule |
 | C4 | Native-Settings-Agents | `Views/Settings/SettingsView` › `AgentSettings` | ready, not signed in, not found |

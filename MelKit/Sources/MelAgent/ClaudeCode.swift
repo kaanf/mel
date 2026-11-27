@@ -55,11 +55,16 @@ public struct ClaudeCode: AgentAdapter {
             "--input-format", "text",
             "--include-partial-messages",
             "--restricted", "--strict-mcp-config",
-            "--tools", request.allowsTools ? "Read,Glob,Grep" : "",
+            "--tools", request.build != nil ? "Read,Glob,Grep,Edit,Write,Bash" : request.allowsTools ? "Read,Glob,Grep" : "",
             "--permission-mode", "manual", "--permission-prompts", "none",
             "--disable-slash-commands", "--no-chrome",
-            "--model", request.model.rawValue,
         ]
+        if let model = request.model { arguments += ["--model", model.rawValue] }
+        // Anything not allowed here would ask, and nobody answers in --print: it is refused (fixture `build-run`).
+        if let build = request.build {
+            let writes = build.folders.isEmpty ? ["Edit", "Write"] : build.folders.flatMap { ["Edit(./\($0)/**)", "Write(./\($0)/**)"] }
+            arguments += ["--allowedTools"] + writes + build.commands.map { "Bash(\($0))" } + ["Bash(git add *)", "Bash(git commit *)"]
+        }
         if let session = request.resumeSessionID { arguments += ["--resume", session] }
         if !request.persistSession { arguments.append("--no-session-persistence") }
         if let system = request.systemPrompt { arguments += ["--append-system-prompt", system] }
@@ -114,7 +119,10 @@ public struct ClaudeCode: AgentAdapter {
 
         case "result":
             // Output + uncached input (OQ #26): cache reads would inflate the count about 5×.
-            let usage: [AgentEvent] = record.usage.map { [.usage(tokens: $0.output_tokens + $0.input_tokens + ($0.cache_creation_input_tokens ?? 0))] } ?? []
+            var usage: [AgentEvent] = record.usage.map { [.usage(tokens: $0.output_tokens + $0.input_tokens + ($0.cache_creation_input_tokens ?? 0))] } ?? []
+            if let denials = record.permission_denials, !denials.isEmpty {
+                usage.append(.denied(denials.map { "\($0.tool_name): " + ($0.tool_input?.command ?? $0.tool_input?.file_path.map(Self.shortPath) ?? "") }))
+            }
             guard record.is_error == true else { return usage + [.done(result: record.result ?? "")] }
             let message = record.result ?? record.errors?.joined(separator: "\n") ?? record.subtype ?? "error"
             return usage + [.failed(Self.reason(for: message))]
@@ -135,6 +143,9 @@ public struct ClaudeCode: AgentAdapter {
         case "Read": "read \(shortPath(input?.file_path ?? ""))"
         case "Glob": "list \(input?.pattern ?? "")"
         case "Grep": "search \(input?.pattern ?? "")"
+        case "Edit": "edit \(shortPath(input?.file_path ?? ""))"
+        case "Write": "write \(shortPath(input?.file_path ?? ""))"
+        case "Bash": "run \(input?.command ?? "")"
         default: tool.lowercased()
         }
     }
@@ -156,12 +167,14 @@ public struct ClaudeCode: AgentAdapter {
         var result: String?
         var errors: [String]?
         var usage: Usage?
+        var permission_denials: [Denial]?
 
         struct Event: Decodable { var type: String; var delta: Delta? }
         struct Delta: Decodable { var type: String; var text: String? }
         struct Message: Decodable { var content: [Block] }
         struct Block: Decodable { var type: String; var name: String?; var input: Input? }
-        struct Input: Decodable { var file_path: String?; var pattern: String? }
+        struct Input: Decodable { var file_path: String?; var pattern: String?; var command: String? }
+        struct Denial: Decodable { var tool_name: String; var tool_input: Input? }
         struct RateLimit: Decodable { var status: String; var resetsAt: Double? }
         struct Usage: Decodable { var input_tokens: Int; var output_tokens: Int; var cache_creation_input_tokens: Int? }
     }

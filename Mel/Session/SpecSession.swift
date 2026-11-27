@@ -30,6 +30,13 @@ import MelSystem
     private(set) var lastChange: ChangeResult?
     /// Build: the task a running Tell Mel request came from; its check waits for the change (V2-12).
     private(set) var tellingTask: Int?
+    /// V2-17: the task Mel is running with Claude Code; one at a time.
+    private(set) var runningTask: Int?
+    /// V2-20: Run refused because these files have changes that aren't committed.
+    private(set) var blockedRun: BlockedRun?
+    struct BlockedRun: Hashable { var task: Int; var files: [String] }
+    /// What the run's permission rules refused (`permission_denials`), for its report.
+    private var denied: [String] = []
     /// Text of each file as Mel last wrote it (`.mel/approved/`), for the edit banner's Update and Undo.
     private(set) var snapshots: [DocKind: String] = [:]
     /// DECISIONS.md, newest first.
@@ -215,7 +222,7 @@ import MelSystem
     }
 
     /// One agent run. Only one runs at a time across the app (`AppState.isAgentBusy`).
-    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true, quick: Bool = false) async -> RunEnd {
+    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true, quick: Bool = false, build: (task: Int, access: BuildAccess)? = nil) async -> RunEnd {
         guard let app else { return .refused }
         guard !app.isAgentBusy else {
             lastError = "Another spec is running. Wait for it to finish or stop it."
@@ -227,7 +234,9 @@ import MelSystem
         }
         lastError = nil
         app.requestNotificationsOnce()
-        let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools, model: quick ? app.quickModel : app.writingModel)
+        // A build run uses the user's own default model, as their terminal would (OQ #42).
+        let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools,
+                                   build: build?.access, model: build != nil ? nil : quick ? app.quickModel : app.writingModel)
         app.runningSpecID = spec.id
         self.runner = runner
         isRunning = true
@@ -236,6 +245,9 @@ import MelSystem
             do {
                 loop: for try await event in runner.run(request) {
                     switch event {
+                    case .session(let id) where build != nil:
+                        spec.runs?[build!.task]?.session = id
+                        persist()
                     case .session(let id) where persistSession:
                         if spec.conversation == nil { spec.conversation = Conversation(id: id) } else { spec.conversation?.id = id }
                         persist()
@@ -245,8 +257,20 @@ import MelSystem
                         received(text)
                     case .step(let step):
                         activity.append(ActivityLine(at: .now, text: step))
+                        // No --max-turns in Claude Code: a build run that loops is stopped here (OQ #42).
+                        if build != nil, activity.count > Self.buildStepLimit {
+                            await runner.stop()
+                            end = .stopped(.crashed("Stopped after \(Self.buildStepLimit) steps without finishing."))
+                            break loop
+                        }
+                    case .denied(let list):
+                        denied += list
                     case .usage(let tokens):
                         spec.addTokens(tokens, to: step)
+                        if let build {
+                            let total = (spec.runs?[build.task]?.tokens ?? 0) + tokens
+                            spec.runs?[build.task]?.tokens = total
+                        }
                         persist()
                     case .done(let result):
                         end = .done(result)
@@ -1006,6 +1030,107 @@ import MelSystem
         persist()
     }
 
+    // MARK: - Run in Mel (V2-17, OQ #39–42)
+
+    static let buildStepLimit = 200
+    /// `specs/<slug>` and the project context: Mel writes them, so they never block Run or go into a task's stash.
+    private var melPaths: [String] { [String(spec.folder.path(percentEncoded: false).dropFirst(projectFolder.path(percentEncoded: false).count)).trimmingCharacters(in: ["/"]), ".mel"] }
+    /// The spec's branch; every task commits to it (OQ #41).
+    var branch: String { "mel/\(slug)" }
+
+    /// Run: Claude Code builds the task in the background, allowed only its folders, its check and
+    /// git commit. A stopped task goes on in the same session with its changes. When it ends, the
+    /// report goes on the card, its decisions into DECISIONS.md, and Mel runs the check.
+    func run(_ task: SpecTask) async {
+        guard runningTask == nil, let app, !app.isAgentBusy else { return }
+        let (folder, excluded, branch) = (projectFolder, melPaths, branch)
+        guard Git.isRepository(folder) else {
+            lastError = "Run needs a git repository in \(folder.lastPathComponent). Copy prompt still works."
+            return
+        }
+        let resume = status(of: task) == .stopped ? spec.runs?[task.number]?.session : nil
+        if resume == nil {
+            let files = await Task.detached { Git.uncommitted(in: folder, excluding: excluded) }.value ?? []
+            guard files.isEmpty else {
+                blockedRun = BlockedRun(task: task.number, files: files)
+                return
+            }
+        }
+        blockedRun = nil
+        do {
+            try await Task.detached { try Git.switchTo(branch: branch, in: folder) }.value
+        } catch {
+            lastError = "Couldn’t switch to \(branch): \(error.localizedDescription)"
+            return
+        }
+        if resume == nil {
+            spec.started(task.number, prompt: prompt(of: task))
+            if let head = await Task.detached(operation: { Git.head(at: folder) }).value { spec.based(task.number, on: head) }
+        } else {
+            spec.runs?[task.number]?.state = .running
+        }
+        uncommitted.remove(task.number)
+        runningTask = task.number
+        activity = []
+        denied = []
+        persist()
+        let prompt = resume == nil ? task.runPrompt(slug: slug, of: tasks.count)
+            : "Go on with task \(task.number) from where you stopped; your changes are still there. End with the JSON object, as before."
+        let access = BuildAccess(folders: task.changes, commands: task.verify.isEmpty ? [] : [task.verify])
+        let end = await run(prompt, step: .build, resume: resume, persist: true, build: (task.number, access))
+        runningTask = nil
+        switch end {
+        case .done(let reply):
+            var report = BuildReport.parse(reply) ?? BuildReport(works: [], notDone: ["Claude Code didn’t say what it did. Show the changed files to see."])
+            if report.refused.isEmpty { report.refused = denied }
+            spec.runs?[task.number]?.report = report
+            for decision in report.decisions {
+                _ = addDecision(title: decision.title, reason: decision.why + (decision.instead.isEmpty ? "" : " Instead: \(decision.instead)"), source: "Task \(task.number), while building")
+            }
+            persist()
+            if task.verify.isEmpty { await markDone(task) } else { await check(task) }
+        case .stopped(let reason):
+            spec.runs?[task.number]?.state = .stopped
+            if reason != .user { lastError = Self.message(reason) }
+            persist()
+        case .refused:
+            spec.runs?[task.number] = nil
+            persist()
+        }
+    }
+
+    /// V2-20: "Commit them, then run" or "Put them aside, then run".
+    func clearBlockedRun(commit: Bool) async {
+        guard let blocked = blockedRun, let task = tasks.first(where: { $0.number == blocked.task }) else { return }
+        let (folder, excluded, number) = (projectFolder, melPaths, task.number)
+        do {
+            try await Task.detached {
+                if commit { try Git.commitAll(message: "chore: my changes before Mel’s task \(number)", excluding: excluded, in: folder) }
+                else { try Git.stash(message: "Mel: before task \(number)", excluding: excluded, in: folder) }
+            }.value
+        } catch {
+            lastError = error.localizedDescription
+            return
+        }
+        blockedRun = nil
+        await run(task)
+    }
+
+    func cancelBlockedRun() { blockedRun = nil }
+
+    /// V2-21 Undo: the stopped task's changes go into a stash (never deleted) and it is ready again.
+    func undoStopped(_ task: SpecTask) async {
+        let (folder, excluded, number) = (projectFolder, melPaths, task.number)
+        do {
+            try await Task.detached { try Git.stash(message: "Mel: undone task \(number)", excluding: excluded, in: folder) }.value
+        } catch {
+            lastError = error.localizedDescription
+            return
+        }
+        spec.runs?[task.number] = nil
+        persist()
+    }
+
     /// "Open Terminal here": Claude Code in the project, ready for a pasted prompt.
     func openTerminal() {
         do { try SystemActions.openInTerminal(command: "claude", in: projectFolder) } catch { lastError = error.localizedDescription }
@@ -1202,10 +1327,12 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil) -> SpecSession {
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil) -> SpecSession {
         let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, snapshots: snapshots, decisions: decisions)
         session.lastChange = lastChange
         session.tellingTask = tellingTask
+        session.runningTask = runningTask
+        session.blockedRun = blockedRun
         return session
     }
 }

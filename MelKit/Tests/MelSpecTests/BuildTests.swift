@@ -113,4 +113,32 @@ struct BuildTests {
         Commit the fix with a Conventional Commits message whose last line is: Mel-Task: yoga/1
         """)
     }
+
+    @Test func reportIsTheLastWorksObject() {
+        let reply = """
+        Done. I used {braces} in prose.
+
+        ```json
+        {"works":["Members can book a class."],"decisions":[{"title":"Random IDs","why":"No clashes offline.","instead":"Server numbers."}],"notDone":[""],"refused":["Editing README.md"]}
+        ```
+        """
+        let report = BuildReport.parse(reply)
+        #expect(report?.works == ["Members can book a class."])
+        #expect(report?.decisions.first?.title == "Random IDs")
+        #expect(report?.notDone.isEmpty == true)
+        #expect(report?.refused == ["Editing README.md"])
+        #expect(BuildReport.parse("No JSON here.") == nil)
+    }
+
+    @Test func runPromptAddsTheRulesToTheCopyPrompt() {
+        let prompt = tasks[0].runPrompt(slug: "demo", of: 5)
+        #expect(prompt.hasPrefix(tasks[0].buildPrompt(slug: "demo", of: 5)))
+        #expect(prompt.contains(#"{"works""#))
+    }
+
+    @Test func aStoppedRunIsStopped() {
+        var spec = yoga
+        spec.runs = [1: TaskRun(state: .stopped)]
+        #expect(spec.status(of: tasks[0], in: BuildStep.steps(tasks)) == .stopped)
+    }
 }

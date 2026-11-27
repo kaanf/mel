@@ -8,6 +8,8 @@ public enum TokenStep: String, Codable, CodingKeyRepresentable, CaseIterable, Ha
     case checks
     /// Patch runs and whole-file rewrites.
     case changes
+    /// Tasks run in Mel (V2-17).
+    case build
 
     public init(file kind: DocKind) {
         self = TokenStep(rawValue: kind.rawValue)!
@@ -18,6 +20,7 @@ public enum TokenStep: String, Codable, CodingKeyRepresentable, CaseIterable, Ha
         case .questions: "Questions"
         case .checks: "Checks"
         case .changes: "Changes"
+        case .build: "Building"
         default: DocKind(rawValue: rawValue)!.fileName
         }
     }

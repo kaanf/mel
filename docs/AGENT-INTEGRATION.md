@@ -119,6 +119,10 @@ The prompt lists the file kind's steps (`DocKind.draftSteps`) as a writing check
 
 New and Tell Mel copy files into `specs/<slug>/.mel/attachments/`; prompts list their paths relative to the project folder, and the agent opens them with Read. Verified under the read-only flags (fixture `attachments`): a `.log` comes back as numbered text, a `.png` as an `image` tool result the model describes. The files are inside the working directory, so no extra permission or `--add-dir` is needed. The step line reads `read attachments/<file>`.
 
+### Build runs (V2-17, OQ #39–42)
+
+Run on Build starts one task in the project folder with `--tools Read,Glob,Grep,Edit,Write,Bash`, `--permission-mode manual --permission-prompts none` and `--allowedTools Edit(./<folder>/**) Write(./<folder>/**)` for each `Changes` folder (plain `Edit Write` when it names none), `Bash(<Verify>)`, `Bash(git add *)`, `Bash(git commit *)`. Anything else would prompt, nobody answers, so it is refused and listed in the result's `permission_denials` (`AgentEvent.denied`). No `--model`: the user's own default, as in their terminal. The session persists; Run again after Stop resumes it. The prompt is the Copy prompt plus `runPrompt`'s rules; the reply ends with `{"works","decisions":[{"title","why","instead"}],"notDone","refused"}` (`BuildReport.parse` takes the last `{"works"` object). Steps (`write`, `edit`, `run <command>`) are shown as plain lines in Swift. Claude Code 2.1.311 has no `--max-turns`: Mel stops a run after 200 steps. Before a run Mel switches to `mel/<slug>` and refuses over uncommitted changes outside `specs/<slug>` and `.mel` (commit or stash). Fixture: `claude-2.1.311-build-run.jsonl`.
+
 ## Prompts
 
 Prompts are Markdown files in the app bundle (`MelKit/Sources/MelSpec/Prompts/`) with `{{placeholders}}` filled by plain string replacement (`Prompt.build`), owned by core; the placeholders per prompt are pinned in `PromptTests.placeholdersPerPrompt`. Every prompt includes the four project context files (`ProjectContext.promptText`) when they exist.

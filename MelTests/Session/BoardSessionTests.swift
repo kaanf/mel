@@ -428,6 +428,84 @@ final class BoardSessionTests {
         #expect(saved.runs?[1]?.state == .done)
     }
 
+    private func git(_ repo: URL, _ arguments: String...) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        process.arguments = ["-c", "user.name=Mel Tests", "-c", "user.email=tests@example.com"] + arguments
+        process.currentDirectoryURL = repo
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        process.waitUntilExit()
+    }
+
+    /// V2-17 to V2-20: Run refuses over uncommitted changes until they're put aside, runs on the spec's
+    /// branch with only the task's access and the user's own model, and keeps the report, its decisions and tokens.
+    @Test func aTaskRunsInMelWithItsReport() async throws {
+        let (session, runner) = try await readyFeature()
+        let repo = session.spec.project
+        try git(repo, "init", "--quiet")
+        try git(repo, "commit", "--quiet", "--allow-empty", "-m", "Start")
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        let store = session.tasks[0]
+        try "mine\n".write(to: repo.appending(path: "notes.txt"), atomically: true, encoding: .utf8)
+
+        let report = #"Done.\n{"works":["Members can book a class."],"decisions":[{"title":"Random IDs","why":"No clashes offline.","instead":"Server numbers."}],"notDone":[],"refused":[]}"#
+        runner.add([[.session("build-1"), .step("write Booking/Store.swift"), .denied(["Bash: mkdir tmp"]), .usage(tokens: 9_000), .done(result: report)]])
+        await session.run(store)
+        #expect(session.blockedRun == SpecSession.BlockedRun(task: 1, files: ["notes.txt"]))
+        #expect(session.status(of: store) == .ready)
+
+        await session.clearBlockedRun(commit: false)
+        #expect(Git.branch(at: repo) == "mel/" + session.spec.folder.lastPathComponent)
+        let request = try #require(runner.requests.last)
+        #expect(request.build == BuildAccess(folders: [], commands: ["swift test"]))
+        #expect(request.model == nil)
+        #expect(request.prompt.contains(#"{"works""#))
+        let run = try #require(session.spec.runs?[1])
+        #expect(run.session == "build-1")
+        #expect(run.tokens == 9_000)
+        #expect(run.report?.works == ["Members can book a class."])
+        #expect(run.report?.refused == ["Bash: mkdir tmp"])
+        #expect(session.decisions.first?.title == "Random IDs")
+        #expect(session.decisions.first?.source == "Task 1, while building")
+        // The fake agent made no commit: the check waits for it, as for a pasted prompt.
+        #expect(session.uncommitted == [1])
+        #expect(session.status(of: store) == .running)
+        try git(repo, "commit", "--quiet", "--allow-empty", "-m", "feat: store\n\n" + store.trailer(slug: session.spec.folder.lastPathComponent))
+        app?.runCheck = { _, _ in Check.Result(passed: true, output: "") }
+        await session.check(store)
+        if case .done(let done) = session.status(of: store) { #expect(done.report != nil) } else { Issue.record("task 1 should be done") }
+    }
+
+    /// V2-21: Stop leaves the task stopped; Run again resumes its session; Undo stashes and it is ready again.
+    @Test func aStoppedRunResumesOrIsUndone() async throws {
+        let (session, runner) = try await readyFeature()
+        let repo = session.spec.project
+        try git(repo, "init", "--quiet")
+        try git(repo, "commit", "--quiet", "--allow-empty", "-m", "Start")
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        let store = session.tasks[0]
+        runner.add([[.session("build-1"), .step("write Booking/Store.swift")]])
+        let running = Task { await session.run(store) }
+        for _ in 0..<100 where !runner.hasOpenRun { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(session.runningTask == 1)
+        await session.stop()
+        await running.value
+        #expect(session.status(of: store) == .stopped)
+        #expect(session.lastError == nil)
+
+        runner.add([[.failed(.user)]])
+        await session.run(store)
+        #expect(runner.requests.last?.resumeSessionID == "build-1")
+        #expect(session.status(of: store) == .stopped)
+
+        try "half\n".write(to: repo.appending(path: "Store.swift"), atomically: true, encoding: .utf8)
+        await session.undoStopped(store)
+        #expect(session.status(of: store) == .ready)
+        #expect(!FileManager.default.fileExists(atPath: repo.appending(path: "Store.swift").path(percentEncoded: false)))
+    }
+
     @Test func aTaskIsDoneOnlyOnceGitHasItsCommit() async throws {
         let (session, _) = try await readyFeature()
         let repo = session.spec.project

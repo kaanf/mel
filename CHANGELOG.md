@@ -6,6 +6,10 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Added
+- **Run a task in Mel.** On Build, Run starts a task with your own Claude Code, on the spec's own branch. You see what it does as it goes, in plain words, and can stop it. It may change only the task's folders, run its check and commit; anything else is refused and listed. When it's done, Mel runs the check, and the task's report says what works now, what was decided while building (also in DECISIONS.md, each with Change…) and what's left. Copy prompt is still there.
+- **Uncommitted changes are safe.** Run won't start over your own uncommitted work: commit it or put it aside first. A stopped task keeps its changes for Run again, or Undo puts them in a git stash.
+
 ### Changed
 - **Roadmap instead of Build order.** The board's Roadmap shows the whole plan: phases, each phase's tasks, and under each task what it delivers, one criterion per line. New specs group their tasks into named phases; older ones are grouped by priority.
 - **Tell Mel sends on Return.** ⌥Return adds a line. For a long request, the expand button opens a larger box. On Build, the panel is wider and what you sent scrolls instead of pushing the box off the bottom.

@@ -41,6 +41,8 @@ public struct TaskRun: Codable, Hashable, Sendable {
         case failed
         /// The check passed, or the user marked it done without one (`checked == false`).
         case done
+        /// A run in Mel was stopped: its changes aren't committed until the user keeps or undoes them (V2-21).
+        case stopped
     }
 
     public var state: State
@@ -55,6 +57,10 @@ public struct TaskRun: Codable, Hashable, Sendable {
     public var prompt: String?
     /// HEAD when the prompt was first copied: the task is done only once git shows its folders changed since.
     public var base: String?
+    /// Run in Mel (V2-17): its Claude Code session, what it said it did, and the tokens it used.
+    public var session: String?
+    public var report: BuildReport?
+    public var tokens: Int?
 
     public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil, prompt: String? = nil, base: String? = nil) {
         self.state = state
@@ -74,6 +80,8 @@ public enum TaskStatus: Hashable, Sendable {
     case running
     case failed(String)
     case done(TaskRun)
+    /// Stopped in Mel, its changes not committed: Keep or Undo.
+    case stopped
 }
 
 extension Spec {
@@ -84,6 +92,7 @@ extension Spec {
             case .running: return .running
             case .failed: return .failed(run.output ?? "")
             case .done: return .done(run)
+            case .stopped: return .stopped
             }
         }
         guard let index = steps.firstIndex(where: { $0.tasks.contains(task) }) else { return .ready }
@@ -117,8 +126,11 @@ extension Spec {
     /// The check's result, or "Mark done without the check". The run keeps the prompt that was
     /// copied; `prompt` is the current one, for a task never copied. The last task done moves the spec to Done.
     public mutating func finished(_ task: Int, passed: Bool, output: String = "", byHand: Bool = false, at date: Date = .now, prompt: String, of tasks: [SpecTask]) {
-        let (prompt, base) = (runs?[task]?.prompt ?? prompt, runs?[task]?.base)
-        runs = (runs ?? [:]).merging([task: passed ? TaskRun(state: .done, at: date, byHand: byHand, prompt: prompt, base: base) : TaskRun(state: .failed, output: output, prompt: prompt, base: base)]) { _, new in new }
+        let old = runs?[task]
+        var run = passed ? TaskRun(state: .done, at: date, byHand: byHand, prompt: old?.prompt ?? prompt, base: old?.base)
+                         : TaskRun(state: .failed, output: output, prompt: old?.prompt ?? prompt, base: old?.base)
+        (run.session, run.report, run.tokens) = (old?.session, old?.report, old?.tokens)
+        runs = (runs ?? [:]).merging([task: run]) { _, new in new }
         retasked(tasks)
     }
 
@@ -169,6 +181,19 @@ extension SpecTask {
         return lines.joined(separator: "\n")
     }
 
+    /// Run (V2-17): the Copy prompt plus when to ask and the report's shape (OQ #42: a few lines, no spec files).
+    public func runPrompt(slug: String, of total: Int) -> String {
+        buildPrompt(slug: slug, of: total) + """
+
+
+        Rules for this run:
+        - Don't ask how to build it: the spec and AGENTS.md decide. Where they are silent, pick the simplest choice that fits and list it under decisions.
+        - You may change files only in the task's folders, run its check and commit. Anything else is refused; list it under refused.
+        - End your reply with one JSON object and nothing after it, written for someone who doesn't code:
+        {"works":["what a user can do now, one plain sentence each"],"decisions":[{"title":"","why":"","instead":"the alternative and what it would mean"}],"notDone":[""],"refused":[""]}
+        """
+    }
+
     /// Copy fix prompt: the failing check and its output.
     public func fixPrompt(slug: String, of total: Int, output: String) -> String {
         ["Task \(number) of \(total) in specs/\(slug): the check failed.", verify, output,
@@ -176,5 +201,45 @@ extension SpecTask {
          "Commit the fix with a Conventional Commits message whose last line is: \(trailer(slug: slug))"]
             .filter { !$0.isEmpty }
             .joined(separator: "\n")
+    }
+}
+
+/// What a task run in Mel says it did (V2-19), from the JSON object at the end of its reply.
+public struct BuildReport: Codable, Hashable, Sendable {
+    public struct Decision: Codable, Hashable, Sendable {
+        public var title: String
+        public var why: String
+        public var instead: String
+
+        public init(title: String, why: String, instead: String) {
+            (self.title, self.why, self.instead) = (title, why, instead)
+        }
+    }
+
+    public var works: [String]
+    public var decisions: [Decision]
+    public var notDone: [String]
+    public var refused: [String]
+
+    public init(works: [String] = [], decisions: [Decision] = [], notDone: [String] = [], refused: [String] = []) {
+        (self.works, self.decisions, self.notDone, self.refused) = (works, decisions, notDone, refused)
+    }
+
+    /// The last `{"works"…}` object in the reply; prose and a code fence around it are ignored. Nil when there is none.
+    public static func parse(_ reply: String) -> BuildReport? {
+        guard let start = reply.range(of: #"{"works""#, options: .backwards) ?? reply.range(of: #"{ "works""#, options: .backwards),
+              let data = try? jsonObject(in: String(reply[start.lowerBound...])),
+              let raw = try? JSONDecoder().decode(Raw.self, from: data) else { return nil }
+        let clean = { (lines: [String]?) in (lines ?? []).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
+        return BuildReport(works: clean(raw.works),
+                           decisions: (raw.decisions ?? []).filter { !$0.title.isEmpty },
+                           notDone: clean(raw.notDone), refused: clean(raw.refused))
+    }
+
+    private struct Raw: Decodable {
+        var works: [String]?
+        var decisions: [Decision]?
+        var notDone: [String]?
+        var refused: [String]?
     }
 }

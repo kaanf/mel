@@ -14,6 +14,9 @@ struct BuildView: View {
     @AppStorage("writeAgentsFile") private var writesAgentsFile = true
     @State private var copied: Int?
     @State private var shownPrompts: Set<Int> = []
+    /// Done tasks whose report is open, and running tasks with every step shown.
+    @State private var shownReports: Set<Int> = []
+    @State private var shownSteps: Set<Int> = []
     /// "Tell Mel about this": the task the next request comes from.
     @State private var telling: SpecTask?
     /// The right panel shows Tell Mel instead of How building works.
@@ -21,10 +24,11 @@ struct BuildView: View {
     /// Width inside an "At the same time" step, for how many cards go side by side.
     @State private var stepWidth = Theme.Size.buildWidth
 
-    private var showsTell: Bool { isTelling || session.isRunning || session.lastChange != nil || spec.unplacedChange != nil }
+    private var showsTell: Bool { isTelling || (session.isRunning && session.runningTask == nil) || session.lastChange != nil || spec.unplacedChange != nil }
 
-    init(session: SpecSession, telling: SpecTask? = nil) {
+    init(session: SpecSession, telling: SpecTask? = nil, report: Int? = nil) {
         self.session = session
+        _shownReports = State(initialValue: report.map { [$0] } ?? [])
         _telling = State(initialValue: telling)
         _isTelling = State(initialValue: telling != nil)
     }
@@ -40,6 +44,7 @@ struct BuildView: View {
             ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Space.x14) {
                         progress
+                        if let blocked = session.blockedRun { blockedBanner(blocked).transition(.drop) }
                         if allDone { builtBanner.transition(.drop) }
                         ForEach(Array(session.steps.enumerated()), id: \.offset) { index, step in
                             stepSection(step, index: index)
@@ -66,6 +71,8 @@ struct BuildView: View {
         .animation(.board, value: showsTell)
         .animation(.board, value: session.isRunning)
         .animation(.board, value: spec.unplacedChange)
+        .animation(.board, value: session.blockedRun)
+        .animation(.board, value: session.runningTask)
         .navigationTitle("Build: \(spec.name)")
         .toolbar { toolbar }
     }
@@ -123,6 +130,7 @@ struct BuildView: View {
     private var runningCount: Int { tasks.count { session.status(of: $0) == .running } }
 
     private var pill: String {
+        if let number = session.runningTask { return "Mel is building task \(number)" }
         if session.isRunning { return "Mel is changing the files" }
         if allDone { return "First version built" }
         if failedCount > 0 { return "A check failed" }
@@ -163,8 +171,35 @@ struct BuildView: View {
         case .done: return Theme.Colors.success
         case .failed: return Theme.Colors.failure
         case .running: return Theme.Colors.accent
+        case .stopped: return Theme.Colors.caution
         case .ready, .waiting: return Theme.Colors.separator
         }
+    }
+
+    /// V2-20: Run won't start over changes that aren't committed.
+    private func blockedBanner(_ blocked: SpecSession.BlockedRun) -> some View {
+        let shown = blocked.files.prefix(3).joined(separator: ", ") + (blocked.files.count > 3 ? " and \(blocked.files.count - 3) more" : "")
+        return VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            Text("You have changes that aren’t committed").textStyle(Theme.Text.bodyBold).foregroundStyle(Theme.Colors.bannerTitle)
+            Text("\(shown). Mel won’t start task \(blocked.task) over them, so they don’t end up in its commit.")
+                .textStyle(Theme.Text.calloutLoose)
+                .foregroundStyle(Theme.Colors.bodyLabel)
+                .fixedSize(horizontal: false, vertical: true)
+            FlowLayout(spacing: Theme.Space.x8) {
+                Button("Commit them, then run") { Task { await session.clearBlockedRun(commit: true) } }.buttonStyle(BoardPillStyle(kind: .accent))
+                Button("Put them aside, then run") { Task { await session.clearBlockedRun(commit: false) } }
+                    .buttonStyle(BoardPillStyle())
+                    .help("A git stash you can get back with git stash pop")
+                Button("Cancel", action: session.cancelBlockedRun)
+                    .buttonStyle(DesignLinkStyle())
+                    .padding(.horizontal, Theme.Space.x4)
+                    .frame(height: Theme.Size.button)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, Theme.Space.x12)
+        .padding(.horizontal, Theme.Space.x14)
+        .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
     // MARK: Built
@@ -242,8 +277,7 @@ struct BuildView: View {
         case .alone:
             return index == 0 && session.steps.count > 1 ? "Every other task builds on it. Run it by itself." : "Run it by itself."
         case .together:
-            let count = step.tasks.count == 2 ? "two" : "\(step.tasks.count)"
-            return "Open \(count) Claude Code terminals in this repo and run them all. They change different folders, so they won’t clash."
+            return "They change different folders, so they won’t clash. Mel runs one at a time; to run them together, copy each prompt into its own terminal."
         case .inOrder:
             let shared = step.tasks.dropFirst().reduce(Set(step.tasks.first?.changes ?? [])) { $0.intersection($1.changes) }.sorted()
             let order = step.tasks.map { "task \($0.number)" }
@@ -263,7 +297,7 @@ struct BuildView: View {
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
             HStack(spacing: Theme.Space.x8) {
                 StatusDot(style: dot(status, isChecking: isChecking))
-                Text(isChecking ? "Checking…" : word(status)).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+                Text(isChecking ? "Checking…" : session.runningTask == task.number ? "Running in Mel" : word(status)).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
                 if isNew {
                     Text("New")
                         .textStyle(Theme.Text.caption)
@@ -326,12 +360,46 @@ struct BuildView: View {
         } else {
             switch status {
             case .waiting(let reason):
-                Text(reason).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
+                lockedRun(reason)
             case .ready:
-                HStack(spacing: Theme.Space.x8) {
-                    Button("Copy prompt") { copy(task) }.buttonStyle(BoardPillStyle(kind: .accent))
-                    Text("Paste it into Claude Code in this repo.").textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel)
+                if let other = session.runningTask {
+                    lockedRun("Starts after task \(other). Mel runs one task at a time.")
+                } else {
+                    VStack(alignment: .leading, spacing: Theme.Space.x4) {
+                        HStack(spacing: Theme.Space.x8) {
+                            Button("Run") { Task { await session.run(task) } }
+                                .buttonStyle(BoardPillStyle(kind: .accent))
+                                .disabled(session.isRunning)
+                                .help("Claude Code builds it here on \(session.branch), then Mel runs the check")
+                            Button("Copy prompt instead") { copy(task) }
+                                .buttonStyle(DesignLinkStyle())
+                                .padding(.horizontal, Theme.Space.x4)
+                                .frame(height: Theme.Size.button)
+                        }
+                        Text("Runs with your Claude Code on \(session.branch).").textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
+            case .running where session.runningTask == task.number:
+                runningInMel(task)
+            case .stopped:
+                VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                    Text("Stopped. Its changes aren’t committed.").textStyle(Theme.Text.calloutBold).foregroundStyle(Theme.Colors.bannerTitle)
+                    Text("Run again goes on from where it stopped, with the changes. Undo puts them aside (a git stash) and the task starts fresh.")
+                        .textStyle(Theme.Text.captionLoose)
+                        .foregroundStyle(Theme.Colors.bodyLabel)
+                        .fixedSize(horizontal: false, vertical: true)
+                    FlowLayout(spacing: Theme.Space.x8) {
+                        Button("Run again") { Task { await session.run(task) } }
+                            .buttonStyle(BoardPillStyle(kind: .accent))
+                            .disabled(session.isRunning)
+                        Button("Undo them") { Task { await session.undoStopped(task) } }
+                            .buttonStyle(BoardPillStyle())
+                            .disabled(session.isRunning)
+                    }
+                }
+                .padding(.vertical, Theme.Space.x8)
+                .padding(.horizontal, Theme.Space.x10)
+                .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
             case .running:
                 VStack(alignment: .leading, spacing: Theme.Space.x6) {
                     Text(task.verify.isEmpty ? "Running in Claude Code. When it’s finished, mark it done." : "Running in Claude Code. When it says it’s finished, press Check it.")
@@ -375,16 +443,152 @@ struct BuildView: View {
                 .padding(.horizontal, Theme.Space.x10)
                 .surface(Theme.Colors.failedFill, .failedOutput, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
             case .done(let run):
-                HStack(spacing: Theme.Space.x6) {
-                    DesignIcon(glyph: .check, size: Theme.Size.doneCheck).foregroundStyle(Theme.Colors.success)
-                    Text(doneText(run, changed: changed))
-                        .textStyle(Theme.Text.callout)
-                        .foregroundStyle(Theme.Colors.bodyLabel)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("Reopen") { session.reopen(task) }.buttonStyle(DesignLinkStyle())
+                VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                    HStack(spacing: Theme.Space.x6) {
+                        DesignIcon(glyph: .check, size: Theme.Size.doneCheck).foregroundStyle(Theme.Colors.success)
+                        Text(doneText(run, changed: changed))
+                            .textStyle(Theme.Text.callout)
+                            .foregroundStyle(Theme.Colors.bodyLabel)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if run.report != nil {
+                            Button(shownReports.contains(task.number) ? "Hide report" : "What was done") { toggle(&shownReports, task.number) }
+                                .buttonStyle(DesignLinkStyle())
+                        }
+                        Button("Reopen") { session.reopen(task) }.buttonStyle(DesignLinkStyle())
+                    }
+                    if let report = run.report, shownReports.contains(task.number) {
+                        reportView(report, task: task, tokens: run.tokens).transition(.drop)
+                    }
                 }
             }
         }
+    }
+
+    // MARK: Run in Mel
+
+    /// A task that can't run yet (V2-17): Run is off and says why.
+    private func lockedRun(_ reason: String) -> some View {
+        HStack(spacing: Theme.Space.x8) {
+            HStack(spacing: Theme.Space.x6) {
+                DesignIcon(glyph: .lock, size: Theme.Size.removeIcon, weight: 1.8)
+                Text("Run")
+            }
+            .textStyle(Theme.Text.calloutBold)
+            .foregroundStyle(Theme.Colors.tertiary)
+            .padding(.horizontal, Theme.Space.x12)
+            .frame(height: Theme.Size.button)
+            .background(Theme.Colors.chipFill, in: Capsule())
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Run, not available")
+            Text(reason).textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// V2-17: what Claude Code is doing, in plain lines from its tool calls (no tokens spent on narration).
+    private func runningInMel(_ task: SpecTask) -> some View {
+        let lines = session.activity.map { plain($0.text, verify: task.verify) }
+        let all = shownSteps.contains(task.number)
+        let shown = all ? lines : Array(lines.suffix(Theme.Size.runLines))
+        let files = Set(session.activity.compactMap { line -> String? in
+            for verb in ["write ", "edit "] where line.text.hasPrefix(verb) { return String(line.text.dropFirst(verb.count)) }
+            return nil
+        }).count
+        return VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            if shown.isEmpty {
+                Text("Starting Claude Code…").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel)
+            }
+            ForEach(Array(shown.enumerated()), id: \.offset) { index, line in
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+                    StatusDot(style: index == shown.count - 1 ? .ring(Theme.Colors.accent) : .filled(Theme.Colors.success))
+                    Text(line).textStyle(Theme.Text.calloutLoose).foregroundStyle(index == shown.count - 1 ? Theme.Colors.label : Theme.Colors.bodyLabel).lineLimit(2)
+                }
+            }
+            Text("\(files) \(files == 1 ? "file" : "files") changed so far" + ((spec.runs?[task.number]?.tokens).map { " · \(TokenStep.text($0)) tokens" } ?? ""))
+                .textStyle(Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+            HStack(spacing: Theme.Space.x8) {
+                if lines.count > Theme.Size.runLines {
+                    Button(all ? "Fewer steps" : "All \(lines.count) steps") { toggle(&shownSteps, task.number) }.buttonStyle(DesignLinkStyle())
+                }
+                Spacer(minLength: 0)
+                Button("Stop") { Task { await session.stop() } }
+                    .buttonStyle(BoardPillStyle())
+                    .help("Stops Claude Code. Its changes stay, not committed: run it again or undo them.")
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// "write src/a.swift" → "Wrote src/a.swift"; the task's own check reads "Ran the check".
+    private func plain(_ step: String, verify: String) -> String {
+        let (verb, rest) = step.firstIndex(of: " ").map { (String(step[..<$0]), String(step[step.index(after: $0)...])) } ?? (step, "")
+        switch verb {
+        case "read": return "Read \(rest)"
+        case "write": return "Wrote \(rest)"
+        case "edit": return "Changed \(rest)"
+        case "list", "search": return "Looked through the code"
+        case "run": return rest == verify ? "Ran the check" : rest.hasPrefix("git commit") ? "Committed" : rest.hasPrefix("git add") ? "Staged the changes" : "Ran \(rest)"
+        default: return step.capitalizedFirst
+        }
+    }
+
+    /// V2-19: what a task run in Mel says it did, for someone who doesn't code.
+    private func reportView(_ report: BuildReport, task: SpecTask, tokens: Int?) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x12) {
+            if !report.works.isEmpty {
+                reportGroup("What works now") {
+                    ForEach(report.works, id: \.self) { Text($0).textStyle(Theme.Text.bodyLoose).fixedSize(horizontal: false, vertical: true) }
+                }
+            }
+            if !report.decisions.isEmpty {
+                reportGroup("Decided while building · \(report.decisions.count)") {
+                    ForEach(report.decisions, id: \.self) { decision in
+                        VStack(alignment: .leading, spacing: Theme.Space.x4) {
+                            HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+                                Text(decision.title).textStyle(Theme.Text.bodyBold).frame(maxWidth: .infinity, alignment: .leading)
+                                Button("Change…") {
+                                    telling = task
+                                    isTelling = true
+                                }
+                                .buttonStyle(DesignLinkStyle())
+                                .help("Tell Mel what you want instead; the request says it came from task \(task.number)")
+                            }
+                            if !decision.why.isEmpty { Text(decision.why).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.bodyLabel).fixedSize(horizontal: false, vertical: true) }
+                            if !decision.instead.isEmpty { Text("Instead: \(decision.instead)").textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true) }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, Theme.Space.x10)
+                        .padding(.horizontal, Theme.Space.x12)
+                        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                    }
+                    Text("Saved in DECISIONS.md with the decisions from planning.").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+                }
+            }
+            if !report.notDone.isEmpty {
+                reportGroup("Not done") {
+                    ForEach(report.notDone, id: \.self) { Text($0).textStyle(Theme.Text.calloutLoose).fixedSize(horizontal: false, vertical: true) }
+                }
+            }
+            if !report.refused.isEmpty {
+                reportGroup("Not allowed in this run") {
+                    ForEach(report.refused, id: \.self) { Text($0).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.bodyLabel).fixedSize(horizontal: false, vertical: true) }
+                }
+            }
+            if let tokens {
+                Text("Built with \(TokenStep.text(tokens)) tokens.").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+            }
+        }
+    }
+
+    private func reportGroup(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x6) {
+            Text(title).textStyle(Theme.Text.calloutBold).foregroundStyle(Theme.Colors.bodyLabel).accessibilityAddTraits(.isHeader)
+            content()
+        }
+    }
+
+    private func toggle(_ set: inout Set<Int>, _ number: Int) {
+        if set.contains(number) { set.remove(number) } else { set.insert(number) }
     }
 
     private func doneText(_ run: TaskRun, changed: Bool) -> String {
@@ -475,6 +679,7 @@ struct BuildView: View {
         case .running: "Running"
         case .failed: "Check failed"
         case .done: "Done"
+        case .stopped: "Stopped"
         }
     }
 
@@ -486,6 +691,7 @@ struct BuildView: View {
         case .running: return .ring(Theme.Colors.accent)
         case .failed: return .filled(Theme.Colors.failure)
         case .done: return .filled(Theme.Colors.success)
+        case .stopped: return .filled(Theme.Colors.caution)
         }
     }
 
@@ -541,8 +747,8 @@ struct BuildView: View {
                 }
             }
             VStack(alignment: .leading, spacing: Theme.Space.x6) {
-                Text("Same step: run them at the same time").textStyle(Theme.Text.calloutBold)
-                Text("Mel puts tasks in one step only when they change different folders. Steps go in order: the next one opens when every task in this one is done.")
+                Text("Tasks run one at a time").textStyle(Theme.Text.calloutBold)
+                Text("A task opens when the step before it is done and no other task is running. Tasks in one step change different folders, so you can also run them together, each in its own terminal.")
                     .textStyle(Theme.Text.captionLoose)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .fixedSize(horizontal: false, vertical: true)
@@ -584,9 +790,9 @@ struct BuildView: View {
     }
 
     private static let how = [
-        "Copy a task’s prompt and paste it into Claude Code, in this repo. The prompt names only the parts of the spec that task needs.",
-        "When Claude Code says it’s finished, press Check it. Mel runs the task’s check on your Mac.",
-        "Claude Code commits each task with its Mel-Task line. Passed and committed: the task is Done and the next ones open. Failed: copy the fix prompt, it includes the error.",
+        "Run builds a task with your Claude Code, here, on the spec’s own branch. You see what it does as it goes.",
+        "It may change only the task’s folders, run its check and commit. When it’s done, Mel runs the check on your Mac.",
+        "Passed and committed: the task is Done, its report says what works now and what was decided, and the next ones open. Prefer your terminal? Copy prompt instead, then press Check it.",
     ]
 
     /// What Start Building did, as Settings › Specs says, and the token total.
@@ -651,4 +857,24 @@ extension BuildStep {
 #Preview("Quick fix") {
     NavigationStack { BuildView(session: PreviewData.quickFixDoneSession) }
         .frame(width: 1100, height: 700)
+}
+
+#Preview("Task running in Mel") {
+    NavigationStack { BuildView(session: PreviewData.buildRunSession) }
+        .frame(width: 1036, height: 800)
+}
+
+#Preview("Task report") {
+    NavigationStack { BuildView(session: PreviewData.buildReportSession, report: 1) }
+        .frame(width: 1036, height: 800)
+}
+
+#Preview("Task stopped") {
+    NavigationStack { BuildView(session: PreviewData.buildStoppedSession) }
+        .frame(width: 1036, height: 800)
+}
+
+#Preview("Changes not committed") {
+    NavigationStack { BuildView(session: PreviewData.buildBlockedSession) }
+        .frame(width: 1036, height: 800)
 }

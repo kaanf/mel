@@ -8,17 +8,33 @@ public struct AgentRequest: Sendable {
     public var persistSession: Bool          // false → --no-session-persistence
     public var systemPrompt: String?         // stage contract → --append-system-prompt
     public var allowsTools: Bool             // false: files are inline (analyze, impact), no Read/Glob/Grep
-    public var model: AgentModel
+    /// A build run (OQ #40): may also change files in `folders` and run `commands`; nothing else.
+    public var build: BuildAccess?
+    /// nil: the user's own Claude Code default, as in their terminal (build runs, OQ #42).
+    public var model: AgentModel?
 
     public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool,
-                systemPrompt: String? = nil, allowsTools: Bool = true, model: AgentModel = .opus) {
+                systemPrompt: String? = nil, allowsTools: Bool = true, build: BuildAccess? = nil, model: AgentModel? = .opus) {
         self.prompt = prompt
         self.workingDirectory = workingDirectory
         self.resumeSessionID = resumeSessionID
         self.persistSession = persistSession
         self.systemPrompt = systemPrompt
         self.allowsTools = allowsTools
+        self.build = build
         self.model = model
+    }
+}
+
+/// What a build run may do besides reading: write in the task's folders (anywhere in the project
+/// when it names none) and run these exact commands.
+public struct BuildAccess: Sendable, Hashable {
+    public var folders: [String]
+    public var commands: [String]
+
+    public init(folders: [String], commands: [String]) {
+        self.folders = folders
+        self.commands = commands
     }
 }
 
@@ -28,6 +44,7 @@ public enum AgentEvent: Sendable, Hashable {
     case step(String)                 // "read specs/PRODUCT.md"
     case rateLimit(allowed: Bool, resetsAt: Date?)
     case usage(tokens: Int)           // what the run counts on the board, just before done/failed
+    case denied([String])             // build runs: what the permission rules refused, "Bash: mkdir -p greet"
     case done(result: String)         // final result text
     case failed(StopReason)
 }

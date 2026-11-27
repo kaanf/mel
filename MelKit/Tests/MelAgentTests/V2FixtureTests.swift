@@ -101,4 +101,18 @@ struct V2FixtureTests {
         #expect(events.contains(.step("read attachments/shot.png")))
         #expect(try result("attachments").contains("token expired (code 4012)"))
     }
+
+    /// A build run (OQ #40): Write in the task's folder, the check and `git commit` allowed; a `mkdir`
+    /// through Bash refused and reported in `permission_denials`; the report is the reply's last JSON object.
+    @Test func buildRunStepsDenialsAndReport() throws {
+        let events = try events("build-run")
+        let steps = events.compactMap { if case .step(let step) = $0 { step } else { nil } }
+        #expect(steps.contains("write greet/hello.txt"))
+        #expect(steps.contains("run sh check.sh"))
+        let denied = events.compactMap { if case .denied(let list) = $0 { list } else { nil } }.first
+        #expect(denied?.count == 1)
+        #expect(denied?.first?.hasPrefix("Bash: mkdir -p greet") == true)
+        guard case .done(let reply) = events.last else { Issue.record("no result"); return }
+        #expect(reply.contains(#""refused""#))
+    }
 }
