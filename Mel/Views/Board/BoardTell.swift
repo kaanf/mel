@@ -29,8 +29,11 @@ struct BoardTell: View {
             } else if let change = session.lastChange {
                 result(change)
             }
+            // Build: the box sits at the bottom of the panel, like a chat's.
+            if building { Spacer(minLength: 0) }
             box
         }
+        .frame(maxHeight: building ? .infinity : nil, alignment: .top)
         .onChange(of: task.wrappedValue) { _, new in if new != nil { isFocused = true } }
         .fileImporter(isPresented: $isAttaching, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { files += urls.filter { !files.contains($0) } }
