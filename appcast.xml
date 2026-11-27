@@ -3,12 +3,12 @@
     <channel>
         <title>Mel</title>
         <item>
-            <title>0.6</title>
-            <pubDate>Fri, 27 Nov 2026 03:33:43 +0000</pubDate>
-            <sparkle:version>438</sparkle:version>
-            <sparkle:shortVersionString>0.6</sparkle:shortVersionString>
+            <title>0.7</title>
+            <pubDate>Fri, 27 Nov 2026 04:39:24 +0000</pubDate>
+            <sparkle:version>441</sparkle:version>
+            <sparkle:shortVersionString>0.7</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/kaanf/mel/releases/download/v0.6/Mel-0.6.dmg" type="application/octet-stream" sparkle:edSignature="UG/nUznpKZXzIbtmKvhra8AbNkUwzdb/3pjfXLLIU8znEL5xUvv1R7cCe5N3yj8afmZT/VPQnCNZ5FuXs3HSAA==" length="4181056"/>
+            <enclosure url="https://github.com/kaanf/mel/releases/download/v0.7/Mel-0.7.dmg" type="application/octet-stream" sparkle:edSignature="mxp4ZFBlQV5If334S3rwLJfxF9BR/ZfGYeGljyr48mqxn/mDCiaIowIycKMLRMCGg7hy2VQK0fsTNMtWaiCcAA==" length="4242796"/>
         </item>
     </channel>
 </rss>
