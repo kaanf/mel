@@ -90,7 +90,7 @@ A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has
 | not drawn | Spec language row in Settings › Specs | Added in 0.4 (OQ #5) |
 | not drawn | Settings › General with the update controls | Sparkle, since 0.2 |
 | not drawn | Settings › General › Appearance (Same as the Mac / Light / Dark) | User feedback 2026-11-27; applied to every window through `NSApp.appearance` |
-| not drawn | Settings › Agents › Models: Writing and changes (Opus 5.5), Questions and checks (Sonnet 5.5) | OQ #12; the models Mel had set per run since 0.5.2 |
+| not drawn | Settings › Agents › Models: Writing and changes (Opus 5.5), Questions and checks (Sonnet 5.5), Building (Sonnet 5.5) | OQ #12, #30 |
 | Settings panes 640 / 680 wide | every pane 680 | Switching panes changed the width from the right; now only the height changes |
 | Tell Mel: ⌘Return sends | Return sends, ⌥Return adds a line; the expand button opens a 640 × 440 editor where ⌘Return sends | User feedback 2026-11-27: long requests pushed the panel and Enter didn't send |
 | not drawn | not signed in / not working on Start's agent line; attached file chips on New | States the drawing doesn't cover, in the drawn components' look |

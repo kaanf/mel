@@ -15,7 +15,7 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 ### Changed
 - **Roadmap instead of Build order.** The board's Roadmap shows the whole plan: phases, each phase's tasks, and under each task what it delivers, one criterion per line. New specs group their tasks into named phases; older ones are grouped by priority.
 - **Tell Mel sends on Return.** ⌥Return adds a line. For a long request, the expand button opens a larger box. On Build, the panel is wider and what you sent scrolls instead of pushing the box off the bottom.
-- **Choose the models and the theme.** Settings › Agents › Models sets the model for writing and changes and the one for questions and checks. Settings › General › Appearance picks Light, Dark or the Mac's setting. Every Settings pane is now the same width.
+- **Choose the models and the theme.** Settings › Agents › Models sets the model for writing and changes, the one for questions and checks, and the one that builds tasks (Sonnet by default, close to Opus on a clear task at half the price). Each kind of run also gets its own effort, and reading your project uses Haiku. Settings › General › Appearance picks Light, Dark or the Mac's setting. Every Settings pane is now the same width.
 - **Flow instead of Screens.** For a new product, Flow shows every flow as screen cards with their states, and the branches under them. A state the spec doesn't describe yet is flagged, so you see the gap before building. A card opens EXPERIENCE.md.
 
 ### Fixed
