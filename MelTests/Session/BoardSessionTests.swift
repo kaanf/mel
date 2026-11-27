@@ -478,6 +478,34 @@ final class BoardSessionTests {
         if case .done(let done) = session.status(of: store) { #expect(done.report != nil) } else { Issue.record("task 1 should be done") }
     }
 
+    /// V2-18: a run that stops on a question waits for the answer, which goes into DECISIONS.md and
+    /// resumes the same session with it; the report then ends the task as usual.
+    @Test func aRunAsksAndGoesOnWithTheAnswer() async throws {
+        let (session, runner) = try await readyFeature()
+        let repo = session.spec.project
+        try git(repo, "init", "--quiet")
+        try git(repo, "commit", "--quiet", "--allow-empty", "-m", "Start")
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        let store = session.tasks[0]
+        let question = #"{"question":{"title":"Hold a spot how long?","why":"Members see it.","options":[{"label":"2 hours","means":"Time to see the notice.","suggested":true},{"label":"At once"}]}}"#
+        runner.add([[.session("build-1"), .done(result: question)]])
+        await session.run(store)
+        guard case .asking(let asked) = session.status(of: store) else { Issue.record("should ask"); return }
+        #expect(asked.options.first?.suggested == true)
+        #expect(session.spec.sidebarNote == "Task 1 asks a question")
+        #expect(notifications.contains("Task 1 asks a question"))
+
+        runner.add([[.done(result: #"{"works":["Spots are held for 2 hours."],"decisions":[],"notDone":[],"refused":[]}"#)]])
+        await session.answer(store, with: "2 hours")
+        let request = try #require(runner.requests.last)
+        #expect(request.resumeSessionID == "build-1")
+        #expect(request.prompt.contains("My answer: 2 hours"))
+        #expect(session.decisions.first?.title == "Hold a spot how long?")
+        #expect(session.decisions.first?.reason == "2 hours")
+        #expect(session.spec.runs?[1]?.question == nil)
+        #expect(session.spec.runs?[1]?.report?.works == ["Spots are held for 2 hours."])
+    }
+
     /// V2-21: Stop leaves the task stopped; Run again resumes its session; Undo stashes and it is ready again.
     @Test func aStoppedRunResumesOrIsUndone() async throws {
         let (session, runner) = try await readyFeature()

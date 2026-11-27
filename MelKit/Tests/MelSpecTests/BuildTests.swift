@@ -141,4 +141,22 @@ struct BuildTests {
         spec.runs = [1: TaskRun(state: .stopped)]
         #expect(spec.status(of: tasks[0], in: BuildStep.steps(tasks)) == .stopped)
     }
+
+    @Test func aRunCanStopOnAQuestion() {
+        let reply = """
+        I need one answer first.
+        {"question":{"title":"What should members see offline?","why":"Members open it on the way.","options":[{"label":"The last schedule","means":"Booking still needs a connection.","suggested":true},{"label":"You’re offline"}]}}
+        """
+        let question = BuildQuestion.parse(reply)
+        #expect(question?.title == "What should members see offline?")
+        #expect(question?.options.map(\.label) == ["The last schedule", "You’re offline"])
+        #expect(question?.options.first?.suggested == true)
+        #expect(BuildQuestion.parse(#"{"works":[]}"#) == nil)
+
+        var spec = yoga
+        spec.runs = [1: TaskRun(state: .running)]
+        spec.runs?[1]?.question = question
+        #expect(spec.status(of: tasks[0], in: BuildStep.steps(tasks)) == .asking(question!))
+        #expect(tasks[0].answerPrompt("The last schedule").contains("My answer: The last schedule"))
+    }
 }

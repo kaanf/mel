@@ -1041,14 +1041,15 @@ import MelSystem
     /// Run: Claude Code builds the task in the background, allowed only its folders, its check and
     /// git commit. A stopped task goes on in the same session with its changes. When it ends, the
     /// report goes on the card, its decisions into DECISIONS.md, and Mel runs the check.
-    func run(_ task: SpecTask) async {
+    func run(_ task: SpecTask, answer: String? = nil) async {
         guard runningTask == nil, let app, !app.isAgentBusy else { return }
         let (folder, excluded, branch) = (projectFolder, melPaths, branch)
         guard Git.isRepository(folder) else {
             lastError = "Run needs a git repository in \(folder.lastPathComponent). Copy prompt still works."
             return
         }
-        let resume = status(of: task) == .stopped ? spec.runs?[task.number]?.session : nil
+        let goesOn: Bool = switch status(of: task) { case .stopped, .asking: true; default: false }
+        let resume = goesOn ? spec.runs?[task.number]?.session : nil
         if resume == nil {
             let files = await Task.detached { Git.uncommitted(in: folder, excluding: excluded) }.value ?? []
             guard files.isEmpty else {
@@ -1068,6 +1069,7 @@ import MelSystem
             if let head = await Task.detached(operation: { Git.head(at: folder) }).value { spec.based(task.number, on: head) }
         } else {
             spec.runs?[task.number]?.state = .running
+            spec.runs?[task.number]?.question = nil
         }
         uncommitted.remove(task.number)
         runningTask = task.number
@@ -1075,11 +1077,16 @@ import MelSystem
         denied = []
         persist()
         let prompt = resume == nil ? task.runPrompt(slug: slug, of: tasks.count)
-            : "Go on with task \(task.number) from where you stopped; your changes are still there. End with the JSON object, as before."
+            : answer.map(task.answerPrompt) ?? "Go on with task \(task.number) from where you stopped; your changes are still there. End with the JSON object, as before."
         let access = BuildAccess(folders: task.changes, commands: task.verify.isEmpty ? [] : [task.verify])
         let end = await run(prompt, step: .build, resume: resume, persist: true, build: (task.number, access))
         runningTask = nil
         switch end {
+        case .done(let reply) where BuildQuestion.parse(reply) != nil && BuildReport.parse(reply) == nil:
+            // V2-18: it stops on a question; the answer goes on in the same session.
+            spec.runs?[task.number]?.question = BuildQuestion.parse(reply)
+            persist()
+            app.notify("Task \(task.number) asks a question", spec.name, nil)
         case .done(let reply):
             var report = BuildReport.parse(reply) ?? BuildReport(works: [], notDone: ["Claude Code didn’t say what it did. Show the changed files to see."])
             if report.refused.isEmpty { report.refused = denied }
@@ -1097,6 +1104,13 @@ import MelSystem
             spec.runs?[task.number] = nil
             persist()
         }
+    }
+
+    /// V2-18: the user's answer goes into DECISIONS.md, then the task goes on where it stopped.
+    func answer(_ task: SpecTask, with answer: String) async {
+        guard case .asking(let question) = status(of: task), !answer.isEmpty else { return }
+        _ = addDecision(title: question.title, reason: answer, source: "Task \(task.number) asked while building")
+        await run(task, answer: answer)
     }
 
     /// V2-20: "Commit them, then run" or "Put them aside, then run".

@@ -17,6 +17,9 @@ struct BuildView: View {
     /// Done tasks whose report is open, and running tasks with every step shown.
     @State private var shownReports: Set<Int> = []
     @State private var shownSteps: Set<Int> = []
+    /// The "Something else…" answer to a task's question.
+    @State private var otherAnswer = ""
+    @State private var answersOther = false
     /// "Tell Mel about this": the task the next request comes from.
     @State private var telling: SpecTask?
     /// The right panel shows Tell Mel instead of How building works.
@@ -131,6 +134,7 @@ struct BuildView: View {
 
     private var pill: String {
         if let number = session.runningTask { return "Mel is building task \(number)" }
+        if let (task, _) = asking { return "Task \(task.number) asks a question" }
         if session.isRunning { return "Mel is changing the files" }
         if allDone { return "First version built" }
         if failedCount > 0 { return "A check failed" }
@@ -158,6 +162,7 @@ struct BuildView: View {
     private var nextLine: String {
         if allDone { return "" }
         let statuses = tasks.map { ($0, session.status(of: $0)) }
+        if let (task, _) = asking { return "Task \(task.number) waits for your answer." }
         if let failed = statuses.first(where: { if case .failed = $0.1 { true } else { false } }) { return "Task \(failed.0.number) needs a fix." }
         let ready = statuses.filter { $0.1 == .ready }.map(\.0.number)
         if !ready.isEmpty { return "Next: task " + ready.map(String.init).joined(separator: " and ") + (ready.count > 1 ? ", at the same time." : ".") }
@@ -172,6 +177,7 @@ struct BuildView: View {
         case .failed: return Theme.Colors.failure
         case .running: return Theme.Colors.accent
         case .stopped: return Theme.Colors.caution
+        case .asking: return Theme.Colors.accent
         case .ready, .waiting: return Theme.Colors.separator
         }
     }
@@ -364,6 +370,8 @@ struct BuildView: View {
             case .ready:
                 if let other = session.runningTask {
                     lockedRun("Starts after task \(other). Mel runs one task at a time.")
+                } else if let (other, _) = asking {
+                    lockedRun("Starts after task \(other.number), which waits for your answer.")
                 } else {
                     VStack(alignment: .leading, spacing: Theme.Space.x4) {
                         HStack(spacing: Theme.Space.x8) {
@@ -381,6 +389,15 @@ struct BuildView: View {
                 }
             case .running where session.runningTask == task.number:
                 runningInMel(task)
+            case .asking:
+                Text("Paused on a question about what users will see. Answer it on the right and the task goes on where it stopped.")
+                    .textStyle(Theme.Text.calloutLoose)
+                    .foregroundStyle(Theme.Colors.label)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, Theme.Space.x8)
+                    .padding(.horizontal, Theme.Space.x10)
+                    .surface(Theme.Colors.accentTint, .editBanner, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
             case .stopped:
                 VStack(alignment: .leading, spacing: Theme.Space.x8) {
                     Text("Stopped. Its changes aren’t committed.").textStyle(Theme.Text.calloutBold).foregroundStyle(Theme.Colors.bannerTitle)
@@ -680,6 +697,7 @@ struct BuildView: View {
         case .failed: "Check failed"
         case .done: "Done"
         case .stopped: "Stopped"
+        case .asking: "Needs you"
         }
     }
 
@@ -692,6 +710,7 @@ struct BuildView: View {
         case .failed: return .filled(Theme.Colors.failure)
         case .done: return .filled(Theme.Colors.success)
         case .stopped: return .filled(Theme.Colors.caution)
+        case .asking: return .filled(Theme.Colors.accent)
         }
     }
 
@@ -731,60 +750,135 @@ struct BuildView: View {
 
     // MARK: How building works
 
-    private var aside: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.x14) {
-            Text("How building works").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
-            VStack(alignment: .leading, spacing: Theme.Space.x10) {
-                ForEach(Array(Self.how.enumerated()), id: \.offset) { index, text in
+    /// The task whose run stopped on a question, if any (one runs at a time, so one asks at most).
+    private var asking: (SpecTask, BuildQuestion)? {
+        for task in tasks { if case .asking(let question) = session.status(of: task) { return (task, question) } }
+        return nil
+    }
+
+    /// V2-18: the question, in Mel's column, with what each answer means for users.
+    private func questionCard(_ task: SpecTask, _ question: BuildQuestion) -> some View {
+        let send = { (answer: String) in
+            otherAnswer = ""
+            answersOther = false
+            Task { await session.answer(task, with: answer) }
+        }
+        return VStack(alignment: .leading, spacing: Theme.Space.x10) {
+            Text("Task \(task.number) · \(task.title.capitalizedFirst)").textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.secondaryLabel)
+            Text(question.title).textStyle(Theme.Text.cardTitle).fixedSize(horizontal: false, vertical: true)
+            if !question.why.isEmpty {
+                Text(question.why).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(Array(question.options.enumerated()), id: \.offset) { index, option in
+                Button { send(option.label) } label: {
                     HStack(alignment: .top, spacing: Theme.Space.x10) {
                         Text("\(index + 1)")
-                            .textStyle(Theme.Text.captionBold)
-                            .frame(width: Theme.Size.howNumber, height: Theme.Size.howNumber)
-                            .surface(Theme.Colors.background, .article, in: Circle())
-                        Text(text).textStyle(Theme.Text.calloutLoose).fixedSize(horizontal: false, vertical: true)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
-            VStack(alignment: .leading, spacing: Theme.Space.x6) {
-                Text("Tasks run one at a time").textStyle(Theme.Text.calloutBold)
-                Text("A task opens when the step before it is done and no other task is running. Tasks in one step change different folders, so you can also run them together, each in its own terminal.")
-                    .textStyle(Theme.Text.captionLoose)
-                    .foregroundStyle(Theme.Colors.secondaryLabel)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.vertical, Theme.Space.x10)
-            .padding(.horizontal, Theme.Space.x12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .surface(.clear, .article, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
-            VStack(alignment: .leading, spacing: Theme.Space.x6) {
-                Text("Spec files").textStyle(Theme.Text.calloutBold).foregroundStyle(Theme.Colors.bodyLabel)
-                FlowLayout(spacing: Theme.Space.x6) {
-                    ForEach(spec.size.files.map(\.fileName) + ["DECISIONS.md"], id: \.self) { name in
-                        Button { session.openInEditor(name) } label: {
-                            Text(name)
-                                .textStyle(Theme.Text.codeCaption)
-                                .padding(.horizontal, Theme.Space.x8)
-                                .frame(height: Theme.Size.buttonSmall)
-                                .surface(Theme.Colors.background, .fileChip, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+                            .textStyle(Theme.Text.caption)
+                            .foregroundStyle(Theme.Colors.secondaryLabel)
+                            .frame(width: Theme.Size.optionKey, height: Theme.Size.optionKey)
+                            .background(Theme.Colors.chipFill, in: RoundedRectangle(cornerRadius: Theme.Radius.progressLarge))
+                        VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                            Text(option.label).textStyle(Theme.Text.body).foregroundStyle(Theme.Colors.label)
+                            if !option.means.isEmpty {
+                                Text(option.means).textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel)
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .help("Open \(name) in your editor")
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        if option.suggested {
+                            Text("Likely").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.likely)
+                        }
+                    }
+                    .padding(.vertical, Theme.Space.x8)
+                    .padding(.horizontal, Theme.Space.x10)
+                    .frame(minHeight: Theme.Size.optionRow)
+                    .surface(Theme.Colors.background, .outlineList, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                    .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.box))
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [])
+            }
+            if answersOther {
+                TextField("Your answer", text: $otherAnswer, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .textStyle(Theme.Text.body)
+                    .lineLimit(1...4)
+                    .padding(Theme.Space.x8)
+                    .surface(Theme.Colors.background, .outlineList, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                    .onSubmit { if !otherAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { send(otherAnswer) } }
+                Button("Answer") { send(otherAnswer) }
+                    .buttonStyle(BoardPillStyle(kind: .accent))
+                    .disabled(otherAnswer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            } else {
+                Button("Something else…") { answersOther = true }.buttonStyle(DesignLinkStyle())
+            }
+            Text("Your answer goes into DECISIONS.md, then task \(task.number) goes on.").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+        }
+        .disabled(session.isRunning)
+        .padding(Theme.Space.x14)
+        .surface(Theme.Colors.background, .storyCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    private var aside: some View {
+        // Scrolls when a question card and How building works don't fit.
+        ScrollView {
+            VStack(alignment: .leading, spacing: Theme.Space.x14) {
+                if let (task, question) = asking {
+                    Text("Mel needs you · 1").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
+                    questionCard(task, question)
+                }
+                Text("How building works").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: Theme.Space.x10) {
+                    ForEach(Array(Self.how.enumerated()), id: \.offset) { index, text in
+                        HStack(alignment: .top, spacing: Theme.Space.x10) {
+                            Text("\(index + 1)")
+                                .textStyle(Theme.Text.captionBold)
+                                .frame(width: Theme.Size.howNumber, height: Theme.Size.howNumber)
+                                .surface(Theme.Colors.background, .article, in: Circle())
+                            Text(text).textStyle(Theme.Text.calloutLoose).fixedSize(horizontal: false, vertical: true)
+                        }
+                        .accessibilityElement(children: .combine)
                     }
                 }
-                Text("specs/\(spec.folder.lastPathComponent)").textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel)
+                VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                    Text("Tasks run one at a time").textStyle(Theme.Text.calloutBold)
+                    Text("A task opens when the step before it is done and no other task is running. Tasks in one step change different folders, so you can also run them together, each in its own terminal.")
+                        .textStyle(Theme.Text.captionLoose)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.vertical, Theme.Space.x10)
+                .padding(.horizontal, Theme.Space.x12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .surface(.clear, .article, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                    Text("Spec files").textStyle(Theme.Text.calloutBold).foregroundStyle(Theme.Colors.bodyLabel)
+                    FlowLayout(spacing: Theme.Space.x6) {
+                        ForEach(spec.size.files.map(\.fileName) + ["DECISIONS.md"], id: \.self) { name in
+                            Button { session.openInEditor(name) } label: {
+                                Text(name)
+                                    .textStyle(Theme.Text.codeCaption)
+                                    .padding(.horizontal, Theme.Space.x8)
+                                    .frame(height: Theme.Size.buttonSmall)
+                                    .surface(Theme.Colors.background, .fileChip, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open \(name) in your editor")
+                        }
+                    }
+                    Text("specs/\(spec.folder.lastPathComponent)").textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel)
+                }
+                Text(defaults).textStyle(Theme.Text.captionTall).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true)
+                Button("Change in Settings") {
+                    settingsTab = .specs
+                    openSettings()
+                }
+                .buttonStyle(DesignLinkStyle(text: Theme.Text.captionTall))
+                Button("Tell Mel something the plan missed") { isTelling = true }
+                    .buttonStyle(BoardPillStyle())
             }
-            Text(defaults).textStyle(Theme.Text.captionTall).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true)
-            Button("Change in Settings") {
-                settingsTab = .specs
-                openSettings()
-            }
-            .buttonStyle(DesignLinkStyle(text: Theme.Text.captionTall))
-            Button("Tell Mel something the plan missed") { isTelling = true }
-                .buttonStyle(BoardPillStyle())
-            Spacer(minLength: 0)
+            .padding(Theme.Space.x16)
         }
-        .padding(Theme.Space.x16)
         .frame(maxHeight: .infinity, alignment: .top)
         .background(Theme.Colors.fillSubtle)
     }
@@ -876,5 +970,10 @@ extension BuildStep {
 
 #Preview("Changes not committed") {
     NavigationStack { BuildView(session: PreviewData.buildBlockedSession) }
+        .frame(width: 1036, height: 800)
+}
+
+#Preview("Task asks a question") {
+    NavigationStack { BuildView(session: PreviewData.buildQuestionSession) }
         .frame(width: 1036, height: 800)
 }

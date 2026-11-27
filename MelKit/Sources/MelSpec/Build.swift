@@ -61,6 +61,8 @@ public struct TaskRun: Codable, Hashable, Sendable {
     public var session: String?
     public var report: BuildReport?
     public var tokens: Int?
+    /// The question the run stopped on, until the user answers it (V2-18).
+    public var question: BuildQuestion?
 
     public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil, prompt: String? = nil, base: String? = nil) {
         self.state = state
@@ -82,6 +84,8 @@ public enum TaskStatus: Hashable, Sendable {
     case done(TaskRun)
     /// Stopped in Mel, its changes not committed: Keep or Undo.
     case stopped
+    /// A run in Mel stopped on a question for the user (V2-18).
+    case asking(BuildQuestion)
 }
 
 extension Spec {
@@ -89,7 +93,7 @@ extension Spec {
     public func status(of task: SpecTask, in steps: [BuildStep]) -> TaskStatus {
         if let run = runs?[task.number] {
             switch run.state {
-            case .running: return .running
+            case .running: return run.question.map { .asking($0) } ?? .running
             case .failed: return .failed(run.output ?? "")
             case .done: return .done(run)
             case .stopped: return .stopped
@@ -188,9 +192,19 @@ extension SpecTask {
 
         Rules for this run:
         - Don't ask how to build it: the spec and AGENTS.md decide. Where they are silent, pick the simplest choice that fits and list it under decisions.
+        - Stop to ask only when the choice changes what users see or is hard to undo. Then end your reply with this instead, and nothing after it:
+        {"question":{"title":"the question, in plain words","why":"why it matters","options":[{"label":"","means":"what it means for users","suggested":true}]}}
         - You may change files only in the task's folders, run its check and commit. Anything else is refused; list it under refused.
-        - End your reply with one JSON object and nothing after it, written for someone who doesn't code:
+        - Otherwise end your reply with one JSON object and nothing after it, written for someone who doesn't code:
         {"works":["what a user can do now, one plain sentence each"],"decisions":[{"title":"","why":"","instead":"the alternative and what it would mean"}],"notDone":[""],"refused":[""]}
+        """
+    }
+
+    /// The answer to a question a run stopped on (V2-18); the run goes on in the same session.
+    public func answerPrompt(_ answer: String) -> String {
+        """
+        My answer: \(answer)
+        Go on with task \(number) from where you stopped. End with the JSON report (or another question), as before.
         """
     }
 
@@ -241,5 +255,41 @@ public struct BuildReport: Codable, Hashable, Sendable {
         var decisions: [Decision]?
         var notDone: [String]?
         var refused: [String]?
+    }
+}
+
+/// A question a task run in Mel stopped on, asked only about what users see or what is hard to undo (V2-18).
+public struct BuildQuestion: Codable, Hashable, Sendable {
+    public struct Option: Codable, Hashable, Sendable {
+        public var label: String
+        public var means: String
+        public var suggested: Bool
+
+        public init(label: String, means: String = "", suggested: Bool = false) {
+            (self.label, self.means, self.suggested) = (label, means, suggested)
+        }
+    }
+
+    public var title: String
+    public var why: String
+    public var options: [Option]
+
+    public init(title: String, why: String = "", options: [Option] = []) {
+        (self.title, self.why, self.options) = (title, why, options)
+    }
+
+    /// The last `{"question"…}` object in the reply; nil when the run ended with its report.
+    public static func parse(_ reply: String) -> BuildQuestion? {
+        guard let start = reply.range(of: #"{"question""#, options: .backwards) ?? reply.range(of: #"{ "question""#, options: .backwards),
+              let data = try? jsonObject(in: String(reply[start.lowerBound...])),
+              let raw = try? JSONDecoder().decode(Raw.self, from: data), !raw.question.title.isEmpty else { return nil }
+        return BuildQuestion(title: raw.question.title, why: raw.question.why ?? "",
+                             options: (raw.question.options ?? []).filter { !$0.label.isEmpty }.map { Option(label: $0.label, means: $0.means ?? "", suggested: $0.suggested ?? false) })
+    }
+
+    private struct Raw: Decodable {
+        struct Question: Decodable { var title: String; var why: String?; var options: [RawOption]? }
+        struct RawOption: Decodable { var label: String; var means: String?; var suggested: Bool? }
+        var question: Question
     }
 }

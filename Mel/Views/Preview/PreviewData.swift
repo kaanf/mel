@@ -474,6 +474,16 @@ enum PreviewData {
         spec.runs?[2] = TaskRun(state: .stopped)
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    /// V2-18: task 2 stopped on a question.
+    static let buildQuestionSession: SpecSession = {
+        var spec = buildReportSession.spec
+        spec.runs?[2] = TaskRun(state: .running)
+        spec.runs?[2]?.question = BuildQuestion(title: "What should members see without a connection?", why: "The plan says the schedule opens in under a second, but not what happens offline. Members often open it on the way to class.", options: [
+            .init(label: "Show the last loaded schedule", means: "Members see classes on the subway; booking still needs a connection.", suggested: true),
+            .init(label: "Show “You’re offline”", means: "Simpler. Members see nothing until they’re back online."),
+        ])
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
     /// V2-20: Run on task 2 refused over uncommitted changes.
     static let buildBlockedSession = SpecSession.preview(buildReportSession.spec, documents: boardDocuments, blockedRun: .init(task: 2, files: ["androidApp/AppNavigation.kt", "shared/booking/Booking.kt", "README.md", "notes.txt"]))
     /// V2-3 with every task done.

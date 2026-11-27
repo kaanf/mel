@@ -349,6 +349,7 @@ extension Spec {
     var sidebarNote: String {
         switch build {
         case .building:
+            if let asking = runs?.first(where: { $0.value.question != nil })?.key { return "Task \(asking) asks a question" }
             let done = runs?.values.count { $0.state == .done } ?? 0
             return taskCount.map { "Task \(min($0, done + 1)) of \($0)" } ?? "Building with Claude Code"
         case .done: return "First version built"
