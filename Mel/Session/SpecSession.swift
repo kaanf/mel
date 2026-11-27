@@ -946,7 +946,14 @@ import MelSystem
     /// "Start Building": writes the task prompts and, as Settings › Specs says, AGENTS.md and the commit.
     func startBuilding(commitToGit: Bool, writeAgentsFile: Bool) async throws {
         guard spec.isReady else { return }
-        try await finish(commitToGit: commitToGit, writeAgentsFile: writeAgentsFile)
+        lastError = nil
+        do {
+            try await finish(commitToGit: commitToGit, writeAgentsFile: writeAgentsFile)
+        } catch {
+            // Shown in the inbox; without it a failed spec commit looks like nothing happened.
+            lastError = "Couldn't start building: \(error.localizedDescription)"
+            throw error
+        }
         spec.startBuilding()
         spec.taskCount = tasks.count
         persist()

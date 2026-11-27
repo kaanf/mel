@@ -134,6 +134,10 @@ struct BoardInbox: View {
             }
         }
         summary.padding(.top, Theme.Space.x4)
+        // Start Building failed (the spec's commit, AGENTS.md).
+        if spec.isReady, !session.isRunning, let error = session.lastError {
+            Text(error).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.cautionText)
+        }
     }
 
     private var waitText: String {
