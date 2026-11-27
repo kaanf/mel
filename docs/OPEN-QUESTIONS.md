@@ -26,6 +26,7 @@
 | 32 | What does "Write it now" do with open cards? | **Marks them as guesses, with no run.** An `[!OPEN QUESTION]` callout stays in the file for the coding agent | 2026-11-26 |
 | 33 | Is the contradiction check run again after its issues are fixed? | **No.** Mel's own checks by ID run again for free after every change; contradictions are looked for once, after the last file. "Check again" runs it on request | 2026-11-26 |
 | 29 | Invariant once approval is gone | **"Never change a Ready file without a user action"**: a card answer, Tell Mel, Remove, Update or Rewrite. "Never overwrite a user's edit" stays. In CLAUDE.md, REQUIREMENTS.md and DESIGN.md | 2026-11-27 |
+| 36 | How do Mel's runs reach the files without sending them every time? | **One Claude Code conversation per spec**, resumed for drafts, changes and rewrites, so the files come from the prompt cache. A prompt sends only files the conversation hasn't seen as they are now. Same model and tools on every turn; a new conversation past 400k characters. Intake, check and project context stay separate. Kingdom and Dynasty used 993k tokens, three quarters of it files sent again | 2026-11-27 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open

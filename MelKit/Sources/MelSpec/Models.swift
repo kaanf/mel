@@ -28,10 +28,11 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var tokens: [TokenStep: Int]?
     /// After "Build with Claude Code": the sidebar's Building and Done groups. Nil while it is planned.
     public var build: BuildState?
-    public var sessionID: String?
+    /// The main model's conversation for this spec; nil until its first draft starts one.
+    public var conversation: Conversation?
 
     /// A new spec starts with the intake questions and every file of its size waiting.
-    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil, sessionID: String? = nil) {
+    public init(id: UUID = UUID(), name: String, idea: String, size: SpecSize = .product, folder: URL, stage: Stage = .discovery, docs: [DocKind: DocStatus]? = nil, questions: [Question] = [], coverage: [CoverageItem] = [], attachments: [Attachment] = [], analyze: AnalyzeStatus = .locked, analysis: AnalyzeResult? = nil, fillGaps: Bool = true, language: SpecLanguage? = nil) {
         self.id = id
         self.name = name
         self.idea = idea
@@ -46,7 +47,6 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
         self.analysis = analysis
         self.fillGaps = fillGaps
         self.language = language
-        self.sessionID = sessionID
     }
 
     /// The project folder: `folder` is `<project>/specs/<slug>/`.

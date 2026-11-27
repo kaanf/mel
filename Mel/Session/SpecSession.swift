@@ -36,6 +36,8 @@ import MelSystem
     @ObservationIgnored private var reply = ""
     @ObservationIgnored private var wroteAt = ContinuousClock.now
     @ObservationIgnored private var shownAt = ContinuousClock.now
+    /// The files the prompt being built sends; the conversation has seen them once its run is done.
+    @ObservationIgnored private var sending: [DocKind: String] = [:]
 
     private enum RunEnd { case done(String), stopped(StopReason), refused }
 
@@ -206,7 +208,7 @@ import MelSystem
                 loop: for try await event in runner.run(request) {
                     switch event {
                     case .session(let id) where persistSession:
-                        spec.sessionID = id
+                        if spec.conversation == nil { spec.conversation = Conversation(id: id) } else { spec.conversation?.id = id }
                         persist()
                     case .session, .rateLimit:
                         break
@@ -236,6 +238,30 @@ import MelSystem
         }
         running = task
         return await task.value
+    }
+
+    /// A run in the spec's conversation (drafts, changes, rewrites): resumed, so what it already
+    /// holds comes from the prompt cache. Model and tools stay the same on every turn, since either
+    /// change invalidates the cache. A lost conversation is dropped; the caller runs again without it.
+    private func converse(_ prompt: String, step: TokenStep) async -> RunEnd {
+        let sent = sending
+        sending = [:]
+        let end = await run(prompt, step: step, resume: spec.conversation?.id, persist: true)
+        switch end {
+        case .done(let reply):
+            spec.conversation?.saw(sent)
+            spec.conversation?.size += prompt.count + reply.count
+        case .stopped(.sessionNotFound):
+            spec.conversation = nil
+        case .stopped, .refused:
+            break
+        }
+        return end
+    }
+
+    /// A new conversation starts before one grows past `Conversation.limit`.
+    private func trimConversation() {
+        if let size = spec.conversation?.size, size > Conversation.limit { spec.conversation = nil }
     }
 
     private static func message(_ reason: StopReason) -> String {
@@ -396,7 +422,7 @@ import MelSystem
         liveText = partial
         activity = []
         persist()
-        let end = await run(prompt, step: step, resume: partial.isEmpty ? nil : spec.sessionID, persist: true)
+        let end = await converse(prompt, step: step)
         draftKind = nil
         liveText = ""
         return end
@@ -404,14 +430,18 @@ import MelSystem
 
     /// Writes `kind`, or continues it from its last complete section after a stop.
     private func draftOnBoard(_ kind: DocKind, fresh: Bool = false) async -> Bool {
-        let partial = !fresh && spec.docs[kind] == .stopped ? DraftText.truncatedToLastCompleteSection(documents[kind] ?? "") : ""
+        trimConversation()
+        // A cut-off file continues in the conversation that was writing it.
+        let partial = !fresh && spec.docs[kind] == .stopped && spec.conversation != nil ? DraftText.truncatedToLastCompleteSection(documents[kind] ?? "") : ""
         spec.begin(.draft(kind))
         if !partial.isEmpty {
             documents[kind] = partial
             write(partial, for: kind)
         }
+        var values = promptValues(drafting: kind)
+        if partial.isEmpty { values["approved"] = filesText(spec.size.files.prefix { $0 != kind }.filter(spec.written.contains)) }
         let prompt = partial.isEmpty
-            ? Prompt(drafting: kind).build(promptValues(drafting: kind), fillGaps: spec.fillGaps, language: spec.language)
+            ? Prompt(drafting: kind).build(values, fillGaps: spec.fillGaps, language: spec.language)
             : Prompt.continue.build(["file": kind.fileName, "partial": partial], language: spec.language)
         switch await stream(kind, prompt: prompt, step: TokenStep(file: kind), from: partial) {
         case .stopped(.sessionNotFound):
@@ -422,6 +452,7 @@ import MelSystem
             documents[kind] = final
             write(final, for: kind)
             saveSnapshot(kind)
+            spec.conversation?.saw([kind: final])
             let asked = DraftText.questions(in: full, kind: kind).map { $0.with(id: "\(kind.rawValue)-\($0.id)") } + OpenQuestion.parse(final, kind: kind).map(Question.init)
             spec.drafted(kind, asked: Self.unique(asked, after: spec.questions.filter { $0.answer != nil || $0.shapes != kind }))
             return true
@@ -466,29 +497,37 @@ import MelSystem
     /// One change run over the written files: applies its edits, or records the files where they don't fit.
     private func change(_ requests: [String], attachments: [Attachment] = [], answers: Bool) async -> ChangeEnd {
         let written = spec.written
-        guard let first = written.first else { return .refused }
-        var values = promptValues(drafting: first)
+        guard !written.isEmpty else { return .refused }
+        trimConversation()
+        var values = promptValues(drafting: written[0])
         values["reading"] = attachments.isEmpty
-            ? "Everything you need is in this prompt. Do not read files or call tools."
-            : "You may open the attachments below with Read. Everything else you need is in this prompt."
+            ? "Everything you need is in this conversation. Do not read files or call tools."
+            : "You may open the attachments below with Read. Everything else you need is in this conversation."
         values["requests"] = requests.map { "- " + $0 }.joined(separator: "\n")
         values["attachments"] = attachments.isEmpty ? "(none)" : attachments.map { "- specs/\(slug)/.mel/attachments/\($0.fileName)" }.joined(separator: "\n")
-        values["current"] = text(of: written)
+        values["current"] = filesText(written)
         values["kinds"] = written.map { "`\($0.rawValue)`" }.joined(separator: ", ")
         let spent = spec.tokens?[.changes] ?? 0
         activity = []
         lastChange = nil
-        let end = await run(Prompt.change.build(values, fillGaps: spec.fillGaps, language: spec.language), step: .changes, resume: nil, persist: false, tools: !attachments.isEmpty)
+        let end = await converse(Prompt.change.build(values, fillGaps: spec.fillGaps, language: spec.language), step: .changes)
         switch end {
         case .done(let reply):
-            guard let change = try? Change.decode(reply) else { return .unreadable }
+            // Edits that weren't put in place: the conversation's idea of these files is wrong now.
+            guard let change = try? Change.decode(reply) else {
+                spec.conversation?.forget(written)
+                return .unreadable
+            }
             let current = Dictionary(uniqueKeysWithValues: written.map { ($0, documents[$0] ?? "") })
             guard let texts = change.apply(to: current) else {
+                spec.conversation?.forget(change.edits.map(\.file))
                 spec.unplacedChange = UnplacedChange(request: requests.joined(separator: "\n"), change: change, files: change.unplaced(in: current), answers: answers)
                 return .unplaced
             }
             install(texts, line: change.summary(order: written), passages: Dictionary(grouping: change.edits, by: \.file).mapValues { $0.map(\.new) }, spent: spent)
             return .applied
+        case .stopped(.sessionNotFound):
+            return await change(requests, attachments: attachments, answers: answers)
         case .stopped(let reason):
             return .stopped(reason)
         case .refused:
@@ -505,6 +544,7 @@ import MelSystem
             documents[kind] = final
             write(final, for: kind)
             saveSnapshot(kind)
+            spec.conversation?.saw([kind: final])
         }
         refreshChecks()
         var result = ChangeResult(line: line, tokens: (spec.tokens?[.changes] ?? 0) - spent, passages: passages)
@@ -593,13 +633,18 @@ import MelSystem
     func rewriteUnplaced() async {
         guard var unplaced = spec.unplacedChange, let kind = unplaced.files.first, !isRunning else { return }
         let before = documents[kind] ?? ""
+        trimConversation()
         var values = promptValues(drafting: kind)
         values["file"] = kind.fileName
         values["instruction"] = unplaced.request
-        values["current"] = before
-        values["approved"] = text(of: spec.written.filter { $0 != kind })
+        values["current"] = filesText([kind])
+        values["approved"] = filesText(spec.written.filter { $0 != kind })
         let spent = spec.tokens?[.changes] ?? 0
         let end = await stream(kind, prompt: Prompt.rewrite.build(values, fillGaps: spec.fillGaps, language: spec.language), step: .changes)
+        if case .stopped(.sessionNotFound) = end {
+            write(before, for: kind)
+            return await rewriteUnplaced()
+        }
         guard case .done(let result) = end else {
             // Nothing changes on a stop: the file goes back and the offer stays.
             write(before, for: kind)
@@ -942,19 +987,27 @@ import MelSystem
         return Prompt.intake.build(values, language: spec.language)
     }
 
+    /// The values every prompt shares. In a running conversation the project context and the idea
+    /// are already in it.
     private func promptValues(drafting kind: DocKind) -> [String: String] {
         let project = app?.contexts[Project(folder: spec.project).id]?.promptText
         let attachments = spec.attachments.map { "- specs/\(slug)/.mel/attachments/\($0.fileName)" }
-        return ["name": spec.name, "idea": spec.idea, "files": spec.size.filesText,
-                "project": project ?? "(no project context yet)",
+        let held = spec.conversation == nil ? nil : "(earlier in this conversation)"
+        return ["name": spec.name, "idea": held ?? spec.idea, "files": spec.size.filesText,
+                "project": held ?? project ?? "(no project context yet)",
                 "attachments": attachments.isEmpty ? "(none)" : attachments.joined(separator: "\n"),
-                "answers": spec.answersText, "decide": spec.decideText,
-                "approved": approvedText(before: kind), "steps": kind.stepsText]
+                "answers": spec.answersText, "decide": spec.decideText, "steps": kind.stepsText]
     }
 
-    /// The files written before `kind`.
-    private func approvedText(before kind: DocKind) -> String {
-        text(of: spec.size.files.prefix { $0 != kind }.filter(spec.written.contains))
+    /// The files of `kinds` for a conversation prompt: the text of those it hasn't seen as they are
+    /// now, and the names of the rest.
+    private func filesText(_ kinds: [DocKind]) -> String {
+        let unseen = spec.conversation?.unseen(kinds, in: documents) ?? kinds
+        for kind in unseen { sending[kind] = documents[kind] ?? "" }
+        let held = kinds.filter { !unseen.contains($0) }
+        guard !held.isEmpty else { return text(of: unseen) }
+        let note = "Unchanged since you last saw them in this conversation, with the edits you sent since applied: \(held.map(\.fileName).joined(separator: ", "))."
+        return unseen.isEmpty ? note : text(of: unseen) + "\n\n" + note
     }
 
     private func text(of kinds: [DocKind]) -> String {

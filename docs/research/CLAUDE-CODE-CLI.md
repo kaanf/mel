@@ -116,5 +116,6 @@ Real recordings, safe to commit (no secrets; `cwd` paths point at disposable pro
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-in.json` | `claude auth status` signed in (email/org replaced with placeholders) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-auth-status-signed-out.json` | `claude auth status` signed out (no `USER` in the environment) |
 | `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-unknown-resume.jsonl` | `--resume` with an unknown session ID (1 record) |
+| `../../MelKit/Tests/MelAgentTests/Fixtures/claude-2.1.311-resumed-change.jsonl` | The second turn of a spec's conversation: `change.md` with `--resume`, Opus, `--tools Read,Glob,Grep`, REQUIREMENTS.md only named as unchanged. The edit is placed from what the conversation holds; usage: input 4, cache creation 1,515, cache read 10,439, output 82 (first turn, with the file: cache creation 6,668) |
 
 They live in `MelKit/Tests/MelAgentTests/Fixtures/` and drive the adapter and runner tests.

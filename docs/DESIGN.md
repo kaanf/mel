@@ -138,7 +138,7 @@ struct Spec {
     var removedStories: [RemovedStory]?   // for Restore
     var tokens: [TokenStep: Int]?    // per step, from result.usage
     var build: BuildState?           // building | done, after the handoff
-    var fillGaps: Bool, language: SpecLanguage?, attachments: [Attachment], sessionID: String?
+    var fillGaps: Bool, language: SpecLanguage?, attachments: [Attachment], conversation: Conversation?
 }
 ```
 
@@ -168,14 +168,14 @@ No file is approved. The gate is the inbox: a file starts only when no card of t
 
 ### Drafting
 
-1. Build the prompt (`Prompts/<kind>.md`): project context, idea, answers, the files written before, attachment paths.
-2. Run `claude -p` with read-only tools and a stored session.
+1. Build the prompt (`Prompts/<kind>.md`): answers, attachment paths, and what the spec's conversation doesn't hold yet (project context, idea, the files written before).
+2. Run `claude -p` with read-only tools, resuming the spec's conversation (AGENT-INTEGRATION.md › The spec's conversation).
 3. Append text deltas to a buffer; write the file at most every 500 ms (atomic); the open file's preview updates at most 10 times a second.
 4. On finish: strip the markers, write the file, save its snapshot (`.mel/approved/`), turn the draft's trailer questions and `[!OPEN QUESTION]` callouts into cards.
 
 ### Changes
 
-Tell Mel, card answers, Update after an edit, Remove and Restore all run `Prompts/change.md` once over the written files, without tools unless the request has attachments. The reply is a `Change` (`{file, old, new}` edits). `Change.apply` places every edit or none.
+Tell Mel, card answers, Update after an edit, Remove and Restore all run `Prompts/change.md` once over the written files, as a turn of the spec's conversation: only files it hasn't seen as they are now go in the prompt. The reply is a `Change` (`{file, old, new}` edits). `Change.apply` places every edit or none.
 
 - Placed: files are written, snapshots saved, Mel's own checks by ID rerun for free, and the result line carries what Undo needs.
 - Not placed: nothing changes. `Spec.unplacedChange` keeps the edits; "Rewrite FILE" streams that one file whole (`Prompts/rewrite.md`), the only whole-file rewrite, then the edits that did fit go in.
@@ -184,7 +184,7 @@ Tell Mel, card answers, Update after an edit, Remove and Restore all run `Prompt
 ### Stop and resume
 
 - **Stop**: `SIGINT`, then `SIGTERM` after 3 s. A cut-off draft is already on disk; `Spec.halt` records the reason and the file.
-- **Resume**: the cut-off file is truncated to its last complete `##` section and continued with `--resume <sessionID>` (`Prompts/continue.md`); an unknown session writes it again from the start. A stopped change or check simply runs again.
+- **Resume**: the cut-off file is truncated to its last complete `##` section and continued in the spec's conversation (`Prompts/continue.md`); an unknown session writes it again from the start, in a new conversation. A stopped change or check simply runs again.
 - **Usage limit**: Resume waits for `resetsAt` and posts a notification then. No automatic runs.
 - A board that was working when Mel quit is halted at load, so nothing runs on launch.
 

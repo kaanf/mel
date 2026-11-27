@@ -221,7 +221,7 @@ final class EndToEndTests {
 
         // The answer goes in as one patch, then the rest is written and checked.
         await session.answerCard(try #require(session.spec.openCards.first?.id), .option(0, note: nil))
-        #expect(script.requests[3].allowsTools == false)
+        #expect(script.requests[3].allowsTools)
         #expect(script.requests[3].prompt.contains("How long is a waitlist spot held?"))
         #expect(session.documents[.requirements]?.contains("- 3.2 WHEN a waitlist spot is offered, THE APP SHALL hold it for 2 hours.") == true)
         #expect(session.documents[.requirements]?.hasPrefix("# Requirements\n\n## 1. Book a class\n\nP1 · MVP") == true)   // the rest word for word
@@ -342,7 +342,10 @@ final class EndToEndTests {
         #expect(session.spec.halted?.file == .experience)
         #expect(script.requests[3].resumeSessionID != nil)
         #expect(script.requests[4].resumeSessionID == nil)
-        #expect(script.requests[4].prompt == script.requests[2].prompt)
+        // The new conversation gets what the lost one held: the idea and PRODUCT.md.
+        #expect(!script.requests[2].prompt.contains("### PRODUCT.md"))
+        #expect(script.requests[4].prompt.contains("### PRODUCT.md"))
+        #expect(script.requests[4].prompt.contains(session.spec.idea))
         #expect(session.spec.written == [.product, .requirements])
         #expect(session.summary(.requirements).stories == 3)
         #expect(!notifications.contains { $0.contains("stopped") })   // never shown to the user

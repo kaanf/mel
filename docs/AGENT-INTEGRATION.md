@@ -85,14 +85,23 @@ Field rules:
 - **ProjectContext.structure** has `## Modules` with lines `- Name — path` (em dash).
 - **Analyze reply** (8.3): `{"issues": [{"id", "location", "text", "ids", "actions"}]}`, contradictions only. `ids` lists the requirements it is about (may be `[]`); exactly 2 actions `{"label", "fix", "files": [DocKind]}`, the second primary. Everything else in `AnalyzeResult` is Mel's own check by ID, with no agent (`AnalyzeResult.coverage`): the coverage rows (task = an ID in a task's `Covers`, test = that task has `Verify`, screen = an ID on a flow's `Covers` line or in the screens table), the stats, and a `noTask` / `qualityNotCovered` issue for each P1 criterion or quality requirement without a task. P2/P3 criteria need no task. `AnalyzeResult.add` puts the contradictions first and marks their rows `conflict`. `scopeCreep` is no longer produced.
 
-- **Change** (board, `change.md`): `{"edits": [{"file", "old", "new"}]}`, a Patch across the written files; `file` is a `DocKind` raw value (a file name is accepted). `Change.apply` places every edit or none; `unplaced(in:)` names the files that need "Rewrite FILE". One run serves all waiting requests (`Spec.changeRequests`: card answers and issue fixes) or one Tell Mel, Update or Remove request. Without attachments it runs with no tools.
+- **Change** (board, `change.md`): `{"edits": [{"file", "old", "new"}]}`, a Patch across the written files; `file` is a `DocKind` raw value (a file name is accepted). `Change.apply` places every edit or none; `unplaced(in:)` names the files that need "Rewrite FILE". One run serves all waiting requests (`Spec.changeRequests`: card answers and issue fixes) or one Tell Mel, Update or Remove request. It runs in the spec's conversation, with the same tools as the drafts.
 - **Patch**: the edits of one file, `{"edits": [{"old", "new"}]}`. `Patch.apply` replaces each `old` with `new`, in order; `old` must occur exactly once, character for character. `Change` applies one per file (fixture `revise` is a recorded one-file patch run).
 
-The check and a change without attachments pass the files inline and run with `allowsTools: false` (`--tools ""`). The prompt must then say not to read files: with no tools and a prompt that invites reading, the model writes tool calls as plain text and the run never finishes (seen: 11+ min).
+The check passes the files inline and runs with `allowsTools: false` (`--tools ""`). The prompt must then say not to read files: with no tools and a prompt that invites reading, the model writes tool calls as plain text and the run never finishes (seen: 11+ min).
+
+### The spec's conversation (OQ #36)
+
+Drafts, changes, rewrites and continues are turns of one Claude Code conversation per spec (`Spec.conversation`), resumed with `--resume <id>` and stored (no `--no-session-persistence`). Each turn reads what the conversation already holds from the prompt cache (1 hour on a subscription), instead of Mel sending it again; fixture `resumed-change`: 10.4k tokens read from the cache, 1.6k counted.
+
+- A prompt carries only the files the conversation hasn't seen as they are now (`Conversation.unseen`, by fingerprint); the rest are named as unchanged, "with the edits you sent since applied". Project context and idea go in the first turn only.
+- Seen: a file it drafted or rewrote, the edits it sent once placed, a file a prompt sent. Forgotten: the files of edits that weren't placed or a reply that couldn't be read. An edit by hand, Undo, a scope move or Remove changes the text, so it goes again by itself.
+- Every turn uses the same model (`main`) and tools (`Read,Glob,Grep`): changing either invalidates the cache. Intake, check and project context run on their own, without the conversation.
+- Past 400,000 characters (`Conversation.limit`) the next turn starts a new conversation with everything it needs, before Claude Code would compact it. An unknown session does the same.
 
 ### Change runs (OQ #25, #31)
 
-Every change after a file is written runs `change.md` once over all written files: the card answers given since (together, once no card is open), one Tell Mel request, Update after an edit by hand, Remove and Restore. No stored session. Mel places the edits and writes the files; everything outside them stays word for word. Nothing streams into a file, so a stopped run leaves the files untouched.
+Every change after a file is written runs `change.md` once over all written files: the card answers given since (together, once no card is open), one Tell Mel request, Update after an edit by hand, Remove and Restore. Mel places the edits and writes the files; everything outside them stays word for word. Nothing streams into a file, so a stopped run leaves the files untouched.
 
 Unplaced: nothing changes. `Spec.unplacedChange` keeps the reply and names the files where an edit didn't fit; the board offers "Rewrite FILE" (with the tokens that file's draft cost) or Cancel. Rewrite runs `rewrite.md`, a streaming whole-file stage like drafting, for one file; when no unplaced file is left, the edits that did fit go in. It is the only way a whole file is written again. Cancel drops the change and hands a typed request back to Tell Mel.
 

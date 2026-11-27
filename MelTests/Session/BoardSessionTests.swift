@@ -164,10 +164,16 @@ final class BoardSessionTests {
         // One change run for both answers, then the other files and the check without stopping.
         #expect(runner.requests[2].prompt.contains("- REQUIREMENTS.md asked “Is there a waitlist?”. The answer: Yes\n- REQUIREMENTS.md has the open question “How long is a spot held?”. The answer: 10 minutes Remove its callout."))
         #expect(runner.requests[2].prompt.contains(#"{"edits": [{"file": "requirements", "old": "…", "new": "…"}]}"#))
-        #expect(!runner.requests[2].allowsTools)
+        #expect(runner.requests[2].resumeSessionID == "s1")   // in the spec's conversation, which already holds the draft
+        #expect(!runner.requests[2].prompt.contains("## 1. Book a class"))
+        #expect(runner.requests[2].allowsTools)   // same tools on every turn, or the cache is lost
         #expect(session.documents[.requirements]?.contains("- 1.2 THE APP SHALL hold a spot for 10 minutes.") == true)
         #expect(session.documents[.requirements]?.contains("OPEN QUESTION") == false)
-        #expect(runner.requests[3].prompt.contains("offer the waitlist"))   // ARCHITECTURE.md is drafted from the changed file
+        // ARCHITECTURE.md: the conversation holds the changed file, so it isn't sent again, nor are the idea and the context.
+        #expect(runner.requests[3].resumeSessionID == "s1")
+        #expect(!runner.requests[3].prompt.contains("offer the waitlist"))
+        #expect(runner.requests[3].prompt.contains("Unchanged since you last saw them in this conversation, with the edits you sent since applied: REQUIREMENTS.md."))
+        #expect(!runner.requests[3].prompt.contains("Members book yoga classes."))
         #expect(runner.requests.count == 6)
         #expect(runner.requests[5].prompt.contains("Find only contradictions"))
         #expect(session.spec.isReady)
@@ -228,7 +234,9 @@ final class BoardSessionTests {
         let sent = await session.tell("  Send a push when a spot is reserved. ")
         #expect(sent)
         #expect(runner.requests[5].prompt.contains("## Requests\n\n- Send a push when a spot is reserved.\n"))
-        #expect(runner.requests[5].prompt.contains("### TASKS.md"))
+        #expect(runner.requests[5].resumeSessionID == "s1")
+        #expect(runner.requests[5].prompt.contains("in this conversation, with the edits you sent since applied: REQUIREMENTS.md, ARCHITECTURE.md, TASKS.md."))
+        #expect(!runner.requests[5].prompt.contains("### TASKS.md"))
         #expect(session.lastChange?.line == "Changed 1 place in REQUIREMENTS.md, 1 in TASKS.md")
         #expect(session.lastChange?.tokens == 1_800)
         #expect(session.lastChange?.passages[.tasks] == ["1. Booking store and push"])
@@ -244,6 +252,13 @@ final class BoardSessionTests {
         #expect(session.decisions.first?.source != "Tell Mel")
         #expect(try await onDisk(session, "TASKS.md") == tasks)
         #expect(try await onDisk(session, "DECISIONS.md").contains("Send a push") == false)
+
+        // The conversation still has the undone edits: the next run sends the files they touched.
+        runner.add([change()])
+        await session.tell("Nothing.")
+        #expect(runner.requests[6].prompt.contains("### REQUIREMENTS.md"))
+        #expect(runner.requests[6].prompt.contains("### TASKS.md"))
+        #expect(!runner.requests[6].prompt.contains("### ARCHITECTURE.md"))
     }
 
     @Test func unplacedChangeChangesNothingUntilRewriteOrCancel() async throws {

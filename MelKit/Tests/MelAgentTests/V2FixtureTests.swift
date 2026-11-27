@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import MelAgent
+import MelSpec
 
 /// v2 runs of core's prompts, recorded with docs/research/v2-prompts/. Checks the stream and the
 /// JSON keys only; core's decoders (`ProjectContext.decode`, `AnalyzeResult.decode`, …) get their own tests.
@@ -66,6 +67,7 @@ struct V2FixtureTests {
     }
 
     /// Recorded with `allowsTools: false` (`--tools ""`): files are inline, so one turn and no steps.
+    /// Change runs have the conversation's tools now (`resumed-change`); these keep their reply shape.
     @Test func analyzeAndChangeRunWithoutTools() throws {
         for name in ["analyze", "revise", "change"] {
             #expect(try fixtureText("claude-2.1.311-\(name).jsonl").contains(#""tools":[]"#))
@@ -78,6 +80,18 @@ struct V2FixtureTests {
         let events = try events("revise")
         #expect(events.dropLast().last == .usage(tokens: 4_323))
         #expect(events.count { if case .usage = $0 { true } else { false } } == 1)
+    }
+
+    /// A change resumed in the spec's conversation (Opus, Read/Glob/Grep, as on every turn), its file
+    /// only named: the edit is placed from what the conversation holds, and the earlier turn is read
+    /// from the cache (10,439 tokens), so only output 82 + input 4 + cache creation 1,515 count.
+    @Test func resumedChangeReadsTheConversationFromTheCache() throws {
+        #expect(try fixtureText("claude-2.1.311-resumed-change.jsonl").contains(#""tools":["Glob","Grep","Read"]"#))
+        let events = try events("resumed-change")
+        #expect(events.dropLast().last == .usage(tokens: 1_601))
+        let change = try Change.decode(try result("resumed-change"))
+        #expect(change.edits.map(\.file) == [.requirements])
+        #expect(change.edits.first?.old == "THE APP SHALL open Terminal with Claude Code's own login command.")
     }
 
     /// Attachments under specs/<slug>/.mel/attachments/ open with Read under the read-only flags, images included.
