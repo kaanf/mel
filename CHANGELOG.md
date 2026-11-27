@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.9.1] · 2026-11-27
+
 ### Changed
 - **Three clean columns.** The sidebar, the plan and Mel's column on the right each run the full height of the window with their own header; the title, status and tokens sit over the plan, Files and Start Building (or Open Terminal here) over the right column. Full screen no longer shows a separate band with a line over the sidebar, and the plan no longer scrolls under the title.
 
@@ -164,7 +166,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.9...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/kaanf/mel/compare/v0.9...v0.9.1
 [0.9]: https://github.com/kaanf/mel/compare/v0.8.1...v0.9
 [0.8.1]: https://github.com/kaanf/mel/compare/v0.8...v0.8.1
 [0.8]: https://github.com/kaanf/mel/compare/v0.7...v0.8
