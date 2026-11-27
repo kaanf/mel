@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN GH-1 · Start with GitHub (proposal, 2026-11-28, OQ #44)
+Same Start as V2-0, plus GitHub. Mel reaches GitHub through the user's GitHub CLI (gh), the way it uses their Claude Code:
+  no token in Mel. The GitHub line sits under Your agents.
+  - Signed in: a chip with the account. "What will you work on?" gets two tabs: On this Mac (V2-0's list) and On GitHub
+    (gh repo list, newest first). A repo that isn't on this Mac is cloned into ~/Developer on Start.
+  - Signing in (GH-1b): Mel runs gh auth login --web and shows the one-time code; GitHub opens in the browser.
+  - No gh (GH-1c): the install command with Copy, and Check Again. Everything else works without GitHub.
+Prop gh: "signedIn" | "signedOut" | "signingIn" | "missing".
+Goes to: V2-1 New (Start), GH-2 (Start on "No code yet").
+-->
+<title>Start with GitHub</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased; display: flex; align-items: center; justify-content: center">
+<div style="width: 100%; max-width: 620px; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 14px">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+
+<div style="padding: 0 40px 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+<svg width="48" height="48" viewBox="0 0 56 56" role="img" aria-label="Mel">
+<rect width="56" height="56" rx="13" fill="#fff8ec"></rect>
+<path d="M28 9l8 4.6v9.2L28 27.4l-8-4.6v-9.2z" fill="#e8a23a"></path>
+<path d="M18 26.4l8 4.6v9.2L18 44.8l-8-4.6V31z" fill="#e8a23a"></path>
+<path d="M38 26.4l8 4.6v9.2L38 44.8l-8-4.6V31z" fill="#e8a23a"></path>
+<path d="M28 29.6l5.2 3v6L28 41.6l-5.2-3v-6z" fill="#fde7bd"></path>
+</svg>
+<h1 style="margin: 0; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.02em">Welcome to Mel</h1>
+<p style="margin: 0; max-width: 440px; font-size: 14px; line-height: 21px; color: #3a3a3c">Describe what you want. Mel asks a few questions and writes a plan your coding agent can build, step by step.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-radius: 12px; background: #f5f5f7">
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<span style="flex: 0 0 76px; font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">Your agent</span>
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); font-size: 12px; line-height: 16px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>Claude Code</span>
+<span style="flex: 1; min-width: 120px; font-size: 11px; line-height: 14px; color: #6e6e73">Mel uses it with your own account.</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<span style="flex: 0 0 76px; font-size: 12px; line-height: 16px; font-weight: 600; color: #3a3a3c">GitHub</span>
+<sc-if value="{{signedIn}}" hint-placeholder-val="{{true}}">
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); font-size: 12px; line-height: 16px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>kaanf</span>
+<span style="flex: 1; min-width: 120px; font-size: 11px; line-height: 14px; color: #6e6e73">Mel pushes each task and opens a pull request when a spec is built.</span>
+</sc-if>
+<sc-if value="{{signedOut}}" hint-placeholder-val="{{false}}">
+<span style="flex: 1; min-width: 120px; font-size: 11px; line-height: 14px; color: #6e6e73">Optional. Without it Mel builds on this Mac and merges into main here.</span>
+<sc-if value="{{showSignIn}}" hint-placeholder-val="{{false}}">
+<button onClick="{{signIn}}" style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Sign in to GitHub…</button>
+</sc-if>
+</sc-if>
+</div>
+
+<sc-if value="{{signingIn}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); flex-wrap: wrap">
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 200px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">Enter this code on GitHub</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">GitHub opened in your browser. Mel goes on by itself once you approve.</span>
+</span>
+<code style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: 0.08em">5C2F-81AD</code>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: rgba(0,0,0,0.05); font: inherit; font-size: 11px; line-height: 14px; color: #1d1d1f">Copy</button>
+<button onClick="{{finishSignIn}}" style="height: 24px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 11px; line-height: 14px; color: #0066d6">Cancel</button>
+</div>
+</sc-if>
+
+<sc-if value="{{missing}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1)">
+<span style="font-size: 12px; line-height: 16px; color: #3a3a3c">To use GitHub, install the GitHub CLI in Terminal. Mel looks again when you come back to this window.</span>
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: 8px; background: #f5f5f7">
+<code style="flex: 1; min-width: 0; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; color: #3a3a3c">brew install gh</code>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12); font: inherit; font-size: 11px; line-height: 14px; color: #1d1d1f">Copy</button>
+</div>
+<div style="display: flex; gap: 12px; align-items: center">
+<button onClick="{{checkAgain}}" style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Check Again</button>
+<a href="https://cli.github.com" style="font-size: 12px; line-height: 16px">No Homebrew? Other ways to install</a>
+</div>
+</div>
+</sc-if>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="flex: 1; font-size: 13px; line-height: 18px; font-weight: 600">What will you work on?</span>
+<div role="tablist" aria-label="Where" style="height: 26px; display: flex; align-items: center; gap: 2px; padding: 2px; box-sizing: border-box; border-radius: 13px; background: rgba(0,0,0,0.05)">
+<button role="tab" aria-selected="{{macSelected}}" onClick="{{showMac}}" style="{{macTab}}">On this Mac</button>
+<button role="tab" aria-selected="{{ghSelected}}" onClick="{{showGitHub}}" aria-disabled="{{ghTabOff}}" style="{{ghTab}}">On GitHub</button>
+</div>
+</div>
+<div role="radiogroup" aria-label="Project" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="4">
+<button role="radio" aria-checked="{{p.checked}}" onClick="{{p.pick}}" style="{{p.style}}">
+<span style="{{p.radio}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="display: flex; align-items: center; gap: 6px"><span style="font-size: 13px; line-height: 18px; font-weight: 500">{{p.name}}</span><sc-if value="{{p.hasTag}}" hint-placeholder-val="{{false}}"><span style="height: 16px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 8px; background: rgba(0,0,0,0.05); font-size: 10px; line-height: 12px; color: #3a3a3c">{{p.tag}}</span></sc-if></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{p.meta}}</span>
+</span>
+</button>
+</sc-for>
+</div>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{listNote}}</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<span style="flex: 1; min-width: 200px; font-size: 12px; line-height: 17px; color: #6e6e73">{{footNote}}</span>
+<a href="{{startHref}}" style="height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: #007aff">{{startLabel}}<span style="font-size: 11px; line-height: 14px; font-weight: 400; opacity: 0.85">↩</span></a>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"gh":{"editor":"enum","options":["signedIn","signedOut","signingIn","missing"],"default":"signedIn"},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+const gh = props.gh || 'signedIn';
+this.state = { gh: gh, tab: gh === 'signedIn' ? 'github' : 'mac', pick: gh === 'signedIn' ? 'habits' : 'yoga' };
+}
+renderVals() {
+const s = this.state;
+const signedIn = s.gh === 'signedIn';
+const mac = [
+{ id: 'yoga', name: 'yoga-studio-booking', meta: '~/Developer · Kotlin Multiplatform · edited today', tag: 'kaanf/yoga-studio-booking' },
+{ id: 'portfolio', name: 'portfolio-site', meta: '~/Developer · Astro · edited last month', tag: 'Only on this Mac' },
+{ id: 'idea', name: 'No code yet, start from an idea', meta: 'Mel makes a new folder and, if you want, a GitHub repo for it', tag: '' }
+];
+const github = [
+{ id: 'habits', name: 'kaanf/habit-tracker', meta: 'Private · Kotlin · updated 3 days ago', tag: 'Not on this Mac' },
+{ id: 'yoga', name: 'kaanf/yoga-studio-booking', meta: 'Private · Kotlin · updated today', tag: 'On this Mac' },
+{ id: 'kingdom', name: 'kaanf/kingdom-and-dynasty', meta: 'Private · empty · created yesterday', tag: 'Not on this Mac' },
+{ id: 'idea', name: 'No code yet, start from an idea', meta: 'Mel makes a new folder and, if you want, a GitHub repo for it', tag: '' }
+];
+const list = s.tab === 'github' && signedIn ? github : mac;
+const projects = list.map((p) => {
+const on = s.pick === p.id;
+return {
+name: p.name, meta: p.meta, tag: p.tag, hasTag: p.tag !== '', checked: on ? 'true' : 'false',
+pick: () => this.setState({ pick: p.id }),
+style: 'min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius: 10px; font: inherit; text-align: left; color: #1d1d1f; ' + (on ? 'background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.14)'),
+radio: 'flex: 0 0 16px; width: 16px; height: 16px; border-radius: 50%; box-sizing: border-box; ' + (on ? 'border: 5px solid #007aff; background: #ffffff' : 'border: 1px solid rgba(0,0,0,0.3); background: #ffffff')
+};
+});
+const tab = (on, off) => 'height: 22px; padding: 0 10px; border: 0; border-radius: 11px; font: inherit; font-size: 12px; line-height: 16px; ' + (off ? 'background: transparent; color: #aeaeb2' : on ? 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.08); color: #1d1d1f; font-weight: 600' : 'background: transparent; color: #3a3a3c');
+const picked = list.find((p) => p.id === s.pick) || list[0];
+const isIdea = picked.id === 'idea';
+const clones = picked.tag === 'Not on this Mac';
+return {
+signedIn: signedIn, signedOut: !signedIn, signingIn: s.gh === 'signingIn', missing: s.gh === 'missing', showSignIn: s.gh === 'signedOut',
+signIn: () => this.setState({ gh: 'signingIn' }),
+finishSignIn: () => this.setState({ gh: 'signedIn' }),
+checkAgain: () => this.setState({ gh: 'signedOut' }),
+macSelected: s.tab === 'mac' ? 'true' : 'false', ghSelected: s.tab === 'github' ? 'true' : 'false', ghTabOff: signedIn ? 'false' : 'true',
+macTab: tab(s.tab === 'mac', false), ghTab: tab(s.tab === 'github' && signedIn, !signedIn),
+showMac: () => this.setState({ tab: 'mac', pick: 'yoga' }),
+showGitHub: () => { if (signedIn) this.setState({ tab: 'github', pick: 'habits' }); },
+projects: projects,
+listNote: s.tab === 'github' && signedIn ? 'Your repos and your organizations’, newest first.' : 'Or drop a project folder anywhere on this window.',
+startLabel: clones ? 'Clone and Start' : 'Start',
+startHref: isIdea ? 'GH-2-Repo-Sheet.dc.html' : '#',
+footNote: isIdea ? 'Next you name it and choose where its code lives.' : clones ? 'Mel clones it into ~/Developer/' + picked.name.split('/')[1] + ', then reads it in the background.' : 'Mel reads the project once in the background, about a minute. You can start writing right away.'
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN GH-3 · Connect a project on this Mac to GitHub (proposal)
+Same component as GH-2-Repo-Sheet.dc.html (GH-2); only the prop below differs. Opens from the sidebar's project menu
+(Connect to GitHub…, shown when the project has no GitHub remote; with one, the menu shows "kaanf/<repo> on GitHub"
+and Open on GitHub instead), and from Build's built banner when the project has no remote.
+-->
+<title>Connect a project to GitHub</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="GH-2-Repo-Sheet" mode="connect" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

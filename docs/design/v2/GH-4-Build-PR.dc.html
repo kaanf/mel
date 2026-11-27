@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN GH-4 · Build, every task done, with GitHub (proposal, 2026-11-28, OQ #44)
+Replaces V2-22's Merge into main / Open a pull request when the project has a GitHub repo. Without one, V2-22 stays.
+  - Each task's commit is pushed to mel/<slug> right after its check passes (git push, no agent, no tokens). A task card's
+    last line says "Checked and pushed". A push that fails (offline, rejected) says so on the card with Push again;
+    the task is still Done.
+  - The last task done: Mel opens one pull request for the spec (gh pr create, title = spec name, body = what works now
+    and the decisions, from the reports). The banner and Mel's column show it with GitHub's checks.
+  - Merge pull request: gh pr merge --squash --delete-branch, then Mel switches the project back to main and pulls.
+    Checks still running: Merge waits for them (Merge when checks pass). A check failed: the failure, Let Claude Code fix
+    it (a run like a task's, on the same branch, pushed) or View on GitHub. GitHub can't merge (conflict): V2-23.
+Prop pr: "checks" | "ready" | "failed" | "merged". Variant on the canvas: GH-5 (merged).
+-->
+<title>Build, pull request</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; height: 800px; display: flex; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Project" style="flex: 0 0 272px; background: #f2f2f4; border-right: 0.5px solid rgba(0,0,0,0.08); display: flex; flex-direction: column">
+<div style="height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 14px">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 0 10px 8px">
+<button aria-haspopup="menu" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">kaanf/yoga-studio-booking on GitHub</span>
+</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="flex: 1; padding: 6px 10px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Needs you</span>
+<span style="padding: 4px 8px; font-size: 12px; line-height: 16px; color: #6e6e73">Nothing waiting for you</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Building</span>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Filter schedule by teacher</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Task 3 of 7</span></span>
+</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Done</span>
+<a href="#" aria-current="page" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; text-decoration: none">
+<span style="{{sideDot}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">Yoga Studio Booking</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{sideMeta}}</span></span>
+</a>
+<a href="#" style="min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">Double booking on fast taps</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Merged yesterday · #12</span></span>
+</a>
+</div>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="#" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">New<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span></a>
+<span style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73"><span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>Claude Code · Ready</span>
+</div>
+</nav>
+
+<main style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<div style="height: 52px; flex: 0 0 52px; display: flex; align-items: center; gap: 12px; padding: 0 20px">
+<button style="height: 28px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px 0 6px; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"></path></svg>Plan</button>
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Build: Yoga Studio Booking</span>
+<span style="flex: 1"></span>
+<span style="height: 28px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 14px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px; color: #3a3a3c"><span style="{{pillDot}}"></span>{{pill}}</span>
+</div>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 4px 20px 24px; display: flex; flex-direction: column; gap: 14px; max-width: 860px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 13px; line-height: 18px; font-weight: 600">5 of 5 tasks done</span><span style="font-size: 12px; line-height: 16px; color: #6e6e73">Each one checked on this Mac and pushed.</span></div>
+<div aria-hidden="true" style="display: flex; gap: 4px">
+<span style="flex: 1; height: 4px; border-radius: 2px; background: #248a3d"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: #248a3d"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: #248a3d"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: #248a3d"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: #248a3d"></span>
+</div>
+</div>
+
+<sc-if value="{{isOpen}}" hint-placeholder-val="{{true}}">
+<div role="status" style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 12px; background: rgba(36,138,61,0.08); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
+<span style="font-size: 15px; line-height: 20px; font-weight: 700">The first version is built</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">All 5 tasks are on <span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px">mel/yoga-studio-booking</span>. Mel opened pull request <a href="#">#14 Yoga Studio Booking</a> with what works now and the 9 decisions made while building.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{merge}}" aria-disabled="{{mergeOff}}" style="{{mergeStyle}}">{{mergeLabel}}</button>
+<a href="#" style="height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font-size: 12px; line-height: 16px; color: #1d1d1f; text-decoration: none">View on GitHub</a>
+<a href="#" style="font-size: 12px; line-height: 16px; text-decoration: none; padding: 0 4px">Plan the 2 later stories</a>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{mergeNote}}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{isFailed}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">GitHub’s check “test” failed on #14</span>
+<code style="display: block; padding: 8px 10px; border-radius: 8px; background: #ffffff; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 16px; color: #3a3a3c; white-space: pre-wrap">BookingStoreTest &gt; cancels within 24 hours FAILED
+  expected refund 1 credit, got 0 (TimeZone UTC on the runner)</code>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">It passed on this Mac, so it likely depends on the time zone. Nothing was merged.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{fix}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; display: inline-flex; align-items: center; gap: 6px">Let Claude Code fix it<span style="font-weight: 400; opacity: 0.85">about 8k tokens</span></button>
+<a href="#" style="height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font-size: 12px; line-height: 16px; color: #1d1d1f; text-decoration: none">View on GitHub</a>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">The fix runs like a task, on the same branch, with a report. Mel pushes it and GitHub checks again.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{isMerged}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: rgba(36,138,61,0.08); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"></path></svg>
+<span style="font-size: 15px; line-height: 20px; font-weight: 700">Merged into main on GitHub</span>
+</div>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c"><a href="#">#14</a> was squashed into one commit on main. Mel deleted <span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px">mel/yoga-studio-booking</span> and switched this Mac to an up-to-date main.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<a href="#" style="height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 14px; background: #007aff; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; text-decoration: none">Plan the 2 later stories</a>
+<a href="#" style="height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font-size: 12px; line-height: 16px; color: #1d1d1f; text-decoration: none">New spec</a>
+</div>
+</div>
+</sc-if>
+
+<section aria-label="Tasks" style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 14px; background: #f5f5f7">
+<div style="display: flex; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-size: 14px; line-height: 19px; font-weight: 700">Steps 1–3</h2>
+<span style="flex: 1"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">5 of 5 done</span>
+</div>
+<sc-for list="{{tasks}}" as="t" hint-placeholder-count="5">
+<div style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08)">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #248a3d"></span>
+<span style="flex: 1; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 500">{{t.title}}</span>
+<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 14px; color: #6e6e73"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"></path></svg>Checked and pushed</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">Task {{t.n}}</span>
+<a href="#" style="font-size: 12px; line-height: 16px; text-decoration: none">Report</a>
+</div>
+</sc-for>
+</section>
+</div>
+</main>
+
+<aside aria-label="Mel" style="flex: 0 0 340px; background: #f5f5f7; border-left: 0.5px solid rgba(0,0,0,0.08); display: flex; flex-direction: column">
+<div style="height: 52px; flex: 0 0 52px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 16px">
+<a href="#" style="height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12); font-size: 12px; line-height: 16px; color: #1d1d1f; text-decoration: none">Open Terminal here</a>
+</div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">On GitHub</h2>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08)">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#3a3a3c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="3.5" r="1.5"></circle><circle cx="4.5" cy="12.5" r="1.5"></circle><circle cx="11.5" cy="12.5" r="1.5"></circle><path d="M4.5 5v6M11.5 11V7.5c0-1.5-1-2.5-2.5-2.5H7"></path></svg>
+<span style="flex: 1; font-size: 13px; line-height: 18px; font-weight: 600">#14 Yoga Studio Booking</span>
+<span style="{{stateChip}}">{{stateWord}}</span>
+</div>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; color: #6e6e73">mel/yoga-studio-booking → main · 5 commits</span>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 2px">
+<sc-for list="{{checks}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="{{c.dot}}"></span>
+<span style="flex: 1; font-size: 12px; line-height: 16px">{{c.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{c.state}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">How it got there</span>
+<span style="font-size: 12px; line-height: 18px; color: #3a3a3c">Each task was pushed once its check passed on this Mac. When the last one was done, Mel opened the pull request. Merge squashes it into main on GitHub; Mel then brings this Mac’s main up to date.</span>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Through your GitHub CLI, as kaanf. Pushing and merging use no tokens.</span>
+</div>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"pr":{"editor":"enum","options":["checks","ready","failed","merged"],"default":"ready"},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { pr: props.pr || 'ready' };
+}
+renderVals() {
+const pr = this.state.pr;
+const dot = (color, ring) => 'flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; ' + (ring ? 'border: 1.5px solid ' + color : 'background: ' + color);
+const checkRows = {
+checks: [['build', 'passed', '#248a3d', false], ['test', 'running, 1 min', '#007aff', true], ['lint', 'passed', '#248a3d', false]],
+ready: [['build', 'passed', '#248a3d', false], ['test', 'passed', '#248a3d', false], ['lint', 'passed', '#248a3d', false]],
+failed: [['build', 'passed', '#248a3d', false], ['test', 'failed', '#d70015', false], ['lint', 'passed', '#248a3d', false]],
+merged: [['build', 'passed', '#248a3d', false], ['test', 'passed', '#248a3d', false], ['lint', 'passed', '#248a3d', false]]
+}[pr];
+const chip = (bg, fg) => 'height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; font-size: 11px; line-height: 14px; font-weight: 600; background: ' + bg + '; color: ' + fg;
+const running = pr === 'checks';
+const pill = { checks: 'Built · checks running', ready: 'Built · ready to merge', failed: 'A GitHub check failed', merged: 'Merged' }[pr];
+const pillColor = { checks: '#007aff', ready: '#248a3d', failed: '#d70015', merged: '#248a3d' }[pr];
+return {
+isOpen: pr === 'checks' || pr === 'ready', isFailed: pr === 'failed', isMerged: pr === 'merged',
+merge: () => { if (pr === 'ready') this.setState({ pr: 'merged' }); },
+fix: () => this.setState({ pr: 'checks' }),
+mergeOff: running ? 'true' : 'false',
+mergeLabel: running ? 'Merge when checks pass' : 'Merge pull request',
+mergeStyle: 'height: 28px; padding: 0 12px; border: 0; border-radius: 14px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; background: #007aff',
+mergeNote: running ? 'GitHub is still running 1 of 3 checks. Mel merges as soon as they pass, even if you close this window.' : 'GitHub’s 3 checks passed. Merge squashes the 5 commits into one on main.',
+pill: pill, pillDot: dot(pillColor, running),
+sideDot: dot(pr === 'merged' ? '#248a3d' : pillColor, running),
+sideMeta: { checks: 'Pull request #14 · checks running', ready: 'Pull request #14 · ready to merge', failed: 'Pull request #14 · a check failed', merged: 'Merged just now · #14' }[pr],
+stateWord: pr === 'merged' ? 'Merged' : 'Open',
+stateChip: pr === 'merged' ? chip('rgba(130,80,223,0.12)', '#6e40c9') : chip('rgba(36,138,61,0.12)', '#1a7f37'),
+checks: checkRows.map((c) => ({ name: c[0], state: c[1], dot: dot(c[2], c[3]) })),
+tasks: [
+{ n: 1, title: 'Booking data and local store' },
+{ n: 2, title: 'Schedule and class screens' },
+{ n: 3, title: 'Class pack checkout' },
+{ n: 4, title: 'Cancel a booking' },
+{ n: 5, title: 'Reminders before class' }
+]
+};
+}
+}
+</script>
+</body>
+</html>

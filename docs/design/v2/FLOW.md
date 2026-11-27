@@ -42,6 +42,13 @@ Goal: before the agent starts, the user makes at most 2 decisions (write, press 
 | V2-21 | V2-21-Build-Stopped.dc.html | Build, a task stopped: its changes are uncommitted, Keep them (Run again goes on) / Undo them (scene = "stopped") | new |
 | V2-22 | V2-22-Build-Built.dc.html | Build, every task done on mel/<slug>: Merge into main / Open a pull request (scene = "built") | new |
 | V2-23 | V2-23-Build-Conflict.dc.html | Build, merge into main conflicts: the files, Let Claude Code resolve it / Open in Terminal / Cancel; nothing merged (scene = "conflict") | new |
+| GH-1 | GH-1-Start-GitHub.dc.html | Start with GitHub (OQ #44): a GitHub line under Your agent (account, Sign in to GitHub…), On this Mac / On GitHub tabs, Clone and Start for a repo not on this Mac (prop gh = "signedIn" / "signedOut" / "signingIn" / "missing") | V2-0 |
+| GH-1b | GH-1b-Start-SignIn.dc.html | Start, signing in: the one-time code from `gh auth login --web` (gh = "signingIn") | new |
+| GH-1c | GH-1c-Start-NoCLI.dc.html | Start, no GitHub CLI: `brew install gh`, Check Again; GitHub optional (gh = "missing") | new |
+| GH-2 | GH-2-Repo-Sheet.dc.html | A New product's name sheet asks where its code lives: a new GitHub repo (owner, name, Private / Public), a repo you already made (clone), only on this Mac (prop mode = "new") | name sheet |
+| GH-3 | GH-3-Project-Connect.dc.html | Connect a project on this Mac to GitHub, from the project menu: new repo or an empty one you made; one with its own history is refused (mode = "connect") | new |
+| GH-4 | GH-4-Build-PR.dc.html | Build, every task done, with GitHub: each task checked and pushed, one pull request per spec, GitHub's checks in Mel's column, Merge pull request / Merge when checks pass / a failed check with Let Claude Code fix it (prop pr = "checks" / "ready" / "failed" / "merged") | V2-22 when there is a GitHub repo |
+| GH-5 | GH-5-Build-Merged.dc.html | Build, merged on GitHub: squashed, branch deleted, this Mac on an up-to-date main (pr = "merged") | new |
 | V2-3 | V2-3-Ready.dc.html | Build: tasks in steps (run alone, at the same time, one after the other), Copy prompt, Check it, Done; back to the plan | B7 |
 | V2-6 | V2-6-Settings-Specs.dc.html | Settings › Specs: the defaults V2 stopped asking about | B1 fields, B7 toggles, A3 rules |
 

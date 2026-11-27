@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN GH-2 · Where a product's code lives (proposal, 2026-11-28, OQ #44)
+The sheet that already asks a New product's name (after Start on "No code yet") also asks where its code lives:
+  - A new GitHub repo (default when signed in): owner, name (from the product name), Private / Public. Mel runs
+    gh repo create <owner>/<name> --private --source <folder> --push after the folder's first commit.
+  - A repo you already made: the user's repos, empty ones first (gh repo list). Mel clones it into ~/Developer/<name>.
+  - Only on this Mac: as today. Connect to GitHub… in the project menu does it later (GH-3).
+Prop mode "connect" is GH-3: the same sheet for a project already on this Mac with no GitHub remote. Its options are the
+  first two; a repo you already made must be empty or share history, else Mel says so and offers a new repo instead.
+Signed out or no gh: the GitHub options are off with one line and Sign in to GitHub… (GH-1's states).
+-->
+<title>Where its code lives</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#0066d6}a:hover{color:#0066d6}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="position: relative; max-width: 1280px; margin: 0 auto; height: 800px; display: flex; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<div aria-hidden="true" style="flex: 0 0 272px; background: #f2f2f4; display: flex; flex-direction: column; gap: 12px; padding: 0 10px">
+<div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 4px">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12)">
+<span style="flex: 0 0 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #8a4b00">{{initial}}</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 17px; font-weight: 600">{{project}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{projectMeta}}</span></span>
+</div>
+<span style="padding: 0 8px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Needs you</span>
+<span style="padding: 0 8px; font-size: 12px; line-height: 16px; color: #6e6e73">Nothing waiting for you</span>
+</div>
+<div aria-hidden="true" style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 60px 48px">
+<span style="font-size: 22px; line-height: 28px; font-weight: 700">What do you want to make?</span>
+<span style="height: 120px; border-radius: 12px; background: #f5f5f7"></span>
+</div>
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,0.18)"></div>
+
+<div role="dialog" aria-label="{{title}}" style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 520px; box-sizing: border-box; padding: 22px 24px 20px; display: flex; flex-direction: column; gap: 16px; background: #ffffff; border-radius: 14px; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 20px 60px rgba(0,0,0,0.25)">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 700">{{title}}</h2>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">{{subtitle}}</span>
+</div>
+
+<sc-if value="{{isNew}}" hint-placeholder-val="{{true}}">
+<label style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">Name</span>
+<input value="Yoga Studio Booking" style="height: 30px; box-sizing: border-box; padding: 0 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.2), 0 0 0 3px rgba(0,122,255,0.25); font: inherit; font-size: 13px; color: #1d1d1f"></input>
+</label>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600">Where will its code live?</span>
+<div role="radiogroup" aria-label="Where its code lives" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{choices}}" as="c" hint-placeholder-count="3">
+<div style="{{c.box}}">
+<button role="radio" aria-checked="{{c.checked}}" onClick="{{c.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<span style="{{c.radio}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 18px; font-weight: 500">{{c.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{c.meta}}</span>
+</span>
+</button>
+
+<sc-if value="{{c.showCreate}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 2px 0 2px 28px">
+<div style="display: flex; align-items: center; gap: 6px">
+<button aria-haspopup="menu" style="height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 7px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.2); font: inherit; font-size: 12px; color: #1d1d1f">kaanf<svg width="8" height="10" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg></button>
+<span style="font-size: 13px; color: #6e6e73">/</span>
+<input aria-label="Repo name" value="yoga-studio-booking" style="flex: 1; min-width: 0; height: 26px; box-sizing: border-box; padding: 0 8px; border: 0; border-radius: 7px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.2); font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; color: #1d1d1f"></input>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<div role="tablist" aria-label="Visibility" style="height: 24px; display: flex; align-items: center; gap: 2px; padding: 2px; box-sizing: border-box; border-radius: 12px; background: rgba(0,0,0,0.05)">
+<button role="tab" aria-selected="{{privateOn}}" onClick="{{makePrivate}}" style="{{privateTab}}">Private</button>
+<button role="tab" aria-selected="{{publicOn}}" onClick="{{makePublic}}" style="{{publicTab}}">Public</button>
+</div>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{visibilityNote}}</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{c.showPick}}" hint-placeholder-val="{{false}}">
+<div role="listbox" aria-label="Your repos" style="display: flex; flex-direction: column; margin-left: 28px; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.14); overflow: hidden">
+<sc-for list="{{repos}}" as="r" hint-placeholder-count="3">
+<button role="option" aria-selected="{{r.selected}}" onClick="{{r.pick}}" style="{{r.style}}">
+<span style="flex: 1; min-width: 0; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px">{{r.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: {{r.metaColor}}">{{r.meta}}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{pickWarn}}" hint-placeholder-val="{{false}}">
+<span style="margin-left: 28px; font-size: 11px; line-height: 15px; color: #8a4b00">{{pickWarnText}}</span>
+</sc-if>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="flex: 1; font-size: 11px; line-height: 15px; color: #6e6e73">{{footNote}}</span>
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.2); font: inherit; font-size: 13px; color: #1d1d1f">Cancel</button>
+<button style="height: 28px; padding: 0 14px; border: 0; border-radius: 7px; background: #007aff; font: inherit; font-size: 13px; font-weight: 600; color: #ffffff">{{confirm}}</button>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["new","connect"],"default":"new"},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { where: 'create', visibility: 'private', repo: 'kingdom' };
+}
+renderVals() {
+const s = this.state;
+const isNew = (this.props.mode || 'new') === 'new';
+const all = [
+{ id: 'create', name: 'A new GitHub repo', meta: isNew ? 'Mel creates it and pushes the first commit.' : 'Mel creates it, adds it as origin and pushes main.' },
+{ id: 'pick', name: 'A repo you already made', meta: isNew ? 'Mel clones it into ~/Developer and starts there.' : 'Mel adds it as origin and pushes main.' },
+{ id: 'mac', name: 'Only on this Mac', meta: 'Connect it later from the project menu. Building merges into main here.' }
+];
+const list = isNew ? all : all.slice(0, 2);
+const choices = list.map((c) => {
+const on = s.where === c.id;
+return {
+name: c.name, meta: c.meta, checked: on ? 'true' : 'false',
+pick: () => this.setState({ where: c.id }),
+showCreate: on && c.id === 'create', showPick: on && c.id === 'pick',
+box: 'display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; ' + (on ? 'background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 1.5px #007aff' : 'background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.14)'),
+radio: 'flex: 0 0 16px; width: 16px; height: 16px; border-radius: 50%; box-sizing: border-box; ' + (on ? 'border: 5px solid #007aff; background: #ffffff' : 'border: 1px solid rgba(0,0,0,0.3); background: #ffffff')
+};
+});
+const reposData = [
+{ id: 'kingdom', name: 'kaanf/kingdom-and-dynasty', meta: 'Empty · created yesterday', empty: true },
+{ id: 'yoga', name: 'kaanf/yoga-app', meta: 'Empty · created today', empty: true },
+{ id: 'habits', name: 'kaanf/habit-tracker', meta: '42 commits · 3 days ago', empty: false }
+];
+const repos = reposData.map((r) => {
+const on = s.repo === r.id;
+return {
+name: r.name, meta: r.meta, selected: on ? 'true' : 'false', metaColor: on ? '#3a3a3c' : '#6e6e73',
+pick: () => this.setState({ repo: r.id }),
+style: 'min-height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 0; border-bottom: 0.5px solid rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f; background: ' + (on ? 'rgba(0,122,255,0.1)' : 'transparent')
+};
+});
+const picked = reposData.find((r) => r.id === s.repo);
+const seg = (on) => 'height: 20px; padding: 0 10px; border: 0; border-radius: 10px; font: inherit; font-size: 11px; line-height: 14px; ' + (on ? 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.08); color: #1d1d1f; font-weight: 600' : 'background: transparent; color: #3a3a3c');
+const priv = s.visibility === 'private';
+let confirm = 'Start';
+if (s.where === 'create') confirm = isNew ? 'Create Repo and Start' : 'Create Repo and Push';
+if (s.where === 'pick') confirm = isNew ? 'Clone and Start' : 'Connect and Push';
+return {
+isNew: isNew,
+title: isNew ? 'Name your product' : 'Connect yoga-studio-booking to GitHub',
+subtitle: isNew ? 'Mel makes a folder for it in ~/Developer. You can rename it later.' : 'This project is only on this Mac. With a GitHub repo, Mel pushes each task and opens a pull request when a spec is built.',
+project: isNew ? 'New product' : 'yoga-studio-booking', projectMeta: isNew ? 'Not started' : 'Only on this Mac', initial: isNew ? 'N' : 'Y',
+choices: choices, repos: repos,
+privateOn: priv ? 'true' : 'false', publicOn: priv ? 'false' : 'true',
+privateTab: seg(priv), publicTab: seg(!priv),
+makePrivate: () => this.setState({ visibility: 'private' }), makePublic: () => this.setState({ visibility: 'public' }),
+visibilityNote: priv ? 'Only you and people you add can see it.' : 'Anyone can see it. Your spec files go there too.',
+pickWarn: !picked.empty, pickWarnText: isNew ? 'This repo has code already. Mel clones it and reads it like any project.' : 'This repo has its own history. Mel won’t mix two histories: pick an empty repo or make a new one.',
+confirm: confirm,
+footNote: s.where === 'mac' ? '' : 'Through your GitHub CLI, as kaanf.'
+};
+}
+}
+</script>
+</body>
+</html>

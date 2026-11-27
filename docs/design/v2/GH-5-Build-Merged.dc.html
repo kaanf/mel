@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN GH-5 · Build, merged on GitHub (proposal)
+Same component as GH-4-Build-PR.dc.html (GH-4); only the prop below differs. After Merge pull request: squashed into main on
+GitHub, the spec branch deleted, this Mac switched to main and pulled. The sidebar says "Merged just now · #14".
+-->
+<title>Build, merged on GitHub</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="GH-4-Build-PR" pr="merged" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

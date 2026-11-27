@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN GH-1c · Start, no GitHub CLI on this Mac (proposal)
+Same component as GH-1-Start-GitHub.dc.html (GH-1); only the prop below differs. GitHub is optional: Start works, On GitHub is off,
+and building stays on this Mac (V2-22's Merge into main). Mel looks again when the window comes back to the front.
+-->
+<title>Start, no GitHub CLI</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="GH-1-Start-GitHub" gh="missing" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
