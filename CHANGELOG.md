@@ -6,12 +6,15 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.10] · 2026-11-28
+
 ### Added
 - **GitHub.** Mel connects to GitHub through your GitHub CLI (`gh`); it keeps no token of its own. Start shows your account and your repos on an On GitHub tab, and clones one that isn't on your Mac. A new product can get a new GitHub repo (private or public) or use one you already made. A project that's only on your Mac connects from the project menu.
 - **Push and pull request.** With a GitHub repo, each task is pushed to the spec's branch once its check passes. When the last task is done, Mel opens one pull request with what works now and what was decided, shows GitHub's checks, and merges it from Build (squashed, the branch deleted, your Mac back on an up-to-date main). Merge when checks pass waits for GitHub's checks.
 
 ### Fixed
 - **Start Building says why it didn't start.** If committing the spec failed, the button did nothing; the reason now shows in the right column.
+- **The sidebar sits right under the window's buttons.** The gap above the project at the top of the sidebar is gone.
 
 ## [0.9.1] · 2026-11-27
 
@@ -173,7 +176,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.10...HEAD
+[0.10]: https://github.com/kaanf/mel/compare/v0.9.1...v0.10
 [0.9.1]: https://github.com/kaanf/mel/compare/v0.9...v0.9.1
 [0.9]: https://github.com/kaanf/mel/compare/v0.8.1...v0.9
 [0.8.1]: https://github.com/kaanf/mel/compare/v0.8...v0.8.1
