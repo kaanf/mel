@@ -53,7 +53,6 @@ struct StartView: View {
         .background(Theme.Colors.background)
         .ignoresSafeArea(.container, edges: .top)
         .toolbar(removing: .title)
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .dropDestination(for: URL.self) { urls, _ in
             let folders = urls.filter(\.hasDirectoryPath)
             guard let first = folders.first else { return false }

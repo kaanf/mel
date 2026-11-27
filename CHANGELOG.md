@@ -6,6 +6,9 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Changed
+- **Three clean columns.** The sidebar, the plan and Mel's column on the right each run the full height of the window with their own header; the title, status and tokens sit over the plan, Files and Start Building (or Open Terminal here) over the right column. Full screen no longer shows a separate band with a line over the sidebar, and the plan no longer scrolls under the title.
+
 ### Fixed
 - **The window fits the screen again.** With a spec's board open, the window could grow past the bottom of the screen and refuse to shrink, and full screen cut off the top and bottom. It now resizes freely and full screen shows everything.
 

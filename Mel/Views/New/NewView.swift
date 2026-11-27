@@ -73,7 +73,6 @@ struct NewView: View {
         .background(Theme.Colors.background)
         .ignoresSafeArea(.container, edges: .top)
         .toolbar(removing: .title)
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .navigationTitle("New")
         .animation(.board, value: text.isEmpty)
         .animation(.board, value: planned)

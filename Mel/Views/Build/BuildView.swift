@@ -45,28 +45,38 @@ struct BuildView: View {
     private var repo: String { spec.project.lastPathComponent }
 
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(spacing: 0) {
+            header
             ScrollView {
-                    VStack(alignment: .leading, spacing: Theme.Space.x14) {
-                        progress
-                        if let blocked = session.blockedRun { blockedBanner(blocked).transition(.drop) }
-                        if allDone { builtBanner.transition(.drop) }
-                        ForEach(Array(session.steps.enumerated()), id: \.offset) { index, step in
-                            stepSection(step, index: index)
-                        }
-                        if let error = session.lastError {
-                            Text(error).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.cautionText)
-                        }
+                VStack(alignment: .leading, spacing: Theme.Space.x14) {
+                    progress
+                    if let blocked = session.blockedRun { blockedBanner(blocked).transition(.drop) }
+                    if allDone { builtBanner.transition(.drop) }
+                    ForEach(Array(session.steps.enumerated()), id: \.offset) { index, step in
+                        stepSection(step, index: index)
                     }
-                    .frame(maxWidth: Theme.Size.buildWidth, alignment: .leading)
-                    .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x20, bottom: Theme.Space.x24, trailing: Theme.Space.x20))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if let error = session.lastError {
+                        Text(error).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.cautionText)
+                    }
+                }
+                .frame(maxWidth: Theme.Size.buildWidth, alignment: .leading)
+                .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x20, bottom: Theme.Space.x24, trailing: Theme.Space.x20))
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Rectangle().fill(Theme.Colors.separator).frame(width: Theme.Size.hairline)
-            Group {
-                if showsTell { tellPanel.transition(.opacity) } else { aside.transition(.opacity) }
+        }
+        // The header takes the hidden title bar's place, level with the traffic lights.
+        .ignoresSafeArea(.container, edges: .top)
+        .inspector(isPresented: .constant(true)) {
+            VStack(spacing: 0) {
+                asideHeader
+                Group {
+                    if showsTell { tellPanel.transition(.opacity) } else { aside.transition(.opacity) }
+                }
             }
-            .frame(width: Theme.Size.buildAside)
+            .ignoresSafeArea(.container, edges: .top)
+            .foregroundStyle(Theme.Colors.label)
+            .background(Theme.Colors.fillSubtle)
+            .inspectorColumnWidth(Theme.Size.buildAside)
         }
         .foregroundStyle(Theme.Colors.label)
         .background(Theme.Colors.background)
@@ -79,14 +89,13 @@ struct BuildView: View {
         .animation(.board, value: session.blockedRun)
         .animation(.board, value: session.runningTask)
         .navigationTitle("Build: \(spec.name)")
-        .toolbar { toolbar }
     }
 
-    // MARK: Toolbar
+    // MARK: Header
 
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
+    /// The center's header: ‹ Plan, the spec's name and the build's status.
+    private var header: some View {
+        HStack(spacing: Theme.Space.x12) {
             Button { session.reopenPlan() } label: {
                 HStack(spacing: Theme.Space.x4) {
                     DesignIcon(glyph: .chevronLeft, size: Theme.Size.rowChevron)
@@ -100,9 +109,8 @@ struct BuildView: View {
             }
             .buttonStyle(.plain)
             .help("Back to the plan. Start Building brings you here again.")
-        }
-        .sharedBackgroundVisibility(.hidden)
-        ToolbarItem(placement: .principal) {
+            Text("Build: \(spec.name)").textStyle(Theme.Text.bodyBold).lineLimit(1).layoutPriority(1)
+            Spacer(minLength: 0)
             HStack(spacing: Theme.Space.x8) {
                 StatusDot(style: session.isRunning ? .ring(Theme.Colors.accent) : .filled(allDone ? Theme.Colors.success : failedCount > 0 ? Theme.Colors.failure : Theme.Colors.accent))
                 Text(pill).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1)
@@ -112,8 +120,14 @@ struct BuildView: View {
             .background(Theme.Colors.statusPillFill, in: Capsule())
             .accessibilityElement(children: .combine)
         }
-        .sharedBackgroundVisibility(.hidden)
-        ToolbarItem {
+        .padding(.horizontal, Theme.Space.x20)
+        .frame(height: Theme.Size.columnHeader)
+    }
+
+    /// Over Mel's column.
+    private var asideHeader: some View {
+        HStack {
+            Spacer(minLength: 0)
             Button(action: session.openTerminal) {
                 HStack(spacing: Theme.Space.x6) {
                     Image(systemName: "apple.terminal").font(.system(size: Theme.Size.terminalButtonIcon))
@@ -128,7 +142,8 @@ struct BuildView: View {
             .buttonStyle(.plain)
             .help("Opens Claude Code in \(repo), ready for a pasted prompt")
         }
-        .sharedBackgroundVisibility(.hidden)
+        .padding(.horizontal, Theme.Space.x16)
+        .frame(height: Theme.Size.columnHeader)
     }
 
     private var failedCount: Int { tasks.count { if case .failed = session.status(of: $0) { true } else { false } } }
@@ -751,7 +766,7 @@ struct BuildView: View {
         }
         .padding(Theme.Space.x16)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.Colors.fillSubtle)
+        
     }
 
     // MARK: How building works
@@ -886,7 +901,7 @@ struct BuildView: View {
             .padding(Theme.Space.x16)
         }
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(Theme.Colors.fillSubtle)
+        
     }
 
     private static let how = [

@@ -35,7 +35,6 @@ struct BoardInbox: View {
             .animation(.board, value: isAsking)
         }
         .foregroundStyle(Theme.Colors.label)
-        .background(Theme.Colors.fillSubtle)
     }
 
     // MARK: Intake

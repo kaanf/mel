@@ -2,7 +2,7 @@ import SwiftUI
 import MelSpec
 
 /// A spec's token use (FLOW.md › V2 "Token use is visible"): the total, and the split by step in
-/// a popover. Sits in the current toolbar until the V2 board draws it (V2-9).
+/// a popover. Sits in the board's header.
 struct TokenReadout: View {
     let spec: Spec
     @State private var showsSteps = false
@@ -15,6 +15,7 @@ struct TokenReadout: View {
                 .monospacedDigit()
                 .padding(.horizontal, Theme.Space.x6)
         }
+        .buttonStyle(.plain)
         .help("Tokens this spec has used: output and uncached input")
         .popover(isPresented: $showsSteps, arrowEdge: .bottom) {
             Grid(alignment: .leading, horizontalSpacing: Theme.Space.x24, verticalSpacing: Theme.Space.x6) {

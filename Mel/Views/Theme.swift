@@ -315,6 +315,8 @@ enum Theme {
         static let statusPillCompact: CGFloat = 160
         /// 44 · title bar row: sidebar top (traffic lights), A2/A3/A4x bar with the centered title.
         static let titleBar: CGFloat = 44
+        /// 52 · a column's header row (title, status, actions), where the window toolbar was.
+        static let columnHeader: CGFloat = 52
         /// 15 · Project context house icon; 12 · spec row chevron; 14 · New Spec plus.
         static let projectIcon: CGFloat = 15
         static let chevron: CGFloat = 12

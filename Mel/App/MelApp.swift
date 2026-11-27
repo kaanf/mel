@@ -29,6 +29,9 @@ struct MelApp: App {
                     }
                 }
         }
+        // No toolbar: in full screen macOS draws it as a band of its own over every column. Each
+        // column has its own header row instead.
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: Theme.Size.windowWidth, height: Theme.Size.windowHeight)
         .commands {
             MelCommands(isShowingNew: $isShowingNew, canCreateSpec: state.currentProject != nil, updater: updater)

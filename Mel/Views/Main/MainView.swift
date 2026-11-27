@@ -7,7 +7,6 @@ struct MainView: View {
     @Environment(AppState.self) private var state
     @Environment(\.controlActiveState) private var activeState
     @AppStorage("didShowWelcome") private var didShowWelcome = false
-    @AppStorage("showTokens") private var showsTokens = true
     @Binding var isShowingNew: Bool
     /// Start with "No code yet": New has no project until the first spec makes its folder.
     @State private var startsFromIdea = false
@@ -85,8 +84,6 @@ struct MainView: View {
             .animation(.easeInOut(duration: 0.18), value: shownSpec?.id)
             .animation(.board, value: shownSpec?.stage)
         }
-        // Full screen draws the toolbar as its own band with a line under it; the window doesn't.
-        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .onChange(of: state.selection) { _, id in
             openFile = nil
             if id != nil { isShowingNew = false }
@@ -106,11 +103,6 @@ struct MainView: View {
             BuildView(session: session)
         } else {
             BoardView(session: session, openFile: $openFile)
-                .toolbar {
-                    if showsTokens, spec.tokenTotal > 0 {
-                        ToolbarItem { TokenReadout(spec: spec) }
-                    }
-                }
         }
     }
 

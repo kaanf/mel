@@ -12,6 +12,7 @@ struct BoardView: View {
     @State private var showsFiles = false
     @State private var isEditing = false
     @State private var why = ""
+    @AppStorage("showTokens") private var showsTokens = true
     @AppStorage("commitSpec") private var commitsSpec = true
     @AppStorage("writeAgentsFile") private var writesAgentsFile = true
 
@@ -21,16 +22,23 @@ struct BoardView: View {
     private var edited: DocKind? { spec.size.files.first { spec.docs[$0] == .edited } }
 
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(spacing: 0) {
+            header
             main
-            Rectangle().fill(Theme.Colors.separator).frame(width: Theme.Size.hairline)
-            BoardInbox(session: session) { open(.decisions) }
-                .frame(width: Theme.Size.inboxWidth)
         }
+        // The header takes the hidden title bar's place, level with the traffic lights.
+        .ignoresSafeArea(.container, edges: .top)
         .background(Theme.Colors.background)
         .navigationTitle(spec.name)
-        .navigationSubtitle(spec.size.boardLabel)
-        .toolbar { toolbar }
+        .inspector(isPresented: .constant(true)) {
+            VStack(spacing: 0) {
+                inboxHeader
+                BoardInbox(session: session) { open(.decisions) }
+            }
+            .ignoresSafeArea(.container, edges: .top)
+            .background(Theme.Colors.fillSubtle)
+            .inspectorColumnWidth(Theme.Size.inboxWidth)
+        }
         .background { shortcuts }
         .task(id: spec.id) { if isAsking { await session.start() } }
     }
@@ -147,50 +155,59 @@ struct BoardView: View {
         openFile = nil
     }
 
-    // MARK: Toolbar
+    // MARK: Header
 
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .principal) {
-            HStack(spacing: Theme.Space.x8) {
-                HStack(spacing: Theme.Space.x8) {
-                    if session.isRunning { ProgressView().controlSize(.mini) } else { status.dot }
-                    Text(status.text).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1)
-                }
-                .padding(.horizontal, Theme.Space.x12)
-                .frame(height: Theme.Size.button)
-                .background(Theme.Colors.statusPillFill, in: Capsule())
-                .accessibilityElement(children: .combine)
-                if spec.gate != nil, !session.isRunning {
-                    Button("Write it now") { Task { await session.writeNow() } }
-                        .buttonStyle(DesignLinkStyle())
-                        .help("Writes the next file without waiting. Open questions become guesses.")
-                }
+    /// The center's header: the spec's name and size, its status, and its tokens.
+    private var header: some View {
+        HStack(spacing: Theme.Space.x12) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(spec.name).textStyle(Theme.Text.bodyBold).lineLimit(1)
+                Text(spec.size.boardLabel).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(1)
             }
+            .layoutPriority(1)
+            Spacer(minLength: 0)
+            HStack(spacing: Theme.Space.x8) {
+                if session.isRunning { ProgressView().controlSize(.mini) } else { status.dot }
+                Text(status.text).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1)
+            }
+            .padding(.horizontal, Theme.Space.x12)
+            .frame(height: Theme.Size.button)
+            .background(Theme.Colors.statusPillFill, in: Capsule())
+            .accessibilityElement(children: .combine)
+            if spec.gate != nil, !session.isRunning {
+                Button("Write it now") { Task { await session.writeNow() } }
+                    .buttonStyle(DesignLinkStyle())
+                    .help("Writes the next file without waiting. Open questions become guesses.")
+            }
+            if showsTokens, spec.tokenTotal > 0 { TokenReadout(spec: spec) }
         }
-        .sharedBackgroundVisibility(.hidden)
-        ToolbarItem {
+        .padding(.horizontal, Theme.Space.x20)
+        .frame(height: Theme.Size.columnHeader)
+    }
+
+    /// Over the inbox: Files and Start Building.
+    private var inboxHeader: some View {
+        HStack(spacing: Theme.Space.x8) {
+            Spacer(minLength: 0)
             Button { showsFiles.toggle() } label: {
                 HStack(spacing: Theme.Space.x6) {
                     DesignIcon(glyph: .file, size: Theme.Size.paperclipIcon)
-                    Text("Files").textStyle(Theme.Text.callout)
+                    Text("Files")
                 }
-                .foregroundStyle(Theme.Colors.label)
-                .padding(.horizontal, Theme.Space.x6)
             }
+            .buttonStyle(BoardPillStyle())
             .accessibilityValue(showsFiles ? "Shown" : "Hidden")
             .help("The spec's Markdown files and their state")
-        }
-        ToolbarItem {
             Button("Start Building") {
                 Task {
                     do { try await session.startBuilding(commitToGit: commitsSpec && session.canCommit, writeAgentsFile: writesAgentsFile) } catch {}
                 }
             }
-            .buttonStyle(DesignButtonStyle(height: Theme.Size.buttonToolbar, leading: Theme.Space.x16, trailing: Theme.Space.x16))
+            .buttonStyle(DesignButtonStyle(height: Theme.Size.button, leading: Theme.Space.x14, trailing: Theme.Space.x14))
             .disabled(!spec.isReady || session.isRunning)
         }
-        .sharedBackgroundVisibility(.hidden)
+        .padding(.horizontal, Theme.Space.x16)
+        .frame(height: Theme.Size.columnHeader)
     }
 
     /// ⌘1 to ⌘5 open the files in order; Esc goes back to the plan.

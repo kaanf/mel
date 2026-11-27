@@ -69,19 +69,13 @@ struct SidebarView: View {
             .scrollIndicators(.never)
             footer
         }
-        // The design's sidebar is a panel inset 8 pt in a white window, not the system's flush column.
-        .frame(width: Theme.Size.boardSidebar)
-        .surface(Theme.Colors.sidebarPanel, .sidebar, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
-        .padding(EdgeInsets(top: Theme.Space.x8, leading: Theme.Space.x8, bottom: Theme.Space.x8, trailing: 0))
-        .background(Theme.Colors.background)
-        .ignoresSafeArea(.container, edges: .top)
         .focusable()
         .focusEffectDisabled()
         .focused($isFocused)
         .onKeyPress(.upArrow) { move(by: -1) }
         .onKeyPress(.downArrow) { move(by: 1) }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .navigationSplitViewColumnWidth(Theme.Size.boardSidebar + Theme.Space.x8)
+        .navigationSplitViewColumnWidth(Theme.Size.boardSidebar)
         .toolbar(removing: .sidebarToggle)
         .fileImporter(isPresented: Binding(get: { isAdding || locating != nil }, set: { if !$0 { isAdding = false; locating = nil } }), allowedContentTypes: [.folder]) { result in
             guard case .success(let folder) = result else { return }
