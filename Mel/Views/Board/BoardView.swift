@@ -581,6 +581,7 @@ struct BoardSkeleton: View {
         .frame(width: 1036, height: 800)
 }
 
-private extension String {
+extension String {
+    /// "builds 1.1" → "Builds 1.1".
     var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }

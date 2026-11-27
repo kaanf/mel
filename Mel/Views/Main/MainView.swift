@@ -101,7 +101,7 @@ struct MainView: View {
     private func detail(_ spec: Spec) -> some View {
         let session = state.session(for: spec.id)
         if spec.stage == .done {
-            ReadyView(session: session)
+            BuildView(session: session)
         } else {
             BoardView(session: session, openFile: $openFile)
                 .toolbar {

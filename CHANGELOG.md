@@ -7,6 +7,7 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 ## [Unreleased]
 
 ### Changed
+- **A new Build screen.** After the plan, Mel shows the tasks in steps: what runs alone, what can run at the same time in separate terminals, and what must wait. Copy a task's prompt into Claude Code; when it's finished, press **Check it** and Mel runs the task's check on your Mac, with no tokens. A failed check shows the error and a fix prompt. When every task is done, the spec moves to Done. **‹ Plan** takes you back to the plan.
 - **Large specs scroll smoothly.** The board and the Ready screen no longer re-read the files while you scroll.
 - **Specs use far fewer tokens.** Mel now writes a spec in one ongoing Claude Code conversation, the way you would in Terminal, instead of sending every file again with each answer or change. What Claude has already seen comes from Claude's cache.
 

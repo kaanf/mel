@@ -100,7 +100,7 @@ struct MarkdownParserTests {
     @Test func summaryOfRepoRequirements() throws {
         let s = MarkdownParser.summary(try doc("REQUIREMENTS.md"), kind: .requirements)
         #expect(s.stories == 12)
-        #expect(s.criteria == 77)
+        #expect(s.criteria == 79)
         #expect(s.sections == 14)
         #expect(s.assumptions == 0)
     }

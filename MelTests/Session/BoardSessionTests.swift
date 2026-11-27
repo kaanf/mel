@@ -4,6 +4,7 @@ import Testing
 import MelAgent
 import MelSpec
 import MelStorage
+import MelSystem
 @testable import Mel
 
 /// Plays scripted replies, one per run. A reply without `done`/`failed` stays open until `stop()`.
@@ -384,6 +385,59 @@ final class BoardSessionTests {
         #expect(session.documents[.requirements] == requirements)
         #expect(session.spec.isReady)
         #expect(runner.requests.count == 6)
+    }
+
+    // MARK: - Build (V2-3)
+
+    @Test func buildCopiesAPromptChecksOnThisMacAndFinishes() async throws {
+        let (session, _) = try await readyFeature()
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        #expect(session.spec.taskCount == 2)
+        #expect(session.steps.map(\.kind) == [.alone, .alone])
+        let (store, gifts) = (session.tasks[0], session.tasks[1])
+        #expect(session.status(of: gifts) == .waiting("Starts after step 1 is done."))
+
+        session.copyPrompt(of: store)
+        #expect(session.spec.build == .building)
+        #expect(session.status(of: store) == .running)
+
+        var checked: [(String, URL)] = []
+        var passes = false
+        app?.runCheck = { command, folder in
+            await MainActor.run { checked.append((command, folder)) }
+            return Check.Result(passed: await MainActor.run { passes }, output: "BookingTests FAILED")
+        }
+        await session.check(store)
+        #expect(checked.first?.0 == "swift test")
+        #expect(checked.first?.1 == session.spec.project)
+        #expect(session.status(of: store) == .failed("BookingTests FAILED"))
+
+        session.copyFixPrompt(of: store)
+        #expect(session.status(of: store) == .running)
+        passes = true
+        await session.check(store)
+        #expect(session.status(of: gifts) == .ready)
+
+        // Gift mail has no Verify: done by hand, and the last task moves the spec to Done.
+        session.markDone(gifts)
+        #expect(session.spec.build == .done)
+        session.reopen(gifts)
+        #expect(session.spec.build == .building)
+        await session.flush()
+        let saved = try JSONDecoder().decode(Spec.self, from: Data(contentsOf: session.spec.folder.appending(path: ".mel/state.json")))
+        #expect(saved.runs?[1]?.state == .done)
+    }
+
+    @Test func planGoesBackToTheBoardAndStartBuildingReturns() async throws {
+        let (session, _) = try await readyFeature()
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        session.copyPrompt(of: session.tasks[0])
+        session.reopenPlan()
+        #expect(session.spec.stage == .board)
+        #expect(session.spec.isReady)
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        #expect(session.spec.stage == .done)
+        #expect(session.spec.runs?[1]?.state == .running)   // runs stay
     }
 
     // MARK: - Stops

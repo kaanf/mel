@@ -41,6 +41,8 @@ import MelSystem
     /// Notifications; tests replace both.
     @ObservationIgnored var notify: (_ title: String, _ body: String, _ at: Date?) -> Void = { Notifier.post(title: $0, body: $1, at: $2) }
     @ObservationIgnored var authorizeNotifications: () async -> Void = { await Notifier.requestAuthorization() }
+    /// V2-3 Check it: a task's verify command in the project folder. Tests replace it.
+    @ObservationIgnored var runCheck: @Sendable (_ command: String, _ folder: URL) async -> Check.Result = { await Check.run($0, in: $1) }
     @ObservationIgnored private var askedForNotifications = false
     /// V2-0's scan folder and the parent of a project made from an idea; tests replace it.
     @ObservationIgnored var developerFolder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer", directoryHint: .isDirectory)

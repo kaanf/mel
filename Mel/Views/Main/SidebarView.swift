@@ -348,8 +348,10 @@ extension Spec {
     /// The line under a spec's name in the sidebar: what it waits for, or what Mel is doing.
     var sidebarNote: String {
         switch build {
-        case .building: return "Building with Claude Code"
-        case .done: return "Built"
+        case .building:
+            let done = runs?.values.count { $0.state == .done } ?? 0
+            return taskCount.map { "Task \(min($0, done + 1)) of \($0)" } ?? "Building with Claude Code"
+        case .done: return "First version built"
         case nil: break
         }
         if let halted { return halted.reason == .user ? "Paused" : "Agent stopped" }

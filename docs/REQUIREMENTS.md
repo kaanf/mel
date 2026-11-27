@@ -123,9 +123,11 @@ As a user, I want to see what a spec costs me, so that I can trust Mel with my p
 As a user, I want one button that starts the build, so that the plan turns into software.
 
 - 11.1 WHEN the user clicks Start Building, THE APP SHALL write `prompts/task-NN.md` for each task, and as Settings › Specs says, write AGENTS.md (only its own marked block) and commit the spec to Git (never `.mel/` state).
-- 11.2 Ready SHALL state what was planned (stories, tasks, token use) and offer "Build with Claude Code" (⌘↩), which opens Terminal in the project with task 1's prompt.
-- 11.3 Ready SHALL offer each task's prompt with Copy Prompt and its check command, and the spec files, both closed by default.
-- 11.4 WHEN the user starts the build, THE APP SHALL list the spec under Building; WHEN the user marks it done, under Done (OQ #34).
+- 11.2 Build SHALL show the tasks in steps from TASKS.md: Run alone, At the same time (tasks marked `Parallel with` each other whose `Changes` don't overlap) and One after the other (they do). A step opens when every task of the step before it is done.
+- 11.3 WHEN the user clicks Copy prompt, THE APP SHALL copy a short prompt naming only the passages the task needs, and mark the task Running.
+- 11.4 WHEN the user clicks Check it, THE APP SHALL run the task's `Verify` command in the project folder on this Mac, with no agent and no tokens: passed → Done, failed → the end of its output with Copy fix prompt (which includes it) and Check again. "Mark done without the check" and Reopen are always there.
+- 11.5 WHEN the user copies the first prompt, THE APP SHALL list the spec under Building; WHEN every task is done, under Done, with a banner that offers to plan the Later stories (OQ #34).
+- 11.6 WHEN the user clicks ‹ Plan, THE APP SHALL show the board with the plan ready; Start Building returns to Build and the tasks keep their state.
 
 ## 12. Library and app shell
 

@@ -268,6 +268,12 @@ extension Spec {
         return true
     }
 
+    /// V2-3's ‹ Plan: back to the board with the plan ready (V2-10). Task runs stay; Start Building returns.
+    public mutating func reopenPlan() {
+        guard stage == .done else { return }
+        stage = .board
+    }
+
     private mutating func countIssues() {
         let open = analysis?.issues.count { $0.answer == nil } ?? 0
         analyze = open == 0 ? .passed : .issues(open)

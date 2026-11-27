@@ -7,7 +7,7 @@ Rules for every screen:
 - **Pixel-exact.** Colors, spacing, radii and type come from the `.dc.html` inline styles and live as named tokens in `Mel/Views/Theme.swift`. Views use tokens, never literals.
 - **Light and Dark**, following the system, in a real macOS window (system traffic lights, corners and shadow). Light is the drawing. Dark isn't drawn: each color token carries a Dark value next to its drawn one (`Color(hex:dark:)`, `Color.ink` for neutral washes and hairlines), so no view decides anything per appearance. The mock's grey page and drawn window frame are not built.
 - Every view has `#Preview`s for each state, built from `Views/Preview/PreviewData.swift`.
-- A Debug build opens one fixture state with `-screen <name>` (`Views/Preview/DebugScreen.swift`): `start`, `noAgent`, `new`, `newEmpty`, `board`, `boardAsking`, `boardWaiting`, `boardWriting`, `boardStopped`, `boardUnplaced`, `boardChanged`, `boardEdited`, `ready`, `settings`, `specsSettings`.
+- A Debug build opens one fixture state with `-screen <name>` (`Views/Preview/DebugScreen.swift`): `start`, `noAgent`, `new`, `newEmpty`, `board`, `boardAsking`, `boardWaiting`, `boardWriting`, `boardStopped`, `boardUnplaced`, `boardChanged`, `boardEdited`, `ready`, `building`, `built`, `settings`, `specsSettings`.
 
 ## Window structure
 
@@ -19,7 +19,7 @@ WindowGroup (main)                         MainView
     ├── sidebar   SidebarView              project menu · Needs you / Building / Done · New · agent line
     └── detail    NewView                  nothing selected, or ⌘N
                   BoardView                the selected spec while it is planned
-                  ReadyView                after Start Building
+                  BuildView                after Start Building; ‹ Plan goes back to BoardView (V2-10)
 Settings          SettingsView (tabs)      GeneralSettings · AgentSettings · SpecsSettings
 ```
 
@@ -32,7 +32,8 @@ Settings          SettingsView (tabs)      GeneralSettings · AgentSettings · S
 | V2-0, V2-0b | V2-0-Start | `Views/Start/StartView` | agent ready, checking, not signed in, not working; no agent (install row, Check Again); no repos found |
 | V2-1 | V2-1-New | `Views/New/NewView` | empty with examples; a guess with its reason; picked by the user; files attached; no project |
 | V2-2 | V2-2-Board | `Views/Board/BoardView` + `BoardInbox`, `BoardPlan`, `BoardFileView`, `BoardTell` | asking (intake), cards open, waiting for answers (V2-9), file open and a change applied (V2-4), stopped (V2-5), change couldn't be placed (V2-7), Remove confirmation (V2-8), edited by hand, plan ready |
-| V2-3 | V2-3-Ready | `Views/Ready/ReadyView` | ready, building, done; Quick fix; disclosures open and closed |
+| V2-3 | V2-3-Ready | `Views/Build/BuildView` | start, midway (done, running, checking, failed, waiting), all done; Quick fix; prompt shown |
+| V2-10 | V2-10-Board-Plan | `Views/Board/BoardView` | the board with the plan ready, after ‹ Plan (`Spec.reopenPlan`) |
 | V2-6 | V2-6-Settings-Specs | `Views/Settings/SpecsSettings` | project read, reading, not read, no project; adding a rule |
 | C4 | Native-Settings-Agents | `Views/Settings/SettingsView` › `AgentSettings` | ready, not signed in, not found |
 | sidebar | V2-1, V2-2, V2-3 | `Views/Main/SidebarView` | groups with rows and empty; New open; file rows; usage limit; missing project |
@@ -49,13 +50,15 @@ One box (5 lines, grows no further; it scrolls), the attach button, the size chi
 
 Center: the plan (Plan, Screens for a New product, Build order), or an open file. Right: "Mel needs you", 340 pt (drawn 300). While the agent runs, a working line sits above the center: what Mel is doing, the section a draft has reached, Watch and Stop. Under the center: Tell Mel with the result line or the unplaced offer above it. Toolbar: the spec's name and size, the status pill with "Write it now" while a file waits, Stop while the agent runs, the token total, Files and Start Building. Banners above the center: stopped, and edited by hand.
 
-### Ready
+### Build
 
-A 640 pt column: the check, "Ready to build", the summary sentence, "Build with Claude Code" (⌘↩), "What happens next", then two closed disclosures (task prompts and checks, spec files) and the line on AGENTS.md and the commit with "Change in Settings".
+Toolbar: ‹ Plan, "Build: name", the status pill, Open Terminal here. Center, up to 820 pt: "n of N tasks done" with the next step, one bar segment per task, the built banner, then the steps (`BuildStep`: Run alone, At the same time in a grid of 260 pt cards, One after the other). A task card: state dot and word, number, title, "Builds … · changes …", its check command, then by state: Copy prompt; Check it, Copy again, Mark done without the check; the check running; the failed output with Copy fix prompt and Check again; Check passed at … with Reopen. Show prompt under every card that isn't waiting. Right, 280 pt: How building works, the same-step box, spec files, the AGENTS.md / commit / token line and Change in Settings.
+
+Check it runs the task's `Verify` with `Check.run` (MelSystem): the user's login shell in the project folder, the last 20 lines kept. A task's state is `Spec.runs`; the last task done moves the spec to Done, Reopen moves it back to Building.
 
 ### Settings
 
-A `TabView`: General (updates), Agents, Specs. Links that open Settings pick the tab first (`settingsTab`): the sidebar's agent line and Start's Change open Agents, Ready's "Change in Settings" opens Specs.
+A `TabView`: General (updates), Agents, Specs. Links that open Settings pick the tab first (`settingsTab`): the sidebar's agent line and Start's Change open Agents, Build's "Change in Settings" opens Specs.
 
 ### Sidebar
 
@@ -66,7 +69,10 @@ A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has
 | Drawn | Built | Why |
 |---|---|---|
 | Codex chip, install row, "Use Codex instead", "Continue with the other agent", Default agent | hidden | OQ #7, #28 |
-| "Ask me before an agent changes the plan" and step 2 of "What happens next" | hidden; Ready has two steps | OQ #28 |
+| "Ask me before an agent changes the plan" | hidden | OQ #28 |
+| V2-3 "2 of 7 tests failed", "· 9 tests" | "The check failed", "Check passed at 14:02" | Mel runs any project's command and can't count its tests |
+| V2-3 Open Terminal here | opens Terminal in the project with `claude` running | The prompt is pasted into Claude Code |
+| V2-3 for a Quick fix | one task, "the fix SPEC.md describes", no check command: Mark done | SPEC.md has no TASKS.md |
 | "Task 3 of 7", "Merged yesterday" in the sidebar | "Building with Claude Code", "Built"; the user moves a spec to Done | OQ #34: Mel doesn't watch the coding agent |
 | "Save specs to", Settings › Advanced | hidden | Not configurable; nothing to hold |
 | "Read 2 days ago" in Settings › Specs | left out | No date kept |
@@ -76,7 +82,7 @@ A 272 pt panel (drawn 244) inset 8 pt in the white window. A spec row's menu has
 | not drawn | a sheet asking a New product's name after Start | The user's request: its folder takes the name |
 | not drawn | Spec language row in Settings › Specs | Added in 0.4 (OQ #5) |
 | not drawn | Settings › General with the update controls | Sparkle, since 0.2 |
-| not drawn | not signed in / not working on Start's agent line; attached file chips on New; "Mark as Done" on Ready | States the drawing doesn't cover, in the drawn components' look |
+| not drawn | not signed in / not working on Start's agent line; attached file chips on New | States the drawing doesn't cover, in the drawn components' look |
 
 ## Motion
 

@@ -354,34 +354,63 @@ enum PreviewData {
         > [!ASSUMPTION]
         > Calm and light, one accent taken from the studio logo, large tap targets for use right before class. Platform-native controls on iOS and Android.
         """
-    // TASKS.md as drawn on Ready.
+    // TASKS.md as drawn on Build (V2-3).
     static let tasksMarkdown = """
         # Tasks
 
-        - [ ] 1. Booking data model and local store
+        - [ ] 1. Booking data and local store
           - Priority: P1
           - Covers: 1.1, 1.2
-          - Reads: ARCHITECTURE § Data
+          - Reads: REQUIREMENTS.md 1.1 and 1.2, ARCHITECTURE.md › Data, D-05
           - Verify: `./gradlew :shared:allTests --tests "*Booking*"`
-        - [ ] 2. Schedule and Class detail screens
+          - Changes: shared/booking
+        - [ ] 2. Schedule and class screens
           - Priority: P1
-          - Covers: 1.1, Q1
-          - Reads: EXPERIENCE › Schedule, Class detail
+          - Covers: 1.1
+          - Reads: EXPERIENCE.md › Flow 1, ARCHITECTURE.md › Modules
           - Verify: `./gradlew :androidApp:connectedCheck`
+          - Changes: androidApp, iosApp
           - Parallel with: 3
         - [ ] 3. Class pack checkout
           - Priority: P1
-          - Covers: 2.1, Q2
-          - Reads: EXPERIENCE › Buy pack
+          - Covers: 2.1
+          - Reads: REQUIREMENTS.md 2.1, EXPERIENCE.md › Flow 2, D-03
           - Verify: `./gradlew :shared:allTests --tests "*Checkout*"`
+          - Changes: shared/payments
           - Parallel with: 2
+        - [ ] 4. Cancel a booking
+          - Priority: P1
+          - Covers: 1.3
+          - Reads: REQUIREMENTS.md 1.3, D-04
+          - Verify: `./gradlew :shared:allTests --tests "*Cancel*"`
+          - Changes: shared/booking
+          - Parallel with: 5
+        - [ ] 5. Waitlist
+          - Priority: P1
+          - Covers: 1.2
+          - Reads: REQUIREMENTS.md 1.2, EXPERIENCE.md › Class detail
+          - Verify: `./gradlew :shared:allTests --tests "*Waitlist*"`
+          - Changes: shared/booking
+          - Parallel with: 4
         """
     static let doneSession = SpecSession.preview(tokens, documents: boardDocuments)
 
-    /// V2-3 after Build with Claude Code.
+    /// V2-3 midway, as drawn: task 1 done, 2 running, 3 failed, 4 and 5 waiting.
     static let buildingSession: SpecSession = {
         var spec = tokens
         spec.build = .building
+        spec.taskCount = 5
+        spec.runs = [1: TaskRun(state: .done, at: Calendar.current.date(bySettingHour: 14, minute: 2, second: 0, of: .now)),
+                     2: TaskRun(state: .running),
+                     3: TaskRun(state: .failed, output: "CheckoutTest > receipt is emailed after payment FAILED\nCheckoutTest > credits added once on retry FAILED")]
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
+    /// V2-3 with every task done.
+    static let builtSession: SpecSession = {
+        var spec = tokens
+        spec.build = .done
+        spec.taskCount = 5
+        spec.runs = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, TaskRun(state: .done, at: .now)) })
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
     static let quickFixDoneSession = SpecSession.preview(

@@ -42,11 +42,13 @@ Name: {{name}}
   - Covers: 1.1, 1.2
   - Reads: ARCHITECTURE › Data
   - Verify: `swift test --filter Booking`
+  - Changes: Sources/Booking
 - [ ] 2. Schedule screen
   - Priority: P1
   - Covers: 1.1, Q1
   - Reads: EXPERIENCE › Schedule
   - Verify: `swift test --filter Schedule`
+  - Changes: Sources/Schedule
   - Parallel with: 3
 ```
 
@@ -54,7 +56,8 @@ Name: {{name}}
 - A reference to a task uses the number on its own `- [ ] N.` line. A callout about a task goes right under that task and names it by that number.
 - `Priority` is the highest priority among the criteria it covers. `Covers` lists criterion IDs (`1.1`, `Q1`).
 - `Reads` names the file sections the task needs. `Verify` is one command that proves the task works, using the project's test tools.
-- `Parallel with` lists tasks that touch different code and can run at the same time. Leave it out otherwise.
+- `Changes` lists the folders the task changes, as paths from the project root.
+- `Parallel with` lists tasks that need nothing from each other and change different folders, so they can run at the same time. Leave it out otherwise.
 - Every P1 criterion and every quality requirement is covered by at least one task.
 
 {{rules}}

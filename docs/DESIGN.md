@@ -138,6 +138,8 @@ struct Spec {
     var removedStories: [RemovedStory]?   // for Restore
     var tokens: [TokenStep: Int]?    // per step, from result.usage
     var build: BuildState?           // building | done, after the handoff
+    var runs: [Int: TaskRun]?        // V2-3: running | failed (output) | done (at, byHand), by task number
+    var taskCount: Int?              // tasks at Start Building, for the sidebar's "Task 3 of 7"
     var fillGaps: Bool, language: SpecLanguage?, attachments: [Attachment], conversation: Conversation?
 }
 ```

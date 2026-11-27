@@ -349,7 +349,3 @@ struct BoardSegmentStyle: ButtonStyle {
             .contentShape(Capsule())
     }
 }
-
-private extension String {
-    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
-}

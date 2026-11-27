@@ -9,9 +9,11 @@ public struct SpecTask: Identifiable, Hashable, Sendable {
     public var reads: String
     public var verify: String
     public var parallelWith: [Int]
+    /// The folders it changes (`Changes:`); two tasks in one step that share one run one after the other.
+    public var changes: [String]
     public var id: Int { number }
 
-    public init(number: Int, title: String, priority: String, covers: [String], reads: String, verify: String, parallelWith: [Int] = []) {
+    public init(number: Int, title: String, priority: String, covers: [String], reads: String, verify: String, parallelWith: [Int] = [], changes: [String] = []) {
         self.number = number
         self.title = title
         self.priority = priority
@@ -19,6 +21,7 @@ public struct SpecTask: Identifiable, Hashable, Sendable {
         self.reads = reads
         self.verify = verify
         self.parallelWith = parallelWith
+        self.changes = changes
     }
 
     /// `- [ ] N. Title` lines and their indented `- Key: value` fields.
@@ -42,6 +45,7 @@ public struct SpecTask: Identifiable, Hashable, Sendable {
                 case "Reads": result[result.count - 1].reads = value
                 case "Verify": result[result.count - 1].verify = value.trimmingCharacters(in: ["`"])
                 case "Parallel with": result[result.count - 1].parallelWith = list.compactMap { Int($0) }
+                case "Changes": result[result.count - 1].changes = list.map { $0.trimmingCharacters(in: ["`"]) }
                 default: break
                 }
             }

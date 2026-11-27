@@ -11,8 +11,12 @@ import MelSystem
     /// What the views read from the files, parsed once per change of a file rather than on every view
     /// pass (a 60 KB REQUIREMENTS.md takes ~5 ms; the board read it several times a pass).
     private(set) var blocks: [DocKind: [Block]] = [:]
-    /// The tasks on Ready and in Build order.
+    /// The tasks on Build and in Build order.
     private(set) var tasks: [SpecTask] = []
+    /// V2-3: the tasks in steps.
+    private(set) var steps: [BuildStep] = []
+    /// Tasks whose check is running now.
+    private(set) var checking: Set<Int> = []
     private(set) var stories: [Story] = []
     private var summaries: [DocKind: DocSummary] = [:]
     private(set) var liveText: String
@@ -109,7 +113,11 @@ import MelSystem
             blocks[kind] = MarkdownParser.blocks(text)
             summaries[kind] = MarkdownParser.summary(text, kind: kind)
         }
-        if changed.contains(.tasks) { tasks = SpecTask.parse(documents[.tasks] ?? "") }
+        if changed.contains(.tasks) || changed.contains(.spec) {
+            // A Quick fix has no TASKS.md: its build is one task, the fix SPEC.md describes.
+            tasks = documents[.spec] != nil ? [SpecTask(number: 1, title: "the fix SPEC.md describes", priority: "", covers: [], reads: "SPEC.md", verify: "")] : SpecTask.parse(documents[.tasks] ?? "")
+            steps = BuildStep.steps(tasks)
+        }
         if changed.contains(.requirements) { stories = Story.parse(documents[.requirements] ?? "") }
         if changed.contains(.tasks) || changed.contains(.requirements) {
             var summary = summaries[.tasks] ?? MarkdownParser.summary("", kind: .tasks)
@@ -897,7 +905,65 @@ import MelSystem
         guard spec.isReady else { return }
         try await finish(commitToGit: commitToGit, writeAgentsFile: writeAgentsFile)
         spec.startBuilding()
+        spec.taskCount = tasks.count
         persist()
+    }
+
+    // MARK: - Build (V2-3)
+
+    func status(of task: SpecTask) -> TaskStatus { spec.status(of: task, in: steps) }
+
+    /// Copy prompt: the task's short prompt goes on the clipboard and the task is Running.
+    func copyPrompt(of task: SpecTask) {
+        SystemActions.copy(task.buildPrompt(slug: slug, of: tasks.count))
+        spec.started(task.number)
+        persist()
+    }
+
+    /// Copy fix prompt: the failed check and its output; the task is Running again.
+    func copyFixPrompt(of task: SpecTask) {
+        guard case .failed(let output) = status(of: task) else { return }
+        SystemActions.copy(task.fixPrompt(slug: slug, of: tasks.count, output: output))
+        spec.started(task.number)
+        persist()
+    }
+
+    /// Check it: Mel runs the task's verify command on this Mac. No agent, no tokens.
+    func check(_ task: SpecTask) async {
+        guard let app, !task.verify.isEmpty, !checking.contains(task.number) else { return }
+        checking.insert(task.number)
+        let result = await app.runCheck(task.verify, projectFolder)
+        checking.remove(task.number)
+        spec.finished(task.number, passed: result.passed, output: result.output, of: tasks)
+        persist()
+    }
+
+    /// "Mark done without the check".
+    func markDone(_ task: SpecTask) {
+        spec.finished(task.number, passed: true, byHand: true, of: tasks)
+        persist()
+    }
+
+    func reopen(_ task: SpecTask) {
+        spec.reopen(task.number)
+        persist()
+    }
+
+    /// "Start over" on the built banner: every task back to the start.
+    func startOver() {
+        spec.startOver()
+        persist()
+    }
+
+    /// ‹ Plan: the board with the finished plan (V2-10).
+    func reopenPlan() {
+        spec.reopenPlan()
+        persist()
+    }
+
+    /// "Open Terminal here": Claude Code in the project, ready for a pasted prompt.
+    func openTerminal() {
+        do { try SystemActions.openInTerminal(command: "claude", in: projectFolder) } catch { lastError = error.localizedDescription }
     }
 
     // MARK: - Attachments
@@ -924,34 +990,13 @@ import MelSystem
 
     private var slug: String { spec.folder.lastPathComponent }
 
-    var startCommand: String {
-        spec.size == .quickFix
-            ? #"claude "Read specs/\#(slug)/SPEC.md and fix it""#
-            : #"claude "Read specs/\#(slug)/prompts/task-01.md and do it""#
-    }
-
     func showInFinder() { SystemActions.showInFinder(spec.folder) }
-
-    /// "Build with Claude Code": Terminal opens in the project with task 1's prompt, and the spec is Building.
-    func build() {
-        do {
-            try SystemActions.openInTerminal(command: startCommand, in: projectFolder)
-            setBuild(.building)
-        } catch {
-            lastError = error.localizedDescription
-        }
-    }
 
     /// The sidebar's Building and Done groups; Mel can't see the coding agent, so the user moves a spec on.
     func setBuild(_ state: BuildState?) {
         guard spec.stage == .done else { return }
         spec.build = state
         persist()
-    }
-
-    /// Copy Prompt on Ready: the text of `prompts/task-NN.md`.
-    func copyPrompt(of task: SpecTask) {
-        SystemActions.copy(task.prompt(requirements: documents[.requirements] ?? ""))
     }
 
     /// Writes `prompts/task-NN.md`.

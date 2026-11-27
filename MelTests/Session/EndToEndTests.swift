@@ -117,7 +117,7 @@ final class EndToEndTests {
         #expect(session.spec.isReady)
         try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
         #expect(session.spec.stage == .done)
-        #expect(session.startCommand == #"claude "Read specs/double-booking/SPEC.md and fix it""#)
+        #expect(session.tasks.map { $0.buildPrompt(slug: "double-booking", of: 1) } == ["Task 1 of 1 in specs/double-booking.\nRead AGENTS.md first, then only: SPEC.md.\nBuild: the fix SPEC.md describes.\nIf the plan doesn’t fit what you find, stop and say why instead of changing the plan."])
         try await expectOnDisk(session)
         #expect(script.requests.count == 2)
         #expect(script.requests.allSatisfy { $0.workingDirectory == project.folder })

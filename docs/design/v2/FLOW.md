@@ -28,15 +28,16 @@ Goal: before the agent starts, the user makes at most 2 decisions (write, press 
 | V2-7 | V2-7-Board-Unplaced.dc.html | Board, a Tell Mel change couldn't be placed: Rewrite ARCHITECTURE.md or Cancel (state of V2-2, prop tell = "unplaced") | new |
 | V2-8 | V2-8-Board-Remove.dc.html | Board, Remove confirmation on a story card (state of V2-2, prop confirmRemove = "pack") | new |
 | V2-9 | V2-9-Board-Waiting.dc.html | Board, files waiting for answers, Files list and token popover open (state of V2-2, props start = "plan", filesOpen, tokensOpen) | new |
-| V2-3 | V2-3-Ready.dc.html | Ready: one primary action, Build with Claude Code; task prompts and files collapsed | B7 |
+| V2-10 | V2-10-Board-Plan.dc.html | Board, plan ready: every card answered, all files written; where Build › Plan returns (state of V2-2, prop start = "ready") | new |
+| V2-3 | V2-3-Ready.dc.html | Build: tasks in steps (run alone, at the same time, one after the other), Copy prompt, Check it, Done; back to the plan | B7 |
 | V2-6 | V2-6-Settings-Specs.dc.html | Settings › Specs: the defaults V2 stopped asking about | B1 fields, B7 toggles, A3 rules |
 
-V2-0b, V2-4, V2-5, V2-7, V2-8 and V2-9 are the same components as V2-0 and V2-2 with different props: build them as states, not screens.
+V2-0b, V2-4, V2-5, V2-7, V2-8, V2-9 and V2-10 are the same components as V2-0 and V2-2 with different props: build them as states, not screens.
 
 Main path:
 
 ```
-V2-0 Start ──Start──▶ V2-1 New ──Start──▶ V2-2 Board ──Start Building──▶ V2-3 Ready
+V2-0 Start ──Start──▶ V2-1 New ──Start──▶ V2-2 Board ──Start Building──▶ V2-3 Build ──‹ Plan──▶ V2-10 Board, plan ready
 ```
 
 Rules that change from V1:
@@ -49,7 +50,7 @@ Rules that change from V1:
 - **Edit after it's written** (was C1): saving an edit shows a banner in the board with the files built on it, Update / Keep them as they are / Undo, and a "Why?" field saved to DECISIONS.md.
 - **Agent stopped** (was C2): a banner in the board: Continue with the other agent, Resume when the limit resets, or Finish it myself (opens the file). Answers and finished files are untouched.
 - **Plan tabs:** Plan, Screens, Build order. Screens appears only for New product.
-- **Ready:** AGENTS.md, commit and "ask before an agent changes the plan" are on by default and live in Settings › Specs.
+- **Build** (V2-3, was Ready / B7): until Mel runs agents itself, the user runs each task's prompt in their own Claude Code. Tasks are grouped in steps from TASKS.md: Run alone, At the same time (only when the tasks change different folders; open one terminal each), One after the other (same folder). A step opens when the step before it is done. Each task: Copy prompt (short, names only the passages it needs, marks the task Running), Check it (Mel runs the task's verify command on this Mac: no agent, no tokens), passed → Done and the next tasks open, failed → the output, Copy fix prompt (includes the error), Check again. "Mark done without the check" and Reopen are always there. ‹ Plan goes to V2-10. When all tasks are done the spec moves to Done. When Mel runs agents later, Copy prompt becomes Run and Check it runs on its own; steps and checks stay. AGENTS.md, commit and "ask before an agent changes the plan" are on by default and live in Settings › Specs.
 
 ## V2 · Expressiveness and token budget
 

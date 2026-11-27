@@ -28,6 +28,10 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var tokens: [TokenStep: Int]?
     /// After "Build with Claude Code": the sidebar's Building and Done groups. Nil while it is planned.
     public var build: BuildState?
+    /// V2-3: what the user did with each task, by number. Nil before the first prompt is copied.
+    public var runs: [Int: TaskRun]?
+    /// How many tasks TASKS.md had at Start Building, for the sidebar's "Task 3 of 7".
+    public var taskCount: Int?
     /// The main model's conversation for this spec; nil until its first draft starts one.
     public var conversation: Conversation?
 

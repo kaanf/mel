@@ -727,8 +727,6 @@ extension Theme.Colors {
     static let emptyGroup = Color(hex: 0x8E8E93, dark: 0x7C7C80)
     /// rgba(0,122,255,0.1) · the sidebar's New button while New is open; its text is `likely` (#0058B9).
     static let newActiveFill = Color(hex: 0x007AFF, opacity: 0.1, dark: 0x0A84FF, darkOpacity: 0.17)
-    /// rgba(36,138,61,0.12) · the check's disc on Ready.
-    static let readyDisc = Color(hex: 0x248A3D, opacity: 0.12, dark: 0x30D158, darkOpacity: 0.204)
     /// rgba(0,122,255,0.35) · glow under "Build with Claude Code".
     static let buildGlow = Color(hex: 0x007AFF, opacity: 0.35, dark: 0x0A84FF, darkOpacity: 0.595)
     /// rgba(0,122,255,0.3) · 3 pt halo of the focused idea box on New.
@@ -770,15 +768,7 @@ extension Theme.Size {
     static let sidebarFileRow: CGFloat = 24
     static let sidebarNew: CGFloat = 30
     static let sidebarAgentLine: CGFloat = 22
-    /// Ready: column 640, 64 from the top; 48 pt disc with a 22 pt check; 44 pt build button; 20 pt step numbers;
-    /// disclosure rows 44 with a 10 pt chevron.
-    static let readyWidth: CGFloat = 640
-    static let readyTop: CGFloat = 64
-    static let readyDisc: CGFloat = 48
-    static let readyDiscCheck: CGFloat = 22
     static let buildButton: CGFloat = 44
-    static let nextNumber: CGFloat = 20
-    static let disclosureRow: CGFloat = 44
     /// Settings › Specs: window 680; rows min 52; a rule's remove button 20.
     static let specsSettingsWidth: CGFloat = 680
     static let specsSettingsRow: CGFloat = 52
@@ -800,6 +790,54 @@ extension Theme.Elevation {
     /// Settings › Specs: a value pop-up (ring 0.18 + 0 1 1 0.06) and a small button (ring 0.18).
     static let settingsValue = Theme.Elevation(ring: .ink(0.18), drop: Theme.Drop(y: 1, blur: 1, color: .black.opacity(0.06)))
     static let settingsButton = Theme.Elevation(ring: .ink(0.18))
+}
+
+// MARK: - V2-3 Build (design/v2/V2-3-Ready.dc.html)
+
+extension Theme.Colors {
+    /// rgba(215,0,21,0.05) · a failed check's output box.
+    static let failedFill = Color(hex: 0xD70015, opacity: 0.05, dark: 0xFF453A, darkOpacity: 0.085)
+    /// rgba(215,0,21,0.3) · its inset ring.
+    static let failedRing = Color(hex: 0xD70015, opacity: 0.3, dark: 0xFF453A, darkOpacity: 0.51)
+}
+
+extension Theme.Text {
+    /// 14/19 bold · "Step 1".
+    static let stepTitle = Theme.TextStyle(size: 14, weight: .bold, lineHeight: 19)
+    /// 11/16 · the aside's closing line.
+    static let captionTall = Theme.TextStyle(size: 11, weight: .regular, lineHeight: 16)
+    /// 11/16 mono · Show prompt.
+    static let codePrompt = Theme.TextStyle(size: 11, weight: .regular, lineHeight: 16, design: .monospaced)
+}
+
+extension Theme.Size {
+    /// The steps column's max width.
+    static let buildWidth: CGFloat = 820
+    /// "How building works".
+    static let buildAside: CGFloat = 280
+    /// A task card's basis in an "At the same time" step.
+    static let taskCardMin: CGFloat = 260
+    /// The progress bar's segments.
+    static let segment: CGFloat = 6
+    static let stepBadge: CGFloat = 20
+    static let terminalButton: CGFloat = 30
+    static let terminalButtonIcon: CGFloat = 13
+    static let doneCheck: CGFloat = 12
+    static let promptChevron: CGFloat = 8
+    static let howNumber: CGFloat = 20
+}
+
+extension Theme.Radius {
+    /// A step's grey box.
+    static let step: CGFloat = 14
+}
+
+extension Theme.Elevation {
+    /// A waiting task: inset 0.5 pt ring, no drop.
+    static let taskWaiting = Theme.Elevation(ring: .ink(0.12), insetRing: true)
+    /// A failed task: inset 1 pt red ring and a soft drop.
+    static let taskFailed = Theme.Elevation(ring: Theme.Colors.disagreeRing, ringWidth: 1, insetRing: true, drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+    static let failedOutput = Theme.Elevation(ring: Theme.Colors.failedRing, insetRing: true)
 }
 
 // MARK: - Motion

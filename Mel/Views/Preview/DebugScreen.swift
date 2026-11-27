@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited
+    case start, noAgent, new, newEmpty, ready, building, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
@@ -17,6 +17,8 @@ enum DebugScreen: String, CaseIterable {
         case .noAgent: PreviewData.appState([], agent: .missing, projects: [], foundRepositories: PreviewData.repositories)
         case .new, .newEmpty: PreviewData.appState(PreviewData.others)
         case .ready: PreviewData.appState([PreviewData.done] + PreviewData.others, sessions: [PreviewData.doneSession])
+        case .building: PreviewData.appState([PreviewData.buildingSession.spec] + PreviewData.others, sessions: [PreviewData.buildingSession])
+        case .built: PreviewData.appState([PreviewData.builtSession.spec] + PreviewData.others, sessions: [PreviewData.builtSession])
         case .settings: PreviewData.appState([])
         case .specsSettings: PreviewData.appState([], contexts: [PreviewData.project.id: PreviewData.context])
         case .board: PreviewData.appState([PreviewData.board] + PreviewData.others, sessions: [PreviewData.boardSession])

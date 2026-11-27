@@ -164,13 +164,17 @@ A state prefixed `!` is missing; the formatted view flags it.
   - Covers: 1.1, 1.2
   - Reads: ARCHITECTURE › Data
   - Verify: `swift test --filter Booking`
+  - Changes: Sources/Booking
 - [ ] 2. Schedule screen
   - Priority: P1
   - Covers: 1.1, Q1
   - Reads: EXPERIENCE › Schedule
   - Verify: `swift test --filter Schedule`
+  - Changes: Sources/Schedule
   - Parallel with: 3
 ```
+
+`Changes` names the folders a task changes. V2-3 Build groups tasks marked `Parallel with` each other into one step: "At the same time" when their `Changes` don't overlap, "One after the other" when they do (a spec from before `Changes` counts as not overlapping). `Verify` is the command Mel runs on this Mac for Check it.
 
 At handoff Mel writes `prompts/task-NN.md` per task: the task, the full text of each criterion it covers, what it reads, and the verify command.
 
