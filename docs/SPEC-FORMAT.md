@@ -179,7 +179,7 @@ A state prefixed `!` is missing; the formatted view and the board's Flow flag it
   - Parallel with: 3
 ```
 
-`## N · Name` headings group the tasks into phases; task numbers count on across them. The board's Roadmap shows phases → tasks → the criteria each covers (a TASKS.md without headings is grouped by priority). `Changes` names the folders a task changes. V2-3 Build groups tasks marked `Parallel with` each other into one step: "At the same time" when their `Changes` don't overlap, "One after the other" when they do (a spec from before `Changes` counts as not overlapping). `Verify` is the command Mel runs on this Mac for Check it.
+A task builds code together with its tests (no task only tests another's work). `## N · Name` headings group the tasks into phases; task numbers count on across them. The board's Roadmap shows phases → tasks → the criteria each covers (a TASKS.md without headings is grouped by priority). `Changes` names the folders a task changes. V2-3 Build groups tasks marked `Parallel with` each other into one step: "At the same time" when their `Changes` don't overlap, "One after the other" when they do (a spec from before `Changes` counts as not overlapping). `Verify` is the command Mel runs on this Mac for Check it.
 
 At handoff Mel writes `prompts/task-NN.md` per task: the task, the full text of each criterion it covers, what it reads, and the verify command.
 

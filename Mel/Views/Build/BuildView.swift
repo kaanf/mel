@@ -17,6 +17,8 @@ struct BuildView: View {
     /// Done tasks whose report is open, and running tasks with every step shown.
     @State private var shownReports: Set<Int> = []
     @State private var shownSteps: Set<Int> = []
+    /// Reports whose "not allowed" list is open.
+    @State private var shownRefused: Set<Int> = []
     /// The "Something else…" answer to a task's question.
     @State private var otherAnswer = ""
     @State private var answersOther = false
@@ -586,9 +588,13 @@ struct BuildView: View {
                     ForEach(report.notDone, id: \.self) { Text($0).textStyle(Theme.Text.calloutLoose).fixedSize(horizontal: false, vertical: true) }
                 }
             }
+            // Mostly the agent's own extra tries; closed unless asked for (real run 2026-11-27).
             if !report.refused.isEmpty {
-                reportGroup("Not allowed in this run") {
-                    ForEach(report.refused, id: \.self) { Text($0).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.bodyLabel).fixedSize(horizontal: false, vertical: true) }
+                let open = shownRefused.contains(task.number)
+                Button(open ? "Hide what wasn’t allowed" : "\(report.refused.count) \(report.refused.count == 1 ? "thing" : "things") weren’t allowed") { toggle(&shownRefused, task.number) }
+                    .buttonStyle(DesignLinkStyle())
+                if open {
+                    ForEach(report.refused, id: \.self) { Text($0).textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true) }
                 }
             }
             if let tokens {

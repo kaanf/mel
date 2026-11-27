@@ -65,5 +65,6 @@ Name: {{name}}
 - `Changes` lists the folders the task changes, as paths from the project root.
 - `Parallel with` lists tasks that need nothing from each other and change different folders, so they can run at the same time. Leave it out otherwise.
 - Every P1 criterion and every quality requirement is covered by at least one task.
+- A task builds a piece of the product together with its tests; never a task that only tests another task's work. Fewer, larger tasks beat many small ones: each task is a separate run.
 
 {{rules}}

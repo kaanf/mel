@@ -196,7 +196,7 @@ extension SpecTask {
         - Don't ask how to build it: the spec and AGENTS.md decide. Where they are silent, pick the simplest choice that fits and list it under decisions.
         - Stop to ask only when the choice changes what users see or is hard to undo. Then end your reply with this instead, and nothing after it:
         {"question":{"title":"the question, in plain words","why":"why it matters","options":[{"label":"","means":"what it means for users","suggested":true}]}}
-        - You may change files only in the task's folders, run its check and commit. Anything else is refused; list it under refused.
+        - You may change files only in the task's folders, run its check and commit. Don't run other commands to try it out: the check is the test, and anything else is refused. List under refused only what the task needed and couldn't do.
         - Otherwise end your reply with one JSON object and nothing after it, written for someone who doesn't code:
         {"works":["what a user can do now, one plain sentence each"],"decisions":[{"title":"","why":"","instead":"the alternative and what it would mean"}],"notDone":[""],"refused":[""]}
         """
