@@ -1,6 +1,12 @@
 import Foundation
 import MelSpec
 
+/// Which model a run uses; each adapter maps it to its own model ID.
+public enum AgentModel: Sendable {
+    case main                         // drafts and changes
+    case light                        // intake, check, project context
+}
+
 public struct AgentRequest: Sendable {
     public var prompt: String                // sent on stdin
     public var workingDirectory: URL         // project folder (parent of specs/)
@@ -8,15 +14,17 @@ public struct AgentRequest: Sendable {
     public var persistSession: Bool          // false → --no-session-persistence
     public var systemPrompt: String?         // stage contract → --append-system-prompt
     public var allowsTools: Bool             // false: files are inline (analyze, impact), no Read/Glob/Grep
+    public var model: AgentModel
 
     public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool,
-                systemPrompt: String? = nil, allowsTools: Bool = true) {
+                systemPrompt: String? = nil, allowsTools: Bool = true, model: AgentModel = .main) {
         self.prompt = prompt
         self.workingDirectory = workingDirectory
         self.resumeSessionID = resumeSessionID
         self.persistSession = persistSession
         self.systemPrompt = systemPrompt
         self.allowsTools = allowsTools
+        self.model = model
     }
 }
 

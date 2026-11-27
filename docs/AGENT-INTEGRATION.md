@@ -43,6 +43,7 @@ claude -p \
   --tools Read,Glob,Grep \         # --tools "" when AgentRequest.allowsTools is false (init then lists tools: [])
   --permission-mode manual --permission-prompts none \
   --disable-slash-commands --no-chrome \
+  --model claude-opus-5-5 \        # claude-sonnet-5-5 for AgentModel.light: intake, check, project context
   [--resume <session_id>]           # verified; drop --no-session-persistence to allow it
   [--no-session-persistence]        # for one-shot runs that will never be resumed
 ```

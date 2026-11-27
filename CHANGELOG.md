@@ -6,6 +6,9 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Changed
+- **Mel picks the model.** Files and changes are written with Claude Opus 5.5; the first questions, the check and reading your project use the faster Claude Sonnet 5.5. Your Claude Code default model no longer matters.
+
 ## [0.5.1] · 2026-11-27
 
 ### Added

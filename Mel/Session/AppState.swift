@@ -155,7 +155,7 @@ import MelSystem
         readingContext.insert(project.id)
         defer { readingContext.remove(project.id) }
         let mode = "Read the code in this folder first: the README, the build files and the main source folders."
-        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false)
+        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false, model: .light)
         var result: String?
         do {
             loop: for try await event in runner.run(request) {
