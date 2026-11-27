@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.8.1] · 2026-11-27
+
 ### Fixed
 - **Tell Mel on Build changed nothing.** When Claude Code added questions after its changes, Mel couldn't read the reply and dropped it without saying so. Mel now reads the changes and ignores what follows, and Claude Code is told not to add questions there.
 
@@ -139,7 +141,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.8...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/kaanf/mel/compare/v0.8...v0.8.1
 [0.8]: https://github.com/kaanf/mel/compare/v0.7...v0.8
 [0.7]: https://github.com/kaanf/mel/compare/v0.6...v0.7
 [0.6]: https://github.com/kaanf/mel/compare/v0.5.2...v0.6
