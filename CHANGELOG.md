@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.5.1] · 2026-11-27
+
 ### Added
 - **Dark mode.** Mel follows your Mac's appearance.
 - **Name a new product.** Start asks what it is called; its folder takes the name. "Let Mel name it" keeps the old behavior.
@@ -103,7 +105,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.5...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/kaanf/mel/compare/v0.5...v0.5.1
 [0.5]: https://github.com/kaanf/mel/compare/v0.4...v0.5
 [0.4]: https://github.com/kaanf/mel/compare/v0.3...v0.4
 [0.3]: https://github.com/kaanf/mel/releases/tag/v0.3
