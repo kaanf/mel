@@ -191,7 +191,7 @@ extension SpecTask {
 
     /// Run (V2-17): the Copy prompt plus when to ask and the report's shape (OQ #42: a few lines, no spec files).
     public func runPrompt(slug: String, of total: Int) -> String {
-        let check = verify.isEmpty ? "" : "- Run the check only as `sh \(checkScript(slug: slug))`; it runs the command above. Make scripts you write runnable with `chmod +x`.\n"
+        let check = verify.isEmpty ? "" : "- Run the check only as `sh \(checkScript(slug: slug))` from the project folder; it runs the command above. Make scripts you write runnable with `chmod +x`.\n"
         return buildPrompt(slug: slug, of: total) + "\n\nRules for this run:\n" + check + """
         - Don't ask how to build it: the spec and AGENTS.md decide. Where they are silent, pick the simplest choice that fits and list it under decisions.
         - Stop to ask only when the choice changes what users see or is hard to undo. Then end your reply with this instead, and nothing after it:

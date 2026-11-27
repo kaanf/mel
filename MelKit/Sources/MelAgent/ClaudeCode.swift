@@ -61,10 +61,16 @@ public struct ClaudeCode: AgentAdapter {
         ]
         if let model = request.model { arguments += ["--model", model.rawValue] }
         // Anything not allowed here would ask, and nobody answers in --print: it is refused (fixture `build-run`).
+        // Paths are absolute (`//…`): a relative rule follows the shell's directory after a `cd` (real run 2026-11-27).
         if let build = request.build {
+            let root = request.workingDirectory.resolvingSymlinksInPath().path(percentEncoded: false).trimmingCharacters(in: ["/"])
             // A script it writes must be runnable: chmod +x only inside the task's folders.
-            let writes = build.folders.isEmpty ? ["Edit", "Write"] : build.folders.flatMap { ["Edit(./\($0)/**)", "Write(./\($0)/**)", "Bash(chmod +x \($0)/*)", "Bash(chmod +x ./\($0)/*)"] }
-            arguments += ["--allowedTools"] + writes + build.commands.map { "Bash(\($0))" } + ["Bash(git add *)", "Bash(git commit *)"]
+            let writes = build.folders.isEmpty ? ["Edit(//\(root)/**)", "Write(//\(root)/**)"]
+                : build.folders.flatMap { ["Edit(//\(root)/\($0)/**)", "Write(//\(root)/\($0)/**)", "Bash(chmod +x \($0)/*)", "Bash(chmod +x /\(root)/\($0)/*)"] }
+            let commands = build.commands.flatMap { command in
+                command.hasPrefix("sh ") ? ["Bash(\(command))", "Bash(sh /\(root)/\(command.dropFirst(3)))"] : ["Bash(\(command))"]
+            }
+            arguments += ["--allowedTools"] + writes + commands + ["Bash(git add *)", "Bash(git commit *)"]
         }
         if let session = request.resumeSessionID { arguments += ["--resume", session] }
         if !request.persistSession { arguments.append("--no-session-persistence") }

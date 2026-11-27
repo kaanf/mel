@@ -216,6 +216,7 @@ final class EndToEndTests {
         let build = try #require(script.claudeArguments.last)
         #expect(!build.contains("--model"))
         #expect(build.contains("Bash(sh specs/waitlist/.mel/checks/task-1.sh)"))
+        #expect(build.contains { $0.hasPrefix("Edit(//") })
         #expect(try String(contentsOf: repo.appending(path: "specs/waitlist/.mel/checks/task-1.sh"), encoding: .utf8) == "swift test --filter Waitlist\n")
         #expect(Git.branch(at: repo) == "mel/waitlist")
 
