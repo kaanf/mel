@@ -122,7 +122,7 @@ struct ReadyView: View {
             if !tasks.isEmpty {
                 disclosure("Task prompts and checks", trailing: "\(tasks.count) \(tasks.count == 1 ? "task" : "tasks")", isOpen: $showsTasks)
                 if showsTasks {
-                    VStack(spacing: Theme.Space.x8) {
+                    LazyVStack(spacing: Theme.Space.x8) {
                         ForEach(tasks) { task in
                             VStack(alignment: .leading, spacing: Theme.Space.x4) {
                                 HStack(spacing: Theme.Space.x8) {

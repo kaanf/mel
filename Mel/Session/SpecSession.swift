@@ -7,7 +7,14 @@ import MelSystem
 
 @Observable final class SpecSession {
     private(set) var spec: Spec
-    private(set) var documents: [DocKind: String]
+    private(set) var documents: [DocKind: String] { didSet { reparse(from: oldValue) } }
+    /// What the views read from the files, parsed once per change of a file rather than on every view
+    /// pass (a 60 KB REQUIREMENTS.md takes ~5 ms; the board read it several times a pass).
+    private(set) var blocks: [DocKind: [Block]] = [:]
+    /// The tasks on Ready and in Build order.
+    private(set) var tasks: [SpecTask] = []
+    private(set) var stories: [Story] = []
+    private var summaries: [DocKind: DocSummary] = [:]
     private(set) var liveText: String
     private(set) var activity: [ActivityLine]
     private(set) var isRunning: Bool
@@ -56,6 +63,7 @@ import MelSystem
         self.app = app
         self.store = store
         self.saved = documents
+        reparse(from: [:])
         self.decisions = (try? String(contentsOf: spec.folder.appending(path: "DECISIONS.md"), encoding: .utf8)).map(Decision.parse) ?? []
         watch()
         let files = spec.size.files
@@ -78,6 +86,7 @@ import MelSystem
         self.lastError = lastError
         self.conflict = conflict
         self.store = nil
+        reparse(from: [:])
     }
 
     var currentQuestion: Question? { spec.questions.first { $0.round == .intake && $0.answer == nil } }
@@ -90,15 +99,23 @@ import MelSystem
         return line.isEmpty ? nil : String(line)
     }
 
-    /// The tasks on Ready and in Build order.
-    var tasks: [SpecTask] { SpecTask.parse(documents[.tasks] ?? "") }
+    func summary(_ kind: DocKind) -> DocSummary { summaries[kind] ?? DocSummary() }
 
-    func summary(_ kind: DocKind) -> DocSummary {
-        var summary = MarkdownParser.summary(documents[kind] ?? "", kind: kind)
-        if kind == .tasks {
-            summary.uncoveredCriteria = MarkdownParser.uncoveredCriteria(requirements: documents[.requirements] ?? "", tasks: documents[.tasks] ?? "")
+    /// Parses the files that changed since `old`.
+    private func reparse(from old: [DocKind: String]) {
+        let changed = Set(old.keys).union(documents.keys).filter { old[$0] != documents[$0] }
+        for kind in changed {
+            let text = documents[kind] ?? ""
+            blocks[kind] = MarkdownParser.blocks(text)
+            summaries[kind] = MarkdownParser.summary(text, kind: kind)
         }
-        return summary
+        if changed.contains(.tasks) { tasks = SpecTask.parse(documents[.tasks] ?? "") }
+        if changed.contains(.requirements) { stories = Story.parse(documents[.requirements] ?? "") }
+        if changed.contains(.tasks) || changed.contains(.requirements) {
+            var summary = summaries[.tasks] ?? MarkdownParser.summary("", kind: .tasks)
+            summary.uncoveredCriteria = MarkdownParser.uncoveredCriteria(requirements: documents[.requirements] ?? "", tasks: documents[.tasks] ?? "")
+            summaries[.tasks] = summary
+        }
     }
 
     // MARK: - Intake
@@ -681,8 +698,6 @@ import MelSystem
     }
 
     // MARK: Plan
-
-    var stories: [Story] { Story.parse(documents[.requirements] ?? "") }
 
     /// First version ↔ Later: Mel edits the story's tag itself, at once and with no run.
     func moveStory(_ id: String, toLater: Bool) {

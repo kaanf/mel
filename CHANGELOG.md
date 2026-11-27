@@ -7,6 +7,7 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 ## [Unreleased]
 
 ### Changed
+- **Large specs scroll smoothly.** The board and the Ready screen no longer re-read the files while you scroll.
 - **Specs use far fewer tokens.** Mel now writes a spec in one ongoing Claude Code conversation, the way you would in Terminal, instead of sending every file again with each answer or change. What Claude has already seen comes from Claude's cache.
 
 ## [0.5.2] · 2026-11-27

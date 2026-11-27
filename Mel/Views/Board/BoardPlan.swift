@@ -164,7 +164,7 @@ struct BoardPlan: View {
     /// "It must also": the quality requirements.
     @ViewBuilder
     private var mustAlso: some View {
-        let quality = MarkdownParser.blocks(session.documents[.requirements] ?? "").compactMap { block -> String? in
+        let quality = (session.blocks[.requirements] ?? []).compactMap { block -> String? in
             if case .criterion(let id, let text) = block, id.hasPrefix("Q") { text.replacingOccurrences(of: "THE APP SHALL ", with: "").capitalizedFirst } else { nil }
         }
         if !quality.isEmpty {
@@ -202,7 +202,7 @@ struct BoardPlan: View {
     /// Each flow of EXPERIENCE.md as a row of screens.
     @ViewBuilder
     private var screens: some View {
-        let flows = BoardFlow.parse(session.documents[.experience] ?? "")
+        let flows = BoardFlow.parse(session.blocks[.experience] ?? [])
         if flows.isEmpty {
             Text("The screens appear here once EXPERIENCE.md is written.").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
         } else {
@@ -280,10 +280,10 @@ struct BoardFlow {
     var title: String
     var screens: [String]
 
-    static func parse(_ experience: String) -> [BoardFlow] {
+    static func parse(_ experience: [Block]) -> [BoardFlow] {
         var flows: [BoardFlow] = []
         var inFlow = false
-        for block in MarkdownParser.blocks(experience) {
+        for block in experience {
             switch block {
             case .heading(2, let text):
                 inFlow = text.hasPrefix("Flow ")
