@@ -80,6 +80,11 @@ public enum AgentModel: String, Codable, CaseIterable, Hashable, Sendable {
     }
 }
 
+/// How much work a run does (Claude Code's `--effort`): Mel sets it per kind of run.
+public enum AgentEffort: String, Codable, Hashable, Sendable {
+    case low, medium, high
+}
+
 public enum SpecLanguage: String, Codable, CaseIterable, Hashable, Sendable {
     case english, turkish
 

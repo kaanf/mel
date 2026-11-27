@@ -10,11 +10,13 @@ public struct AgentRequest: Sendable {
     public var allowsTools: Bool             // false: files are inline (analyze, impact), no Read/Glob/Grep
     /// A build run (OQ #40): may also change files in `folders` and run `commands`; nothing else.
     public var build: BuildAccess?
-    /// nil: the user's own Claude Code default, as in their terminal (build runs, OQ #42).
+    /// nil: the user's own Claude Code default.
     public var model: AgentModel?
+    /// nil: the model's own default effort.
+    public var effort: AgentEffort?
 
     public init(prompt: String, workingDirectory: URL, resumeSessionID: String? = nil, persistSession: Bool,
-                systemPrompt: String? = nil, allowsTools: Bool = true, build: BuildAccess? = nil, model: AgentModel? = .opus) {
+                systemPrompt: String? = nil, allowsTools: Bool = true, build: BuildAccess? = nil, model: AgentModel? = .opus, effort: AgentEffort? = nil) {
         self.prompt = prompt
         self.workingDirectory = workingDirectory
         self.resumeSessionID = resumeSessionID
@@ -23,6 +25,7 @@ public struct AgentRequest: Sendable {
         self.allowsTools = allowsTools
         self.build = build
         self.model = model
+        self.effort = effort
     }
 }
 

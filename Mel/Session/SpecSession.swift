@@ -143,7 +143,7 @@ import MelSystem
     func start() async {
         guard spec.stage == .discovery, !spec.questions.contains(where: { $0.round == .intake }) else { return }
         lastError = nil
-        let end = await run(intakePrompt, step: .questions, resume: nil, persist: false, quick: true)
+        let end = await run(intakePrompt, step: .questions, resume: nil, persist: false, quick: .low)
         guard spec.stage == .discovery else { return }
         switch end {
         case .done(let reply):
@@ -222,7 +222,9 @@ import MelSystem
     }
 
     /// One agent run. Only one runs at a time across the app (`AppState.isAgentBusy`).
-    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true, quick: Bool = false, build: (task: Int, access: BuildAccess)? = nil) async -> RunEnd {
+    /// `quick`: a short run outside the spec's conversation, at that effort. The conversation's runs (drafts,
+    /// changes, rewrites) keep one model and effort on every turn, since a change invalidates its cache (OQ #36).
+    private func run(_ prompt: String, step: TokenStep, resume: String?, persist persistSession: Bool, tools: Bool = true, quick: AgentEffort? = nil, build: (task: Int, access: BuildAccess)? = nil) async -> RunEnd {
         guard let app else { return .refused }
         guard !app.isAgentBusy else {
             lastError = "Another spec is running. Wait for it to finish or stop it."
@@ -234,9 +236,9 @@ import MelSystem
         }
         lastError = nil
         app.requestNotificationsOnce()
-        // A build run uses the user's own default model, as their terminal would (OQ #42).
+        let (model, effort): (AgentModel, AgentEffort) = build != nil ? (app.buildModel, .medium) : quick.map { (app.quickModel, $0) } ?? (app.writingModel, .medium)
         let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools,
-                                   build: build?.access, model: build != nil ? nil : quick ? app.quickModel : app.writingModel)
+                                   build: build?.access, model: model, effort: effort)
         app.runningSpecID = spec.id
         self.runner = runner
         isRunning = true
@@ -920,7 +922,7 @@ import MelSystem
         persist()
         let values = ["name": spec.name, "approved": text(of: spec.written), "kinds": spec.size.kindsText,
                       "earlier": earlier.isEmpty ? "(none: this is the first check)" : earlier.joined(separator: "\n")]
-        switch await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false, quick: true) {
+        switch await run(Prompt.analyze.build(values, language: spec.language), step: .checks, resume: nil, persist: false, tools: false, quick: .medium) {
         case .done(let reply):
             if let contradictions = try? AnalyzeResult.contradictions(in: reply) {
                 var result = AnalyzeResult.coverage(requirements: documents[.requirements] ?? "", experience: spec.size.files.contains(.experience) ? documents[.experience] ?? "" : nil, tasks: documents[.tasks] ?? "")

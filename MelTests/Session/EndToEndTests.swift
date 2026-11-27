@@ -214,7 +214,7 @@ final class EndToEndTests {
         guard case .asking(let question) = session.status(of: task) else { Issue.record("task 1 should ask"); return }
         #expect(question.title == "How long is a freed spot held?")
         let build = try #require(script.claudeArguments.last)
-        #expect(!build.contains("--model"))
+        #expect(build[build.firstIndex(of: "--model")! + 1] == "claude-sonnet-5-5")
         #expect(build.contains("Bash(sh specs/waitlist/.mel/checks/task-1.sh)"))
         #expect(build.contains { $0.hasPrefix("Edit(//") })
         #expect(try String(contentsOf: repo.appending(path: "specs/waitlist/.mel/checks/task-1.sh"), encoding: .utf8) == "swift test --filter Waitlist\n")

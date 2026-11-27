@@ -60,6 +60,7 @@ public struct ClaudeCode: AgentAdapter {
             "--disable-slash-commands", "--no-chrome",
         ]
         if let model = request.model { arguments += ["--model", model.rawValue] }
+        if let effort = request.effort { arguments += ["--effort", effort.rawValue] }
         // Anything not allowed here would ask, and nobody answers in --print: it is refused (fixture `build-run`).
         // Paths are absolute (`//…`): a relative rule follows the shell's directory after a `cd` (real run 2026-11-27).
         if let build = request.build {

@@ -32,7 +32,7 @@ final class RealRunTests {
         app.notify = { [unowned self] title, body, _ in note("notification: \(title) · \(body)") }
         app.authorizeNotifications = {}
         await app.scanForAgent()
-        note("agent: \(app.agent.word) · models \(app.writingModel.name) / \(app.quickModel.name)")
+        note("agent: \(app.agent.word) · models writing \(app.writingModel.name), quick \(app.quickModel.name), building \(app.buildModel.name), project context Haiku 5.5")
         try #require(app.agent.isReady)
 
         // Start: the project, read once in the background.

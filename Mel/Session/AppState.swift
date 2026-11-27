@@ -21,6 +21,11 @@ import MelSystem
     var quickModel: AgentModel {
         didSet { defaults.set(quickModel.rawValue, forKey: Self.quickModelKey) }
     }
+    /// Settings › Agents › Models › Building: tasks run in Mel. Sonnet by default: a task has a clear
+    /// scope, where Sonnet comes close to Opus at half the price (research 2026-11-27).
+    var buildModel: AgentModel {
+        didSet { defaults.set(buildModel.rawValue, forKey: Self.buildModelKey) }
+    }
     /// Every spec of every project, found by scanning `specs/*/.mel/state.json`.
     var specs: [Spec] = []
     /// Library projects whose folder is gone; row title = folder name.
@@ -67,6 +72,7 @@ import MelSystem
     private static let specLanguageKey = "specLanguage"
     private static let writingModelKey = "writingModel"
     private static let quickModelKey = "quickModel"
+    private static let buildModelKey = "buildModel"
     private static let currentProjectKey = "currentProject"
     private static let editorKey = "editorApp"
 
@@ -81,6 +87,7 @@ import MelSystem
         specLanguage = defaults.string(forKey: Self.specLanguageKey).flatMap(SpecLanguage.init) ?? .english
         writingModel = defaults.string(forKey: Self.writingModelKey).flatMap(AgentModel.init) ?? .opus
         quickModel = defaults.string(forKey: Self.quickModelKey).flatMap(AgentModel.init) ?? .sonnet
+        buildModel = defaults.string(forKey: Self.buildModelKey).flatMap(AgentModel.init) ?? .sonnet
         projectID = defaults.string(forKey: Self.currentProjectKey).map { URL(filePath: $0).normalizedFolder }
         editor = defaults.string(forKey: Self.editorKey).map { URL(filePath: $0) }
         for item in library.load() {
@@ -168,7 +175,8 @@ import MelSystem
         readingContext.insert(project.id)
         defer { readingContext.remove(project.id) }
         let mode = "Read the code in this folder first: the README, the build files and the main source folders."
-        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false, model: quickModel)
+        // Reading and summing up the project: Haiku's job, at low effort (research 2026-11-27).
+        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false, model: .haiku, effort: .low)
         var result: String?
         do {
             loop: for try await event in runner.run(request) {

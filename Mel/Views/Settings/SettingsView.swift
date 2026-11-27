@@ -219,9 +219,17 @@ struct AgentSettings: View {
                 }
             }
             separator.padding(.leading, Theme.Space.x12)
-            settingsRow("Questions and checks", "The first questions, the check for contradictions and reading the project. Short runs.") {
+            settingsRow("Questions and checks", "The first questions and the check for contradictions. Short runs.") {
                 settingsValue(state.quickModel.name) {
                     Picker("Questions and checks", selection: $state.quickModel) {
+                        ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
+                    }
+                }
+            }
+            separator.padding(.leading, Theme.Space.x12)
+            settingsRow("Building", "Runs each task when you press Run. A task has a clear scope, so Sonnet is close to Opus here at half the cost.") {
+                settingsValue(state.buildModel.name) {
+                    Picker("Building", selection: $state.buildModel) {
                         ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
                     }
                 }

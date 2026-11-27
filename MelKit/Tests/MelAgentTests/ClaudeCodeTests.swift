@@ -189,4 +189,11 @@ struct ClaudeCodeTests {
         #expect(allowed == ["Edit(//\(root)/greet/**)", "Write(//\(root)/greet/**)", "Bash(chmod +x greet/*)", "Bash(chmod +x /\(root)/greet/*)",
                             "Bash(sh check.sh)", "Bash(sh /\(root)/check.sh)", "Bash(git add *)", "Bash(git commit *)"])
     }
+
+    @Test func effortIsPassedWhenSet() {
+        let args = claude.arguments(for: AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false, model: .haiku, effort: .low))
+        #expect(args[args.firstIndex(of: "--effort")! + 1] == "low")
+        #expect(args[args.firstIndex(of: "--model")! + 1] == "claude-haiku-5-5")
+        #expect(!claude.arguments(for: AgentRequest(prompt: "x", workingDirectory: folder, persistSession: false)).contains("--effort"))
+    }
 }
