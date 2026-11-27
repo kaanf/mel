@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.9] · 2026-11-27
+
 ### Added
 - **Run a task in Mel.** On Build, Run starts a task with your own Claude Code, on the spec's own branch. You see what it does as it goes, in plain words, and can stop it. It may change only the task's folders, run its check and commit; anything else is refused and listed. When it's done, Mel runs the check, and the task's report says what works now, what was decided while building (also in DECISIONS.md, each with Change…) and what's left. Copy prompt is still there.
 - **A task asks when it matters.** Claude Code stops only for something users would see or that is hard to undo. The question shows in Mel's column with what each answer means; your answer goes into DECISIONS.md and the task goes on where it stopped.
@@ -156,7 +158,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.9...HEAD
+[0.9]: https://github.com/kaanf/mel/compare/v0.8.1...v0.9
 [0.8.1]: https://github.com/kaanf/mel/compare/v0.8...v0.8.1
 [0.8]: https://github.com/kaanf/mel/compare/v0.7...v0.8
 [0.7]: https://github.com/kaanf/mel/compare/v0.6...v0.7
