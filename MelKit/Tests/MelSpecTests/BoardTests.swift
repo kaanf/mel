@@ -328,6 +328,19 @@ struct ChangeTests {
         #expect(change.without([.architecture, .tasks]).apply(to: documents)?.keys.map(\.self) == [.requirements])
     }
 
+    /// A real reply (Kingdom and Dynasty, 0.8): the edits, then a questions block the prompt didn't ask for.
+    @Test func textAfterTheJSONIsIgnored() throws {
+        let reply = #"""
+        {"edits": [{"file": "requirements", "old": "12 hours", "new": "24 hours {see D-19}"}]}
+
+        <!-- mel:questions
+        [{"id":"q1","title":"Foreign keys?","options":[{"label":"No","suggested":true}]}]
+        -->
+        """#
+        let change = try Change.decode(reply)
+        #expect(change.edits.map(\.new) == ["24 hours {see D-19}"])
+    }
+
     @Test func unknownFileOrProseDoesNotDecode() {
         #expect(throws: (any Error).self) { try Change.decode(#"{"edits":[{"file":"readme","old":"a","new":"b"}]}"#) }
         #expect(throws: (any Error).self) { try Change.decode("Done.") }

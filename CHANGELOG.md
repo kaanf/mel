@@ -6,6 +6,12 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Fixed
+- **Tell Mel on Build changed nothing.** When Claude Code added questions after its changes, Mel couldn't read the reply and dropped it without saying so. Mel now reads the changes and ignores what follows, and Claude Code is told not to add questions there.
+
+### Changed
+- **Tell Mel works like a chat.** What you send moves up out of the box at once, with the result under it. If something goes wrong, the panel says so and your text comes back into the box.
+
 ## [0.8] · 2026-11-27
 
 ### Changed

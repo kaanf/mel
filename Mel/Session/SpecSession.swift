@@ -622,6 +622,7 @@ import MelSystem
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard spec.stage != .discovery, !isRunning, !text.isEmpty, !spec.written.isEmpty, spec.halted == nil, spec.unplacedChange == nil else { return false }
         let request = task.map { "Found while building task \($0.number) (\($0.title)): " + text } ?? text
+        lastError = nil
         tellingTask = task?.number
         defer { tellingTask = nil }
         var attachments: [Attachment] = []

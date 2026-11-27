@@ -14,6 +14,8 @@ struct BoardTell: View {
     @State private var text = ""
     @State private var files: [URL] = []
     @State private var isAttaching = false
+    /// Build: the request just sent, shown above like a chat message; back in the box if the run fails.
+    @State private var sent: (text: String, task: SpecTask?)?
     @FocusState private var isFocused: Bool
 
     private var spec: Spec { session.spec }
@@ -22,6 +24,8 @@ struct BoardTell: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            if building, let sent { message(sent.text, task: sent.task) }
+            if building, !session.isRunning, let error = session.lastError { errorLine(error) }
             if let unplaced = spec.unplacedChange {
                 if building, session.isRunning { working(rewriting: unplaced.files.first) } else { unplacedBanner(unplaced) }
             } else if building, session.isRunning {
@@ -120,6 +124,28 @@ struct BoardTell: View {
         return note
     }
 
+    /// Build: what the user sent, right-aligned like a chat message.
+    private func message(_ text: String, task: SpecTask?) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x4) {
+            if let task {
+                Text("Task \(task.number) · \(task.title.capitalizedFirst)").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.likely).lineLimit(1)
+            }
+            Text(text).textStyle(Theme.Text.calloutLoose).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+        }
+        .padding(.vertical, Theme.Space.x8)
+        .padding(.horizontal, Theme.Space.x10)
+        .background(Theme.Colors.changedFill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.leading, Theme.Space.x24)
+    }
+
+    private func errorLine(_ error: String) -> some View {
+        Text(error + " Nothing was changed; your request is back in the box.")
+            .textStyle(Theme.Text.captionLoose)
+            .foregroundStyle(Theme.Colors.cautionText)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     /// V2-12: the board's working line, where the user is looking on Build.
     private func working(rewriting: DocKind?) -> some View {
         HStack(alignment: .top, spacing: Theme.Space.x8) {
@@ -185,7 +211,12 @@ struct BoardTell: View {
                     }
                 }
                 .buttonStyle(BoardPillStyle())
-                Button("Cancel") { Task { text = await session.cancelUnplaced() } }
+                Button("Cancel") {
+                    Task {
+                        text = await session.cancelUnplaced()
+                        sent = nil
+                    }
+                }
                     .buttonStyle(BoardPillStyle())
             }
             .disabled(session.isRunning)
@@ -272,7 +303,25 @@ struct BoardTell: View {
 
     private var sendButton: some View {
         Button(building && session.isRunning ? "Changing…" : "Send") {
-            let (sent, attached, about) = (request, files, task.wrappedValue)
+            let (request, attached, about) = (self.request, files, task.wrappedValue)
+            if building {
+                // Chat-like: the request leaves the box at once and comes back only if the run fails.
+                sent = (request, about)
+                text = ""
+                files = []
+                task.wrappedValue = nil
+                Task {
+                    guard await !session.tell(request, files: attached, task: about) else { return }
+                    sent = nil
+                    if text.isEmpty {
+                        text = request
+                        files = attached
+                        task.wrappedValue = about
+                    }
+                }
+                return
+            }
+            let sent = request
             Task {
                 // The request stays in the box until the run has finished.
                 if await session.tell(sent, files: attached, task: about), text.trimmingCharacters(in: .whitespacesAndNewlines) == sent {

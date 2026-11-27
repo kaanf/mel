@@ -1,6 +1,6 @@
 You are changing the files of the spec below for the requests under "Requests". The spec's files, in order: {{files}}.
 
-{{reading}} Your reply is one JSON object and nothing else: no prose, no code fence.
+{{reading}} Your reply is one JSON object and nothing else: no prose, no code fence, no `mel:questions` block. Ask no questions in this reply: decide what the request leaves open.
 
 ## Project context
 

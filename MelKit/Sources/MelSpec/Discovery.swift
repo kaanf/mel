@@ -50,10 +50,25 @@ struct WireQuestion: Decodable {
 
 /// The outermost JSON object or array in an agent reply; text around it (a stray code fence) is ignored.
 func jsonObject(in reply: String, open: Character = "{", close: Character = "}") throws -> Data {
-    guard let start = reply.firstIndex(of: open), let end = reply.lastIndex(of: close), start < end else {
-        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "No JSON in the reply."))
+    // From the first `open` to the bracket that closes it, outside strings: an agent sometimes
+    // adds text after the JSON, such as a `<!-- mel:questions -->` block with brackets of its own.
+    if let start = reply.firstIndex(of: open) {
+        var depth = 0, inString = false, escaped = false
+        for index in reply[start...].indices {
+            let character = reply[index]
+            if inString {
+                if escaped { escaped = false } else if character == "\\" { escaped = true } else if character == "\"" { inString = false }
+            } else if character == "\"" {
+                inString = true
+            } else if character == open {
+                depth += 1
+            } else if character == close {
+                depth -= 1
+                if depth == 0 { return Data(reply[start...index].utf8) }
+            }
+        }
     }
-    return Data(reply[start...end].utf8)
+    throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "No JSON in the reply."))
 }
 
 // Prompt text for `{{answers}}`, `{{coverage}}` and `{{decide}}`.
