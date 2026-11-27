@@ -4,8 +4,8 @@ import SwiftUI
 struct DesignIcon: View {
     nonisolated enum Glyph {
         case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector, stop, lock, bell, star, question, docLines, code, share, flowArrow, branch, checkCircle, warning, minus
-        /// V2 board: back to Plan, Tell Mel's Attach, Screens' arrow, the Files button, Reveal in Finder.
-        case chevronLeft, attach, flowArrowLong, file, folderOpen
+        /// V2 board: back to Plan, Tell Mel's Attach, Flow's arrow and branch, the Files button, Reveal in Finder.
+        case chevronLeft, attach, flowArrowLong, flowBranch, file, folderOpen
 
         /// SVG `d` attribute, as written in the `.dc.html` (circles written as two arcs).
         var path: String {
@@ -29,7 +29,8 @@ struct DesignIcon: View {
             case .minus: "M3 8h10"
             case .chevronLeft: "M10 3L5 8l5 5"
             case .attach: "M13 7.5l-5.2 5.2a3 3 0 0 1-4.3-4.3L9 3a2 2 0 0 1 2.9 2.9l-5.4 5.4a1 1 0 0 1-1.4-1.4L10 5"
-            case .flowArrowLong: "M1 5h17M14 1.5L18 5l-4 3.5"
+            case .flowArrowLong: "M1 5h13M10 1.5L14 5l-4 3.5"
+            case .flowBranch: "M2 1v6a3 3 0 0 0 3 3h7M9 7l3 3-3 3"
             case .file: "M4 1.75h5l3.25 3.25v9.25H4zM9 1.75V5h3.25"
             case .folderOpen: "M1.75 4.25h4.5l1.5 1.5h6.5v7.5H1.75z"
             case .draftNow: "M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"
@@ -62,7 +63,7 @@ struct DesignIcon: View {
             case .checkCircle: 1.8
             case .folderPlus: 1
             case .close: 2.6
-            case .paperclip, .draftNow, .bell, .star, .warning, .attach, .flowArrowLong, .file, .folderOpen: 1.5
+            case .paperclip, .draftNow, .bell, .star, .warning, .attach, .flowArrowLong, .flowBranch, .file, .folderOpen: 1.5
             case .chevronLeft: 2.2
             }
         }
@@ -72,7 +73,8 @@ struct DesignIcon: View {
             switch self {
             case .popUp: CGSize(width: 10, height: 14)
             case .flowArrow: CGSize(width: 18, height: 10)
-            case .flowArrowLong: CGSize(width: 20, height: 10)
+            case .flowArrowLong: CGSize(width: 16, height: 10)
+            case .flowBranch: CGSize(width: 14, height: 14)
             case .branch: CGSize(width: 16, height: 12)
             default: CGSize(width: 16, height: 16)
             }

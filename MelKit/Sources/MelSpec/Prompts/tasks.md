@@ -37,12 +37,17 @@ Name: {{name}}
 ```markdown
 # Tasks
 
+## 1 · Foundation
+
 - [ ] 1. Booking data model and local store
   - Priority: P1
   - Covers: 1.1, 1.2
   - Reads: ARCHITECTURE › Data
   - Verify: `swift test --filter Booking`
   - Changes: Sources/Booking
+
+## 2 · Booking
+
 - [ ] 2. Schedule screen
   - Priority: P1
   - Covers: 1.1, Q1
@@ -52,7 +57,8 @@ Name: {{name}}
   - Parallel with: 3
 ```
 
-- Tasks are numbered 1, 2, 3… in build order, with no gaps or repeats. Each fits in one focused session.
+- Tasks are numbered 1, 2, 3… in build order, with no gaps or repeats, counting on across phases. Each fits in one focused session.
+- Group the tasks into phases under `## N · Name` headings, in build order: each phase ends with something the user can see working. Name it in 1 to 4 words.
 - A reference to a task uses the number on its own `- [ ] N.` line. A callout about a task goes right under that task and names it by that number.
 - `Priority` is the highest priority among the criteria it covers. `Covers` lists criterion IDs (`1.1`, `Q1`).
 - `Reads` names the file sections the task needs. `Verify` is one command that proves the task works, using the project's test tools.

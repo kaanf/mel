@@ -641,6 +641,9 @@ extension Theme.Text {
     static let storyTitle = Theme.TextStyle(size: 14, weight: .semibold, lineHeight: 19)
     /// 12/16 bold · Build order column title.
     static let calloutHeavy = Theme.TextStyle(size: 12, weight: .bold, lineHeight: 16)
+    /// 13/18 bold · a Flow or Roadmap section's name; 11/14 bold · its number.
+    static let planSectionTitle = Theme.TextStyle(size: 13, weight: .bold, lineHeight: 18)
+    static let sectionNumber = Theme.TextStyle(size: 11, weight: .bold, lineHeight: 14)
     /// 13/17 semibold · project name in the V2 sidebar.
     static let sidebarProject = Theme.TextStyle(size: 13, weight: .semibold, lineHeight: 17)
     /// 12/16 bold on the tile · the project's letter.
@@ -650,11 +653,11 @@ extension Theme.Text {
 extension Theme.Size {
     /// 340 · "Mel needs you" column (drawn 300; widened so answers fit on a line or two).
     static let inboxWidth: CGFloat = 340
-    /// 760 / 780 / 680 / 860 · widest Plan, open file and Tell Mel, intake summary, Screens.
+    /// 760 / 780 / 680 / 860 · widest Plan, open file and Tell Mel, intake summary, Flow and Roadmap.
     static let planMaxWidth: CGFloat = 760
     static let fileMaxWidth: CGFloat = 780
     static let askingMaxWidth: CGFloat = 680
-    static let screensMaxWidth: CGFloat = 860
+    static let planTabMaxWidth: CGFloat = 860
     /// 40 · intake option row; 20 · its key box.
     static let optionRow: CGFloat = 40
     static let optionKey: CGFloat = 20
@@ -666,11 +669,10 @@ extension Theme.Size {
     static let gripDot: CGFloat = 2.4
     /// 2.8 · a dot of the ··· button, 5 pt apart.
     static let moreDot: CGFloat = 2.8
-    /// 150 wide Screens node with a 78 pt sketch.
-    static let flowNode: CGFloat = 150
-    static let flowSketch: CGFloat = 78
-    /// 200 · narrowest Build order column.
-    static let orderColumnMin: CGFloat = 200
+    /// 168 · a Flow screen card; 22 · Roadmap's indent under a task's number (criterion IDs use `criterionID`); 18 · a task's priority.
+    static let flowNode: CGFloat = 168
+    static let roadmapIndent: CGFloat = 22
+    static let priorityChip: CGFloat = 18
     /// 12 and 56 · skeleton line and card before the plan exists.
     static let skeletonLine: CGFloat = 12
     static let skeletonCard: CGFloat = 56
@@ -705,8 +707,10 @@ extension Theme.Elevation {
     static let article = Theme.Elevation(ring: .ink(0.12))
     /// Token popover and a story's menu: ring 0.12 + 0 8 24 0.14.
     static let popover = Theme.Elevation(ring: .ink(0.12), drop: Theme.Drop(y: 8, blur: 24, color: .black.opacity(0.14)))
-    /// Screens node: ring 0.14 + 0 1 3 0.06.
-    static let flowNode = Theme.Elevation(ring: .ink(0.14), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
+    /// A Flow branch target and a section's number: ring 0.12.
+    static let flowChip = Theme.Elevation(ring: .ink(0.12))
+    /// Flow screen card: ring 0.12 + 0 1 2 0.05.
+    static let flowNode = Theme.Elevation(ring: .ink(0.12), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.05)))
     /// Focused text area: 1 pt inset accent ring.
     static let focus = Theme.Elevation(ring: Theme.Colors.focusRing, ringWidth: 1, insetRing: true)
     /// Edit banner and change result: inset rings in their own color.

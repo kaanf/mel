@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-16 · Board, Flow tab (v2)
+Purpose: how the user moves through the product. Every flow in EXPERIENCE.md is a row of screen cards (name, its states,
+  the criteria it covers) with its branches below ("Class is full → Waitlist sheet"). A state EXPERIENCE.md marks
+  missing (!) shows red, so a gap is seen before building. A card opens EXPERIENCE.md. Replaces the Screens tab.
+  Mel builds it from EXPERIENCE.md (Flow sections, Screens and states table): no agent run. Only specs with EXPERIENCE.md
+  (New product) have it.
+Same component as V2-2-Board.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Board, Flow (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-2-Board" start="ready" tab="flow" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

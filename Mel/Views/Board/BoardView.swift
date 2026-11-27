@@ -131,7 +131,7 @@ struct BoardView: View {
             BoardAsking(idea: spec.idea, known: session.answeredQuestions.filter { $0.answer != .agentDecides }.compactMap(\.answerText))
                 .frame(maxWidth: Theme.Size.askingMaxWidth, alignment: .leading)
         } else {
-            BoardPlan(session: session)
+            BoardPlan(session: session) { open($0) }
         }
     }
 

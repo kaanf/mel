@@ -34,6 +34,7 @@ Settings          SettingsView (tabs)      GeneralSettings · AgentSettings · S
 | V2-2 | V2-2-Board | `Views/Board/BoardView` + `BoardInbox`, `BoardPlan`, `BoardFileView`, `BoardTell` | asking (intake), cards open, waiting for answers (V2-9), file open and a change applied (V2-4), stopped (V2-5), change couldn't be placed (V2-7), Remove confirmation (V2-8), edited by hand, plan ready |
 | V2-3 | V2-3-Ready | `Views/Build/BuildView` | start, midway (done, running, checking, failed, waiting), all done; Quick fix; prompt shown |
 | V2-11 to V2-14 | V2-11-Build-Typing … V2-14-Build-Unplaced | `BuildView` + `Views/Board/BoardTell` (`building`) | telling Mel with a task chip, Mel changing files, change applied, unplaced (in the right panel, OQ #38) |
+| V2-15, V2-16 | V2-15-Board-Roadmap, V2-16-Board-Flow | `Views/Board/BoardPlan` (`tab`) | Roadmap with phases, without phases (by priority); Flow |
 | V2-10 | V2-10-Board-Plan | `Views/Board/BoardView` | the board with the plan ready, after ‹ Plan (`Spec.reopenPlan`) |
 | V2-6 | V2-6-Settings-Specs | `Views/Settings/SpecsSettings` | project read, reading, not read, no project; adding a rule |
 | C4 | Native-Settings-Agents | `Views/Settings/SettingsView` › `AgentSettings` | ready, not signed in, not found |
@@ -49,7 +50,7 @@ One box (5 lines, grows no further; it scrolls), the attach button, the size chi
 
 ### Board
 
-Center: the plan (Plan, Screens for a New product, Build order), or an open file. Right: "Mel needs you", 340 pt (drawn 300). While the agent runs, a working line sits above the center: what Mel is doing, the section a draft has reached, Watch and Stop. Under the center: Tell Mel with the result line or the unplaced offer above it. Toolbar: the spec's name and size, the status pill with "Write it now" while a file waits, Stop while the agent runs, the token total, Files and Start Building. Banners above the center: stopped, and edited by hand.
+Center: the plan (Plan, Flow for a New product, Roadmap), or an open file. Flow (V2-16): each flow of EXPERIENCE.md as 168 pt screen cards with their states (missing ones flagged) and criteria, branches below; a card opens EXPERIENCE.md. Roadmap (V2-15): TASKS.md's phases on grey cards, each task with its priority, the criteria it covers (text from REQUIREMENTS.md) and its check; Later stories without tasks in one line below. Right: "Mel needs you", 340 pt (drawn 300). While the agent runs, a working line sits above the center: what Mel is doing, the section a draft has reached, Watch and Stop. Under the center: Tell Mel with the result line or the unplaced offer above it. Toolbar: the spec's name and size, the status pill with "Write it now" while a file waits, Stop while the agent runs, the token total, Files and Start Building. Banners above the center: stopped, and edited by hand.
 
 ### Build
 

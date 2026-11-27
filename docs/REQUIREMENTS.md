@@ -68,7 +68,7 @@ As a user, I want Mel to write the files without me reading each one, so that I 
 - 6.3 WHILE a file waits for answers, THE APP SHALL say so in the toolbar pill and in Files ("ARCHITECTURE.md starts after 2 answers") and offer "Write it now".
 - 6.4 WHEN the user clicks "Write it now", THE APP SHALL mark the open cards as guesses with no agent run and start the next file (OQ #32).
 - 6.5 THE APP SHALL show four file states only: Ready, Writing, Needs you and Waiting.
-- 6.6 THE APP SHALL show the plan from the files: stories in First version and Later, what it must also do, Screens (New product only) and Build order.
+- 6.6 THE APP SHALL show the plan from the files: stories in First version and Later, what it must also do, Flow (New product only: each flow's screens with their states, missing states flagged) and Roadmap (TASKS.md's phases, their tasks and the criteria each covers), built from the files with no agent run.
 - 6.7 AFTER the last file of a Feature or New product, THE APP SHALL check coverage by ID itself and run one agent check for contradictions; "Check again" runs it on request (OQ #33).
 - 6.8 WHEN everything is written, answered and applied, THE APP SHALL show "Plan is ready" and enable Start Building.
 - 6.9 THE APP SHALL post a notification when the plan is ready, when Mel needs answers, and when the agent stops.

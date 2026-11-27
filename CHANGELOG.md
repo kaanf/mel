@@ -6,6 +6,10 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Changed
+- **Roadmap instead of Build order.** The board's Roadmap shows the whole plan: phases, each phase's tasks, and under each task what it delivers, one criterion per line. New specs group their tasks into named phases; older ones are grouped by priority.
+- **Flow instead of Screens.** For a new product, Flow shows every flow as screen cards with their states, and the branches under them. A state the spec doesn't describe yet is flagged, so you see the gap before building. A card opens EXPERIENCE.md.
+
 ## [0.8.1] · 2026-11-27
 
 ### Fixed

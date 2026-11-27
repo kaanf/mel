@@ -264,6 +264,8 @@ enum PreviewData {
         return spec
     }()
     static let boardSession = SpecSession.preview(board, documents: boardDocuments, decisions: boardDecisions)
+    /// A TASKS.md from before phases: Roadmap groups it by priority.
+    static let boardFlatTasksSession = SpecSession.preview(board, documents: boardDocuments.merging([.tasks: tasksMarkdown.split(separator: "\n", omittingEmptySubsequences: false).filter { !$0.hasPrefix("## ") }.joined(separator: "\n")]) { $1 }, decisions: boardDecisions)
 
     /// V2-9: REQUIREMENTS.md is written; EXPERIENCE.md waits for two answers.
     static let boardWaiting: Spec = {
@@ -358,12 +360,17 @@ enum PreviewData {
     static let tasksMarkdown = """
         # Tasks
 
+        ## 1 · Foundation
+
         - [ ] 1. Booking data and local store
           - Priority: P1
           - Covers: 1.1, 1.2
           - Reads: REQUIREMENTS.md 1.1 and 1.2, ARCHITECTURE.md › Data, D-05
           - Verify: `./gradlew :shared:allTests --tests "*Booking*"`
           - Changes: shared/booking
+
+        ## 2 · Booking and paying
+
         - [ ] 2. Schedule and class screens
           - Priority: P1
           - Covers: 1.1
@@ -378,6 +385,9 @@ enum PreviewData {
           - Verify: `./gradlew :shared:allTests --tests "*Checkout*"`
           - Changes: shared/payments
           - Parallel with: 2
+
+        ## 3 · Cancelling and the waitlist
+
         - [ ] 4. Cancel a booking
           - Priority: P1
           - Covers: 1.3

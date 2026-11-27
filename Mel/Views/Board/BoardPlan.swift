@@ -2,18 +2,26 @@ import SwiftUI
 import MelSpec
 
 /// The board's center while no file is open: Plan (stories in First version and Later),
-/// Screens (New product) and Build order. The plan is the files' summary.
+/// Flow (New product) and Roadmap. The plan is the files' summary; Flow and Roadmap need no agent run.
 struct BoardPlan: View {
     let session: SpecSession
+    /// Opens a file in the board's center (a Flow card opens EXPERIENCE.md).
+    var open: (BoardFile) -> Void = { _ in }
 
-    private enum Tab: String, CaseIterable { case plan = "Plan", screens = "Screens", order = "Build order" }
+    enum Tab: String, CaseIterable { case plan = "Plan", flow = "Flow", roadmap = "Roadmap" }
 
-    @State private var tab = Tab.plan
+    @State private var tab: Tab
     @State private var confirming: String?
+
+    init(session: SpecSession, tab: Tab = .plan, open: @escaping (BoardFile) -> Void = { _ in }) {
+        self.session = session
+        self.open = open
+        _tab = State(initialValue: tab)
+    }
 
     private var spec: Spec { session.spec }
     private var stories: [Story] { session.stories }
-    private var tabs: [Tab] { Tab.allCases.filter { $0 != .screens || spec.size.files.contains(.experience) } }
+    private var tabs: [Tab] { Tab.allCases.filter { $0 != .flow || spec.size.files.contains(.experience) } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x12) {
@@ -30,8 +38,8 @@ struct BoardPlan: View {
             }
             switch tab {
             case .plan: plan.frame(maxWidth: Theme.Size.planMaxWidth, alignment: .leading)
-            case .screens: screens.frame(maxWidth: Theme.Size.screensMaxWidth, alignment: .leading)
-            case .order: order
+            case .flow: flow.frame(maxWidth: Theme.Size.planTabMaxWidth, alignment: .leading)
+            case .roadmap: roadmap.frame(maxWidth: Theme.Size.planTabMaxWidth, alignment: .leading)
             }
         }
         // A story changing group, a removed one, the plan filling in as files are written.
@@ -197,42 +205,49 @@ struct BoardPlan: View {
         }
     }
 
-    // MARK: Screens
+    // MARK: Flow
 
-    /// Each flow of EXPERIENCE.md as a row of screens.
+    /// V2-16: each flow of EXPERIENCE.md as screen cards with their states, its branches below.
     @ViewBuilder
-    private var screens: some View {
-        let flows = BoardFlow.parse(session.blocks[.experience] ?? [])
+    private var flow: some View {
+        let flows = ExperienceFlow.parse(session.blocks[.experience] ?? [])
         if flows.isEmpty {
-            Text("The screens appear here once EXPERIENCE.md is written.").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
+            Text("The flows appear here once EXPERIENCE.md is written.").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
         } else {
+            let screens = flows.reduce(0) { $0 + $1.screens.count + $1.branches.count }
+            let missing = flows.reduce(0) { $0 + $1.screens.reduce(0) { $0 + $1.states.filter { $0.hasPrefix("!") }.count } }
             VStack(alignment: .leading, spacing: Theme.Space.x14) {
-                ForEach(flows, id: \.title) { flow in
-                    Text(flow.title).textStyle(Theme.Text.bodyLoose).foregroundStyle(Theme.Colors.bodyLabel)
-                    FlowLayout(spacing: Theme.Space.x8) {
-                        ForEach(Array(flow.screens.enumerated()), id: \.offset) { index, name in
-                            HStack(spacing: Theme.Space.x8) {
-                                VStack(alignment: .leading, spacing: Theme.Space.x8) {
-                                    VStack(alignment: .leading, spacing: Theme.Space.x5) {
-                                        Capsule().fill(Theme.Colors.skeletonStrong).frame(width: 78, height: Theme.Space.x6)
-                                        RoundedRectangle(cornerRadius: Theme.Radius.keyHint).fill(Theme.Colors.skeleton).frame(height: Theme.Space.x14)
-                                        RoundedRectangle(cornerRadius: Theme.Radius.keyHint).fill(Theme.Colors.skeleton).frame(height: Theme.Space.x14)
-                                        Spacer(minLength: 0)
-                                        Capsule().fill(Theme.Colors.accentRing).frame(width: 52, height: Theme.Space.x10)
+                Text("\(count(flows.count, "flow")) · \(count(screens, "screen"))" + (missing > 0 ? " · \(count(missing, "state")) not described" : ""))
+                    .textStyle(Theme.Text.body)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                ForEach(Array(flows.enumerated()), id: \.offset) { index, flow in
+                    section(number: index + 1, name: flow.title, meta: flow.covers.isEmpty ? "" : "Covers " + flow.covers.joined(separator: ", ")) {
+                        FlowLayout(spacing: Theme.Space.x6) {
+                            ForEach(Array(flow.screens.enumerated()), id: \.offset) { step, screen in
+                                HStack(spacing: Theme.Space.x6) {
+                                    screenCard(screen)
+                                    if step < flow.screens.count - 1 {
+                                        DesignIcon(glyph: .flowArrowLong, size: Theme.Space.x16).foregroundStyle(Theme.Colors.tertiary)
                                     }
-                                    .padding(Theme.Space.x8)
-                                    .frame(height: Theme.Size.flowSketch)
-                                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
-                                    .accessibilityHidden(true)
-                                    Text(name).textStyle(Theme.Text.calloutBold).lineLimit(1)
-                                }
-                                .padding(Theme.Space.x10)
-                                .frame(width: Theme.Size.flowNode, alignment: .leading)
-                                .surface(Theme.Colors.background, .flowNode, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
-                                if index < flow.screens.count - 1 {
-                                    DesignIcon(glyph: .flowArrowLong, size: Theme.Space.x20).foregroundStyle(Theme.Colors.tertiary)
                                 }
                             }
+                        }
+                        ForEach(flow.branches, id: \.self) { branch in
+                            HStack(spacing: Theme.Space.x8) {
+                                DesignIcon(glyph: .flowBranch, size: Theme.Space.x14).foregroundStyle(Theme.Colors.tertiary)
+                                Text(branch.when).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.bodyLabel)
+                                Button { open(.doc(.experience)) } label: {
+                                    HStack(spacing: Theme.Space.x6) {
+                                        Text(branch.to).textStyle(Theme.Text.calloutBold)
+                                        Text(branch.ids.joined(separator: ", ")).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel).monospacedDigit()
+                                    }
+                                    .padding(.horizontal, Theme.Space.x10)
+                                    .frame(height: Theme.Size.buttonSmall)
+                                    .surface(Theme.Colors.background, .flowChip, in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.leading, Theme.Space.x8)
                         }
                     }
                 }
@@ -240,79 +255,128 @@ struct BoardPlan: View {
         }
     }
 
-    // MARK: Build order
+    private func screenCard(_ screen: ExperienceFlow.Screen) -> some View {
+        Button { open(.doc(.experience)) } label: {
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                Text(screen.name).textStyle(Theme.Text.bodyBold)
+                FlowLayout(spacing: Theme.Space.x4) {
+                    ForEach(screen.states, id: \.self) { StateChip(state: $0) }
+                }
+                Spacer(minLength: 0)
+                Text(screen.ids.joined(separator: ", ")).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).monospacedDigit()
+            }
+            .padding(Theme.Space.x10)
+            .frame(width: Theme.Size.flowNode, alignment: .leading)
+            .frame(maxHeight: .infinity, alignment: .topLeading)
+            .surface(Theme.Colors.background, .flowNode, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(screen.name), \(screen.states.map { $0.hasPrefix("!") ? "\($0.dropFirst()) missing" : $0 }.joined(separator: ", ")). Opens EXPERIENCE.md")
+    }
 
-    /// TASKS.md in build order; tasks marked "Parallel with" share a column.
+    // MARK: Roadmap
+
+    /// V2-15: phases of TASKS.md, their tasks, and under each task the criteria it covers.
     @ViewBuilder
-    private var order: some View {
-        let columns = BoardOrder.columns(session.tasks)
-        if columns.isEmpty {
-            Text("The build order appears here once TASKS.md is written.").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
+    private var roadmap: some View {
+        let phases = RoadmapPhase.phases(session.tasks)
+        if phases.isEmpty {
+            Text("The roadmap appears here once TASKS.md is written.").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
         } else {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: Theme.Size.orderColumnMin), spacing: Theme.Space.x12, alignment: .top)], alignment: .leading, spacing: Theme.Space.x12) {
-                ForEach(Array(columns.enumerated()), id: \.offset) { index, tasks in
-                    VStack(alignment: .leading, spacing: Theme.Space.x8) {
-                        Text("\(index + 1) · \(index == 0 ? "First" : tasks.count > 1 ? "At the same time" : "Then")")
-                            .textStyle(Theme.Text.calloutHeavy)
-                            .foregroundStyle(Theme.Colors.bodyLabel)
-                        ForEach(tasks) { task in
-                            VStack(alignment: .leading, spacing: Theme.Space.x4) {
-                                Text(task.title).textStyle(Theme.Text.bodyBold)
-                                if !task.verify.isEmpty {
-                                    Text("Checked by: \(task.verify)").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(Theme.Space.x10)
-                            .surface(Theme.Colors.background, .fileChip, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+            let criteria = Dictionary((session.blocks[.requirements] ?? []).compactMap { block -> (String, String)? in
+                if case .criterion(let id, let text) = block { (id, text) } else { nil }
+            }, uniquingKeysWith: { first, _ in first })
+            let tasks = phases.flatMap(\.tasks)
+            let covered = Set(tasks.flatMap(\.covers))
+            let later = stories.filter { !$0.isFirst && covered.isDisjoint(with: $0.criteria) }
+            VStack(alignment: .leading, spacing: Theme.Space.x14) {
+                Text("\(count(phases.count, "phase")) · \(count(tasks.count, "task")) · \(tasks.reduce(0) { $0 + $1.covers.count }) criteria")
+                    .textStyle(Theme.Text.body)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                ForEach(Array(phases.enumerated()), id: \.offset) { index, phase in
+                    section(number: index + 1, name: phase.name, meta: phaseMeta(phase)) {
+                        ForEach(phase.tasks) { task in
+                            taskCard(task, criteria: criteria)
                         }
                     }
-                    .padding(Theme.Space.x10)
-                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+                }
+                if !later.isEmpty {
+                    Text("Later, not in the roadmap yet: \(later.map(\.title).joined(separator: ", ")). Move a story to the first version to plan it.")
+                        .textStyle(Theme.Text.calloutLoose)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, Theme.Space.x10)
+                        .padding(.horizontal, Theme.Space.x12)
+                        .surface(.clear, Theme.Elevation(ring: .ink(0.12), ringWidth: 1, insetRing: true), in: RoundedRectangle(cornerRadius: Theme.Radius.card))
                 }
             }
         }
     }
-}
 
-/// A flow of EXPERIENCE.md: `## Flow 1 · Book a class` and its numbered screens.
-struct BoardFlow {
-    var title: String
-    var screens: [String]
+    /// "2 tasks · at the same time" when the phase is one Build step.
+    private func phaseMeta(_ phase: RoadmapPhase) -> String {
+        let steps = BuildStep.steps(phase.tasks)
+        guard phase.tasks.count > 1, steps.count == 1 else { return count(phase.tasks.count, "task") }
+        return count(phase.tasks.count, "task") + (steps[0].kind == .together ? " · at the same time" : " · one after the other")
+    }
 
-    static func parse(_ experience: [Block]) -> [BoardFlow] {
-        var flows: [BoardFlow] = []
-        var inFlow = false
-        for block in experience {
-            switch block {
-            case .heading(2, let text):
-                inFlow = text.hasPrefix("Flow ")
-                if inFlow { flows.append(BoardFlow(title: text.split(separator: "·", maxSplits: 1).last.map { $0.trimmingCharacters(in: .whitespaces) } ?? text, screens: [])) }
-            case .orderedItem(_, let text) where inFlow:
-                // "Schedule (1.1)" → "Schedule"
-                let name = text.split(separator: "(").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? text
-                flows[flows.count - 1].screens.append(name)
-            default:
-                break
+    private func taskCard(_ task: SpecTask, criteria: [String: String]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x6) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x6) {
+                Text("\(task.number).").textStyle(Theme.Text.bodyBold).foregroundStyle(Theme.Colors.secondaryLabel).monospacedDigit()
+                    .frame(width: Theme.Size.roadmapIndent - Theme.Space.x6, alignment: .leading)
+                Text(task.title).textStyle(Theme.Text.bodyBold).frame(maxWidth: .infinity, alignment: .leading)
+                if !task.priority.isEmpty {
+                    Text(task.priority)
+                        .textStyle(Theme.Text.caption)
+                        .foregroundStyle(Theme.Colors.bodyLabel)
+                        .padding(.horizontal, Theme.Space.x6)
+                        .frame(height: Theme.Size.priorityChip)
+                        .background(Theme.Colors.chipFill, in: Capsule())
+                }
+            }
+            VStack(alignment: .leading, spacing: Theme.Space.x4) {
+                ForEach(task.covers, id: \.self) { id in
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+                        Text(id).foregroundStyle(Theme.Colors.secondaryLabel).monospacedDigit().frame(width: Theme.Size.criterionID, alignment: .leading)
+                        Text(criteria[id] ?? "Not in REQUIREMENTS.md").foregroundStyle(criteria[id] == nil ? Theme.Colors.secondaryLabel : Theme.Colors.label)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .textStyle(Theme.Text.calloutLoose)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .padding(.leading, Theme.Size.roadmapIndent)
+            if !task.verify.isEmpty {
+                Text("Checked by: \(task.verify)").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+                    .padding(.leading, Theme.Size.roadmapIndent)
             }
         }
-        return flows.filter { !$0.screens.isEmpty }
+        .padding(.vertical, Theme.Space.x10)
+        .padding(.horizontal, Theme.Space.x12)
+        .surface(Theme.Colors.background, .fileChip, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
     }
-}
 
-enum BoardOrder {
-    /// Tasks in order; a task that runs parallel with one in the current column joins it.
-    static func columns(_ tasks: [SpecTask]) -> [[SpecTask]] {
-        var columns: [[SpecTask]] = []
-        for task in tasks {
-            if let last = columns.last, last.contains(where: { task.parallelWith.contains($0.number) || $0.parallelWith.contains(task.number) }) {
-                columns[columns.count - 1].append(task)
-            } else {
-                columns.append([task])
+    /// A Flow or Roadmap section: number, name and a quiet line on the right, on a grey card.
+    private func section(number: Int, name: String, meta: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            HStack(spacing: Theme.Space.x8) {
+                Text("\(number)")
+                    .textStyle(Theme.Text.sectionNumber)
+                    .foregroundStyle(Theme.Colors.bodyLabel)
+                    .frame(width: Theme.Size.badge, height: Theme.Size.badge)
+                    .surface(Theme.Colors.background, .flowChip, in: Circle())
+                    .accessibilityHidden(true)
+                Text(name).textStyle(Theme.Text.planSectionTitle).frame(maxWidth: .infinity, alignment: .leading).accessibilityAddTraits(.isHeader)
+                Text(meta).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
             }
+            content()
         }
-        return columns
+        .padding(Theme.Space.x12)
+        .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
+
+    private func count(_ n: Int, _ noun: String) -> String { "\(n) \(noun)\(n == 1 ? "" : "s")" }
 }
 
 /// A story's drag handle: six dots.
@@ -348,4 +412,19 @@ struct BoardSegmentStyle: ButtonStyle {
             .surface(isSelected ? Theme.Colors.segmentFill : .clear, isSelected ? .segmentSelected : .init(), in: Capsule())
             .contentShape(Capsule())
     }
+}
+
+#Preview("Flow") {
+    ScrollView { BoardPlan(session: PreviewData.boardSession, tab: .flow).padding(Theme.Space.x20) }
+        .frame(width: 900, height: 760)
+}
+
+#Preview("Roadmap") {
+    ScrollView { BoardPlan(session: PreviewData.boardSession, tab: .roadmap).padding(Theme.Space.x20) }
+        .frame(width: 900, height: 760)
+}
+
+#Preview("Roadmap, no phases") {
+    ScrollView { BoardPlan(session: PreviewData.boardFlatTasksSession, tab: .roadmap).padding(Theme.Space.x20) }
+        .frame(width: 900, height: 760)
 }

@@ -33,15 +33,17 @@ Goal: before the agent starts, the user makes at most 2 decisions (write, press 
 | V2-12 | V2-12-Build-Working.dc.html | Build, Mel changing files: working line, Check it disabled on changed tasks (tell = "working") | new |
 | V2-13 | V2-13-Build-Changed.dc.html | Build, change applied: result line, Updated tags, Prompt changed, Changed after done, new task (tell = "result") | new |
 | V2-14 | V2-14-Build-Unplaced.dc.html | Build, change couldn't be placed (tell = "unplaced") | new |
+| V2-15 | V2-15-Board-Roadmap.dc.html | Board, Roadmap tab: phases → tasks → covered criteria, every item shown (state of V2-2, props start = "ready", tab = "roadmap") | Build order tab |
+| V2-16 | V2-16-Board-Flow.dc.html | Board, Flow tab: each flow as screen cards with states and criteria, branches below, missing states red (state of V2-2, props start = "ready", tab = "flow") | Screens tab |
 | V2-3 | V2-3-Ready.dc.html | Build: tasks in steps (run alone, at the same time, one after the other), Copy prompt, Check it, Done; back to the plan | B7 |
 | V2-6 | V2-6-Settings-Specs.dc.html | Settings › Specs: the defaults V2 stopped asking about | B1 fields, B7 toggles, A3 rules |
 
-V2-0b, V2-4, V2-5, V2-7, V2-8, V2-9, V2-10 and V2-11 to V2-14 are the same components as V2-0, V2-2 and V2-3 with different props: build them as states, not screens.
+V2-0b, V2-4, V2-5, V2-7, V2-8, V2-9, V2-10, V2-11 to V2-14, V2-15 and V2-16 are the same components as V2-0, V2-2 and V2-3 with different props: build them as states, not screens.
 
 Main path:
 
 ```
-V2-0 Start ──Start──▶ V2-1 New ──Start──▶ V2-2 Board ──Start Building──▶ V2-3 Build ──‹ Plan──▶ V2-10 Board, plan ready
+V2-0 Start ──Continue──▶ V2-1 New ──Plan it──▶ V2-2 Board ──Start Building──▶ V2-3 Build ──Plan (steps)──▶ V2-10 Board, plan ready
 ```
 
 Rules that change from V1:
@@ -52,9 +54,9 @@ Rules that change from V1:
 - **4 file states only:** Ready (green dot), Writing (blue ring), Needs you (blue dot), Waiting (grey ring, not started yet). Stopped and out-of-date files show as Needs you, with the reason in the banner.
 - **Files:** the Files button in the board toolbar lists the files. Clicking one opens it in the board's center: Formatted or Markdown, Open in Editor (Settings › Specs › Open files in), Reveal in Finder, Edit. A file still being written is read-only. DECISIONS.md is read-only (decisions change from their cards). Keyboard: ⌘1 to ⌘5 open the files in order, Esc returns to the plan. Settings › Specs › "Show spec files in the sidebar" (off by default) also lists them under the open spec.
 - **Edit after it's written** (was C1): saving an edit shows a banner in the board with the files built on it, Update / Keep them as they are / Undo, and a "Why?" field saved to DECISIONS.md.
-- **Agent stopped** (was C2): a banner in the board: Continue with the other agent, Resume when the limit resets, or Finish it myself (opens the file). Answers and finished files are untouched.
-- **Plan tabs:** Plan, Screens, Build order. Screens appears only for New product.
-- **Build** (V2-3, was Ready / B7): until Mel runs agents itself, the user runs each task's prompt in their own Claude Code. Tasks are grouped in steps from TASKS.md: Run alone, At the same time (only when the tasks change different folders; open one terminal each), One after the other (same folder). A step opens when the step before it is done. Each task: Copy prompt (short, names only the passages it needs, marks the task Running), Check it (Mel runs the task's verify command on this Mac: no agent, no tokens), passed → Done and the next tasks open, failed → the output, Copy fix prompt (includes the error), Check again. "Mark done without the check" and Reopen are always there. ‹ Plan goes to V2-10. When all tasks are done the spec moves to Done. Tell Mel is on Build too, pinned under the steps: Running and Failed cards have "Tell Mel about this", which adds a task chip (and the check output from a failed card) so the request knows where it came from. While Mel changes files, Check it is disabled only on the tasks being changed. After a change, a running task whose prompt changed shows "Prompt changed · Copy again", a done task whose text changed shows "Changed after done" with Reopen (Mel never reopens it on its own), and a new task appears in its step with a soft highlight. The working line (file · where · Stop) is shared with the board. When Mel runs agents later, Copy prompt becomes Run and Check it runs on its own; steps and checks stay. AGENTS.md, commit and "ask before an agent changes the plan" are on by default and live in Settings › Specs.
+- **Agent stopped** (was C2): a banner in the board: Resume when the limit resets (on its own, with a notification), or Finish it myself (opens the file). Answers and finished files are untouched.
+- **Plan tabs:** Plan, Flow, Roadmap. Flow appears only for New product (it needs EXPERIENCE.md). Flow (V2-16, replaces Screens) shows every flow in EXPERIENCE.md as a row of screen cards: the screen's name, its states (a state marked `!` is missing and shows red) and the criteria it covers, with the flow's branches below. A card opens EXPERIENCE.md. Mel builds it in Swift, no agent run. Roadmap (V2-15, replaces Build order) shows the whole plan: phases from the `##` headings in TASKS.md, each phase's tasks with priority and check, and under each task the criteria it covers (from `Covers`, text from REQUIREMENTS.md). Every item is shown; Mel builds it in Swift, no agent run. Without phase headings it groups by priority. Later stories without tasks are listed below the phases.
+- **Build** (V2-3, was Ready / B7): until Mel runs agents itself, the user runs each task's prompt in their own Claude Code. Tasks are grouped in steps from TASKS.md: Run alone, At the same time (only when the tasks change different folders; open one terminal each), One after the other (same folder). A step opens when the step before it is done. Each task: Copy prompt (short, names only the passages it needs, marks the task Running), Check it (Mel runs the task's verify command on this Mac: no agent, no tokens), passed → Done and the next tasks open, failed → the output, Copy fix prompt (includes the error), Check again. "Mark done without the check" and Reopen are always there. Plan in the steps control goes to V2-10. When all tasks are done the spec moves to Done. Tell Mel is on Build too, pinned at the bottom of the right column: Running and Failed cards have "Tell Mel about this", which adds a task chip (and the check output from a failed card) so the request knows where it came from. While Mel changes files, Check it is disabled only on the tasks being changed. After a change, a running task whose prompt changed shows "Prompt changed · Copy again", a done task whose text changed shows "Changed after done" with Reopen (Mel never reopens it on its own), and a new task appears in its step with a soft highlight. The working line (file · where · Stop) is shared with the board. When Mel runs agents later, Copy prompt becomes Run and Check it runs on its own; steps and checks stay. AGENTS.md, commit and "ask before an agent changes the plan" are on by default and live in Settings › Specs.
 
 ## V2 · Expressiveness and token budget
 
@@ -65,7 +67,7 @@ Users could write these files by hand in Claude, ChatGPT or Claude Code, so V2 h
 
 Rules that follow from them (all on V2-2 Board):
 
-- **Tell Mel.** One free-text field under the board's center, also when a file is open: "Tell Mel what to change, add or remove…". Long text and attachments are fine. One request at a time against the current files; there is no chat and no history. Mel finds the passages the request touches and patches only those.
+- **Tell Mel.** One free-text field at the bottom of Mel's column (the right column), also when a file is open: "Tell Mel what to change, add or remove…". Long text and attachments are fine. One request at a time against the current files; there is no chat and no history. Mel finds the passages the request touches and patches only those.
   - Result: one line, for example "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md, 1 task in TASKS.md", with Undo. Changed passages are highlighted in the open file until the line is dismissed. (V2-4)
   - The change and its reason (the user's own words) are added to DECISIONS.md automatically.
   - Can't be placed: "Mel couldn't find where this goes in ARCHITECTURE.md." with Rewrite ARCHITECTURE.md (shows its cost) and Cancel. A whole-file rewrite only ever happens from this button, so it is always the user's explicit choice. Cancel puts the request back in the box. (V2-7)
@@ -73,8 +75,39 @@ Rules that follow from them (all on V2-2 Board):
 - **Free answers.** Every intake question and decision card has "Something else…" next to its one-tap answers. It opens an inline text field; the typed answer is used exactly like a tapped one. An answered card shows the answer and Change.
 - **Removing.** Each story card in Plan has a ··· menu with Remove…. A confirmation in the card lists what goes with it, for example "Also removes requirement 2.1, 2 screens in EXPERIENCE.md, the payments module in ARCHITECTURE.md and task 3", with Remove and Cancel (V2-8). Removing patches those passages out. Removed stories are logged in DECISIONS.md with Restore.
 - **Scope moves are free.** Story cards drag between "First version" and "Later" (the Later / First buttons and the ··· menu do the same). It changes at once: no agent run and no progress indicator, because only the priority marker of that story changes.
-- **Files are written one at a time, gated.** The next file starts only when the cards of the files before it are answered, so an answer never forces a rewrite of a later file. The waiting file reads "ARCHITECTURE.md starts after 2 answers" in Files and in the toolbar pill. A quiet "Write it now" link writes on without waiting; unanswered cards then become guesses, the same rule as "Skip, write the plan now". Not-started files are Waiting (grey ring) and can't be opened yet. (V2-9)
+- **Files are written one at a time, gated.** The next file starts only when the cards of the files before it are answered, so an answer never forces a rewrite of a later file. The waiting file reads "ARCHITECTURE.md starts after 2 answers" in Files and in Mel's status line. A quiet "Write it now" link writes on without waiting; unanswered cards then become guesses, the same rule as "Skip, write the plan now". Not-started files are Waiting (grey ring) and can't be opened yet. (V2-9)
 - **Token use is visible.** The board toolbar shows a small, neutral total for this spec, for example "41k tokens". Clicking it opens a popover by step: project context, questions, each file, checks, changes (V2-9). Settings › Specs › "Show token use on the board" (on by default) hides it. V2-3 Ready states the total in its summary.
+
+## V2 · One whole
+
+Added 2026-11-27 after a UX review against current agent and macOS patterns. Each screen should feel like a step of one
+journey, so the same few pieces repeat everywhere and nothing new costs tokens:
+
+- **Steps control: Idea › Plan › Build.** One segmented control in the toolbar of New (Idea current), the board (Plan) and
+  Build (Build). Done steps show a check, the current one is raised, later ones are grey until they open: Build opens when
+  the plan is ready, Plan on Build returns to V2-10. It replaces the separate ‹ Plan breadcrumb and tells the user where
+  they are and what comes next without a tutorial. Buttons follow the same words: Continue (Start), Plan it (New), Start
+  Building (board).
+- **Mel's column.** The right column is Mel's on the board and on Build: a title ("Mel needs you · 2", "Nothing needs
+  you"), Mel's status line (what it is doing or waiting for, with Write it now; this is the old toolbar pill), then the
+  questions and cards (board) or how building works (Build), and the Tell Mel box pinned at the bottom. The user looks in
+  one place for "what does Mel want" and "tell Mel something". The center is always the user's work: plan, file or steps.
+- **One composer.** New and both Tell Mel boxes are the same: text, Attach, Dictate (macOS speech to text into the box,
+  read before sending), the primary button. Saying an idea out loud is the lowest-effort way to start.
+- **One result line with Undo.** Every change shows one line in Mel's column right above the box: a Tell Mel change, a
+  rewrite, and now Remove ("Removed “Buy a class pack” and what was built on it" · Undo). Restore in DECISIONS.md stays
+  for later.
+- **Honest defaults.** The likely answer on a question is marked "Likely · ↩" (Return picks it). Skip says what happens:
+  the Likely answer is used, or a guess, and each one is listed under "small things Mel guessed".
+- **Leave while Mel works.** New says it up front ("Mel writes the plan · leave, you get a notification"), and the board
+  repeats it while a file is being written or the agent is stopped. Mel already notifies when it needs the user.
+- **What happens next, once.** Under New's box: Up to 3 questions · Mel writes the plan · You build it.
+- **Only what ships.** Claude Code only (no Codex on Start or the stopped banner); Settings › Specs shows only the settings
+  the app has.
+
+Sources for this review: setproduct.com "16 AI agent UI design patterns", beyondchat.design and agentic-ux.com
+"Clarifying questions", Jakob Nielsen "Slow AI" and "Think-time UX", Smashing Magazine "Practical interface patterns for
+AI transparency" (2026), Apple HIG Sidebars and Toolbars, WWDC25 "Get to know the new design system".
 
 ## Lanes (reference, replaced by V2)
 

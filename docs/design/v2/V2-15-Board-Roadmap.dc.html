@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-15 · Board, Roadmap tab (v2)
+Purpose: the whole plan as a roadmap. Phases (## headings in TASKS.md) → tasks → the criteria each task covers, every item
+  shown. Replaces the Build order tab. Mel builds it from TASKS.md (Covers) and REQUIREMENTS.md: no agent run. A spec whose
+  TASKS.md has no phase headings groups by priority. Later stories with no tasks are listed under the phases.
+Same component as V2-2-Board.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Board, Roadmap (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-2-Board" start="ready" tab="roadmap" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -330,7 +330,7 @@ struct MarkdownBlocksView: View {
                     Text(row[0]).textStyle(Theme.Text.bodyMedium).frame(width: Theme.Size.screenColumn, alignment: .leading)
                     FlowLayout(spacing: Theme.Space.x4) {
                         ForEach(row[1].split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }, id: \.self) { state in
-                            stateChip(state)
+                            StateChip(state: state)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -346,24 +346,6 @@ struct MarkdownBlocksView: View {
             }
         }
         .surface(.clear, .outlineCard, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
-    }
-
-    @ViewBuilder
-    private func stateChip(_ state: String) -> some View {
-        if state.hasPrefix("!") {
-            Text("\(state.dropFirst()) missing")
-                .textStyle(Theme.Text.captionBold)
-                .foregroundStyle(Theme.Colors.cautionText)
-                .padding(.horizontal, Theme.Space.x8)
-                .frame(height: Theme.Size.badge)
-                .surface(Theme.Colors.background, .missingBadge, in: Capsule())
-        } else {
-            Text(state)
-                .textStyle(Theme.Text.caption)
-                .padding(.horizontal, Theme.Space.x8)
-                .frame(height: Theme.Size.badge)
-                .background(Theme.Colors.chipFill, in: Capsule())
-        }
     }
 
     private var dashedLine: some View {

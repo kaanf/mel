@@ -141,7 +141,7 @@ Covers: 1.1, 1.2, 1.3
 Calm and light, one accent color, large tap targets.
 ```
 
-A state prefixed `!` is missing; the formatted view flags it.
+A state prefixed `!` is missing; the formatted view and the board's Flow flag it.
 
 ## ARCHITECTURE.md
 
@@ -159,12 +159,17 @@ A state prefixed `!` is missing; the formatted view flags it.
 ```markdown
 # Tasks
 
+## 1 · Foundation
+
 - [ ] 1. Booking data model and local store
   - Priority: P1
   - Covers: 1.1, 1.2
   - Reads: ARCHITECTURE › Data
   - Verify: `swift test --filter Booking`
   - Changes: Sources/Booking
+
+## 2 · Booking
+
 - [ ] 2. Schedule screen
   - Priority: P1
   - Covers: 1.1, Q1
@@ -174,7 +179,7 @@ A state prefixed `!` is missing; the formatted view flags it.
   - Parallel with: 3
 ```
 
-`Changes` names the folders a task changes. V2-3 Build groups tasks marked `Parallel with` each other into one step: "At the same time" when their `Changes` don't overlap, "One after the other" when they do (a spec from before `Changes` counts as not overlapping). `Verify` is the command Mel runs on this Mac for Check it.
+`## N · Name` headings group the tasks into phases; task numbers count on across them. The board's Roadmap shows phases → tasks → the criteria each covers (a TASKS.md without headings is grouped by priority). `Changes` names the folders a task changes. V2-3 Build groups tasks marked `Parallel with` each other into one step: "At the same time" when their `Changes` don't overlap, "One after the other" when they do (a spec from before `Changes` counts as not overlapping). `Verify` is the command Mel runs on this Mac for Check it.
 
 At handoff Mel writes `prompts/task-NN.md` per task: the task, the full text of each criterion it covers, what it reads, and the verify command.
 
