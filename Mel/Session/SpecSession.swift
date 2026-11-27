@@ -26,6 +26,8 @@ import MelSystem
     private(set) var conflict: DocKind?
     /// Board: the last change's result line, until dismissed or undone.
     private(set) var lastChange: ChangeResult?
+    /// Build: the task a running Tell Mel request came from; its check waits for the change (V2-12).
+    private(set) var tellingTask: Int?
     /// Text of each file as Mel last wrote it (`.mel/approved/`), for the edit banner's Update and Undo.
     private(set) var snapshots: [DocKind: String] = [:]
     /// DECISIONS.md, newest first.
@@ -503,6 +505,9 @@ import MelSystem
         var tokens: Int
         /// The new text of each changed passage, highlighted in an open file.
         var passages: [DocKind: [String]]
+        /// Build (V2-13): tasks the change added, and tasks whose text it changed.
+        var newTasks: Set<Int> = []
+        var updatedTasks: Set<Int> = []
         fileprivate var before: [DocKind: String] = [:]
         fileprivate var decision: String?
 
@@ -562,6 +567,7 @@ import MelSystem
 
     /// Puts changed files in place (text, disk, snapshot), reruns Mel's own checks and sets the result line.
     private func install(_ texts: [DocKind: String], line: String, passages: [DocKind: [String]] = [:], spent: Int) {
+        let oldTasks = Dictionary(tasks.map { ($0.number, $0) }) { first, _ in first }
         var before: [DocKind: String] = [:]
         for (kind, text) in texts {
             before[kind] = documents[kind]
@@ -572,8 +578,11 @@ import MelSystem
             spec.conversation?.saw([kind: final])
         }
         refreshChecks()
+        if spec.stage == .done { spec.retasked(tasks) }
         var result = ChangeResult(line: line, tokens: (spec.tokens?[.changes] ?? 0) - spent, passages: passages)
         result.before = before
+        result.newTasks = Set(tasks.filter { oldTasks[$0.number] == nil }.map(\.number))
+        result.updatedTasks = Set(tasks.filter { task in oldTasks[task.number].map { $0 != task } ?? false }.map(\.number))
         lastChange = result
     }
 
@@ -604,11 +613,15 @@ import MelSystem
     }
 
     /// Tell Mel: one request against the written files, with the user's words as the decision's
-    /// reason. False when the run didn't finish: the request stays in the box.
+    /// reason. On Build, `task` is where the request came from. False when the run didn't finish:
+    /// the request stays in the box.
     @discardableResult
-    func tell(_ request: String, files: [URL] = []) async -> Bool {
-        let request = request.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard spec.stage == .board, !isRunning, !request.isEmpty, !spec.written.isEmpty, spec.halted == nil, spec.unplacedChange == nil else { return false }
+    func tell(_ text: String, files: [URL] = [], task: SpecTask? = nil) async -> Bool {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard spec.stage != .discovery, !isRunning, !text.isEmpty, !spec.written.isEmpty, spec.halted == nil, spec.unplacedChange == nil else { return false }
+        let request = task.map { "Found while building task \($0.number) (\($0.title)): " + text } ?? text
+        tellingTask = task?.number
+        defer { tellingTask = nil }
         var attachments: [Attachment] = []
         if let store {
             for file in files { if let attachment = try? await store.attach(copying: file) { attachments.append(attachment) } }
@@ -618,7 +631,7 @@ import MelSystem
         defer { persist() }
         switch end {
         case .applied:
-            lastChange?.decision = addDecision(title: Self.title(request), reason: request, source: "Tell Mel")
+            lastChange?.decision = addDecision(title: Self.title(text), reason: request, source: "Tell Mel")
             persist()
             await runBoard()
             return true
@@ -646,6 +659,7 @@ import MelSystem
         if let id = change.decision { removeDecision(id) }
         lastChange = nil
         refreshChecks()
+        if spec.stage == .done { spec.retasked(tasks) }
         persist()
     }
 
@@ -913,10 +927,15 @@ import MelSystem
 
     func status(of task: SpecTask) -> TaskStatus { spec.status(of: task, in: steps) }
 
+    func prompt(of task: SpecTask) -> String { task.buildPrompt(slug: slug, of: tasks.count) }
+
+    /// A Tell Mel change made the task differ from the prompt the user ran (V2-13).
+    func promptChanged(_ task: SpecTask) -> Bool { spec.promptChanged(task.number, now: prompt(of: task)) }
+
     /// Copy prompt: the task's short prompt goes on the clipboard and the task is Running.
     func copyPrompt(of task: SpecTask) {
-        SystemActions.copy(task.buildPrompt(slug: slug, of: tasks.count))
-        spec.started(task.number)
+        SystemActions.copy(prompt(of: task))
+        spec.started(task.number, prompt: prompt(of: task))
         persist()
     }
 
@@ -924,23 +943,23 @@ import MelSystem
     func copyFixPrompt(of task: SpecTask) {
         guard case .failed(let output) = status(of: task) else { return }
         SystemActions.copy(task.fixPrompt(slug: slug, of: tasks.count, output: output))
-        spec.started(task.number)
+        spec.started(task.number, prompt: prompt(of: task))
         persist()
     }
 
     /// Check it: Mel runs the task's verify command on this Mac. No agent, no tokens.
     func check(_ task: SpecTask) async {
-        guard let app, !task.verify.isEmpty, !checking.contains(task.number) else { return }
+        guard let app, !task.verify.isEmpty, !checking.contains(task.number), tellingTask != task.number else { return }
         checking.insert(task.number)
         let result = await app.runCheck(task.verify, projectFolder)
         checking.remove(task.number)
-        spec.finished(task.number, passed: result.passed, output: result.output, of: tasks)
+        spec.finished(task.number, passed: result.passed, output: result.output, prompt: prompt(of: task), of: tasks)
         persist()
     }
 
     /// "Mark done without the check".
     func markDone(_ task: SpecTask) {
-        spec.finished(task.number, passed: true, byHand: true, of: tasks)
+        spec.finished(task.number, passed: true, byHand: true, prompt: prompt(of: task), of: tasks)
         persist()
     }
 
@@ -1157,9 +1176,10 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil) -> SpecSession {
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil) -> SpecSession {
         let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, snapshots: snapshots, decisions: decisions)
         session.lastChange = lastChange
+        session.tellingTask = tellingTask
         return session
     }
 }

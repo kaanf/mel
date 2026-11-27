@@ -15,6 +15,15 @@ Per task: Copy prompt (copies a short prompt that names only the passages it nee
   Check it (Mel runs the task's verify command on this Mac: no agent, no tokens) · passed → Done, the next tasks unlock ·
   failed → the failing output, Copy fix prompt (includes the error) and Check again · "Mark done without the check" (quiet) ·
   Reopen on a done task.
+The window is a fixed 800 px tall like a real Mac window: the steps scroll, the Tell Mel box stays at the bottom.
+Tell Mel (pinned under the steps; same box, result line and banners as V2-2): report what you found while a task runs.
+  Running and Failed cards have "Tell Mel about this": it focuses the box and adds a task chip ("Task 3 · Class pack checkout ×");
+  from a Failed card the check output comes along as a second chip. Prop tell = idle | typing | working | result | unplaced.
+  working: the board's working line (file · where · Stop); Check it is disabled only on the tasks being changed.
+  result: "Changed REQUIREMENTS.md, EXPERIENCE.md, TASKS.md" with Undo; changed cards get an Updated tag, a new task appears in its
+  step with a soft highlight and a New tag. unplaced: the V2-7 banner (Rewrite FILE / Cancel).
+  A Running or Failed task whose prompt changed after you copied it shows "Prompt changed · Copy again". A Done task whose text
+  changed shows "Changed after done" with Reopen; Mel never reopens it on its own.
 Right column: how building works in 3 lines, the spec files, AGENTS.md / commit defaults (Settings › Specs), the token total.
 All tasks done: a banner, the spec moves to Done in the sidebar, "Plan the 2 later stories" goes back to the plan.
 Later, when Mel runs agents: Copy prompt becomes Run, Check it runs on its own; steps, states and checks stay the same.
@@ -35,7 +44,7 @@ a{color:#0066d6}a:hover{color:#0066d6}
 </style>
 </helmet>
 <div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
-<div style="max-width: 1280px; margin: 0 auto; min-height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div style="max-width: 1280px; margin: 0 auto; height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
 
 <nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
 <div class="tl" style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
@@ -94,7 +103,7 @@ a{color:#0066d6}a:hover{color:#0066d6}
 </div>
 </nav>
 
-<main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+<main style="flex: 999 1 480px; min-width: 0; min-height: 0; max-height: 100%; display: flex; flex-direction: column">
 <div style="min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 20px; flex-wrap: wrap">
 <a href="V2-10-Board-Plan.dc.html" style="height: 28px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px 0 6px; border-radius: 14px; background: rgba(0,0,0,0.05); font-size: 12px; line-height: 16px; color: #1d1d1f; text-decoration: none">
 <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"></path></svg>Plan</a>
@@ -109,7 +118,7 @@ a{color:#0066d6}a:hover{color:#0066d6}
 Open Terminal here</button>
 </div>
 
-<div style="padding: 4px 20px 24px; display: flex; flex-direction: column; gap: 14px; max-width: 820px">
+<div style="flex: 1; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 4px 20px 16px; display: flex; flex-direction: column; gap: 14px; max-width: 820px">
 
 <div style="display: flex; flex-direction: column; gap: 8px">
 <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
@@ -149,6 +158,7 @@ Open Terminal here</button>
 <div style="display: flex; align-items: center; gap: 8px">
 <span style="{{t.dot}}"></span>
 <span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{t.word}}</span>
+<sc-if value="{{t.tagShow}}" hint-placeholder-val="{{false}}"><span style="height: 18px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 9px; background: rgba(0,122,255,0.1); font-size: 11px; line-height: 14px; color: #0058b9">{{t.tag}}</span></sc-if>
 <span style="flex: 1"></span>
 <span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; color: #6e6e73">Task {{t.n}}</span>
 </div>
@@ -174,10 +184,14 @@ Open Terminal here</button>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <span style="font-size: 12px; line-height: 16px; color: #3a3a3c">{{t.runText}}</span>
 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
-<button onClick="{{t.check}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Check it</button>
-<button onClick="{{t.copy}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Copy again</button>
+<button onClick="{{t.check}}" aria-disabled="{{t.checkDisabled}}" style="{{t.checkStyle}}">Check it</button>
+<button onClick="{{t.copy}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{t.copyAgainLabel}}</button>
 <button onClick="{{t.markDone}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Mark done without the check</button>
+<button onClick="{{t.tell}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Tell Mel about this</button>
 </div>
+<sc-if value="{{t.blockedNote}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Mel is updating this task. Check it opens when it’s done.</span>
+</sc-if>
 </div>
 </sc-if>
 
@@ -190,9 +204,13 @@ Open Terminal here</button>
 <span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #b8000f">{{t.failTitle}}</span>
 <pre style="margin: 0; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 15px; color: #3a3a3c; white-space: pre-wrap">{{t.failOut}}</pre>
 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
-<button onClick="{{t.copyFix}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Copy fix prompt</button>
-<button onClick="{{t.check}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Check again</button>
+<button onClick="{{t.copyFix}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">{{t.fixLabel}}</button>
+<button onClick="{{t.check}}" aria-disabled="{{t.checkDisabled}}" style="{{t.recheckStyle}}">Check again</button>
+<button onClick="{{t.tell}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Tell Mel about this</button>
 </div>
+<sc-if value="{{t.blockedNote}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Mel is updating this task. Check again opens when it’s done.</span>
+</sc-if>
 </div>
 </sc-if>
 
@@ -221,9 +239,63 @@ Open Terminal here</button>
 </section>
 </sc-for>
 </div>
+
+<div style="flex: 0 0 auto; box-sizing: border-box; max-width: 820px; padding: 8px 20px 20px; background: #ffffff; display: flex; flex-direction: column; gap: 8px">
+<sc-if value="{{tellResult}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: rgba(36,138,61,0.08); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
+<span style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{tellLine}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #3a3a3c">{{tellSub}}</span>
+</span>
+<button onClick="{{undoTell}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Undo</button>
+<button onClick="{{dismissTell}}" aria-label="Dismiss" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: transparent; color: #6e6e73">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button>
+</div>
+</sc-if>
+<sc-if value="{{tellUnplaced}}" hint-placeholder-val="{{false}}">
+<div role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">Mel couldn’t find where this goes in ARCHITECTURE.md.</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">“{{tellAsked}}” changes who sends receipts, and no single passage covers that. Nothing was changed.</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+<button onClick="{{rewrite}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f; display: inline-flex; align-items: center; gap: 6px">Rewrite ARCHITECTURE.md<span style="font-size: 11px; line-height: 14px; color: #6e6e73">about 8k tokens</span></button>
+<button onClick="{{cancelTell}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Cancel</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{tellWorking}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-radius: 12px; background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 0.5px rgba(0,122,255,0.35)">
+<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600">{{workFile}}</span>
+<span style="flex: 1; min-width: 160px; font-size: 12px; line-height: 16px; color: #3a3a3c">{{workWhere}}</span>
+<button onClick="{{stopTell}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Stop</button>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)">
+<label for="v3-tell" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Tell Mel</label>
+<sc-if value="{{hasChip}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 6px; background: rgba(0,122,255,0.1); font-size: 11px; line-height: 14px; color: #0058b9">{{chipLabel}}
+<button onClick="{{removeChip}}" aria-label="Remove {{chipLabel}}" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: #0058b9"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></span>
+<sc-if value="{{chipHasOutput}}" hint-placeholder-val="{{false}}">
+<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 6px; background: #f5f5f7; font-size: 11px; line-height: 14px; color: #1d1d1f">Check output · 2 failed tests
+<button onClick="{{removeOutput}}" aria-label="Remove check output" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: #6e6e73"><svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></span>
+</sc-if>
+</div>
+</sc-if>
+<textarea id="v3-tell" rows="2" value="{{tellText}}" onChange="{{onTell}}" placeholder="Tell Mel what you found while building…" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 19px; color: #1d1d1f"></textarea>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button style="height: 26px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; border: 0; border-radius: 13px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 7.5l-5.2 5.2a3 3 0 0 1-4.3-4.3L9 3a2 2 0 0 1 2.9 2.9l-5.4 5.4a1 1 0 0 1-1.4-1.4L10 5"></path></svg>Attach</button>
+<span style="flex: 1; min-width: 160px; font-size: 11px; line-height: 14px; color: #6e6e73">Mel edits only the passages it touches. Prompts you already copied keep running; changed ones are marked.</span>
+<button onClick="{{sendTell}}" aria-disabled="{{sendDisabled}}" style="{{sendStyle}}">{{sendLabel}}</button>
+</div>
+</div>
+</div>
 </main>
 
-<aside aria-label="How building works" style="flex: 1 1 280px; max-width: 100%; box-sizing: border-box; padding: 16px; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column; gap: 14px">
+<aside aria-label="How building works" style="max-height: 100%; overflow-y: auto; flex: 1 1 280px; max-width: 100%; box-sizing: border-box; padding: 16px; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column; gap: 14px">
 <h2 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">How building works</h2>
 <div style="display: flex; flex-direction: column; gap: 10px">
 <sc-for list="{{how}}" as="h" hint-placeholder-count="3">
@@ -252,83 +324,120 @@ Open Terminal here</button>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"progress":{"editor":"enum","options":["start","midway","done"],"default":"midway"},"$preview":{"width":1360,"height":880}}'>
+<script type="text/x-dc" data-dc-script data-props='{"progress":{"editor":"enum","options":["start","midway","done"],"default":"midway"},"tell":{"editor":"enum","options":["idle","typing","working","result","unplaced"],"default":"idle"},"$preview":{"width":1360,"height":880}}'>
 class Component extends DCLogic {
 constructor(props) {
 super(props);
 const p = props.progress || 'midway';
+const tell = props.tell || 'idle';
 const st = p === 'done' ? { 1: 'done', 2: 'done', 3: 'done', 4: 'done', 5: 'done' } : (p === 'start' ? {} : { 1: 'done', 2: 'running', 3: 'failed' });
 const at = p === 'done' ? { 1: '14:02', 2: '15:10', 3: '15:31', 4: '16:05', 5: '16:40' } : (p === 'start' ? {} : { 1: '14:02' });
-this.state = { st: st, at: at, fails: p === 'midway' ? { 3: 1 } : {}, open: {}, copied: 0 };
+const unplaced = tell === 'unplaced';
+this.state = {
+st: st, at: at, fails: p === 'midway' ? { 3: 1 } : {}, open: {}, copied: 0,
+ver: tell === 'result' ? { 1: 2, 2: 2, 3: 2 } : {}, copiedV: { 2: 1, 3: 1 }, doneV: { 1: 1 },
+applied: tell === 'result', phase: (tell === 'typing' || tell === 'idle') ? 'idle' : tell,
+chip: tell === 'typing' ? 3 : 0, withOutput: tell === 'typing',
+text: tell === 'typing' ? this.foundText() : '',
+asked: unplaced ? this.providerText() : (tell === 'idle' || tell === 'typing' ? '' : this.foundText()),
+rewrites: 0
+};
 }
+foundText() { return 'Weeks with no classes need an empty state, and the booking store should return an empty list there instead of an error. Also the receipt email should be its own task; it’s a separate service.'; }
+providerText() { return 'Receipts should come from the payment provider’s own emails, not from our server.'; }
 tasks() {
-return [
-{ n: 1, step: 1, title: 'Booking data and local store', builds: '1.1, 1.2', touches: 'shared/booking', verify: './gradlew :shared:allTests --tests "*Booking*"', tests: 9, reads: 'REQUIREMENTS.md 1.1 and 1.2, ARCHITECTURE.md › Data, D-05' },
-{ n: 2, step: 2, title: 'Schedule and class screens', builds: '1.1', touches: 'androidApp, iosApp', verify: './gradlew :androidApp:connectedCheck', tests: 6, reads: 'EXPERIENCE.md › Flow 1, ARCHITECTURE.md › Modules' },
-{ n: 3, step: 2, title: 'Class pack checkout', builds: '2.1', touches: 'shared/payments', verify: './gradlew :shared:allTests --tests "*Checkout*"', tests: 7, reads: 'REQUIREMENTS.md 2.1, EXPERIENCE.md › Flow 2, D-03' },
+const a = this.state.applied;
+const list = [
+{ n: 1, step: 1, title: 'Booking data and local store', builds: a ? '1.1, 1.2, 1.4' : '1.1, 1.2', touches: 'shared/booking', verify: './gradlew :shared:allTests --tests "*Booking*"', tests: 9, reads: a ? 'REQUIREMENTS.md 1.1, 1.2 and 1.4 (an empty week returns an empty list), ARCHITECTURE.md › Data, D-05' : 'REQUIREMENTS.md 1.1 and 1.2, ARCHITECTURE.md › Data, D-05' },
+{ n: 2, step: 2, title: 'Schedule and class screens', builds: a ? '1.1, 1.4' : '1.1', touches: 'androidApp, iosApp', verify: './gradlew :androidApp:connectedCheck', tests: 6, reads: a ? 'EXPERIENCE.md › Flow 1 (with the new empty week state), ARCHITECTURE.md › Modules' : 'EXPERIENCE.md › Flow 1, ARCHITECTURE.md › Modules' },
+{ n: 3, step: 2, title: a ? 'Class pack checkout, without the receipt' : 'Class pack checkout', builds: '2.1', touches: 'shared/payments', verify: './gradlew :shared:allTests --tests "*Checkout*"', tests: a ? 5 : 7, reads: a ? 'REQUIREMENTS.md 2.1 (receipt is task 6), EXPERIENCE.md › Flow 2, D-03' : 'REQUIREMENTS.md 2.1, EXPERIENCE.md › Flow 2, D-03' }
+];
+if (a) list.push({ n: 6, step: 2, title: 'Receipt email', builds: '2.2', touches: 'shared/notifications', verify: './gradlew :shared:allTests --tests "*Receipt*"', tests: 2, reads: 'REQUIREMENTS.md 2.2, D-07', isNew: true });
+return list.concat([
 { n: 4, step: 3, title: 'Cancel a booking', builds: '1.3', touches: 'shared/booking', verify: './gradlew :shared:allTests --tests "*Cancel*"', tests: 5, reads: 'REQUIREMENTS.md 1.3, D-04' },
 { n: 5, step: 3, title: 'Waitlist', builds: '1.2', touches: 'shared/booking', verify: './gradlew :shared:allTests --tests "*Waitlist*"', tests: 4, reads: 'REQUIREMENTS.md 1.2, EXPERIENCE.md › Class detail' }
-];
+]);
 }
 now() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 put(text) { try { if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {}); } catch (e) {} }
-componentWillUnmount() { clearTimeout(this.timer); }
+componentWillUnmount() { clearTimeout(this.timer); clearTimeout(this.tellTimer); }
 renderVals() {
 const s = this.state;
 const tasks = this.tasks();
+const total = tasks.length;
 const status = (t) => s.st[t.n] || 'todo';
+const v = (n) => s.ver[n] || 1;
 const stepDone = (n) => tasks.filter((t) => t.step === n).every((t) => status(t) === 'done');
 const locked = (t) => {
 if (status(t) !== 'todo') return '';
 if (t.step > 1 && !stepDone(t.step - 1)) return 'Starts after step ' + (t.step - 1) + ' is done.';
-if (t.n === 5 && status(tasks[3]) !== 'done') return 'Starts after task 4. Both change shared/booking.';
+if (t.n === 5 && status(tasks.filter((x) => x.n === 4)[0]) !== 'done') return 'Starts after task 4. Both change shared/booking.';
 return '';
 };
-const set = (n, v, extra) => this.setState(Object.assign({ st: Object.assign({}, s.st, { [n]: v }) }, extra || {}));
-const promptOf = (t) => 'Task ' + t.n + ' of 5 in specs/yoga-studio-booking.\nRead AGENTS.md first, then only: ' + t.reads + '.\nBuild: ' + t.title + ' (requirements ' + t.builds + ').\nChange only ' + t.touches + '.\nDone when this passes: ' + t.verify + '\nIf the plan doesn’t fit what you find, stop and say why instead of changing the plan.';
-const fixOf = (t) => 'Task ' + t.n + ' of 5 in specs/yoga-studio-booking: the check failed.\n' + t.verify + '\nCheckoutTest > receipt is emailed after payment FAILED\nCheckoutTest > credits added once on retry FAILED\nFix the code in ' + t.touches + ' so the check passes. Don’t change the tests or the plan.';
+const working = s.phase === 'working';
+const beingChanged = working && !s.rewriting ? [1, 2, 3] : [];
+const set = (n, val, extra) => this.setState(Object.assign({ st: Object.assign({}, s.st, { [n]: val }) }, extra || {}));
+const promptOf = (t) => 'Task ' + t.n + ' of ' + total + ' in specs/yoga-studio-booking.\nRead AGENTS.md first, then only: ' + t.reads + '.\nBuild: ' + t.title + ' (requirements ' + t.builds + ').\nChange only ' + t.touches + '.\nDone when this passes: ' + t.verify + '\nIf the plan doesn’t fit what you find, stop and say why instead of changing the plan.';
+const fixOf = (t) => 'Task ' + t.n + ' of ' + total + ' in specs/yoga-studio-booking: the check failed.\n' + t.verify + '\nCheckoutTest > receipt is emailed after payment FAILED\nCheckoutTest > credits added once on retry FAILED\nFix the code in ' + t.touches + ' so the check passes. Don’t change the tests or the plan.' + (s.applied && t.n === 3 ? '\nThe receipt is now task 6: remove the receipt test from this task.' : '');
 const word = { done: 'Done', running: 'Running', checking: 'Checking…', failed: 'Check failed', todo: 'Ready to start', locked: 'Waiting' };
 const dotStyle = { done: 'background: #248a3d', running: 'border: 1.5px solid #007aff', checking: 'border: 1.5px solid #007aff', failed: 'background: #d70015', todo: 'background: #007aff', locked: 'border: 1.5px solid #aeaeb2' };
+const focus = () => setTimeout(() => { const el = document.getElementById('v3-tell'); if (el) el.focus(); }, 0);
+const showNew = s.phase === 'result';
 const view = (t) => {
 const lock = locked(t);
 const k = lock ? 'locked' : status(t);
 const open = !!s.open[t.n];
+const promptStale = (k === 'running' || k === 'failed') && (s.copiedV[t.n] || 1) < v(t.n);
+const doneStale = k === 'done' && (s.doneV[t.n] || 1) < v(t.n);
+const blocked = beingChanged.indexOf(t.n) >= 0 && (k === 'running' || k === 'failed');
+const updated = v(t.n) > 1;
+const isNew = !!t.isNew && showNew;
+const plain = 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)';
+const look = isNew ? 'background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 1px rgba(0,122,255,0.35)' : (k === 'locked' ? 'background: #fbfbfd; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)' : (k === 'failed' ? 'background: #ffffff; box-shadow: inset 0 0 0 1px rgba(215,0,21,0.45), 0 1px 3px rgba(0,0,0,0.06)' : plain));
+const btn = (primary) => 'height: 28px; padding: 0 12px; border: 0; border-radius: 14px; font: inherit; font-size: 12px; line-height: 16px; ' + (blocked ? 'background: #aeaeb2; color: #ffffff; pointer-events: none' : (primary ? 'background: #007aff; font-weight: 600; color: #ffffff' : 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); color: #1d1d1f'));
 return {
 n: String(t.n), title: t.title, builds: t.builds, touches: t.touches, verify: t.verify,
 word: word[k], dot: 'flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; ' + dotStyle[k],
+tagShow: isNew || updated, tag: isNew ? 'New' : 'Updated',
 titleColor: k === 'locked' ? '#6e6e73' : '#1d1d1f',
-box: 'flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; ' + (k === 'locked' ? 'background: #fbfbfd; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)' : (k === 'failed' ? 'background: #ffffff; box-shadow: inset 0 0 0 1px rgba(215,0,21,0.45), 0 1px 3px rgba(0,0,0,0.06)' : 'background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)')),
+box: 'flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; ' + look,
 isLocked: k === 'locked', lockText: lock,
 isTodo: k === 'todo', isRunning: k === 'running', isChecking: k === 'checking', isFailed: k === 'failed', isDone: k === 'done',
 runText: 'Running in Claude Code. When it says it’s finished, press Check it.',
 failTitle: '2 of ' + t.tests + ' tests failed',
 failOut: 'CheckoutTest > receipt is emailed after payment FAILED\nCheckoutTest > credits added once on retry FAILED',
-doneText: s.at[t.n] === 'by hand' ? 'Marked done by you, no check run' : 'Check passed at ' + s.at[t.n] + ' · ' + t.tests + ' tests',
+doneText: doneStale ? 'Changed after done. Its check passed at ' + s.at[t.n] + ' for the old version.' : (s.at[t.n] === 'by hand' ? 'Marked done by you, no check run' : 'Check passed at ' + s.at[t.n] + ' · ' + t.tests + ' tests'),
+copyAgainLabel: promptStale ? 'Prompt changed · Copy again' : 'Copy again',
+fixLabel: promptStale ? 'Prompt changed · Copy fix prompt' : 'Copy fix prompt',
+checkDisabled: blocked ? 'true' : 'false', checkStyle: btn(true), recheckStyle: btn(false), blockedNote: blocked,
 copied: s.copied === t.n, copiedText: 'Prompt copied. Paste it into Claude Code in yoga-studio-booking.',
 canPeek: k !== 'locked', promptOpen: open ? 'true' : 'false', promptBool: open && k !== 'locked',
 peekLabel: open ? 'Hide prompt' : (k === 'failed' ? 'Show fix prompt' : 'Show prompt'),
 prompt: k === 'failed' ? fixOf(t) : promptOf(t),
 chev: 'transition: transform 150ms ease; transform: rotate(' + (open ? '90deg' : '0deg') + ')',
 togglePrompt: () => this.setState({ open: Object.assign({}, s.open, { [t.n]: !open }) }),
-copy: () => { this.put(promptOf(t)); set(t.n, 'running', { copied: t.n }); },
-copyFix: () => { this.put(fixOf(t)); set(t.n, 'running', { copied: t.n }); },
-markDone: () => set(t.n, 'done', { at: Object.assign({}, s.at, { [t.n]: 'by hand' }), copied: 0 }),
+copy: () => { this.put(promptOf(t)); set(t.n, 'running', { copied: t.n, copiedV: Object.assign({}, s.copiedV, { [t.n]: v(t.n) }) }); },
+copyFix: () => { this.put(fixOf(t)); set(t.n, 'running', { copied: t.n, copiedV: Object.assign({}, s.copiedV, { [t.n]: v(t.n) }) }); },
+markDone: () => set(t.n, 'done', { at: Object.assign({}, s.at, { [t.n]: 'by hand' }), doneV: Object.assign({}, s.doneV, { [t.n]: v(t.n) }), copied: 0 }),
 reopen: () => set(t.n, 'todo', { copied: 0 }),
+tell: () => { this.setState({ chip: t.n, withOutput: k === 'failed', phase: s.phase === 'working' ? 'working' : 'idle' }); focus(); },
 check: () => {
+if (blocked) return;
 const fails = s.fails[t.n] || 0;
 const willFail = t.n === 3 && fails === 0;
 set(t.n, 'checking', { copied: 0 });
 this.timer = setTimeout(() => {
 const st2 = Object.assign({}, this.state.st, { [t.n]: willFail ? 'failed' : 'done' });
 const at2 = willFail ? this.state.at : Object.assign({}, this.state.at, { [t.n]: this.now() });
-this.setState({ st: st2, at: at2, fails: Object.assign({}, this.state.fails, { [t.n]: fails + 1 }) });
+const dv = willFail ? this.state.doneV : Object.assign({}, this.state.doneV, { [t.n]: this.state.ver[t.n] || 1 });
+this.setState({ st: st2, at: at2, doneV: dv, fails: Object.assign({}, this.state.fails, { [t.n]: fails + 1 }) });
 }, 1500);
 }
 };
 };
 const meta = [
 { n: 1, title: 'Step 1', kindWord: 'Run alone', why: 'Every other task builds on it. Run it by itself.' },
-{ n: 2, title: 'Step 2', kindWord: 'At the same time', why: 'Open two Claude Code terminals in this repo and run both. They change different folders, so they won’t clash.' },
+{ n: 2, title: 'Step 2', kindWord: 'At the same time', why: 'Open one Claude Code terminal per task in this repo and run them together. They change different folders, so they won’t clash.' },
 { n: 3, title: 'Step 3', kindWord: 'One after the other', why: 'Both change shared/booking. Run task 4, check it, then task 5.' }
 ];
 const steps = meta.map((m) => {
@@ -346,7 +455,7 @@ tasks: ts.map(view)
 };
 });
 const doneCount = tasks.filter((t) => status(t) === 'done').length;
-const allDone = doneCount === tasks.length;
+const allDone = doneCount === total;
 const segments = tasks.map((t) => {
 const k = locked(t) ? 'locked' : status(t);
 const c = k === 'done' ? '#248a3d' : (k === 'failed' ? '#d70015' : (k === 'running' || k === 'checking' ? '#007aff' : 'rgba(0,0,0,0.1)'));
@@ -356,18 +465,51 @@ const failed = tasks.filter((t) => status(t) === 'failed');
 const running = tasks.filter((t) => status(t) === 'running' || status(t) === 'checking');
 const ready = tasks.filter((t) => status(t) === 'todo' && !locked(t));
 const nextLine = allDone ? '' : (failed.length ? 'Task ' + failed[0].n + ' needs a fix.' : (ready.length ? 'Next: task ' + ready.map((t) => t.n).join(' and ') + (ready.length > 1 ? ', at the same time.' : '.') : (running.length ? 'Waiting for Claude Code on task ' + running.map((t) => t.n).join(' and ') + '.' : '')));
+const chipTask = tasks.filter((t) => t.n === s.chip)[0];
+const tellOk = s.text.trim().length > 0 && !working;
 return {
 steps: steps, segments: segments, allDone: allDone, notDone: !allDone,
-doneLine: doneCount + ' of 5 tasks done',
+doneLine: doneCount + ' of ' + total + ' tasks done',
 nextLine: nextLine,
-sideMeta: 'Task ' + Math.min(5, doneCount + 1) + ' of 5',
-pill: allDone ? 'First version built' : (failed.length ? 'A check failed' : (running.length ? running.length + (running.length === 1 ? ' task running' : ' tasks running') : 'Ready for the next task')),
-pillDot: 'width: 8px; height: 8px; border-radius: 50%; background: ' + (allDone ? '#248a3d' : (failed.length ? '#d70015' : '#007aff')),
+sideMeta: 'Task ' + Math.min(total, doneCount + 1) + ' of ' + total,
+pill: working ? 'Mel is changing the files' : (allDone ? 'First version built' : (failed.length ? 'A check failed' : (running.length ? running.length + (running.length === 1 ? ' task running' : ' tasks running') : 'Ready for the next task'))),
+pillDot: 'width: 8px; height: 8px; border-radius: 50%; ' + (working ? 'box-sizing: border-box; border: 1.5px solid #007aff' : 'background: ' + (allDone ? '#248a3d' : (failed.length ? '#d70015' : '#007aff'))),
 reopenAll: () => this.setState({ st: {}, at: {}, fails: {}, open: {}, copied: 0 }),
+hasChip: !!chipTask, chipLabel: chipTask ? 'Task ' + chipTask.n + ' · ' + chipTask.title : '',
+chipHasOutput: !!chipTask && s.withOutput,
+removeChip: () => this.setState({ chip: 0, withOutput: false }),
+removeOutput: () => this.setState({ withOutput: false }),
+tellText: s.text, onTell: (e) => this.setState({ text: e.target.value }),
+tellAsked: s.asked,
+tellWorking: working, tellResult: s.phase === 'result', tellUnplaced: s.phase === 'unplaced',
+workFile: s.rewriting ? 'ARCHITECTURE.md' : 'TASKS.md',
+workWhere: s.rewriting ? 'Rewriting the whole file, as you chose' : 'Tasks 1, 2 and 3, and a new task in step 2',
+stopTell: () => { clearTimeout(this.tellTimer); this.setState({ phase: 'idle', text: s.asked, rewriting: false }); },
+tellLine: s.rewrites > 0 && !s.applied ? 'Rewrote ARCHITECTURE.md' : 'Changed REQUIREMENTS.md, EXPERIENCE.md, TASKS.md',
+tellSub: s.rewrites > 0 && !s.applied ? 'You chose a full rewrite. Saved to DECISIONS.md. 8.4k tokens.' : '3 tasks updated, 1 added in step 2. Task 1 changed after it was done: reopen it if you want the change built. Saved to DECISIONS.md with your words. 2.1k tokens.',
+undoTell: () => this.setState(s.rewrites > 0 && !s.applied ? { phase: 'idle', rewrites: s.rewrites - 1 } : { phase: 'idle', applied: false, ver: {} }),
+dismissTell: () => this.setState({ phase: 'idle' }),
+cancelTell: () => this.setState({ phase: 'idle', text: s.asked }),
+rewrite: () => {
+this.setState({ phase: 'working', rewriting: true });
+clearTimeout(this.tellTimer);
+this.tellTimer = setTimeout(() => this.setState({ phase: 'result', rewriting: false, rewrites: this.state.rewrites + 1 }), 1600);
+},
+sendDisabled: tellOk ? 'false' : 'true',
+sendLabel: working ? 'Changing…' : 'Send',
+sendStyle: 'height: 28px; padding: 0 14px; border: 0; border-radius: 14px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; background: ' + (tellOk ? '#007aff' : '#aeaeb2'),
+sendTell: () => {
+const txt = s.text.trim();
+if (!txt || working) return;
+const off = /provider|offline/i.test(txt);
+this.setState({ phase: 'working', asked: txt, text: '', chip: 0, withOutput: false });
+clearTimeout(this.tellTimer);
+this.tellTimer = setTimeout(() => this.setState(off ? { phase: 'unplaced' } : { phase: 'result', applied: true, ver: { 1: 2, 2: 2, 3: 2 } }), 1800);
+},
 how: [
 { n: '1', text: 'Copy a task’s prompt and paste it into Claude Code, in this repo. The prompt names only the parts of the spec that task needs.' },
 { n: '2', text: 'When Claude Code says it’s finished, press Check it. Mel runs the task’s check on your Mac.' },
-{ n: '3', text: 'Passed: the task is Done and the next ones open. Failed: copy the fix prompt, it includes the error.' }
+{ n: '3', text: 'Passed: the task is Done and the next ones open. Failed: copy the fix prompt, it includes the error. Found something the plan missed? Tell Mel below.' }
 ],
 files: ['PRODUCT.md', 'REQUIREMENTS.md', 'EXPERIENCE.md', 'ARCHITECTURE.md', 'TASKS.md', 'DECISIONS.md']
 };

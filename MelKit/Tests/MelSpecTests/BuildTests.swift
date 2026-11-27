@@ -40,24 +40,24 @@ struct BuildTests {
         #expect(spec.status(of: tasks[0], in: steps) == .ready)
         #expect(spec.status(of: tasks[1], in: steps) == .waiting("Starts after step 1 is done."))
 
-        spec.started(1)
+        spec.started(1, prompt: "p1")
         #expect(spec.build == .building)
         #expect(spec.status(of: tasks[0], in: steps) == .running)
-        spec.finished(1, passed: false, output: "BookingTest FAILED", of: tasks)
+        spec.finished(1, passed: false, output: "BookingTest FAILED", prompt: "p1", of: tasks)
         #expect(spec.status(of: tasks[0], in: steps) == .failed("BookingTest FAILED"))
-        spec.finished(1, passed: true, at: Date(timeIntervalSince1970: 0), of: tasks)
+        spec.finished(1, passed: true, at: Date(timeIntervalSince1970: 0), prompt: "p1", of: tasks)
         #expect(spec.status(of: tasks[1], in: steps) == .ready)
         #expect(spec.status(of: tasks[2], in: steps) == .ready)
 
-        spec.finished(2, passed: true, byHand: true, of: tasks)
-        spec.finished(3, passed: true, of: tasks)
+        spec.finished(2, passed: true, byHand: true, prompt: "p2", of: tasks)
+        spec.finished(3, passed: true, prompt: "p3", of: tasks)
         #expect(spec.status(of: tasks[3], in: steps) == .ready)
         #expect(spec.status(of: tasks[4], in: steps) == .waiting("Starts after task 4. Both change shared/booking."))
     }
 
     @Test func theLastTaskMovesTheSpecToDoneAndReopenBack() {
         var spec = yoga
-        for task in tasks { spec.finished(task.number, passed: true, of: tasks) }
+        for task in tasks { spec.finished(task.number, passed: true, prompt: "", of: tasks) }
         #expect(spec.build == .done)
         #expect(spec.doneCount(tasks) == 5)
         spec.reopen(3)
@@ -65,6 +65,26 @@ struct BuildTests {
         #expect(spec.doneCount(tasks) == 4)
         spec.startOver()
         #expect(spec.runs == nil)
+    }
+
+    @Test func aChangedPromptIsNoticedAndAnAddedTaskReopensTheBuild() {
+        var spec = yoga
+        spec.started(1, prompt: "old")
+        #expect(!spec.promptChanged(1, now: "old"))
+        #expect(spec.promptChanged(1, now: "new"))
+        // The check keeps the prompt that ran; a task never copied takes the current one.
+        spec.finished(1, passed: true, prompt: "new", of: tasks)
+        #expect(spec.promptChanged(1, now: "new"))
+        spec.finished(2, passed: true, byHand: true, prompt: "two", of: tasks)
+        #expect(!spec.promptChanged(2, now: "two"))
+        #expect(!spec.promptChanged(3, now: "anything"))
+
+        for task in tasks { spec.finished(task.number, passed: true, prompt: "", of: tasks) }
+        #expect(spec.build == .done)
+        let added = tasks + SpecTask.parse("- [ ] 6. Receipt email")
+        spec.retasked(added)
+        #expect(spec.build == .building)
+        #expect(spec.taskCount == 6)
     }
 
     @Test func promptsNameOnlyWhatTheTaskNeeds() {

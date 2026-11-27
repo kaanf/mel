@@ -3,13 +3,18 @@ import UniformTypeIdentifiers
 import MelSpec
 
 /// Tell Mel (V2-2, under the center): one request at a time against the current files, with the
-/// result line (V2-4) or the unplaced offer (V2-7) above the box.
+/// result line (V2-4) or the unplaced offer (V2-7) above the box. On Build (V2-11 to V2-14) it is
+/// pinned under the steps, carries the task a request came from and shows the working line itself.
 struct BoardTell: View {
     let session: SpecSession
+    var building = false
+    /// Build: "Tell Mel about this" on a task card puts the task here.
+    var task: Binding<SpecTask?> = .constant(nil)
 
     @State private var text = ""
     @State private var files: [URL] = []
     @State private var isAttaching = false
+    @FocusState private var isFocused: Bool
 
     private var spec: Spec { session.spec }
     private var request: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -18,12 +23,15 @@ struct BoardTell: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
             if let unplaced = spec.unplacedChange {
-                unplacedBanner(unplaced)
+                if building, session.isRunning { working(rewriting: unplaced.files.first) } else { unplacedBanner(unplaced) }
+            } else if building, session.isRunning {
+                working(rewriting: nil)
             } else if let change = session.lastChange {
                 result(change)
             }
             box
         }
+        .onChange(of: task.wrappedValue) { _, new in if new != nil { isFocused = true } }
         .fileImporter(isPresented: $isAttaching, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { files += urls.filter { !files.contains($0) } }
         }
@@ -34,7 +42,7 @@ struct BoardTell: View {
             DesignIcon(glyph: .check, size: Theme.Size.checkIcon, weight: 2.2).foregroundStyle(Theme.Colors.success)
             VStack(alignment: .leading, spacing: Theme.Space.x2) {
                 Text(change.line).textStyle(Theme.Text.bodyBold)
-                Text((change.passages.isEmpty ? "" : "Highlighted in the files. ") + "Saved to DECISIONS.md." + (change.tokens > 0 ? " \(TokenStep.text(change.tokens)) tokens." : ""))
+                Text(sub(change))
                     .textStyle(Theme.Text.captionLoose)
                     .foregroundStyle(Theme.Colors.bodyLabel)
             }
@@ -55,6 +63,73 @@ struct BoardTell: View {
         .padding(.horizontal, Theme.Space.x12)
         .surface(Theme.Colors.resultFill, .result, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         .accessibilityElement(children: .contain)
+    }
+
+    private func sub(_ change: SpecSession.ChangeResult) -> String {
+        let tokens = change.tokens > 0 ? " \(TokenStep.text(change.tokens)) tokens." : ""
+        guard building else { return (change.passages.isEmpty ? "" : "Highlighted in the files. ") + "Saved to DECISIONS.md." + tokens }
+        return taskNote(change) + "Saved to DECISIONS.md with your words." + tokens
+    }
+
+    /// V2-13: "3 tasks updated, 1 added in step 2. Task 1 changed after it was done: …"
+    private func taskNote(_ change: SpecSession.ChangeResult) -> String {
+        var parts: [String] = []
+        if !change.updatedTasks.isEmpty { parts.append("\(change.updatedTasks.count) \(change.updatedTasks.count == 1 ? "task" : "tasks") updated") }
+        if !change.newTasks.isEmpty {
+            let steps = Set(change.newTasks.compactMap { number in session.steps.firstIndex { $0.tasks.contains { $0.number == number } } }).sorted()
+            parts.append("\(change.newTasks.count) added" + (steps.isEmpty ? "" : " in step " + steps.map { String($0 + 1) }.joined(separator: " and ")))
+        }
+        var note = parts.isEmpty ? "" : parts.joined(separator: ", ").capitalizedFirst + ". "
+        let doneChanged = session.tasks.filter { task in
+            guard change.updatedTasks.contains(task.number), case .done = session.status(of: task) else { return false }
+            return session.promptChanged(task)
+        }.map(\.number)
+        if !doneChanged.isEmpty {
+            let names = doneChanged.map(String.init).joined(separator: " and ")
+            note += "\(doneChanged.count == 1 ? "Task" : "Tasks") \(names) changed after \(doneChanged.count == 1 ? "it was" : "they were") done: reopen \(doneChanged.count == 1 ? "it" : "them") if you want the change built. "
+        }
+        return note
+    }
+
+    /// V2-12: the board's working line, where the user is looking on Build.
+    private func working(rewriting: DocKind?) -> some View {
+        HStack(spacing: Theme.Space.x8) {
+            StatusDot(style: .ring(Theme.Colors.accent))
+            if let rewriting {
+                Text(rewriting.fileName).textStyle(Theme.Text.codeBold)
+            }
+            Text(rewriting == nil ? "Changing the passages your request touches" : "Rewriting the whole file, as you chose")
+                .textStyle(Theme.Text.callout)
+                .foregroundStyle(Theme.Colors.bodyLabel)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Stop") { Task { await session.stop() } }
+                .buttonStyle(DesignLinkStyle())
+                .padding(.horizontal, Theme.Space.x4)
+                .help("Stops Mel. Nothing changes.")
+        }
+        .padding(.vertical, Theme.Space.x8)
+        .padding(.horizontal, Theme.Space.x12)
+        .surface(Theme.Colors.accentTint, .editBanner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .accessibilityElement(children: .contain)
+    }
+
+    /// V2-11: the task a request came from.
+    private func chip(_ task: SpecTask) -> some View {
+        HStack(spacing: Theme.Space.x6) {
+            Text("Task \(task.number) · \(task.title.capitalizedFirst)").textStyle(Theme.Text.caption).lineLimit(1)
+            Button { self.task.wrappedValue = nil } label: {
+                DesignIcon(glyph: .close, size: Theme.Size.removeIcon, weight: 2.4)
+                    .frame(width: Theme.Size.removeButton, height: Theme.Size.removeButton)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove task \(task.number)")
+        }
+        .foregroundStyle(Theme.Colors.likely)
+        .padding(.leading, Theme.Space.x8)
+        .padding(.trailing, Theme.Space.x4)
+        .frame(height: Theme.Size.buttonMini)
+        .background(Theme.Colors.changedFill, in: RoundedRectangle(cornerRadius: Theme.Radius.code))
     }
 
     /// V2-7: nothing was changed. A whole-file rewrite only ever starts from this button.
@@ -92,10 +167,12 @@ struct BoardTell: View {
     private var box: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
             Text("Tell Mel").textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.bodyLabel)
-            TextField("Tell Mel what to change, add or remove…", text: $text, axis: .vertical)
+            if let task = task.wrappedValue { chip(task) }
+            TextField(building ? "Tell Mel what you found while building…" : "Tell Mel what to change, add or remove…", text: $text, axis: .vertical)
                 .lineLimit(Theme.Size.tellLines...8)
                 .textFieldStyle(.plain)
                 .textStyle(Theme.Text.bodyLoose)
+                .focused($isFocused)
                 .accessibilityLabel("Tell Mel")
             if !files.isEmpty {
                 FlowLayout(spacing: Theme.Space.x6) {
@@ -126,17 +203,19 @@ struct BoardTell: View {
                     }
                 }
                 .buttonStyle(BoardPillStyle(kind: .quiet, height: Theme.Size.buttonSmall, padding: Theme.Space.x10))
-                Text("One request at a time. Mel edits only the passages it touches and logs why in DECISIONS.md.")
+                Text(building ? "Mel edits only the passages it touches. Prompts you already copied keep running; changed ones are marked." : "One request at a time. Mel edits only the passages it touches and logs why in DECISIONS.md.")
                     .textStyle(Theme.Text.caption)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Send") {
-                    let (sent, attached) = (request, files)
+                Button(building && session.isRunning ? "Changing…" : "Send") {
+                    let (sent, attached, about) = (request, files, task.wrappedValue)
                     Task {
                         // The request stays in the box until the run has finished.
-                        if await session.tell(sent, files: attached), text.trimmingCharacters(in: .whitespacesAndNewlines) == sent {
+                        if await session.tell(sent, files: attached, task: about), text.trimmingCharacters(in: .whitespacesAndNewlines) == sent {
                             text = ""
                             files = []
+                            if task.wrappedValue == about { task.wrappedValue = nil }
                         }
                     }
                 }

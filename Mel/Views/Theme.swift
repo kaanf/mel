@@ -825,6 +825,8 @@ extension Theme.Size {
     static let doneCheck: CGFloat = 12
     static let promptChevron: CGFloat = 8
     static let howNumber: CGFloat = 20
+    /// "New" on a task Tell Mel added (V2-13).
+    static let newTag: CGFloat = 18
 }
 
 extension Theme.Radius {
@@ -838,6 +840,8 @@ extension Theme.Elevation {
     /// A failed task: inset 1 pt red ring and a soft drop.
     static let taskFailed = Theme.Elevation(ring: Theme.Colors.disagreeRing, ringWidth: 1, insetRing: true, drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.06)))
     static let failedOutput = Theme.Elevation(ring: Theme.Colors.failedRing, insetRing: true)
+    /// A task the last Tell Mel change added (V2-13): `accentTint` with an inset 1 pt ring at 0.35.
+    static let taskNew = Theme.Elevation(ring: Theme.Colors.accentRing, ringWidth: 1, insetRing: true)
 }
 
 // MARK: - Motion

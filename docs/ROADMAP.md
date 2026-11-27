@@ -184,6 +184,8 @@ Gate G8: a Product spec uses fewer tokens than the same spec on v0.4; a Tell Mel
 - 2026-11-27: V2-3 Build from the user's new canvas screens (V2-3 redrawn, V2-10 added, FLOW.md › Build; synced to `docs/design/v2/`). `BuildStep` (MelSpec) groups TASKS.md into Run alone / At the same time / One after the other from `Parallel with` and the new `Changes:` field (tasks.md prompt and SPEC-FORMAT); `Spec.runs` holds each task's state; Check it runs `Verify` through `Check.run` (MelSystem, login shell, last 20 lines); the last task done moves the spec to Done (OQ #34 updated). ‹ Plan reopens the board (V2-10), Start Building returns. `ReadyView` replaced by `Views/Build/BuildView`; looked at in the Debug build (`-screen building`), not compared pixel by pixel. The tasks prompt change (`Changes:`) isn't re-recorded. On `main`, not released.
 - v0.5.1 published 2026-11-27 (build 429, notarized DMG; appcast.xml updated): dark mode, a new product's name, Rename, the working line, wider columns, wrapping answers, motion.
 
+- 2026-11-27: Tell Mel on Build (V2-11 to V2-14, synced from the canvas; OQ #37). `BoardTell` with `building` is pinned under the steps; "Tell Mel about this" adds a task chip (the request says "Found while building task N"). `TaskRun.prompt` keeps the prompt copied, so a change shows "Prompt changed · Copy again" or "Changed after done" (Mel never reopens a task); `Spec.retasked` keeps the task count and Building / Done right when a change adds a task. Cuts from the drawing (user's choice): no Updated tag, no check output chip, Check it off only on the chip's task. Looked at in the Debug build (`-screen buildWorking`, `buildChanged`, `buildUnplaced`), Dark only. 269 tests green. On `main`, not released.
+
 ## Risks
 
 | Risk | Mitigation |

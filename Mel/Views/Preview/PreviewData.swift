@@ -405,6 +405,34 @@ enum PreviewData {
                      3: TaskRun(state: .failed, output: "CheckoutTest > receipt is emailed after payment FAILED\nCheckoutTest > credits added once on retry FAILED")]
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    /// V2-12: Mel is changing the files for a request from task 3.
+    static let buildTellingSession = SpecSession.preview(buildingSession.spec, documents: boardDocuments, isRunning: true, tellingTask: 3)
+    /// V2-13: the change touched tasks 1–3 and added task 6 to step 2.
+    static let buildChangedSession: SpecSession = {
+        var spec = buildingSession.spec
+        for number in 1...3 { spec.runs?[number]?.prompt = "the prompt before the change" }
+        var documents = boardDocuments
+        documents[.tasks] = tasksMarkdown.replacingOccurrences(of: "- [ ] 4. Cancel a booking", with: """
+            - [ ] 6. Receipt email
+              - Priority: P1
+              - Covers: 2.2
+              - Reads: REQUIREMENTS.md 2.2, D-07
+              - Verify: `./gradlew :shared:allTests --tests "*Receipt*"`
+              - Changes: shared/notifications
+              - Parallel with: 2, 3
+            - [ ] 4. Cancel a booking
+            """)
+        var change = SpecSession.ChangeResult(line: "Changed REQUIREMENTS.md, EXPERIENCE.md, TASKS.md", tokens: 2_100, passages: [:])
+        change.newTasks = [6]
+        change.updatedTasks = [1, 2, 3]
+        return SpecSession.preview(spec, documents: documents, lastChange: change)
+    }()
+    /// V2-14: the request doesn't fit ARCHITECTURE.md.
+    static let buildUnplacedSession: SpecSession = {
+        var spec = buildingSession.spec
+        spec.unplacedChange = UnplacedChange(request: "Receipts should come from the payment provider’s own emails, not from our server.", change: Change(edits: []), files: [.architecture])
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
     /// V2-3 with every task done.
     static let builtSession: SpecSession = {
         var spec = tokens

@@ -6,6 +6,9 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Added
+- **Tell Mel while you build.** The Build screen has a Tell Mel box under the steps for what a task turned up: a missing state, a task that should be split, a wrong assumption. "Tell Mel about this" on a running or failed task says which task it came from. Mel patches the spec; a task whose prompt changed after you copied it says **Prompt changed · Copy again**, a finished task whose text changed says **Changed after done** and stays done until you reopen it, and new tasks show up in their step.
+
 ## [0.6] · 2026-11-27
 
 ### Changed

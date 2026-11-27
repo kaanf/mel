@@ -29,10 +29,14 @@ Goal: before the agent starts, the user makes at most 2 decisions (write, press 
 | V2-8 | V2-8-Board-Remove.dc.html | Board, Remove confirmation on a story card (state of V2-2, prop confirmRemove = "pack") | new |
 | V2-9 | V2-9-Board-Waiting.dc.html | Board, files waiting for answers, Files list and token popover open (state of V2-2, props start = "plan", filesOpen, tokensOpen) | new |
 | V2-10 | V2-10-Board-Plan.dc.html | Board, plan ready: every card answered, all files written; where Build › Plan returns (state of V2-2, prop start = "ready") | new |
+| V2-11 | V2-11-Build-Typing.dc.html | Build, typing a Tell Mel request with a task chip (state of V2-3, prop tell = "typing") | new |
+| V2-12 | V2-12-Build-Working.dc.html | Build, Mel changing files: working line, Check it disabled on changed tasks (tell = "working") | new |
+| V2-13 | V2-13-Build-Changed.dc.html | Build, change applied: result line, Updated tags, Prompt changed, Changed after done, new task (tell = "result") | new |
+| V2-14 | V2-14-Build-Unplaced.dc.html | Build, change couldn't be placed (tell = "unplaced") | new |
 | V2-3 | V2-3-Ready.dc.html | Build: tasks in steps (run alone, at the same time, one after the other), Copy prompt, Check it, Done; back to the plan | B7 |
 | V2-6 | V2-6-Settings-Specs.dc.html | Settings › Specs: the defaults V2 stopped asking about | B1 fields, B7 toggles, A3 rules |
 
-V2-0b, V2-4, V2-5, V2-7, V2-8, V2-9 and V2-10 are the same components as V2-0 and V2-2 with different props: build them as states, not screens.
+V2-0b, V2-4, V2-5, V2-7, V2-8, V2-9, V2-10 and V2-11 to V2-14 are the same components as V2-0, V2-2 and V2-3 with different props: build them as states, not screens.
 
 Main path:
 
@@ -50,7 +54,7 @@ Rules that change from V1:
 - **Edit after it's written** (was C1): saving an edit shows a banner in the board with the files built on it, Update / Keep them as they are / Undo, and a "Why?" field saved to DECISIONS.md.
 - **Agent stopped** (was C2): a banner in the board: Continue with the other agent, Resume when the limit resets, or Finish it myself (opens the file). Answers and finished files are untouched.
 - **Plan tabs:** Plan, Screens, Build order. Screens appears only for New product.
-- **Build** (V2-3, was Ready / B7): until Mel runs agents itself, the user runs each task's prompt in their own Claude Code. Tasks are grouped in steps from TASKS.md: Run alone, At the same time (only when the tasks change different folders; open one terminal each), One after the other (same folder). A step opens when the step before it is done. Each task: Copy prompt (short, names only the passages it needs, marks the task Running), Check it (Mel runs the task's verify command on this Mac: no agent, no tokens), passed → Done and the next tasks open, failed → the output, Copy fix prompt (includes the error), Check again. "Mark done without the check" and Reopen are always there. ‹ Plan goes to V2-10. When all tasks are done the spec moves to Done. When Mel runs agents later, Copy prompt becomes Run and Check it runs on its own; steps and checks stay. AGENTS.md, commit and "ask before an agent changes the plan" are on by default and live in Settings › Specs.
+- **Build** (V2-3, was Ready / B7): until Mel runs agents itself, the user runs each task's prompt in their own Claude Code. Tasks are grouped in steps from TASKS.md: Run alone, At the same time (only when the tasks change different folders; open one terminal each), One after the other (same folder). A step opens when the step before it is done. Each task: Copy prompt (short, names only the passages it needs, marks the task Running), Check it (Mel runs the task's verify command on this Mac: no agent, no tokens), passed → Done and the next tasks open, failed → the output, Copy fix prompt (includes the error), Check again. "Mark done without the check" and Reopen are always there. ‹ Plan goes to V2-10. When all tasks are done the spec moves to Done. Tell Mel is on Build too, pinned under the steps: Running and Failed cards have "Tell Mel about this", which adds a task chip (and the check output from a failed card) so the request knows where it came from. While Mel changes files, Check it is disabled only on the tasks being changed. After a change, a running task whose prompt changed shows "Prompt changed · Copy again", a done task whose text changed shows "Changed after done" with Reopen (Mel never reopens it on its own), and a new task appears in its step with a soft highlight. The working line (file · where · Stop) is shared with the board. When Mel runs agents later, Copy prompt becomes Run and Check it runs on its own; steps and checks stay. AGENTS.md, commit and "ask before an agent changes the plan" are on by default and live in Settings › Specs.
 
 ## V2 · Expressiveness and token budget
 

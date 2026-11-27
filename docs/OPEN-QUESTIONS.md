@@ -27,6 +27,7 @@
 | 33 | Is the contradiction check run again after its issues are fixed? | **No.** Mel's own checks by ID run again for free after every change; contradictions are looked for once, after the last file. "Check again" runs it on request | 2026-11-26 |
 | 29 | Invariant once approval is gone | **"Never change a Ready file without a user action"**: a card answer, Tell Mel, Remove, Update or Rewrite. "Never overwrite a user's edit" stays. In CLAUDE.md, REQUIREMENTS.md and DESIGN.md | 2026-11-27 |
 | 36 | How do Mel's runs reach the files without sending them every time? | **One Claude Code conversation per spec**, resumed for drafts, changes and rewrites, so the files come from the prompt cache. A prompt sends only files the conversation hasn't seen as they are now. Same model and tools on every turn; a new conversation past 400k characters. Intake, check and project context stay separate. Kingdom and Dynasty used 993k tokens, three quarters of it files sent again | 2026-11-27 |
+| 37 | Tell Mel on Build (V2-11 to V2-14): what changes for tasks already started? | **A done task stays Done**; if its text changed it shows "Changed after done" with Reopen. A running or failed task whose prompt changed shows "Prompt changed · Copy again". Check it is off only on the task the request came from; no "Updated" tag; a failed check's output isn't sent with the request | 2026-11-27 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open

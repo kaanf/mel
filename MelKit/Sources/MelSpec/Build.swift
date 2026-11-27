@@ -50,12 +50,16 @@ public struct TaskRun: Codable, Hashable, Sendable {
     public var byHand = false
     /// The end of the failing check's output, for the card and the fix prompt.
     public var output: String?
+    /// The task's prompt when it was copied or marked done. A Tell Mel change that makes it differ
+    /// shows "Prompt changed" or "Changed after done" (V2-13).
+    public var prompt: String?
 
-    public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil) {
+    public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil, prompt: String? = nil) {
         self.state = state
         self.at = at
         self.byHand = byHand
         self.output = output
+        self.prompt = prompt
     }
 }
 
@@ -101,16 +105,30 @@ extension Spec {
         tasks.count { runs?[$0.number]?.state == .done }
     }
 
-    /// Copy prompt: Claude Code is on it.
-    public mutating func started(_ task: Int) {
-        runs = (runs ?? [:]).merging([task: TaskRun(state: .running)]) { _, new in new }
+    /// Copy prompt: Claude Code is on it, with `prompt`.
+    public mutating func started(_ task: Int, prompt: String) {
+        runs = (runs ?? [:]).merging([task: TaskRun(state: .running, prompt: prompt)]) { _, new in new }
         if build == nil || build == .done { build = .building }
     }
 
-    /// The check's result, or "Mark done without the check". The last task done moves the spec to Done.
-    public mutating func finished(_ task: Int, passed: Bool, output: String = "", byHand: Bool = false, at date: Date = .now, of tasks: [SpecTask]) {
-        runs = (runs ?? [:]).merging([task: passed ? TaskRun(state: .done, at: date, byHand: byHand) : TaskRun(state: .failed, output: output)]) { _, new in new }
+    /// The check's result, or "Mark done without the check". The run keeps the prompt that was
+    /// copied; `prompt` is the current one, for a task never copied. The last task done moves the spec to Done.
+    public mutating func finished(_ task: Int, passed: Bool, output: String = "", byHand: Bool = false, at date: Date = .now, prompt: String, of tasks: [SpecTask]) {
+        let prompt = runs?[task]?.prompt ?? prompt
+        runs = (runs ?? [:]).merging([task: passed ? TaskRun(state: .done, at: date, byHand: byHand, prompt: prompt) : TaskRun(state: .failed, output: output, prompt: prompt)]) { _, new in new }
+        retasked(tasks)
+    }
+
+    /// TASKS.md changed while building: a task added to a finished build reopens it, and the reverse.
+    public mutating func retasked(_ tasks: [SpecTask]) {
+        taskCount = tasks.count
         build = !tasks.isEmpty && doneCount(tasks) == tasks.count ? .done : .building
+    }
+
+    /// The prompt the user ran is no longer the task's prompt.
+    public func promptChanged(_ task: Int, now prompt: String) -> Bool {
+        guard let copied = runs?[task]?.prompt else { return false }
+        return copied != prompt
     }
 
     /// Reopen on a done task.

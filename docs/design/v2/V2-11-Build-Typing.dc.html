@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-11 · Build, typing a Tell Mel request
+The user pressed "Tell Mel about this" on the failed task 3: the box has the task chip, the check output chip and the text, with Send.
+Same component as V2-3-Ready.dc.html (Build); only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Build, telling Mel (v2)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-3-Ready" tell="typing" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
