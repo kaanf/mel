@@ -63,6 +63,8 @@ public struct TaskRun: Codable, Hashable, Sendable {
     public var tokens: Int?
     /// The question the run stopped on, until the user answers it (V2-18).
     public var question: BuildQuestion?
+    /// GH-4: its commit is on GitHub. Nil without a GitHub repo.
+    public var pushed: Bool?
 
     public init(state: State, at: Date? = nil, byHand: Bool = false, output: String? = nil, prompt: String? = nil, base: String? = nil) {
         self.state = state
@@ -133,7 +135,7 @@ extension Spec {
         let old = runs?[task]
         var run = passed ? TaskRun(state: .done, at: date, byHand: byHand, prompt: old?.prompt ?? prompt, base: old?.base)
                          : TaskRun(state: .failed, output: output, prompt: old?.prompt ?? prompt, base: old?.base)
-        (run.session, run.report, run.tokens) = (old?.session, old?.report, old?.tokens)
+        (run.session, run.report, run.tokens, run.pushed) = (old?.session, old?.report, old?.tokens, old?.pushed)
         runs = (runs ?? [:]).merging([task: run]) { _, new in new }
         retasked(tasks)
     }
@@ -165,6 +167,7 @@ extension Spec {
     /// "Start over" once everything is built.
     public mutating func startOver() {
         runs = nil
+        pullRequest = nil
         build = .building
     }
 }

@@ -51,6 +51,7 @@ struct BuildView: View {
                 VStack(alignment: .leading, spacing: Theme.Space.x14) {
                     progress
                     if let blocked = session.blockedRun { blockedBanner(blocked).transition(.drop) }
+                    if let error = session.pushError { pushBanner(error).transition(.drop) }
                     if allDone { builtBanner.transition(.drop) }
                     ForEach(Array(session.steps.enumerated()), id: \.offset) { index, step in
                         stepSection(step, index: index)
@@ -88,7 +89,18 @@ struct BuildView: View {
         .animation(.board, value: spec.unplacedChange)
         .animation(.board, value: session.blockedRun)
         .animation(.board, value: session.runningTask)
+        .animation(.board, value: spec.pullRequest)
+        .animation(.board, value: session.pullStatus)
+        .animation(.board, value: session.pushError)
         .navigationTitle("Build: \(spec.name)")
+        // GH-4: GitHub's checks while they run, and a Merge when checks pass until GitHub merges.
+        .task(id: spec.pullRequest) {
+            await session.refreshPullRequest()
+            while !Task.isCancelled, let pull = spec.pullRequest, !pull.merged, pull.autoMerge || session.pullStatus?.pending.isEmpty == false {
+                try? await Task.sleep(for: .seconds(15))
+                await session.refreshPullRequest()
+            }
+        }
     }
 
     // MARK: Header
@@ -112,7 +124,7 @@ struct BuildView: View {
             Text("Build: \(spec.name)").textStyle(Theme.Text.bodyBold).lineLimit(1).layoutPriority(1)
             Spacer(minLength: 0)
             HStack(spacing: Theme.Space.x8) {
-                StatusDot(style: session.isRunning ? .ring(Theme.Colors.accent) : .filled(allDone ? Theme.Colors.success : failedCount > 0 ? Theme.Colors.failure : Theme.Colors.accent))
+                StatusDot(style: dotStyle)
                 Text(pill).textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1)
             }
             .padding(.horizontal, Theme.Space.x12)
@@ -155,10 +167,22 @@ struct BuildView: View {
     private var failedCount: Int { tasks.count { if case .failed = session.status(of: $0) { true } else { false } } }
     private var runningCount: Int { tasks.count { session.status(of: $0) == .running } }
 
+    private var dotStyle: StatusDot.Style {
+        if session.isRunning || (spec.pullRequest?.merged == false && session.pullStatus?.pending.isEmpty == false) { return .ring(Theme.Colors.accent) }
+        if spec.pullRequest?.merged == false, session.pullStatus?.failed.isEmpty == false { return .filled(Theme.Colors.failure) }
+        return .filled(allDone ? Theme.Colors.success : failedCount > 0 ? Theme.Colors.failure : Theme.Colors.accent)
+    }
+
     private var pill: String {
         if let number = session.runningTask { return "Mel is building task \(number)" }
         if let (task, _) = asking { return "Task \(task.number) asks a question" }
         if session.isRunning { return "Mel is changing the files" }
+        if let pull = spec.pullRequest {
+            if pull.merged { return "Merged" }
+            if session.pullStatus?.failed.isEmpty == false { return "A GitHub check failed" }
+            if session.pullStatus?.pending.isEmpty == false { return "Built · checks running" }
+            return "Built · ready to merge"
+        }
         if allDone { return "First version built" }
         if failedCount > 0 { return "A check failed" }
         if runningCount > 0 { return "\(runningCount) \(runningCount == 1 ? "task" : "tasks") running" }
@@ -233,8 +257,97 @@ struct BuildView: View {
 
     // MARK: Built
 
+    @ViewBuilder
     private var builtBanner: some View {
-        let later = session.stories.filter { !$0.isFirst }
+        if let pull = spec.pullRequest { pullBanner(pull) } else { localBanner }
+    }
+
+    private var laterStories: [Story] { session.stories.filter { !$0.isFirst } }
+
+    @ViewBuilder
+    private var planLater: some View {
+        let later = laterStories
+        if !later.isEmpty {
+            Button("Plan the \(later.count) later \(later.count == 1 ? "story" : "stories")") { session.reopenPlan() }
+                .buttonStyle(BoardPillStyle(kind: spec.pullRequest?.merged == true ? .accent : .white))
+        }
+    }
+
+    /// GH-4 / GH-5: the spec's pull request: Merge, Merge when checks pass, a failed check, merged.
+    @ViewBuilder
+    private func pullBanner(_ pull: PullRequest) -> some View {
+        let status = session.pullStatus
+        if let failed = status?.failed.first, !pull.merged {
+            VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                Text("GitHub’s check “\(failed.name)” failed on #\(pull.number)").textStyle(Theme.Text.bodyBold).foregroundStyle(Theme.Colors.bannerTitle)
+                Text("Its tasks passed their checks on this Mac, so it may depend on GitHub’s runner. Nothing was merged. Fix it with Tell Mel or in your terminal on \(session.branch); Mel pushes what you commit after the next Check it.")
+                    .textStyle(Theme.Text.calloutLoose)
+                    .foregroundStyle(Theme.Colors.bodyLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: Theme.Space.x8) {
+                    Button("View on GitHub", action: session.openPullRequest).buttonStyle(BoardPillStyle(kind: .accent))
+                    Button("Push again") { Task { await session.publish() } }.buttonStyle(BoardPillStyle())
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, Theme.Space.x12)
+            .padding(.horizontal, Theme.Space.x14)
+            .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        } else {
+            let pending = status?.pending.isEmpty == false
+            VStack(alignment: .leading, spacing: Theme.Space.x8) {
+                HStack(spacing: Theme.Space.x8) {
+                    if pull.merged { DesignIcon(glyph: .check, size: Theme.Size.doneCheck, weight: 2.2).foregroundStyle(Theme.Colors.success) }
+                    Text(pull.merged ? "Merged into main on GitHub" : "The first version is built").textStyle(Theme.Text.boardTitle)
+                }
+                Text(pull.merged
+                     ? "#\(pull.number) was squashed into one commit on main. Mel deleted \(session.branch) and switched this Mac to an up-to-date main."
+                     : "All \(tasks.count) tasks are on \(session.branch). Mel opened pull request #\(pull.number) with what works now and the decisions made while building.")
+                    .textStyle(Theme.Text.calloutLoose)
+                    .foregroundStyle(Theme.Colors.bodyLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: Theme.Space.x8) {
+                    if !pull.merged {
+                        Button(pull.autoMerge ? "Merges when checks pass" : pending ? "Merge when checks pass" : "Merge pull request") {
+                            Task { await session.mergePullRequest(auto: pending) }
+                        }
+                        .buttonStyle(BoardPillStyle(kind: .accent))
+                        .disabled(pull.autoMerge || session.isMerging)
+                    }
+                    planLater
+                    Button("View on GitHub", action: session.openPullRequest).buttonStyle(BoardPillStyle())
+                    if session.isMerging { ProgressView().controlSize(.small) }
+                }
+                if !pull.merged, let status {
+                    Text(pending ? "GitHub is still running \(status.pending.count) of \(status.checks.count) checks. Mel merges as soon as they pass, even if you close this window."
+                         : status.checks.isEmpty ? "Merge squashes the \(tasks.count) task commits into one on main." : "GitHub’s \(status.checks.count) checks passed. Merge squashes the \(tasks.count) task commits into one on main.")
+                        .textStyle(Theme.Text.caption)
+                        .foregroundStyle(Theme.Colors.secondaryLabel)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, Theme.Space.x14)
+            .padding(.horizontal, Theme.Space.x16)
+            .surface(Theme.Colors.resultFill, .result, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .accessibilityElement(children: .contain)
+        }
+    }
+
+    /// A push or the pull request failed (offline, rejected); the tasks stay Done.
+    private func pushBanner(_ error: String) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            Text(error).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.bannerTitle).fixedSize(horizontal: false, vertical: true)
+            Button("Push again") { Task { await session.publish() } }.buttonStyle(BoardPillStyle())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, Theme.Space.x12)
+        .padding(.horizontal, Theme.Space.x14)
+        .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    /// V2-22 without GitHub.
+    private var localBanner: some View {
+        let later = laterStories
         let byHand = spec.runs?.values.contains { $0.byHand } == true
         return VStack(alignment: .leading, spacing: Theme.Space.x8) {
             Text("The first version is built").textStyle(Theme.Text.boardTitle)
@@ -638,7 +751,8 @@ struct BuildView: View {
     private func doneText(_ run: TaskRun, changed: Bool) -> String {
         let at = run.at.map { " at " + $0.formatted(date: .omitted, time: .shortened) } ?? ""
         if changed { return run.byHand ? "Changed after you marked it done." : "Changed after done. Its check passed\(at) for the old version." }
-        return run.byHand ? "Marked done by you, no check run" : "Check passed" + at
+        let pushed = run.pushed == true ? ", pushed" : ""
+        return (run.byHand ? "Marked done by you, no check run" : "Check passed" + at) + pushed
     }
 
     private func tellLink(_ task: SpecTask) -> some View {
@@ -850,6 +964,7 @@ struct BuildView: View {
         // Scrolls when a question card and How building works don't fit.
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Space.x14) {
+                if let pull = spec.pullRequest { onGitHub(pull) }
                 if let (task, question) = asking {
                     Text("Mel needs you · 1").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
                     questionCard(task, question)
@@ -908,6 +1023,47 @@ struct BuildView: View {
         }
         .frame(maxHeight: .infinity, alignment: .top)
         
+    }
+
+    /// GH-4: the pull request and GitHub's checks, over How building works.
+    private func onGitHub(_ pull: PullRequest) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x10) {
+            Text("On GitHub").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: Theme.Space.x10) {
+                HStack(spacing: Theme.Space.x8) {
+                    Button("#\(pull.number) \(spec.name)", action: session.openPullRequest)
+                        .buttonStyle(.plain)
+                        .textStyle(Theme.Text.bodyBold)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .help("Open the pull request on GitHub")
+                    Text(pull.merged ? "Merged" : "Open")
+                        .textStyle(Theme.Text.captionBold)
+                        .foregroundStyle(pull.merged ? Theme.Colors.mergedChipText : Theme.Colors.openChipText)
+                        .padding(.horizontal, Theme.Space.x8)
+                        .frame(height: Theme.Size.prChip)
+                        .background(pull.merged ? Theme.Colors.mergedChipFill : Theme.Colors.openChipFill, in: Capsule())
+                }
+                Text("\(session.branch) → main · \(tasks.count) \(tasks.count == 1 ? "commit" : "commits")")
+                    .textStyle(Theme.Text.codeCaptionLoose)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                ForEach(session.pullStatus?.checks ?? [], id: \.name) { check in
+                    HStack(spacing: Theme.Space.x8) {
+                        StatusDot(style: check.outcome == .pending ? .ring(Theme.Colors.accent) : .filled(check.outcome == .passed ? Theme.Colors.success : Theme.Colors.failure))
+                        Text(check.name).textStyle(Theme.Text.callout).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(check.outcome == .pending ? "running" : check.outcome == .passed ? "passed" : "failed")
+                            .textStyle(Theme.Text.caption)
+                            .foregroundStyle(Theme.Colors.secondaryLabel)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .padding(.vertical, Theme.Space.x12)
+            .padding(.horizontal, Theme.Space.x14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .surface(Theme.Colors.background, .storyCard, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            Text("Through your GitHub CLI. Pushing and merging use no tokens.").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+        }
     }
 
     private static let how = [
@@ -972,6 +1128,32 @@ extension BuildStep {
 
 #Preview("Done") {
     NavigationStack { BuildView(session: PreviewData.builtSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("Pull request, checks running") {
+    NavigationStack { BuildView(session: PreviewData.pullRequestChecking) }
+        .environment(PreviewData.appState(remotes: PreviewData.remotes))
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("Pull request, ready") {
+    NavigationStack { BuildView(session: PreviewData.pullRequestReady) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("Pull request, a check failed") {
+    NavigationStack { BuildView(session: PreviewData.pullRequestFailed) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("Merged") {
+    NavigationStack { BuildView(session: PreviewData.pullRequestMerged) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("Push failed") {
+    NavigationStack { BuildView(session: PreviewData.pullRequestSession([], pushError: "Couldn’t push to GitHub: Could not resolve host: github.com")) }
         .frame(width: 1100, height: 900)
 }
 

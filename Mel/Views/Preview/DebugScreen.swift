@@ -5,10 +5,14 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited
+    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
+    }
+
+    private static func pullRequest(_ session: SpecSession) -> AppState {
+        PreviewData.appState([session.spec] + PreviewData.others, sessions: [session], github: .signedIn("kaanf"), remotes: PreviewData.remotes)
     }
 
     var state: AppState {
@@ -36,6 +40,13 @@ enum DebugScreen: String, CaseIterable {
         case .boardStopped: PreviewData.appState([PreviewData.boardStopped], sessions: [PreviewData.boardStoppedSession])
         case .boardUnplaced: PreviewData.appState([PreviewData.boardUnplaced], sessions: [PreviewData.boardUnplacedSession])
         case .boardChanged: PreviewData.appState([PreviewData.boardChangedSession.spec], sessions: [PreviewData.boardChangedSession])
+        case .startGitHub: PreviewData.appState([], projects: [], foundRepositories: PreviewData.repositories, github: .signedIn("kaanf"), githubRepos: PreviewData.githubRepos)
+        case .startSignIn: PreviewData.appState([], projects: [], foundRepositories: PreviewData.repositories, github: .signingIn(code: "5C2F-81AD"))
+        case .startNoGitHub: PreviewData.appState([], projects: [], foundRepositories: PreviewData.repositories, github: .missing)
+        case .buildPR: Self.pullRequest(PreviewData.pullRequestChecking)
+        case .buildPRReady: Self.pullRequest(PreviewData.pullRequestReady)
+        case .buildPRFailed: Self.pullRequest(PreviewData.pullRequestFailed)
+        case .buildMerged: Self.pullRequest(PreviewData.pullRequestMerged)
         case .boardEdited: PreviewData.appState([PreviewData.boardEditedSession.spec], sessions: [PreviewData.boardEditedSession])
         }
     }

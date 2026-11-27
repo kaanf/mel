@@ -771,8 +771,6 @@ extension Theme.Size {
     static let newBoxFooter: CGFloat = 52
     static let attachButton: CGFloat = 32
     static let attachIcon: CGFloat = 15
-    /// 440 · the sheet that asks a new product's name (not drawn).
-    static let newNameSheet: CGFloat = 440
     /// V2 sidebar: 40 pt top for the traffic lights; file rows 24; New 30; agent line 22.
     static let sidebarTop: CGFloat = 40
     static let sidebarFileRow: CGFloat = 24
@@ -855,6 +853,35 @@ extension Theme.Elevation {
     static let failedOutput = Theme.Elevation(ring: Theme.Colors.failedRing, insetRing: true)
     /// A task the last Tell Mel change added (V2-13): `accentTint` with an inset 1 pt ring at 0.35.
     static let taskNew = Theme.Elevation(ring: Theme.Colors.accentRing, ringWidth: 1, insetRing: true)
+}
+
+// MARK: - GitHub (design/v2/GH-1 to GH-5)
+
+extension Theme.Colors {
+    /// rgba(36,138,61,0.12) / #1A7F37 · an open pull request's chip.
+    static let openChipFill = Color(hex: 0x248A3D, opacity: 0.12, dark: 0x30D158, darkOpacity: 0.2)
+    static let openChipText = Color(hex: 0x1A7F37, dark: 0x30D158)
+    /// rgba(130,80,223,0.12) / #6E40C9 · a merged pull request's chip.
+    static let mergedChipFill = Color(hex: 0x8250DF, opacity: 0.12, dark: 0xA371F7, darkOpacity: 0.22)
+    static let mergedChipText = Color(hex: 0x6E40C9, dark: 0xBC8CFF)
+}
+
+extension Theme.Text {
+    /// 10/12 · "Not on this Mac" on a repo row.
+    static let repoTag = Theme.TextStyle(size: 10, weight: .regular, lineHeight: 12)
+    /// 17/22 semibold mono · the one-time code on GitHub sign-in.
+    static let deviceCode = Theme.TextStyle(size: 17, weight: .semibold, lineHeight: 22, design: .monospaced)
+}
+
+extension Theme.Size {
+    /// Start: the 76 pt label column of the agent and GitHub lines; a repo row's 16 pt tag.
+    static let startLineLabel: CGFloat = 76
+    static let repoTag: CGFloat = 16
+    /// GH-2 / GH-3: the sheet's width; the repo list's rows.
+    static let repoSheet: CGFloat = 520
+    static let repoListRow: CGFloat = 32
+    /// GH-4: the pull request's Open / Merged chip.
+    static let prChip: CGFloat = 20
 }
 
 // MARK: - Motion

@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import Synchronization
 import MelAgent
 import MelSpec
 import MelStorage
@@ -43,6 +44,12 @@ import MelSystem
     private(set) var branches: [Project.ID: String] = [:]
     /// V2-0: git repos one level under `~/Developer`.
     private(set) var foundRepositories: [FoundRepository] = []
+    /// GH-1: the user's GitHub account through their GitHub CLI (OQ #44).
+    var github: GitHubAccount = .checking
+    /// GH-1 On GitHub, newest first; loaded once signed in.
+    private(set) var githubRepos: [GitHubRepo] = []
+    /// Each project's GitHub repo, `owner/name` from its `origin`; nil when it has none.
+    private(set) var remotes: [Project.ID: String] = [:]
     /// Settings › Specs › Open files in: the app for Open in Editor; nil is the Mac's default for Markdown.
     var editor: URL? {
         didSet { defaults.set(editor?.path(percentEncoded: false), forKey: Self.editorKey) }
@@ -56,6 +63,9 @@ import MelSystem
     /// V2-3 Check it: a task's verify command in the project folder. Tests replace it.
     @ObservationIgnored var runCheck: @Sendable (_ command: String, _ folder: URL) async -> Check.Result = { await Check.run($0, in: $1) }
     @ObservationIgnored private var askedForNotifications = false
+    /// Found by `scanGitHub`; tests set a fake script.
+    @ObservationIgnored var gitHubCLI: GitHubCLI?
+    @ObservationIgnored private var signingIn: Task<Void, Never>?
     /// V2-0's scan folder and the parent of a project made from an idea; tests replace it.
     @ObservationIgnored var developerFolder = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer", directoryHint: .isDirectory)
 
@@ -160,6 +170,7 @@ import MelSystem
         contexts[project.id] = nil
         contextErrors[project.id] = nil
         branches[project.id] = nil
+        remotes[project.id] = nil
         if projectID == project.id { projectID = nil }
         saveLibrary()
     }
@@ -266,6 +277,7 @@ import MelSystem
             ideaProjects.insert(project.id)
             contexts[project.id] = contexts.removeValue(forKey: old.id)
             branches[project.id] = branches.removeValue(forKey: old.id)
+            remotes[project.id] = remotes.removeValue(forKey: old.id)
             if projectID == old.id { projectID = project.id }
             saveLibrary()
         }
@@ -302,6 +314,95 @@ import MelSystem
     func removeMissing(_ missing: URL) {
         missingFolders.removeAll { $0 == missing }
         saveLibrary()
+    }
+
+    // MARK: - GitHub (OQ #44, GH-1 to GH-3)
+
+    /// Looks for `gh` and its account; signed in, loads the repos for Start.
+    func scanGitHub() async {
+        guard let executable = GitHubCLI.locate(extraPaths: extraSearchPaths) else {
+            gitHubCLI = nil
+            github = .missing
+            return
+        }
+        let cli = GitHubCLI(executable: executable)
+        gitHubCLI = cli
+        if case .signingIn = github { return }
+        if let login = await Task.detached(operation: { cli.login() }).value {
+            github = .signedIn(login)
+            await loadGitHubRepos()
+        } else {
+            github = .signedOut
+        }
+    }
+
+    func loadGitHubRepos() async {
+        guard let cli = gitHubCLI, let json = try? await Task.detached(operation: { try cli.repos() }).value else { return }
+        githubRepos = (try? GitHubRepo.list(json: json)) ?? []
+    }
+
+    /// GH-1b: `gh auth login --web`; the code shows on Start and GitHub opens in the browser.
+    func signInToGitHub() {
+        guard let cli = gitHubCLI else { return }
+        github = .signingIn(code: nil)
+        signingIn = Task {
+            let opened = Mutex(false)
+            let done = await cli.signIn { output in
+                guard let code = gitHubDeviceCode(in: output) else { return }
+                let first = opened.withLock { was in defer { was = true }; return !was }
+                Task { @MainActor in
+                    self.github = .signingIn(code: code)
+                    if first { SystemActions.open(URL(string: "https://github.com/login/device")!) }
+                }
+            }
+            guard !Task.isCancelled else { return }
+            github = .checking
+            if done { await scanGitHub() } else { github = .signedOut }
+        }
+    }
+
+    func cancelGitHubSignIn() {
+        signingIn?.cancel()
+        signingIn = nil
+        github = .signedOut
+    }
+
+    /// GH-1 Clone and Start, GH-2 a repo you already made: cloned into `~/Developer/<name>`, then added like any project.
+    @discardableResult
+    func cloneProject(_ repo: GitHubRepo) async throws -> Project {
+        guard let cli = gitHubCLI else { throw CocoaError(.featureUnsupported) }
+        let folder = developerFolder.appending(path: repo.name, directoryHint: .isDirectory)
+        guard !FileManager.default.fileExists(atPath: folder.path) else {
+            throw CocoaError(.fileWriteFileExists, userInfo: [NSLocalizedDescriptionKey: "~/Developer/\(repo.name) already exists. Drop that folder on the window to use it."])
+        }
+        let (name, parent) = (repo.nameWithOwner, developerFolder)
+        try await Task.detached {
+            try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+            try cli.clone(name, to: folder)
+        }.value
+        return try startProject(folder)
+    }
+
+    /// GH-2 / GH-3 a new repo for `project`, made `origin`; what is committed is pushed.
+    func createRepo(for project: Project, name: String, isPrivate: Bool) async throws {
+        guard let cli = gitHubCLI else { throw CocoaError(.featureUnsupported) }
+        let folder = project.folder
+        remotes[project.id] = try await Task.detached { try cli.create(name: name, isPrivate: isPrivate, from: folder) }.value
+        branches[project.id] = Git.branch(at: folder)
+    }
+
+    /// GH-3 an empty repo the user made, made `project`'s `origin`.
+    func connectRepo(_ repo: GitHubRepo, to project: Project) async throws {
+        guard let cli = gitHubCLI else { throw CocoaError(.featureUnsupported) }
+        let (folder, url) = (project.folder, repo.url)
+        try await Task.detached { try cli.connect(url, to: folder) }.value
+        remotes[project.id] = repo.nameWithOwner
+        branches[project.id] = Git.branch(at: folder)
+    }
+
+    func openOnGitHub(_ project: Project) {
+        guard let name = remotes[project.id], let url = URL(string: "https://github.com/\(name)") else { return }
+        SystemActions.open(url)
     }
 
     // System actions for views (views never import MelSystem)
@@ -354,6 +455,7 @@ import MelSystem
         projects.append(project)
         contexts[project.id] = context
         branches[project.id] = Git.branch(at: folder)
+        remotes[project.id] = Git.origin(at: folder).flatMap(gitHubName(remote:))
         for var spec in SpecStore.scan(project: project.folder) where !specs.contains(where: { $0.id == spec.id }) {
             // A board that was working when Mel quit waits for Resume: nothing runs on launch.
             if spec.halted == nil, let step = spec.nextStep { spec.halt(.user, during: step) }
@@ -367,7 +469,7 @@ import MelSystem
         library.save(projects.map(\.folder) + missingFolders)
     }
 
-    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], readingContext: Set<Project.ID> = [], branches: [Project.ID: String] = [:], sessions: [SpecSession] = []) -> AppState {
+    static func preview(_ specs: [Spec], agent: AgentStatus, projects: [Project] = [], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], readingContext: Set<Project.ID> = [], branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], github: GitHubAccount = .signedOut, githubRepos: [GitHubRepo] = [], remotes: [Project.ID: String] = [:]) -> AppState {
         let state = AppState(adapter: InertAdapter(), makeRunner: { _ in InertRunner() }, defaults: UserDefaults(suiteName: "preview")!)
         state.isPreview = true
         state.specs = specs
@@ -377,6 +479,9 @@ import MelSystem
         state.foundRepositories = foundRepositories
         state.readingContext = readingContext
         state.branches = branches
+        state.github = github
+        state.githubRepos = githubRepos
+        state.remotes = remotes
         for session in sessions { state.sessions[session.spec.id] = session }   // fixtures with live text, activity, step
         state.selection = specs.first?.id
         return state
@@ -395,4 +500,17 @@ private struct InertAdapter: AgentAdapter {
 private struct InertRunner: AgentRunning {
     func run(_ request: AgentRequest) -> AsyncThrowingStream<AgentEvent, Error> { AsyncThrowingStream { $0.finish() } }
     func stop() async {}
+}
+
+/// GH-1: where the user's GitHub account stands.
+enum GitHubAccount: Equatable {
+    case checking
+    /// No GitHub CLI on this Mac (GH-1c).
+    case missing
+    case signedOut
+    /// GH-1b: `code` once `gh` printed it.
+    case signingIn(code: String?)
+    case signedIn(String)
+
+    var login: String? { if case .signedIn(let login) = self { login } else { nil } }
 }

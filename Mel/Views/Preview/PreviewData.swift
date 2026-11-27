@@ -183,11 +183,19 @@ enum PreviewData {
         sources: ["product.md": "From README", "tech.md": "Detected", "structure.md": "Detected"]
     )
 
-    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], readingContext: Set<Project.ID> = [], branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], missing: [URL] = []) -> AppState {
-        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, readingContext: readingContext, branches: branches, sessions: sessions)
+    static func appState(_ specs: [Spec] = [discovery], agent: AgentStatus = ready, projects: [Project] = [project], contexts: [Project.ID: ProjectContext] = [:], foundRepositories: [FoundRepository] = [], readingContext: Set<Project.ID> = [], branches: [Project.ID: String] = [:], sessions: [SpecSession] = [], missing: [URL] = [], github: GitHubAccount = .signedOut, githubRepos: [GitHubRepo] = [], remotes: [Project.ID: String] = [:]) -> AppState {
+        let state = AppState.preview(specs, agent: agent, projects: projects, contexts: contexts, foundRepositories: foundRepositories, readingContext: readingContext, branches: branches, sessions: sessions, github: github, githubRepos: githubRepos, remotes: remotes)
         state.missingFolders = missing
         return state
     }
+
+    /// GH-1, GH-2: the account's repos, newest first; habit-tracker and kingdom-and-dynasty aren't on this Mac.
+    static let githubRepos = [("habit-tracker", "Kotlin", false, 3), ("yoga-studio-booking", "Kotlin", false, 0), ("kingdom-and-dynasty", nil, true, 1), ("portfolio-site", "TypeScript", false, 40)]
+        .map { name, language, isEmpty, days in
+            GitHubRepo(nameWithOwner: "kaanf/\(name)", isPrivate: name != "portfolio-site", isEmpty: isEmpty, language: language,
+                       updatedAt: Date.now.addingTimeInterval(-Double(days) * 86_400), url: URL(string: "https://github.com/kaanf/\(name)")!)
+        }
+    static let remotes = [project.id: "kaanf/yoga-studio-booking"]
 
     static let habitTracker = Project(folder: FileManager.default.homeDirectoryForCurrentUser.appending(path: "Developer/habit-tracker"))
     // REQUIREMENTS.md with an assumption and an open question.
@@ -494,6 +502,19 @@ enum PreviewData {
         spec.runs = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, TaskRun(state: .done, at: .now)) })
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    /// GH-4: every task checked and pushed, the pull request open; `checks` is GitHub's now.
+    static func pullRequestSession(_ checks: [PullRequestStatus.Check.Outcome], merged: Bool = false, pushError: String? = nil) -> SpecSession {
+        var spec = builtSession.spec
+        spec.runs = spec.runs?.mapValues { var run = $0; run.pushed = true; return run }
+        spec.pullRequest = PullRequest(number: 14, url: URL(string: "https://github.com/kaanf/yoga-studio-booking/pull/14")!, merged: merged)
+        let names = ["build", "test", "lint"]
+        let status = PullRequestStatus(state: merged ? .merged : .open, checks: zip(names, checks).map { .init(name: $0, outcome: $1) })
+        return SpecSession.preview(spec, documents: boardDocuments, pullStatus: status, pushError: pushError)
+    }
+    static let pullRequestChecking = pullRequestSession([.passed, .pending, .passed])
+    static let pullRequestReady = pullRequestSession([.passed, .passed, .passed])
+    static let pullRequestFailed = pullRequestSession([.passed, .failed, .passed])
+    static let pullRequestMerged = pullRequestSession([.passed, .passed, .passed], merged: true)
     static let quickFixDoneSession = SpecSession.preview(
         Spec(name: "Double booking on fast taps", idea: "Two quick taps on Book create two bookings.", size: .quickFix, folder: project.folder.appending(path: "specs/double-booking"), stage: .done, docs: [.spec: .approved]),
         documents: [.spec: "# Spec\n\n## What breaks\n\nTwo quick taps on Book create two bookings.\n"]

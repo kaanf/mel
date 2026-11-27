@@ -41,6 +41,11 @@ import MelSystem
     private(set) var snapshots: [DocKind: String] = [:]
     /// DECISIONS.md, newest first.
     private(set) var decisions: [Decision] = []
+    /// GH-4: why the last push or pull request failed, with Push again; nil when it went through.
+    private(set) var pushError: String?
+    /// GH-4: the pull request on GitHub now (checks, merged), read when Build shows it.
+    private(set) var pullStatus: PullRequestStatus?
+    private(set) var isMerging = false
 
     @ObservationIgnored private weak var app: AppState?
     @ObservationIgnored private var store: SpecStore?
@@ -957,6 +962,7 @@ import MelSystem
         spec.startBuilding()
         spec.taskCount = tasks.count
         persist()
+        await pushBase()
     }
 
     // MARK: - Build (V2-3)
@@ -1013,6 +1019,7 @@ import MelSystem
         checking.remove(task.number)
         spec.finished(task.number, passed: result.passed, output: result.output, prompt: prompt(of: task), of: tasks)
         persist()
+        if result.passed { await publish() }
     }
 
     /// "Mark done without the check": only once the task's commit is there.
@@ -1020,6 +1027,7 @@ import MelSystem
         guard await isCommitted(task) else { return }
         spec.finished(task.number, passed: true, byHand: true, prompt: prompt(of: task), of: tasks)
         persist()
+        await publish()
     }
 
     func reopen(_ task: SpecTask) {
@@ -1031,6 +1039,96 @@ import MelSystem
     func startOver() {
         spec.startOver()
         persist()
+    }
+
+    // MARK: - GitHub (GH-4, OQ #44)
+
+    /// The project's GitHub repo, `owner/name`; nil without one.
+    var gitHubRepo: String? { app?.remotes[Project(folder: projectFolder).id] }
+
+    /// Start Building with a GitHub repo: the branch the spec was committed on goes up first, so the
+    /// pull request has a base (a new repo has none).
+    private func pushBase() async {
+        guard gitHubRepo != nil, let cli = app?.gitHubCLI, let base = Git.branch(at: projectFolder), base != branch else { return }
+        let folder = projectFolder
+        do {
+            try await Task.detached { try cli.push(branch: base, in: folder) }.value
+            pushError = nil
+        } catch {
+            pushError = "Couldn’t push \(base) to GitHub: \(error.localizedDescription)"
+        }
+    }
+
+    /// A task done with a GitHub repo: the spec branch is pushed (no agent, no tokens), and once the
+    /// last task is done Mel opens the pull request. Also Push again.
+    func publish() async {
+        guard gitHubRepo != nil, let cli = app?.gitHubCLI, spec.pullRequest?.merged != true else { return }
+        let (folder, branch) = (projectFolder, branch)
+        guard await Task.detached(operation: { Git.hasBranch(branch, in: folder) }).value else { return }
+        do {
+            try await Task.detached { try cli.push(branch: branch, in: folder) }.value
+        } catch {
+            pushError = "Couldn’t push to GitHub: \(error.localizedDescription)"
+            return
+        }
+        pushError = nil
+        for task in tasks where spec.runs?[task.number]?.state == .done { spec.runs?[task.number]?.pushed = true }
+        persist()
+        guard spec.build == .done, spec.pullRequest == nil else { return await refreshPullRequest() }
+        let (title, body) = (spec.name, PullRequest.body(slug: slug, reports: tasks.compactMap { spec.runs?[$0.number]?.report }))
+        do {
+            let output = try await Task.detached { try cli.createPullRequest(branch: branch, title: title, body: body, in: folder) }.value
+            spec.pullRequest = PullRequest(created: output)
+            persist()
+        } catch {
+            pushError = "Pushed, but the pull request couldn’t be opened: \(error.localizedDescription)"
+            return
+        }
+        await refreshPullRequest()
+    }
+
+    /// GH-4: GitHub's checks and whether the pull request was merged (by Mel's Merge when checks pass, or on GitHub).
+    func refreshPullRequest() async {
+        guard let pull = spec.pullRequest, !pull.merged, let cli = app?.gitHubCLI else { return }
+        let folder = projectFolder
+        guard let json = try? await Task.detached(operation: { try cli.pullRequest(pull.number, in: folder) }).value,
+              let status = try? PullRequestStatus.parse(json: json) else { return }
+        pullStatus = status
+        if status.state == .merged { merged() }
+    }
+
+    /// GH-4 Merge pull request, or Merge when checks pass (`auto`): squashed on GitHub, the branch deleted,
+    /// this Mac back on an up-to-date default branch.
+    func mergePullRequest(auto: Bool) async {
+        guard let pull = spec.pullRequest, !pull.merged, let cli = app?.gitHubCLI, !isMerging else { return }
+        let folder = projectFolder
+        isMerging = true
+        defer { isMerging = false }
+        do {
+            try await Task.detached { try cli.merge(pull.number, auto: auto, in: folder) }.value
+            pushError = nil
+        } catch {
+            pushError = "GitHub didn’t merge #\(pull.number): \(error.localizedDescription)"
+            return
+        }
+        if auto {
+            spec.pullRequest?.autoMerge = true
+            persist()
+            await refreshPullRequest()
+        } else {
+            merged()
+        }
+    }
+
+    private func merged() {
+        spec.pullRequest?.merged = true
+        pullStatus = pullStatus.map { PullRequestStatus(state: .merged, checks: $0.checks) }
+        persist()
+    }
+
+    func openPullRequest() {
+        guard let url = spec.pullRequest?.url else { return }
+        SystemActions.open(url)
     }
 
     /// ‹ Plan: the board with the finished plan (V2-10).
@@ -1363,12 +1461,14 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil) -> SpecSession {
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil, pullStatus: PullRequestStatus? = nil, pushError: String? = nil) -> SpecSession {
         let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, snapshots: snapshots, decisions: decisions)
         session.lastChange = lastChange
         session.tellingTask = tellingTask
         session.runningTask = runningTask
         session.blockedRun = blockedRun
+        session.pullStatus = pullStatus
+        session.pushError = pushError
         return session
     }
 }

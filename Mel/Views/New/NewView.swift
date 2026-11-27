@@ -16,6 +16,11 @@ struct NewView: View {
     /// A New product gets its own folder, so Start asks what it is called first.
     @State private var isNaming = false
     @State private var name = ""
+    /// GH-2: where the new product's code lives.
+    @State private var home = RepoChoice(place: .mac)
+    @State private var isCreating = false
+    /// The spec was made but GitHub failed: New closes once the alert is read.
+    @State private var startsAfterError = false
     @FocusState private var isFocused: Bool
     /// The spec was made; the board takes over.
     var onStart: () -> Void = {}
@@ -84,7 +89,7 @@ struct NewView: View {
             if case .success(let urls) = result { files += urls.filter { !files.contains($0) } }
         }
         .sheet(isPresented: $isNaming) { naming }
-        .alert("Couldn’t Start", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+        .alert("Couldn’t Start", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil; if startsAfterError { onStart() } } })) {
         } message: {
             Text(error ?? "")
         }
@@ -223,6 +228,7 @@ struct NewView: View {
     private func start() {
         guard canStart else { return }
         if planned == .product {
+            home = RepoChoice(place: state.github.login == nil ? .mac : .newRepo, name: RepoChoice.repoName(name))
             isNaming = true
         } else {
             create(named: Spec.untitledName)
@@ -240,13 +246,14 @@ struct NewView: View {
         }
     }
 
-    /// Not drawn: the name of a new product, asked once after Start. Its folder in ~/Developer takes it.
+    /// GH-2: the name of a new product, asked once after Start, and where its code lives. Its folder in ~/Developer takes the name.
     private var naming: some View {
         let typed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let onGitHub = home.place != .mac
         return VStack(alignment: .leading, spacing: Theme.Space.x16) {
             VStack(alignment: .leading, spacing: Theme.Space.x6) {
-                Text("What is it called?").textStyle(Theme.Text.headline).accessibilityAddTraits(.isHeader)
-                Text("The new folder in ~/Developer and the spec take this name. You can rename the spec later.")
+                Text("Name your product").textStyle(Theme.Text.headline).accessibilityAddTraits(.isHeader)
+                Text("Mel makes a folder for it in ~/Developer. You can rename the spec later.")
                     .textStyle(Theme.Text.calloutLoose)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
                     .fixedSize(horizontal: false, vertical: true)
@@ -257,31 +264,80 @@ struct NewView: View {
                 .padding(.horizontal, Theme.Space.x10)
                 .frame(height: Theme.Size.buttonLarge)
                 .surface(Theme.Colors.background, .focus, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
-                .onSubmit { if !typed.isEmpty { finishNaming(typed) } }
+                .onSubmit { if !typed.isEmpty, home.isReady(connecting: false) { finishNaming(typed) } }
+                .onChange(of: name) { old, new in
+                    // The repo name follows the product's until it's typed over.
+                    if home.name == RepoChoice.repoName(old) { home.name = RepoChoice.repoName(new) }
+                }
                 .accessibilityLabel("Name")
+            RepoChoiceView(choice: $home)
             HStack(spacing: Theme.Space.x12) {
                 Button("Cancel") { isNaming = false }
                     .buttonStyle(DesignLinkStyle())
                     .keyboardShortcut(.cancelAction)
                 Spacer(minLength: 0)
-                Button("Let Mel name it") { finishNaming(Spec.untitledName) }
-                    .buttonStyle(BoardPillStyle(height: Theme.Size.buttonLarge, padding: Theme.Space.x16))
-                    .help("Mel names it from your idea after its first read")
-                Button("Start") { finishNaming(typed) }
+                if isCreating { ProgressView().controlSize(.small) }
+                // A repo needs its name now; only a product on this Mac can wait for Mel's.
+                if !onGitHub {
+                    Button("Let Mel name it") { finishNaming(Spec.untitledName) }
+                        .buttonStyle(BoardPillStyle(height: Theme.Size.buttonLarge, padding: Theme.Space.x16))
+                        .help("Mel names it from your idea after its first read")
+                }
+                Button(home.confirm(connecting: false)) { finishNaming(typed) }
                     .buttonStyle(AccentPillStyle(padding: Theme.Space.x16, hint: "↩"))
                     .keyboardShortcut(.defaultAction)
-                    .disabled(typed.isEmpty)
+                    .disabled(typed.isEmpty || !home.isReady(connecting: false) || isCreating)
             }
         }
         .foregroundStyle(Theme.Colors.label)
         .padding(Theme.Space.x24)
-        .frame(width: Theme.Size.newNameSheet)
+        .frame(width: Theme.Size.repoSheet)
+        .animation(.board, value: home)
         .background(Theme.Colors.background)
     }
 
     private func finishNaming(_ name: String) {
-        isNaming = false
-        create(named: name)
+        switch home.place {
+        case .mac:
+            isNaming = false
+            create(named: name)
+        case .newRepo:
+            let (repoName, isPrivate) = (home.name.trimmingCharacters(in: .whitespaces), home.isPrivate)
+            isCreating = true
+            Task {
+                defer { isCreating = false }
+                isNaming = false
+                do {
+                    _ = try state.createSpec(name: name, idea: text, size: planned, project: nil, fillGaps: fillsGaps, files: files)
+                } catch {
+                    self.error = error.localizedDescription
+                    return
+                }
+                guard let project = state.currentProject else { return onStart() }
+                do {
+                    try await state.createRepo(for: project, name: repoName, isPrivate: isPrivate)
+                    onStart()
+                } catch {
+                    startsAfterError = true
+                    self.error = "The spec is made, but GitHub didn’t create the repo: \(error.localizedDescription) Connect it later from the project menu."
+                }
+            }
+        case .existing:
+            guard let repo = home.repo else { return }
+            isCreating = true
+            Task {
+                defer { isCreating = false }
+                do {
+                    let project = try await state.cloneProject(repo)
+                    isNaming = false
+                    _ = try state.createSpec(name: name, idea: text, size: planned, project: project, fillGaps: fillsGaps, files: files)
+                    onStart()
+                } catch {
+                    isNaming = false
+                    self.error = error.localizedDescription
+                }
+            }
+        }
     }
 }
 

@@ -22,6 +22,8 @@ struct SidebarView: View {
     @State private var newName = ""
     /// The project waiting for "Move to Trash" to be confirmed.
     @State private var trashing: Project?
+    /// GH-3: the project being connected to GitHub.
+    @State private var connecting: Project?
 
     private var project: Project? { state.currentProject }
     private var specs: [Spec] { project.map(state.specs) ?? [] }
@@ -96,6 +98,7 @@ struct SidebarView: View {
         } message: { project in
             Text("The whole folder goes to the Trash, code and specs included: \(project.folder.path). You can put it back from the Trash.")
         }
+        .sheet(item: $connecting) { ConnectRepoSheet(project: $0) }
         .alert("Something Went Wrong", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
         } message: {
             Text(error ?? "")
@@ -127,6 +130,11 @@ struct SidebarView: View {
             Divider()
             Button("Add Project…") { isAdding = true }
             if let project {
+                if let repo = state.remotes[project.id] {
+                    Button("Open \(repo) on GitHub") { state.openOnGitHub(project) }
+                } else {
+                    Button("Connect to GitHub…") { connecting = project }
+                }
                 Button("Remove \(project.name) from the List") { state.removeProject(project) }
                 Button("Move \(project.name) to Trash…") { trashing = project }
                     .disabled(state.isAgentBusy || state.readingContext.contains(project.id))
@@ -346,7 +354,10 @@ extension Spec {
             if let asking = runs?.first(where: { $0.value.question != nil })?.key { return "Task \(asking) asks a question" }
             let done = runs?.values.count { $0.state == .done } ?? 0
             return taskCount.map { "Task \(min($0, done + 1)) of \($0)" } ?? "Building with Claude Code"
-        case .done: return "First version built"
+        case .done:
+            // Checks and merges on GitHub aren't read here: the note says only what Mel did.
+            if let pullRequest { return pullRequest.merged ? "Merged · #\(pullRequest.number)" : "Pull request #\(pullRequest.number)" }
+            return "First version built"
         case nil: break
         }
         if let halted { return halted.reason == .user ? "Paused" : "Agent stopped" }

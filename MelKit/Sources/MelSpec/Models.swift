@@ -32,6 +32,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var runs: [Int: TaskRun]?
     /// How many tasks TASKS.md had at Start Building, for the sidebar's "Task 3 of 7".
     public var taskCount: Int?
+    /// GH-4: the pull request Mel opened when the last task was done. Nil without GitHub or before that.
+    public var pullRequest: PullRequest?
     /// The main model's conversation for this spec; nil until its first draft starts one.
     public var conversation: Conversation?
 

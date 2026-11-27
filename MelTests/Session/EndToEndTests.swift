@@ -238,6 +238,71 @@ final class EndToEndTests {
         #expect(script.requests.count == 7)
     }
 
+    /// GH-4 with a fake `gh` and a bare repo as origin's push URL: Start Building pushes main, each
+    /// task done pushes the spec branch, the last one opens the pull request, Merge merges it.
+    @Test func featureShipsThroughGitHub() async throws {
+        let (app, _) = makeApp([
+            ("e2e/v2/ft-intake.jsonl", []),
+            ("e2e/v2/ft-requirements.jsonl", []),
+            ("e2e/v2/ft-architecture.jsonl", []),
+            ("e2e/v2/ft-tasks.jsonl", []),
+            ("e2e/v2/ft-analyze.jsonl", []),
+        ])
+        let repo = parent.appending(path: "waitlist-app", directoryHint: .isDirectory)
+        let remote = parent.appending(path: "remote.git", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: repo, withIntermediateDirectories: true)
+        try "# Waitlist\n".write(to: repo.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        try git(parent, ["init", "--quiet", "--bare", remote.path])
+        for arguments in [["init", "--quiet", "-b", "main"], ["add", "-A"], ["commit", "--quiet", "-m", "Start"],
+                          ["remote", "add", "origin", "https://github.com/kaanf/waitlist-app.git"], ["remote", "set-url", "--push", "origin", remote.path]] {
+            try git(repo, arguments)
+        }
+        let gh = parent.appending(path: "gh")
+        try """
+            #!/bin/sh
+            echo "$@" >> "$(dirname "$0")/gh.log"
+            case "$1 $2" in
+            "pr create") echo "https://github.com/kaanf/waitlist-app/pull/7" ;;
+            "pr view") echo '{"state":"OPEN","statusCheckRollup":[{"name":"test","status":"COMPLETED","conclusion":"SUCCESS"}]}' ;;
+            esac
+
+            """.write(to: gh, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: gh.path)
+        app.gitHubCLI = GitHubCLI(executable: gh)
+        let project = try app.addProject(repo)
+        #expect(app.remotes[project.id] == "kaanf/waitlist-app")
+
+        let session = try app.createSpec(name: "Waitlist", idea: "Members join a waitlist for full classes.", size: .feature, project: project)
+        await session.start()
+        await session.skipIntake()
+        for _ in 0..<3 where !session.spec.isReady { await session.writeNow() }
+        try await session.startBuilding(commitToGit: true, writeAgentsFile: false)
+        let pushed = { (branch: String) in FileManager.default.fileExists(atPath: remote.appending(path: "refs/heads/\(branch)").path) }
+        #expect(pushed("main"))
+        #expect(session.pushError == nil)
+
+        // Prompts copied into a terminal: the user's branch, one commit per task, marked done.
+        try git(repo, ["checkout", "--quiet", "-b", session.branch])
+        for task in session.tasks {
+            session.copyPrompt(of: task)
+            try await wait("task \(task.number)'s base") { session.spec.runs?[task.number]?.base != nil }
+            try git(repo, ["commit", "--quiet", "--allow-empty", "-m", "feat: task \(task.number)\n\n" + task.trailer(slug: "waitlist")])
+            await session.markDone(task)
+            #expect(session.spec.runs?[task.number]?.pushed == true)
+        }
+        #expect(pushed(session.branch))
+        let pull = try #require(session.spec.pullRequest)
+        #expect(pull.number == 7 && !pull.merged)
+        #expect(session.pullStatus?.checks.map(\.name) == ["test"])
+
+        await session.mergePullRequest(auto: false)
+        #expect(session.spec.pullRequest?.merged == true)
+        #expect(session.spec.sidebarNote == "Merged · #7")
+        let log = try String(contentsOf: parent.appending(path: "gh.log"), encoding: .utf8).split(separator: "\n")
+        #expect(log.first?.hasPrefix("pr create --head mel/waitlist --title Waitlist --body Built by Mel") == true)
+        #expect(log.last == "pr merge 7 --squash --delete-branch")
+    }
+
     private func git(_ repo: URL, _ arguments: [String]) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")

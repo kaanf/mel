@@ -18,6 +18,7 @@ struct MainView: View {
             // "Mel looks again when you come back to this window."
             .onChange(of: activeState) { _, active in
                 if active == .key, !state.agent.isReady, state.agent != .checking { Task { await state.scanForAgent() } }
+                if active == .key, state.github == .missing || state.github == .signedOut { Task { await state.scanGitHub() } }
             }
     }
 
