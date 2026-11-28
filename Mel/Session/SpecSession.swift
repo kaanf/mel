@@ -1509,7 +1509,7 @@ import MelSystem
 
     private var intakePrompt: String {
         var values = promptValues(drafting: spec.size.files[0])
-        values["size"] = ["Quick fix", "Feature", "Product"][SpecSize.allCases.firstIndex(of: spec.size)!]
+        values["size"] = spec.size == .product ? "Product" : spec.size.boardLabel
         values["topics"] = spec.size.topics.map { "- \($0)" }.joined(separator: "\n")
         values["count"] = String(spec.size.intakeQuestions)
         values["kinds"] = spec.size.kindsText

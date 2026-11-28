@@ -85,8 +85,8 @@ Source: your idea, Question 4 (cancellations)
 As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
 
 - 1.1 WHEN a member books a class with free spots,
-  THE APP SHALL reserve one spot and deduct one credit.
-- 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.
+  THEN one spot is reserved and one credit is deducted.
+- 1.2 WHEN a class is full, THEN the app offers to join the waitlist instead.
 
 <!-- MVP line -->
 
@@ -97,20 +97,20 @@ Source: Question 2 (payments)
 
 As a member, I want to buy a gift card, so that I can give classes to a friend.
 
-- 2.1 WHEN a member completes payment, THE APP SHALL email the gift card.
+- 2.1 WHEN a member completes payment, THEN the gift card is emailed to them.
 
 ## Quality requirements
 
 Source: Intake (privacy, speed, offline) and project principles
 
-- Q1 THE APP SHALL open the weekly schedule in under 1 second on a mid-range phone.
+- Q1 WHEN a member opens the weekly schedule on a mid-range phone, THEN it appears in under 1 second.
 
 ## Edge cases
 
 - Two members book the last spot at the same moment: one gets it, the other is offered the waitlist.
 ```
 
-- Each story is a numbered `##` section with a tag line (`P1 · MVP`, `P1`, `P2`, `P3`), a `Source:` line, the "As a …" paragraph and EARS criteria `- <story>.<n> … THE APP SHALL …`. A criterion may wrap onto indented lines.
+- Each story is a numbered `##` section with a tag line (`P1 · MVP`, `P1`, `P2`, `P3`), a `Source:` line, the "As a …" paragraph and criteria `- <story>.<n> WHEN <situation>, THEN <what must be true>.` (OQ #48: always this form; specs written before 0.12 use EARS `… THE APP SHALL …`, which Mel still reads). A criterion may wrap onto indented lines.
 - `<!-- MVP line -->` follows the last MVP story.
 - Quality requirements are `- Q<n> …`; edge cases are a plain list.
 
@@ -188,14 +188,14 @@ At handoff Mel writes `prompts/task-NN.md` per task: the task, the full text of 
 ```markdown
 # Spec
 
-## What breaks
-## Expected behavior
-## How to verify
+## What happens now
+## What should happen
+## Must not change
+## Check
 ## Code it touches
-## Out of scope
 ```
 
-Expected behavior uses EARS criteria (`- 1.1 WHEN …, THE APP SHALL …`).
+What happens now: numbered steps to reproduce. What should happen: `- 1 WHEN …, THEN ….` Must not change: the behavior next to the fix that stays, `- WHEN …, THEN ….` Check: the one command that fails before and passes after (V2-32).
 
 ## DECISIONS.md
 

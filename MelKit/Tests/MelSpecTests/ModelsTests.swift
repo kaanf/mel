@@ -22,6 +22,8 @@ struct ModelsTests {
         #expect(SpecSize.guess(from: "Two quick taps on Book create two bookings. Fix it.", hasProject: true) == .quickFix)
         #expect(SpecSize.guess(from: "An app for my yoga studio where members book classes.", hasProject: true) == .product)
         #expect(SpecSize.guess(from: "Members can filter the weekly schedule by teacher.", hasProject: true) == .feature)
+        #expect(SpecSize.guess(from: "Migrate the booking store from Room to SQLDelight.", hasProject: true) == .technical)
+        #expect(SpecSize.technical.files == [.architecture, .requirements, .tasks])
         #expect(SpecSize.guess(from: "The login screen crashes.", hasProject: false) == .product)   // nothing to fix without code
     }
 

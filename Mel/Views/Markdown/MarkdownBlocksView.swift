@@ -22,6 +22,8 @@ struct MarkdownBlocksView: View {
         case source(String)
         case criteria([(id: String, text: String)])
         case bullets([String])
+        /// SPEC.md › Must not change (V2-32): rules the fix keeps, each with a lock.
+        case keeps([String])
         case ordered([(number: Int, text: String)])
         case tasks([(id: String, text: String, done: Bool, covers: [String], details: [String])])
         case assumption(index: Int, text: String)
@@ -36,8 +38,14 @@ struct MarkdownBlocksView: View {
 
     private var items: [Item] {
         var items: [Item] = []
+        var keeping = false
         for block in blocks {
+            if case .heading(_, let text) = block { keeping = text == "Must not change" }
             switch (block, items.last) {
+            case (.listItem(let text), .keeps(let list)?) where keeping:
+                items[items.count - 1] = .keeps(list + [text])
+            case (.listItem(let text), _) where keeping:
+                items.append(.keeps([text]))
             case (.orderedItem(_, let text), .flow(let steps, let branches)?) where isExperience && branches.isEmpty:
                 items[items.count - 1] = .flow(steps: steps + [text], branches: [])
             case (.orderedItem(_, let text), _) where isExperience:
@@ -117,7 +125,7 @@ struct MarkdownBlocksView: View {
         let text: String = switch item {
         case .heading(_, let text, _), .paragraph(let text), .source(let text), .code(let text), .assumption(_, let text), .openQuestion(_, let text): text
         case .criteria(let list): list.map { "\($0.id) \($0.text)" }.joined(separator: "\n")
-        case .bullets(let list): list.joined(separator: "\n")
+        case .bullets(let list), .keeps(let list): list.joined(separator: "\n")
         case .ordered(let list): list.map(\.text).joined(separator: "\n")
         case .tasks(let list): list.map { "\($0.id). \($0.text)\n" + $0.details.joined(separator: "\n") }.joined(separator: "\n")
         case .covers(let ids): "Covers: " + ids.joined(separator: ", ")
@@ -161,9 +169,21 @@ struct MarkdownBlocksView: View {
                             .textStyle(Theme.Text.codeProse)
                             .foregroundStyle(Theme.Colors.secondaryLabel)
                             .frame(width: Theme.Size.criterionID, alignment: .leading)
-                        Text(Self.ears(list[i].text)).textStyle(Theme.Text.prose)
+                        criterionText(list[i].text)
                     }
                     .accessibilityElement(children: .combine)
+                }
+            }
+        case .keeps(let list):
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                ForEach(list.indices, id: \.self) { i in
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x10) {
+                        DesignIcon(glyph: .lock, size: 14).foregroundStyle(Theme.Colors.addedSign).accessibilityLabel("Must not change")
+                        Text(inline(list[i])).textStyle(Theme.Text.prose).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.vertical, Theme.Space.x8)
+                    .padding(.horizontal, Theme.Space.x10)
+                    .background(Theme.Colors.keepFill, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
                 }
             }
         case .bullets(let list):
@@ -394,6 +414,26 @@ struct MarkdownBlocksView: View {
     static func inline(_ text: String) -> AttributedString {
         // Inline only: block syntax is already parsed, and "1. Book a class" must keep its number.
         (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
+    }
+
+    /// V2-31: "WHEN a, THEN b" as two lines with small WHEN / THEN labels; EARS from before 0.12 as one.
+    @ViewBuilder
+    private func criterionText(_ text: String) -> some View {
+        if let (when, then) = Self.whenThen(text) {
+            VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                (Text("WHEN ").font(Theme.Text.criterionLabel.font).foregroundStyle(Theme.Colors.secondaryLabel).tracking(0.4) + Text(inline(when)))
+                (Text("THEN ").font(Theme.Text.criterionLabel.font).foregroundStyle(Theme.Colors.likely).tracking(0.4) + Text(inline(then)))
+            }
+            .textStyle(Theme.Text.prose)
+        } else {
+            Text(Self.ears(text)).textStyle(Theme.Text.prose)
+        }
+    }
+
+    /// "WHEN a member books, THEN a spot is held." → ("a member books,", "a spot is held.").
+    static func whenThen(_ text: String) -> (String, String)? {
+        guard text.hasPrefix("WHEN "), let then = text.range(of: " THEN ") else { return nil }
+        return (String(text[text.index(text.startIndex, offsetBy: 5)..<then.lowerBound]), String(text[then.upperBound...]))
     }
 
     private static let earsKeywords: Set<Substring> = ["WHEN", "WHILE", "IF", "THEN", "WHERE"]

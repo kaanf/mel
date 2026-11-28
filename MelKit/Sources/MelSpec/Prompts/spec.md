@@ -37,17 +37,17 @@ Name: {{name}}
 ```markdown
 # Spec
 
-## What breaks
-## Expected behavior
-## How to verify
+## What happens now
+## What should happen
+## Must not change
+## Check
 ## Code it touches
-## Out of scope
 ```
 
-- `## What breaks`: the bug in one paragraph, with steps to reproduce.
-- `## Expected behavior`: what should happen, as EARS criteria `- 1.1 WHEN …, THE APP SHALL …`.
-- `## How to verify`: a test or command that fails before the fix and passes after.
+- `## What happens now`: what happens today, as numbered steps to reproduce it and what goes wrong. For a small change that isn't a bug, how it works today.
+- `## What should happen`: numbered criteria `- 1 WHEN …, THEN ….`, one sentence each, that a test can check.
+- `## Must not change`: the behavior next to the fix that has to stay as it is, one bullet each, as `- WHEN …, THEN ….` Read the code around the fix to find it. Answers to questions can add to it.
+- `## Check`: the one command that fails before the fix and passes after, in backticks, and what it shows.
 - `## Code it touches`: files and functions, found by reading the code.
-- `## Out of scope`: what this fix does not change.
 
 {{rules}}

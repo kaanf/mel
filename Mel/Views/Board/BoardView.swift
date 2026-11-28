@@ -393,6 +393,7 @@ extension SpecSize {
         switch self {
         case .quickFix: "Quick fix"
         case .feature: "Feature"
+        case .technical: "Technical change"
         case .product: "New product"
         }
     }

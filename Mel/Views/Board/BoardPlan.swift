@@ -173,7 +173,7 @@ struct BoardPlan: View {
     @ViewBuilder
     private var mustAlso: some View {
         let quality = (session.blocks[.requirements] ?? []).compactMap { block -> String? in
-            if case .criterion(let id, let text) = block, id.hasPrefix("Q") { text.replacingOccurrences(of: "THE APP SHALL ", with: "").capitalizedFirst } else { nil }
+            if case .criterion(let id, let text) = block, id.hasPrefix("Q") { (MarkdownBlocksView.whenThen(text)?.1 ?? text.replacingOccurrences(of: "THE APP SHALL ", with: "")).capitalizedFirst } else { nil }
         }
         if !quality.isEmpty {
             VStack(alignment: .leading, spacing: Theme.Space.x8) {

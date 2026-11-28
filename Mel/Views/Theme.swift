@@ -911,6 +911,8 @@ extension Theme.Colors {
 }
 
 extension Theme.Text {
+    /// 10 bold · WHEN / THEN over a criterion (V2-31).
+    static let criterionLabel = Theme.TextStyle(size: 10, weight: .bold, lineHeight: 20)
     /// 14/20 semibold · a decision card's question.
     static let cardQuestion = Theme.TextStyle(size: 14, weight: .semibold, lineHeight: 20)
 }
@@ -953,6 +955,8 @@ extension Theme.Colors {
     /// #FFF7EB, ring rgba(178,80,0,0.25) · "Nothing was changed".
     static let unplacedFill = Color(hex: 0xFFF7EB, dark: 0x33281A)
     static let unplacedRing = Color(hex: 0xB25000, opacity: 0.25, dark: 0xFF9F0A, darkOpacity: 0.4)
+    /// rgba(36,138,61,0.06) · a rule under Must not change (V2-32).
+    static let keepFill = Color(hex: 0x248A3D, opacity: 0.06, dark: 0x30D158, darkOpacity: 0.1)
     /// #6B2A2A struck through, signs #C4000F / #1F7A36 · a change's removed and added lines.
     static let removedLine = Color(hex: 0x6B2A2A, dark: 0xFF9C94)
     static let removedSign = Color(hex: 0xC4000F, dark: 0xFF6961)

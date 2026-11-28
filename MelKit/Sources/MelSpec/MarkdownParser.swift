@@ -3,7 +3,7 @@ import Foundation
 public enum Block: Hashable, Sendable {
     case heading(level: Int, text: String)
     case paragraph(String)
-    case criterion(id: String, text: String)        // "1.1" or "Q1", EARS text
+    case criterion(id: String, text: String)        // "1.1" or "Q1", WHEN … THEN … (EARS before 0.12)
     case task(id: String, text: String, done: Bool, covers: [String])
     case listItem(String)
     case orderedItem(number: Int, text: String)      // EXPERIENCE flow steps
@@ -296,9 +296,12 @@ public enum MarkdownParser {
             let text = id.map { rest.dropFirst($0.count).trimming(while: { $0 == "." || $0 == " " }) } ?? rest
             return .task(id: id.map(String.init) ?? "", text: String(text), done: done, covers: [])
         }
-        // Criterion: `<n>.<m> ` containing SHALL.
-        if let id = leadingID(item), id.contains("."), item.dropFirst(id.count).first == " ", item.contains("SHALL") {
-            return .criterion(id: String(id), text: String(item.dropFirst(id.count + 1)))
+        // Criterion: `<n>.<m> WHEN …, THEN …` (OQ #48), or EARS with SHALL from before 0.12; a bug fix's
+        // `<n> WHEN …` (SPEC.md › What should happen).
+        if let id = leadingID(item), item.dropFirst(id.count).first == " " {
+            let text = item.dropFirst(id.count + 1)
+            if id.contains("."), text.contains("SHALL") || text.contains(" THEN ") { return .criterion(id: String(id), text: String(text)) }
+            if text.hasPrefix("WHEN ") { return .criterion(id: String(id), text: String(text)) }
         }
         // Quality requirement: `Q<n> …`.
         let q = item.dropFirst().prefix(while: \.isNumber)

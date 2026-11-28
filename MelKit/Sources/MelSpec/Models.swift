@@ -108,12 +108,15 @@ public enum SpecLanguage: String, Codable, CaseIterable, Hashable, Sendable {
 
 /// V2.md §4. The size fixes the files and their order.
 public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
-    case quickFix, feature, product
+    /// In the order the size chip on New cycles (V2-1).
+    case quickFix, feature, technical, product
 
     public var files: [DocKind] {
         switch self {
         case .quickFix: [.spec]
         case .feature: [.requirements, .architecture, .tasks]
+        // Design first (V2-1): the change to how it is built, then what it must keep doing.
+        case .technical: [.architecture, .requirements, .tasks]
         case .product: [.product, .requirements, .experience, .architecture, .tasks]
         }
     }
@@ -122,7 +125,7 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
     public var intakeQuestions: Int {
         switch self {
         case .quickFix: 2
-        case .feature: 3
+        case .feature, .technical: 3
         case .product: 5
         }
     }
@@ -130,8 +133,9 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
     /// The intake's starting topics. Those no question covers are left for the drafts to settle.
     public var topics: [String] {
         switch self {
-        case .quickFix: ["What breaks today", "Expected behavior", "How to verify"]
+        case .quickFix: ["What happens now", "What should happen", "What must not change"]
         case .feature: ["Goal", "Existing code it touches", "Edge cases", "Out of scope"]
+        case .technical: ["What changes and why", "What must keep working", "How to know it worked"]
         case .product: ["Goal and success metric", "Users and roles", "Platforms", "Privacy and offline", "Out of scope"]
         }
     }
@@ -148,6 +152,7 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
         guard hasProject else { return .product }
         let text = idea.lowercased()
         if text.contains(/bug|crash|broken|wrong|double|fails|error|fix/) { return .quickFix }
+        if text.contains(/refactor|migrat|upgrade|speed up|performance|faster|rewrite the|move to|switch to|replace the/) { return .technical }
         if text.contains(/an app|new app|a platform|for my|from scratch|website for/) { return .product }
         return .feature
     }
@@ -175,7 +180,7 @@ public enum DocKind: String, Codable, CodingKeyRepresentable, CaseIterable, Hash
         case .experience: ["Read the approved files and your answers", "Map each flow and the criteria it covers", "List every screen with its states", "Flag states that are missing", "Set the visual direction", "Mark anything you didn’t confirm as an assumption"]
         case .architecture: ["Read the approved files and the project context", "Lay out the modules and their boundaries", "Describe the data", "Describe the API and integrations", "Record the key decisions with reasons", "Mark anything you didn’t confirm as an assumption"]
         case .tasks: ["Read the approved files", "Break the work into tasks", "Link each task to the criteria it covers", "Add what each task reads and how to verify it", "Mark tasks that can run in parallel", "Check that every P1 criterion has a task"]
-        case .spec: ["Read the report and the code it touches", "Describe what breaks", "Describe the expected behavior", "Write how to verify the fix", "List the code it touches", "Set what is out of scope"]
+        case .spec: ["Read the report and the code it touches", "Write how to reproduce what happens now", "Write what should happen as WHEN … THEN", "List what must not change", "Write the check that proves the fix", "List the code it touches"]
         }
     }
 }

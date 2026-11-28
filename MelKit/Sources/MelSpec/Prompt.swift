@@ -49,7 +49,10 @@ extension DocKind {
 
 extension SpecSize {
     /// "REQUIREMENTS.md, ARCHITECTURE.md, TASKS.md".
-    public var filesText: String { files.map(\.fileName).joined(separator: ", ") }
+    public var filesText: String {
+        files.map(\.fileName).joined(separator: ", ")
+            + (self == .technical ? ". This is a technical change (a refactor, migration, upgrade or performance work), designed first: ARCHITECTURE.md describes the change to how it is built; REQUIREMENTS.md is derived from it and says what must keep working and how to know it worked" : "")
+    }
 
     /// "`requirements`, `architecture`, `tasks`": the JSON values a reply may use for a file.
     public var kindsText: String { files.map { "`\($0.rawValue)`" }.joined(separator: ", ") }

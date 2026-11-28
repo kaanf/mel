@@ -210,8 +210,8 @@ enum PreviewData {
 
         Source: your idea, Question 4 (cancellations)
 
-        - 1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot, deduct one credit and show it under Upcoming.
-        - 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead.
+        - 1.1 WHEN a member books a class with free spots, THEN one spot is reserved, one credit is deducted and the class shows under Upcoming.
+        - 1.2 WHEN a class is full, THEN the app offers to join the waitlist instead.
 
         > [!ASSUMPTION]
         > The waitlist is first come, first served. When a spot frees up, the first member on it is booked automatically and notified.
@@ -224,7 +224,7 @@ enum PreviewData {
 
         Source: Question 2 (payments)
 
-        - 2.1 WHEN a member completes payment, THE APP SHALL add the pack’s credits and email a receipt.
+        - 2.1 WHEN a member completes payment, THEN the pack’s credits are added and a receipt is emailed.
 
         > [!OPEN QUESTION]
         > What happens to unused credits when a pack expires?
@@ -235,9 +235,9 @@ enum PreviewData {
 
         Source: Intake (privacy, speed, offline) and project principles
 
-        - Q1 THE APP SHALL open the weekly schedule in under 1 second on a mid-range phone.
-        - Q2 THE APP SHALL never store card data on the device.
-        - Q3 WHILE offline, THE APP SHALL show the last loaded schedule and say when it was updated.
+        - Q1 WHEN a member opens the weekly schedule on a mid-range phone, THEN it appears in under 1 second.
+        - Q2 WHEN a member pays, THEN no card data is stored on the device.
+        - Q3 WHEN the phone is offline, THEN the schedule shows the last loaded classes and when they were updated.
 
         ## Edge cases
 
@@ -566,6 +566,6 @@ enum PreviewData {
     static let pullRequestMerged = pullRequestSession([.passed, .passed, .passed], merged: true)
     static let quickFixDoneSession = SpecSession.preview(
         Spec(name: "Double booking on fast taps", idea: "Two quick taps on Book create two bookings.", size: .quickFix, folder: project.folder.appending(path: "specs/double-booking"), stage: .done, docs: [.spec: .approved]),
-        documents: [.spec: "# Spec\n\n## What breaks\n\nTwo quick taps on Book create two bookings.\n"]
+        documents: [.spec: "# Spec\n\n## What happens now\n\n1. Open a class with free spots.\n2. Tap Book twice quickly.\n3. Two bookings appear and two credits are gone.\n\n## What should happen\n\n- 1 WHEN a member taps Book twice quickly, THEN one booking is made and one credit is deducted.\n\n## Must not change\n\n- WHEN a member books two different classes, THEN both bookings are made.\n- WHEN a class is full, THEN the app offers the waitlist.\n\n## Check\n\n`./gradlew :shared:allTests --tests \"*DoubleBooking*\"` fails today and passes after the fix.\n"]
     )
 }

@@ -36,6 +36,25 @@ struct MarkdownParserTests {
         ])
     }
 
+    /// OQ #48: WHEN … THEN … criteria, wrapped or not; a bug fix's numbered `1 WHEN …`; EARS still read.
+    @Test func whenThenCriteria() {
+        let blocks = MarkdownParser.blocks("""
+            - 1.1 WHEN a member books a class with free spots,
+              THEN one spot is reserved.
+            - Q1 WHEN the schedule opens, THEN it appears in under 1 second.
+            - 1 WHEN a member cancels late, THEN the credit is kept.
+            - 2.1 WHEN a member pays, THE APP SHALL email the gift card.
+            - 1 apple
+            """)
+        #expect(blocks == [
+            .criterion(id: "1.1", text: "WHEN a member books a class with free spots, THEN one spot is reserved."),
+            .criterion(id: "Q1", text: "WHEN the schedule opens, THEN it appears in under 1 second."),
+            .criterion(id: "1", text: "WHEN a member cancels late, THEN the credit is kept."),
+            .criterion(id: "2.1", text: "WHEN a member pays, THE APP SHALL email the gift card."),
+            .listItem("1 apple"),
+        ])
+    }
+
     @Test func tasksWithCovers() {
         let text = """
         # Tasks

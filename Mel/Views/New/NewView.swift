@@ -183,7 +183,7 @@ struct NewView: View {
         Button {
             // Only a new product works without a project.
             guard project != nil else { return }
-            let order: [SpecSize] = [.quickFix, .feature, .product]
+            let order = SpecSize.allCases
             size = order[(order.firstIndex(of: planned)! + 1) % order.count]
         } label: {
             HStack(spacing: Theme.Space.x6) {
@@ -204,7 +204,7 @@ struct NewView: View {
     private var chipNote: String {
         switch planned {
         case .quickFix: "1 file"
-        case .feature: "in \(project?.name ?? "")"
+        case .feature, .technical: "in \(project?.name ?? "")"
         case .product: "new folder"
         }
     }
@@ -219,6 +219,7 @@ struct NewView: View {
             switch planned {
             case .quickFix: "Sounds like a bug in \(project.name), so Mel keeps it to one short spec."
             case .feature: "Sounds like a change to \(project.name), so Mel plans it on top of your code."
+            case .technical: "Sounds like a change to how \(project.name) is built, so Mel designs it first, then what must keep working."
             case .product: "Sounds like a new app, so Mel also plans the screens."
             }
         }
