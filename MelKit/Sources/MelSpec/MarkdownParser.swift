@@ -15,6 +15,8 @@ public enum Block: Hashable, Sendable {
     case mvpLine                                     // `<!-- MVP line -->` in REQUIREMENTS
     case table(header: [String], rows: [[String]])
     case code(String)
+    /// A ```mermaid block (V2-33): drawn when `Flowchart.parse` reads it, else shown as code.
+    case diagram(String)
 }
 
 public struct DocSummary: Hashable, Sendable {
@@ -55,6 +57,7 @@ public enum MarkdownParser {
         var blocks: [Block] = []
         var paragraph: [Substring] = []
         var code: [Substring]?
+        var isMermaid = false
         var table: [[String]]?
         var callout: (open: Bool, lines: [Substring])?
         var assumptionIndex = 0
@@ -95,7 +98,8 @@ public enum MarkdownParser {
 
             if code != nil {
                 if trimmed.hasPrefix("```") {
-                    blocks.append(.code(code!.joined(separator: "\n")))
+                    let text = code!.joined(separator: "\n")
+                    blocks.append(isMermaid ? .diagram(text) : .code(text))
                     code = nil
                 } else {
                     code!.append(line)
@@ -142,6 +146,7 @@ public enum MarkdownParser {
             } else if trimmed.hasPrefix("```") {
                 flushParagraph()
                 code = []
+                isMermaid = trimmed.dropFirst(3).trimming(while: \.isWhitespace).hasPrefix("mermaid")
             } else if trimmed.hasPrefix(">"), let open = calloutKind(quoteContent(trimmed)) {
                 flushParagraph()
                 callout = (open, [])

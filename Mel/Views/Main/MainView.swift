@@ -89,6 +89,9 @@ struct MainView: View {
             openFile = nil
             if id != nil { isShowingNew = false }
         }
+        #if DEBUG
+        .task { if DebugScreen.current == .diagram { openFile = .doc(.architecture) } }
+        #endif
     }
 
     /// The selected spec, when it belongs to the project the sidebar shows.

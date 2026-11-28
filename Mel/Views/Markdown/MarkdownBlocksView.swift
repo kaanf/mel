@@ -32,6 +32,8 @@ struct MarkdownBlocksView: View {
         case mvpLine
         case table(header: [String], rows: [[String]])
         case code(String)
+        /// V2-33: a mermaid flowchart Mel can draw.
+        case diagram(Flowchart)
         case flow(steps: [String], branches: [String])
         case states(rows: [[String]])
     }
@@ -88,6 +90,7 @@ struct MarkdownBlocksView: View {
             case (.mvpLine, _): items.append(.mvpLine)
             case (.table(let header, let rows), _): items.append(.table(header: header, rows: rows))
             case (.code(let text), _): items.append(.code(text))
+            case (.diagram(let text), _): items.append(Flowchart.parse(text).map(Item.diagram) ?? .code(text))
             }
         }
         return items
@@ -131,7 +134,7 @@ struct MarkdownBlocksView: View {
         case .covers(let ids): "Covers: " + ids.joined(separator: ", ")
         case .table(_, let rows), .states(let rows): rows.map { $0.joined(separator: " | ") }.joined(separator: "\n")
         case .flow(let steps, let branches): (steps + branches).joined(separator: "\n")
-        case .mvpLine: ""
+        case .mvpLine, .diagram: ""
         }
         return changedLines.contains { text.contains($0) }
     }
@@ -259,6 +262,8 @@ struct MarkdownBlocksView: View {
             flowDiagram(steps: steps, branches: branches)
         case .states(let rows):
             statesTable(rows).id("states")
+        case .diagram(let chart):
+            FlowchartView(chart: chart)
         case .code(let text):
             Text(text)
                 .textStyle(Theme.Text.codeBlock)

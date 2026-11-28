@@ -61,7 +61,15 @@ struct BoardFileView: View {
         .task(id: text) { blocks = await parseDocument(text, kind: kind ?? .product).0 }
     }
 
+    /// Narrow center (Mel's column is 380): the state word goes and Open in Editor becomes an icon.
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            headerRow(compact: false)
+            headerRow(compact: true)
+        }
+    }
+
+    private func headerRow(compact: Bool) -> some View {
         HStack(spacing: Theme.Space.x8) {
             Button(action: close) {
                 HStack(spacing: Theme.Space.x4) {
@@ -75,9 +83,11 @@ struct BoardFileView: View {
             Text(file.name).textStyle(Theme.Text.codeBold)
             if kind != nil {
                 FileStateDot(state: state)
+                if !compact {
                 Text(spec.gate?.file == kind ? "Starts after \(BoardStatus.answers(spec.gate?.answers ?? 0))" : state.word)
                     .textStyle(Theme.Text.caption)
                     .foregroundStyle(Theme.Colors.secondaryLabel)
+                }
             }
             Spacer(minLength: 0)
             if let kind, !notYet {
@@ -87,10 +97,23 @@ struct BoardFileView: View {
                     Button("Markdown") { showsMarkdown = true; isEditing = false }
                         .buttonStyle(BoardSegmentStyle(isSelected: showsMarkdown, text: showsMarkdown ? Theme.Text.calloutBold : Theme.Text.callout))
                 }
+                .fixedSize()
                 .padding(Theme.Space.x2)
                 .background(Theme.Colors.badgeFill, in: Capsule())
-                Button("Open in Editor") { session.openInEditor(kind.fileName) }
-                    .buttonStyle(BoardPillStyle(kind: .quiet, padding: Theme.Space.x10))
+                if compact {
+                    Button { session.openInEditor(kind.fileName) } label: {
+                        Image(systemName: "square.and.pencil").font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Theme.Colors.bodyLabel)
+                            .frame(width: Theme.Size.button, height: Theme.Size.button)
+                            .background(Theme.Colors.chipFill, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open in Editor")
+                    .help("Open in Editor")
+                } else {
+                    Button("Open in Editor") { session.openInEditor(kind.fileName) }
+                        .buttonStyle(BoardPillStyle(kind: .quiet, padding: Theme.Space.x10))
+                }
                 Button { session.showInFinder(kind) } label: {
                     DesignIcon(glyph: .folderOpen, size: Theme.Size.paperclipIcon)
                         .foregroundStyle(Theme.Colors.bodyLabel)

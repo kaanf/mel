@@ -47,6 +47,7 @@ Name: {{name}}
 - `## Data`: entities, fields and where they are stored.
 - `## API`: endpoints, events or functions other modules and services call.
 - `## Decisions`: each important choice with its reason and the criteria it serves.
-- Use exactly these headings. Code blocks only for short schemas or signatures.
+- Under `## Modules`, one diagram of the modules and how they call each other: a ```mermaid block with `flowchart LR` (or `TD`), one `A[Label] --> B[Label]` per line, `-->|label|` where it helps, at most 12 nodes, nothing else of mermaid. Mark the modules this spec changes `:::changed` and new ones `:::added`.
+- Use exactly these headings. Code blocks only for the diagram and short schemas or signatures.
 
 {{rules}}

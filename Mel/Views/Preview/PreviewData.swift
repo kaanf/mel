@@ -246,7 +246,7 @@ enum PreviewData {
         """
     // MARK: Board (V2)
 
-    private static let boardDocuments: [DocKind: String] = [.product: "# Product\n\nA booking app for one yoga studio.\n", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture\n\n## Modules\n\n- shared/booking: booking rules, credits, waitlist.\n", .tasks: tasksMarkdown]
+    private static let boardDocuments: [DocKind: String] = [.product: "# Product\n\nA booking app for one yoga studio.\n", .requirements: reviewMarkdown, .experience: experienceMarkdown, .architecture: "# Architecture\n\n## Modules\n\n```mermaid\nflowchart LR\n  S[Schedule screen] --> VM[ScheduleViewModel]:::changed\n  VM --> R[ClassRepository]\n  R --> API[GET /classes]\n  R --> C[Local cache]\n  P[Teacher profile] --> T[TeacherRepository]:::added\n  T --> TA[GET /teachers]\n```\n\n- shared/booking: booking rules, credits, waitlist.\n", .tasks: tasksMarkdown]
     private static let boardDecisions = [
         Decision(id: "D-02", title: "Which phones first?", reason: "iOS and Android", source: "Your answer", date: .now, replaces: nil, affects: []),
         Decision(id: "D-01", title: "How do members pay?", reason: "Class packs bought in the app", source: "Intake Q1", date: .now, replaces: nil, affects: []),
