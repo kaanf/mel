@@ -677,11 +677,18 @@ struct BuildView: View {
                         Text(output).textStyle(Theme.Text.codeCaptionLoose).foregroundStyle(Theme.Colors.bodyLabel).textSelection(.enabled)
                     }
                     FlowLayout(spacing: Theme.Space.x8) {
+                        // A task run in Mel goes on in its session with the check's output (OQ #42).
+                        let inMel = session.spec.runs?[task.number]?.session != nil
+                        if inMel {
+                            Button("Let Claude Code fix it") { Task { await session.run(task) } }
+                                .buttonStyle(BoardPillStyle(kind: .accent))
+                                .disabled(session.isRunning)
+                        }
                         Button("Copy fix prompt") {
                             session.copyFixPrompt(of: task)
                             copied = task.number
                         }
-                        .buttonStyle(BoardPillStyle(kind: .accent))
+                        .buttonStyle(BoardPillStyle(kind: inMel ? .white : .accent))
                         Button("Check again") { check(task) }.buttonStyle(BoardPillStyle()).disabled(blocked)
                         tellLink(task)
                     }
@@ -1252,6 +1259,11 @@ extension BuildStep {
 
 #Preview("Done") {
     NavigationStack { BuildView(session: PreviewData.builtSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("Check failed on a task run in Mel") {
+    NavigationStack { BuildView(session: PreviewData.buildFailedInMelSession) }
         .frame(width: 1100, height: 900)
 }
 

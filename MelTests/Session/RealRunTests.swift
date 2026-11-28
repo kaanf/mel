@@ -80,32 +80,19 @@ final class RealRunTests {
         // Build: every task run in Mel, in order; a question gets the suggested answer.
         try await session.startBuilding(commitToGit: true, writeAgentsFile: true)
         note("tasks: " + session.tasks.map { "\($0.number). \($0.title) [\($0.phase)] changes \($0.changes) verify `\($0.verify)`" }.joined(separator: " | "))
+        // Run the rest, answering each question with the suggested option, until it stops for another reason.
+        for _ in 0..<8 {
+            let start = Date.now
+            await session.runRest()
+            note("run the rest: \(Int(Date.now.timeIntervalSince(start)))s · \(session.lastError ?? "no error")")
+            guard let (task, question) = session.tasks.lazy.compactMap({ task -> (SpecTask, BuildQuestion)? in
+                if case .asking(let question) = session.status(of: task) { (task, question) } else { nil }
+            }).first else { break }
+            let pick = question.options.first { $0.suggested } ?? question.options.first
+            note("task \(task.number) asks: \(question.title) → \(pick?.label ?? "-")")
+            await session.answer(task, with: pick?.label ?? "Pick the simplest")
+        }
         for task in session.tasks {
-            var rounds = 0
-            while rounds < 4 {
-                rounds += 1
-                switch session.status(of: task) {
-                case .ready, .stopped:
-                    let start = Date.now
-                    await session.run(task)
-                    note("task \(task.number) run: \(Int(Date.now.timeIntervalSince(start)))s · \(session.activity.count) steps · \(session.lastError ?? "no error")")
-                case .asking(let question):
-                    let pick = question.options.first { $0.suggested } ?? question.options.first
-                    note("task \(task.number) asks: \(question.title) → \(pick?.label ?? "-")")
-                    await session.answer(task, with: pick?.label ?? "Pick the simplest")
-                case .running:
-                    note("task \(task.number): no commit found after its run (uncommitted: \(session.uncommitted.contains(task.number)))")
-                    rounds = 99
-                case .failed(let output):
-                    note("task \(task.number): check failed\n\(output)")
-                    rounds = 99
-                case .waiting(let why):
-                    note("task \(task.number): waiting · \(why)")
-                    rounds = 99
-                case .done:
-                    rounds = 99
-                }
-            }
             let run = session.spec.runs?[task.number]
             note("task \(task.number) → \(session.status(of: task)) · tokens \(run?.tokens.map(TokenStep.text) ?? "-")")
             if let report = run?.report {
@@ -113,7 +100,30 @@ final class RealRunTests {
                 note("  decisions: \(report.decisions.map { "\($0.title) (\($0.why); instead \($0.instead))" })")
                 note("  not done: \(report.notDone) · refused: \(report.refused)")
             }
-            guard case .done = session.status(of: task) else { break }
+        }
+
+        // Merge into main after main moved: the same script added there differently, so it conflicts.
+        if session.spec.build == .done, let script = session.tasks.flatMap(\.changes).first(where: { $0.hasPrefix("bin") }) {
+            try git(folder, ["checkout", "--quiet", "main"])
+            try FileManager.default.createDirectory(at: folder.appending(path: script), withIntermediateDirectories: true)
+            try "#!/bin/sh\n# Placeholder from main: prints usage.\necho 'usage: tip.sh AMOUNT PERCENT'\n".write(to: folder.appending(path: script).appending(path: "tip.sh"), atomically: true, encoding: .utf8)
+            try git(folder, ["add", "-A"])
+            try git(folder, ["commit", "--quiet", "-m", "chore: usage placeholder on main"])
+            try git(folder, ["checkout", "--quiet", session.branch])
+            await session.mergeIntoMain()
+            note("merge: conflict \(session.mergeConflict?.files ?? []) · about \(session.mergeConflict.map { TokenStep.text($0.tokens) } ?? "-") tokens · \(session.lastError ?? "no error")")
+            if session.mergeConflict != nil {
+                let before = session.spec.tokens?[.build] ?? 0
+                let start = Date.now
+                await session.resolveConflict()
+                note("resolve: \(Int(Date.now.timeIntervalSince(start)))s · \(TokenStep.text((session.spec.tokens?[.build] ?? 0) - before)) tokens · \(session.lastError ?? "no error") · works \(session.resolveReport?.works ?? []) · refused \(session.resolveReport?.refused ?? [])")
+                await session.mergeIntoMain()
+            }
+            note("merged into: \(session.spec.mergedInto ?? "-") · \(session.lastError ?? "no error")")
+            if let check = session.tasks.last?.verify, !check.isEmpty {
+                let result = await app.runCheck(check, folder)
+                note("last task's check on main: \(result.passed ? "passed" : "failed\n" + result.output)")
+            }
         }
 
         note("built: \(session.spec.build.map { "\($0)" } ?? "-") · \(session.spec.doneCount(session.tasks)) of \(session.tasks.count) tasks")
@@ -122,6 +132,7 @@ final class RealRunTests {
         note("git log:\n" + output(folder, ["log", "--format=%h %d %s", "--all"]))
         note("repo: \(folder.path(percentEncoded: false))")
         #expect(session.spec.build == .done)
+        #expect(session.spec.mergedInto == "main")
     }
 
     private func expectNoError(_ session: SpecSession, _ step: String) throws {

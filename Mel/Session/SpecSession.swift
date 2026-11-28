@@ -1164,7 +1164,8 @@ import MelSystem
             lastError = "Run needs a git repository in \(folder.lastPathComponent). Copy prompt still works."
             return
         }
-        let goesOn: Bool = switch status(of: task) { case .stopped, .asking: true; default: false }
+        let status = status(of: task)
+        let goesOn: Bool = switch status { case .stopped, .asking, .failed: true; default: false }
         let resume = goesOn ? spec.runs?[task.number]?.session : nil
         if resume == nil {
             let files = await Task.detached { Git.uncommitted(in: folder, excluding: excluded) }.value ?? []
@@ -1197,8 +1198,9 @@ import MelSystem
         activity = []
         denied = []
         persist()
+        let failed: String? = if case .failed(let output) = status { output } else { nil }
         let prompt = resume == nil ? task.runPrompt(slug: slug, of: tasks.count)
-            : answer.map(task.answerPrompt) ?? "Go on with task \(task.number) from where you stopped; your changes are still there. End with the JSON object, as before."
+            : answer.map(task.answerPrompt) ?? failed.map { task.fixRunPrompt(slug: slug, output: $0) } ?? "Go on with task \(task.number) from where you stopped; your changes are still there. End with the JSON object, as before."
         // The check as one command the run may call (Claude Code splits compound commands for its rules).
         var commands: [String] = []
         if !task.verify.isEmpty {
@@ -1308,9 +1310,7 @@ import MelSystem
             lastError = "Couldn’t start the merge: \(error.localizedDescription)"
             return
         }
-        let folders = Set(conflict.files.map { ($0 as NSString).deletingLastPathComponent })
-        // A conflict at the top of the project can't be narrowed to a folder.
-        let access = BuildAccess(folders: folders.contains("") ? [] : folders.sorted(), commands: [])
+        let access = BuildAccess(folders: conflict.files, commands: [])
         activity = []
         denied = []
         isResolving = true

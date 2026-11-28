@@ -186,7 +186,8 @@ struct ClaudeCodeTests {
         #expect(!args.contains("--model"))
         let allowed = Array(args[(args.firstIndex(of: "--allowedTools")! + 1)...])
         let root = folder.resolvingSymlinksInPath().path(percentEncoded: false).trimmingCharacters(in: ["/"])
-        #expect(allowed == ["Edit(//\(root)/greet/**)", "Write(//\(root)/greet/**)", "Bash(chmod +x greet/*)", "Bash(chmod +x /\(root)/greet/*)",
+        #expect(allowed == ["Edit(//\(root)/greet)", "Edit(//\(root)/greet/**)", "Write(//\(root)/greet)", "Write(//\(root)/greet/**)",
+                            "Bash(chmod +x *)",
                             "Bash(sh check.sh)", "Bash(sh /\(root)/check.sh)",
                             "Edit(//\(root)/.gitignore)", "Write(//\(root)/.gitignore)", "Bash(git add *)",
                             "Bash(git restore --staged *)", "Bash(git rm --cached *)", "Bash(git commit *)"])

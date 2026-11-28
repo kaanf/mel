@@ -476,6 +476,13 @@ enum PreviewData {
         spec.runs?[2] = nil
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    /// A task run in Mel whose check failed: Let Claude Code fix it goes on in its session (OQ #42).
+    static let buildFailedInMelSession: SpecSession = {
+        var spec = buildReportSession.spec
+        spec.runs?[2] = TaskRun(state: .failed, output: "ScheduleTest > shows today's classes FAILED")
+        spec.runs?[2]?.session = "build-2"
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
     /// V2-21: task 2 stopped in Mel.
     static let buildStoppedSession: SpecSession = {
         var spec = buildReportSession.spec

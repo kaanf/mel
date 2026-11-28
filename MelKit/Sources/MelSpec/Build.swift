@@ -194,7 +194,7 @@ extension SpecTask {
 
     /// Run (V2-17): the Copy prompt plus when to ask and the report's shape (OQ #42: a few lines, no spec files).
     public func runPrompt(slug: String, of total: Int) -> String {
-        let check = verify.isEmpty ? "" : "- Run the check only as `sh \(checkScript(slug: slug))` from the project folder; it runs the command above. Make scripts you write runnable with `chmod +x`.\n"
+        let check = verify.isEmpty ? "" : "- Run the check only as `sh \(checkScript(slug: slug))` from the project folder; it runs the command above. Make scripts you write runnable with `chmod +x`. Run the check as its own command, never chained with `&&` or `;`.\n"
         return buildPrompt(slug: slug, of: total) + "\n\nRules for this run:\n" + check + """
         - Don't ask how to build it: the spec and AGENTS.md decide. Where they are silent, pick the simplest choice that fits and list it under decisions.
         - Stop to ask only when the choice changes what users see or is hard to undo. Then end your reply with this instead, and nothing after it:
@@ -210,6 +210,16 @@ extension SpecTask {
         """
         My answer: \(answer)
         Go on with task \(number) from where you stopped. End with the JSON report (or another question), as before.
+        """
+    }
+
+    /// A failed check on a task run in Mel: its session goes on with the output (OQ #42).
+    public func fixRunPrompt(slug: String, output: String) -> String {
+        """
+        The check failed:
+        \(output)
+        Fix the code in the task's folders so the check passes. Don't change the tests or the plan. Commit the fix with a Conventional Commits message whose last line is: \(trailer(slug: slug))
+        End with the JSON report, as before.
         """
     }
 
@@ -239,8 +249,9 @@ public enum ConflictRun {
         """
     }
 
-    /// "about 6k tokens" on the button: the files read and written once, plus the prompt.
-    public static func tokens(fileBytes: Int) -> Int { 2_000 + fileBytes / 2 }
+    /// "about 6k tokens" on the button: the run's own overhead (a 600-byte file took 7.3k in a real run,
+    /// 2026-11-28) plus the files read and written once.
+    public static func tokens(fileBytes: Int) -> Int { 6_500 + fileBytes / 2 }
 }
 
 /// What a task run in Mel says it did (V2-19), from the JSON object at the end of its reply.

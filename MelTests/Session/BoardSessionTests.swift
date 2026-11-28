@@ -628,7 +628,7 @@ final class BoardSessionTests {
         runner.add([[.done(result: #"{"works":["Both changes are in."],"decisions":[{"title":"Kept both lines","why":"Both matter.","instead":""}],"notDone":[],"refused":[]}"#)]])
         await session.resolveConflict()
         let request = try #require(runner.requests.last)
-        #expect(request.build == BuildAccess(folders: [], commands: []))
+        #expect(request.build == BuildAccess(folders: ["shared.txt"], commands: []))
         #expect(request.prompt.contains("- shared.txt"))
         #expect(session.mergeConflict == nil)
         #expect(session.resolveReport?.works == ["Both changes are in."])

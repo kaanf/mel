@@ -238,6 +238,48 @@ final class EndToEndTests {
         #expect(script.requests.count == 7)
     }
 
+    /// 9.4 through the real runner: a task run in Mel whose check fails goes on in its session with the
+    /// output, passes, and Merge into main brings the spec branch back into main and deletes it.
+    @Test func featureFixesAFailedCheckThenMergesIntoMain() async throws {
+        let (app, script) = makeApp([
+            ("e2e/v2/ft-intake.jsonl", []),
+            ("e2e/v2/ft-requirements.jsonl", []),
+            ("e2e/v2/ft-architecture.jsonl", []),
+            ("e2e/v2/ft-tasks.jsonl", []),
+            ("e2e/v2/ft-analyze.jsonl", []),
+            ("e2e/v2/ft-build-report.jsonl", []),
+            ("e2e/v2/ft-build-report.jsonl", []),
+        ])
+        let session = try newSpec(app, "Waitlist", size: .feature)
+        let repo = session.spec.project
+        for arguments in [["init", "--quiet", "-b", "main"], ["add", "-A"], ["commit", "--quiet", "-m", "Start"]] { try git(repo, arguments) }
+        await session.start()
+        await session.skipIntake()
+        for _ in 0..<3 where !session.spec.isReady { await session.writeNow() }
+        try await session.startBuilding(commitToGit: true, writeAgentsFile: false)
+        let task = session.tasks[0]
+        app.runCheck = { _, _ in Check.Result(passed: false, output: "Waitlist.swift:12: expected 2 hours") }
+
+        await session.run(task)
+        #expect(session.spec.base == "main")
+        try git(repo, ["commit", "--quiet", "--allow-empty", "-m", "feat: waitlist store\n\n" + task.trailer(slug: "waitlist")])
+        await session.check(task)
+        guard case .failed = session.status(of: task) else { Issue.record("the check should fail"); return }
+
+        app.runCheck = { _, _ in Check.Result(passed: true, output: "") }
+        await session.run(task)
+        let fix = try #require(script.requests.last)
+        #expect(fix.resumeSessionID == "e2e00000-0000-4000-8000-000000000020")
+        #expect(fix.prompt.contains("The check failed:\nWaitlist.swift:12: expected 2 hours"))
+        #expect(session.spec.build == .done)
+
+        await session.mergeIntoMain()
+        #expect(session.spec.mergedInto == "main")
+        #expect(Git.branch(at: repo) == "main")
+        #expect(!Git.hasBranch("mel/waitlist", in: repo))
+        #expect(script.requests.count == 7)
+    }
+
     /// GH-4 with a fake `gh` and a bare repo as origin's push URL: Start Building pushes main, each
     /// task done pushes the spec branch, the last one opens the pull request, Merge merges it.
     @Test func featureShipsThroughGitHub() async throws {

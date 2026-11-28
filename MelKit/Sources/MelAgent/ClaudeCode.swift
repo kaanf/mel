@@ -65,9 +65,12 @@ public struct ClaudeCode: AgentAdapter {
         // Paths are absolute (`//…`): a relative rule follows the shell's directory after a `cd` (real run 2026-11-27).
         if let build = request.build {
             let root = request.workingDirectory.resolvingSymlinksInPath().path(percentEncoded: false).trimmingCharacters(in: ["/"])
-            // A script it writes must be runnable: chmod +x only inside the task's folders.
-            let writes = build.folders.isEmpty ? ["Edit(//\(root)/**)", "Write(//\(root)/**)"]
-                : build.folders.flatMap { ["Edit(//\(root)/\($0)/**)", "Write(//\(root)/\($0)/**)", "Bash(chmod +x \($0)/*)", "Bash(chmod +x /\(root)/\($0)/*)"] }
+            // A task's Changes are folders or files (`bin/tip.sh`), so each path is allowed as itself and as a folder.
+            // A script it writes must be runnable: chmod +x sets only the mode, and runs name several files at
+            // once, so any path (real runs 2026-11-28).
+            let writes = (build.folders.isEmpty ? ["Edit(//\(root)/**)", "Write(//\(root)/**)"]
+                : build.folders.flatMap { ["Edit(//\(root)/\($0))", "Edit(//\(root)/\($0)/**)", "Write(//\(root)/\($0))", "Write(//\(root)/\($0)/**)"] })
+                + ["Bash(chmod +x *)"]
             let commands = build.commands.flatMap { command in
                 command.hasPrefix("sh ") ? ["Bash(\(command))", "Bash(sh /\(root)/\(command.dropFirst(3)))"] : ["Bash(\(command))"]
             }
