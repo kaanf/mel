@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally, tellCompose, tellWorking, tellReview, tellUnplaced, projectSpec
+    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally, tellCompose, tellWorking, tellReview, tellUnplaced, projectSpec, newSplit
 
     /// The Tell Mel panel opens by itself on these (V2-24 to V2-27); `review` shows the last change.
     var opensTell: (open: Bool, review: Bool) {
@@ -28,7 +28,7 @@ enum DebugScreen: String, CaseIterable {
         switch self {
         case .start: PreviewData.appState([], projects: [], foundRepositories: PreviewData.repositories)
         case .noAgent: PreviewData.appState([], agent: .missing, projects: [], foundRepositories: PreviewData.repositories)
-        case .new, .newEmpty: PreviewData.appState(PreviewData.others)
+        case .new, .newEmpty, .newSplit: PreviewData.appState(PreviewData.others)
         case .ready: PreviewData.appState([PreviewData.done] + PreviewData.others, sessions: [PreviewData.doneSession])
         case .building: PreviewData.appState([PreviewData.buildingSession.spec] + PreviewData.others, sessions: [PreviewData.buildingSession])
         case .buildWorking: PreviewData.appState([PreviewData.buildTellingSession.spec], sessions: [PreviewData.buildTellingSession])

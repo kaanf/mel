@@ -51,7 +51,7 @@ struct MelApp: App {
 
     private static var startsOnNew: Bool {
         #if DEBUG
-        DebugScreen.current == .new || DebugScreen.current == .newEmpty
+        DebugScreen.current == .new || DebugScreen.current == .newEmpty || DebugScreen.current == .newSplit
         #else
         false
         #endif

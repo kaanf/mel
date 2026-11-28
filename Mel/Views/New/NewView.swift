@@ -10,6 +10,8 @@ struct NewView: View {
     @State var idea = ""
     /// The size the user picked on the chip; nil while Mel's guess stands.
     @State private var size: SpecSize?
+    /// V2-30: Split into 2 specs (true) or Keep as one (false); nil while the card asks.
+    @State private var split: Bool?
     @State private var files: [URL] = []
     @State private var isAttaching = false
     @State private var error: String?
@@ -35,6 +37,8 @@ struct NewView: View {
     private var text: String { idea.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var planned: SpecSize { size ?? SpecSize.guess(from: idea, hasProject: project != nil) }
     private var canStart: Bool { !text.isEmpty && state.agent.isReady }
+    /// V2-30: a feature or technical change that reads like two (Swift, no tokens).
+    private var parts: [String]? { planned == .feature || planned == .technical ? SpecSize.splitParts(of: text) : nil }
 
     var body: some View {
         ScrollView {
@@ -46,6 +50,16 @@ struct NewView: View {
                     .multilineTextAlignment(.center)
                     .padding(.bottom, Theme.Space.x8)
                 box
+                if let parts, split == nil { splitCard(parts).transition(.drop) }
+                if let parts, split == true {
+                    HStack(spacing: Theme.Space.x8) {
+                        DoneMark(size: 14)
+                        Text("Split. Mel plans “\(SpecSize.splitName(parts[0]))” first; “\(SpecSize.splitName(parts[1]))” waits under Needs you.")
+                            .textStyle(Theme.Text.calloutLoose)
+                            .foregroundStyle(Theme.Colors.bodyLabel)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
                 if text.isEmpty {
                     VStack(spacing: Theme.Space.x8) {
                         Text("Or try one").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
@@ -84,7 +98,8 @@ struct NewView: View {
         .animation(.board, value: files)
         .animation(.easeOut(duration: 0.15), value: isFocused)
         .onAppear { isFocused = true }
-        .onChange(of: idea) { size = nil }
+        .onChange(of: idea) { (size, split) = (nil, nil) }
+        .animation(.board, value: split)
         .fileImporter(isPresented: $isAttaching, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
             if case .success(let urls) = result { files += urls.filter { !files.contains($0) } }
         }
@@ -133,7 +148,7 @@ struct NewView: View {
                 .help("Add files: a log, a screenshot, a document")
                 if !text.isEmpty { sizeChip.transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .leading))) }
                 Spacer(minLength: 0)
-                Button("Start", action: start)
+                Button(split == true ? "Plan the first" : "Start", action: start)
                     .buttonStyle(AccentPillStyle(padding: Theme.Space.x16, hint: "⌘↩"))
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(!canStart)
@@ -236,11 +251,53 @@ struct NewView: View {
         }
     }
 
+    /// "This reads like 2 separate specs" (V2-30).
+    private func splitCard(_ parts: [String]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x12) {
+            HStack(spacing: Theme.Space.x10) {
+                MelMark(size: 22)
+                Text("This reads like 2 separate specs").textStyle(Theme.Text.cardTitle)
+            }
+            Text("Smaller specs get fewer questions and cheaper changes, and they can be built at the same time. Mel plans the first now; the second waits under Needs you.")
+                .textStyle(Theme.Text.calloutLoose)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: Theme.Space.x8) {
+                ForEach(Array(parts.enumerated()), id: \.offset) { i, part in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Spec \(i + 1)").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+                        Text(SpecSize.splitName(part)).textStyle(Theme.Text.bodyBold).fixedSize(horizontal: false, vertical: true)
+                        Text("\(planned.boardLabel) · in \(project?.name ?? "")").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.likely)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, Theme.Space.x10)
+                    .padding(.horizontal, Theme.Space.x12)
+                    .background(Theme.Colors.fill, in: RoundedRectangle(cornerRadius: Theme.Radius.box))
+                }
+            }
+            HStack(spacing: Theme.Space.x8) {
+                Button("Split into 2 specs") { split = true }.buttonStyle(BoardPillStyle(kind: .accent, height: 30, padding: Theme.Space.x14))
+                Button("Keep as one") { split = false }.buttonStyle(BoardPillStyle(height: 30, padding: Theme.Space.x14))
+            }
+        }
+        .padding(Theme.Space.x16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .surface(Theme.Colors.background, .questionCard, in: RoundedRectangle(cornerRadius: Theme.Radius.large))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Mel suggests two specs")
+    }
+
     /// With `Spec.untitledName` the intake names the spec (and a new product's folder).
     private func create(named name: String) {
         do {
+            // V2-30 Split: the second spec waits under Needs you with its words; the first is planned now.
+            var name = name, idea = text
+            if split == true, let parts {
+                _ = try state.createSpec(name: SpecSize.splitName(parts[1]), idea: parts[1], size: planned, project: project, fillGaps: fillsGaps, files: [])
+                (name, idea) = (SpecSize.splitName(parts[0]), parts[0])
+            }
             // A new product gets its own folder; a feature or a fix goes into the project.
-            _ = try state.createSpec(name: name, idea: text, size: planned, project: planned == .product ? nil : project, fillGaps: fillsGaps, files: files)
+            _ = try state.createSpec(name: name, idea: idea, size: planned, project: planned == .product ? nil : project, fillGaps: fillsGaps, files: files)
             onStart()
         } catch {
             self.error = error.localizedDescription
@@ -344,6 +401,12 @@ struct NewView: View {
 
 #Preview("Feature guessed") {
     NewView(idea: "Members can filter the weekly schedule by teacher and see a short teacher profile on each class.")
+        .environment(PreviewData.appState([]))
+        .frame(width: 1036, height: 800)
+}
+
+#Preview("V2-30 Two features: split?") {
+    NewView(idea: "Members can filter the schedule by teacher, and teachers get a dashboard with their earnings and monthly payouts.")
         .environment(PreviewData.appState([]))
         .frame(width: 1036, height: 800)
 }

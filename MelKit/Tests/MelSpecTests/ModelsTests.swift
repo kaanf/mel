@@ -27,6 +27,14 @@ struct ModelsTests {
         #expect(SpecSize.guess(from: "The login screen crashes.", hasProject: false) == .product)   // nothing to fix without code
     }
 
+    /// V2-30: two features in one idea are offered as two specs; one feature isn't.
+    @Test func ideasWithTwoFeaturesSplit() {
+        #expect(SpecSize.splitParts(of: "Members can filter the schedule by teacher, and teachers get a dashboard with their earnings and monthly payouts.")
+                == ["Members can filter the schedule by teacher.", "Teachers get a dashboard with their earnings and monthly payouts."])
+        #expect(SpecSize.splitParts(of: "Members can filter the weekly schedule by teacher and see a short teacher profile on each class.") == nil)
+        #expect(SpecSize.splitName("Teachers get a dashboard with their earnings and monthly payouts.") == "Teachers get a dashboard with their earnings")
+    }
+
     @Test func projectFoldersCompareEqualWithOrWithoutSlash() {
         let spec = Spec(name: "S", idea: "x", folder: URL(filePath: "/Users/me/app/specs/s/"))
         #expect(spec.project == Project(folder: URL(filePath: "/Users/me/app")).folder)

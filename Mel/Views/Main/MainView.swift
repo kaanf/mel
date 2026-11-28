@@ -110,6 +110,7 @@ struct MainView: View {
     private var initialIdea: String {
         #if DEBUG
         if DebugScreen.current == .new { return PreviewData.featureIdea }
+        if DebugScreen.current == .newSplit { return "Members can filter the schedule by teacher, and teachers get a dashboard with their earnings and monthly payouts." }
         #endif
         return ""
     }

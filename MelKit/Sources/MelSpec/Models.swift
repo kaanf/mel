@@ -204,6 +204,20 @@ public enum SpecSize: String, Codable, CaseIterable, Hashable, Sendable {
         return .feature
     }
 
+    /// V2-30, in Swift (no tokens): an idea that reads like two features, two sentences or two clauses
+    /// joined by ", and", each at least 5 words. The parts as the user wrote them; nil for one feature.
+    public static func splitParts(of idea: String) -> [String]? {
+        let pieces = idea.split(separator: /,\s*and\s+|\.\s+(?=[A-Z])/).map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(["."])) }
+        let parts = pieces.filter { $0.split(separator: " ").count >= 5 }
+        guard parts.count >= 2 else { return nil }
+        return [parts[0].prefix(1).uppercased() + parts[0].dropFirst() + ".", parts[1].prefix(1).uppercased() + parts[1].dropFirst() + "."]
+    }
+
+    /// A part's name: its first seven words.
+    public static func splitName(_ part: String) -> String {
+        part.trimmingCharacters(in: ["."]).split(separator: " ").prefix(7).joined(separator: " ")
+    }
+
     /// The file drafted after `kind`, or nil after the last one.
     public func file(after kind: DocKind) -> DocKind? {
         guard let i = files.firstIndex(of: kind), i + 1 < files.count else { return nil }
