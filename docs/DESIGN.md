@@ -114,7 +114,7 @@ SwiftUI views ──observe──▶ SpecSession (@Observable, @MainActor), one 
           draft: stream into the file (debounced)      change: Change.apply places {old, new} edits
 ```
 
-**Mel is the only writer of the spec files.** Spec runs give Claude Code no write or shell tools; a build run (Run on Build, OQ #40) may change only the task's `Changes` folders, run its `Verify` command and `git commit`, and anything else is refused. A draft streams plain Markdown that Mel appends to the file; every later change comes back as edits that Mel places.
+**Mel is the only writer of the spec files.** Spec runs give Claude Code no write or shell tools; a build run (Run on Build, OQ #40) may change only the task's `Changes` folders and `.gitignore`, run its `Verify` command, stage, unstage and `git commit`, and anything else is refused. A draft streams plain Markdown that Mel appends to the file; every later change comes back as edits that Mel places.
 
 `AppState` (one per app) holds the agent's status, the library (projects, their context, specs), the current project and the sessions. `AgentAdapter` is a small protocol with one implementation (`ClaudeCode`) so Codex can be added later.
 

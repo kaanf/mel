@@ -71,7 +71,10 @@ public struct ClaudeCode: AgentAdapter {
             let commands = build.commands.flatMap { command in
                 command.hasPrefix("sh ") ? ["Bash(\(command))", "Bash(sh /\(root)/\(command.dropFirst(3)))"] : ["Bash(\(command))"]
             }
-            arguments += ["--allowedTools"] + writes + commands + ["Bash(git add *)", "Bash(git commit *)"]
+            // .gitignore and unstaging: a check that installs (node_modules) would otherwise block the commit (2026-11-28).
+            let git = ["Edit(//\(root)/.gitignore)", "Write(//\(root)/.gitignore)",
+                       "Bash(git add *)", "Bash(git restore --staged *)", "Bash(git rm --cached *)", "Bash(git commit *)"]
+            arguments += ["--allowedTools"] + writes + commands + git
         }
         if let session = request.resumeSessionID { arguments += ["--resume", session] }
         if !request.persistSession { arguments.append("--no-session-persistence") }

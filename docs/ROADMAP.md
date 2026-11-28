@@ -226,6 +226,8 @@ Later (OQ #43): tasks of one step at the same time, each in its own worktree.
 
 - v0.10 published 2026-11-28 (build 483, notarized DMG; appcast.xml updated): GitHub through gh (GH-1 to GH-5), Start Building's error shown, the sidebar right under the traffic lights (`sidebarTop` 0; the system column already starts below them).
 
+- 2026-11-28, from the user ("No commit for task 1 yet" on Kingdom and Dynasty): task 1 ran in Mel, the check's `pnpm` made `packages/shared/node_modules`, `git add` staged it, and with no `.gitignore` (outside `Changes`) and unstaging refused, the run stopped short of the commit. A build run may now write the root `.gitignore` and run `git restore --staged` / `git rm --cached`; `runPrompt` says to keep tool output out of git. The user's task 1 committed by hand (`.gitignore` with `node_modules/`). Not re-recorded for real. On `main`, not released.
+
 ## Risks
 
 | Risk | Mitigation |

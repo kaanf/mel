@@ -141,7 +141,7 @@ As a user, I want one button that starts the build, so that the plan turns into 
 
 ## Invariants
 
-- Mel is the only writer of the spec files. Spec runs give Claude Code no write or shell tools; a build run (Run on Build, OQ #40) may change only the task's `Changes` folders, run its `Verify` command and `git commit`, and anything else is refused.
+- Mel is the only writer of the spec files. Spec runs give Claude Code no write or shell tools; a build run (Run on Build, OQ #40) may change only the task's `Changes` folders and `.gitignore`, run its `Verify` command, stage, unstage and `git commit`, and anything else is refused.
 - Never overwrite a user's edit. Never change a Ready file without a user action: a card answer, Tell Mel, Remove, Update or Rewrite (OQ #29).
 - All file writes are atomic.
 
