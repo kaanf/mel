@@ -6,6 +6,8 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.11] · 2026-11-28
+
 ### Added
 - **Run the rest.** On Build, Run the rest runs the open tasks one after another with your Claude Code and stops when Mel needs you: a question, a failed check, changes to commit first, or Stop.
 - **Merge into main without GitHub.** When every task ran in Mel, Merge into main brings the spec's branch into the branch you started from and deletes it. If main changed meanwhile and files conflict, nothing is merged: Claude Code can resolve it in one more run (with its cost shown and a report afterwards), or you resolve it in Terminal.
@@ -192,7 +194,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.10.1...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.11...HEAD
+[0.11]: https://github.com/kaanf/mel/compare/v0.10.1...v0.11
 [0.10.1]: https://github.com/kaanf/mel/compare/v0.10...v0.10.1
 [0.10]: https://github.com/kaanf/mel/compare/v0.9.1...v0.10
 [0.9.1]: https://github.com/kaanf/mel/compare/v0.9...v0.9.1
