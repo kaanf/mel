@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged
+    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
@@ -29,6 +29,7 @@ enum DebugScreen: String, CaseIterable {
         case .buildQuestion: PreviewData.appState([PreviewData.buildQuestionSession.spec], sessions: [PreviewData.buildQuestionSession])
         case .buildReport: PreviewData.appState([PreviewData.buildReportSession.spec], sessions: [PreviewData.buildReportSession])
         case .buildStopped: PreviewData.appState([PreviewData.buildStoppedSession.spec], sessions: [PreviewData.buildStoppedSession])
+        case .buildNoCommit: PreviewData.appState([PreviewData.buildNoCommitSession.spec], sessions: [PreviewData.buildNoCommitSession])
         case .buildBlocked: PreviewData.appState([PreviewData.buildBlockedSession.spec], sessions: [PreviewData.buildBlockedSession])
         case .built: PreviewData.appState([PreviewData.builtSession.spec] + PreviewData.others, sessions: [PreviewData.builtSession])
         case .settings: PreviewData.appState([])

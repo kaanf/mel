@@ -62,7 +62,7 @@ Name: {{name}}
 - A reference to a task uses the number on its own `- [ ] N.` line. A callout about a task goes right under that task and names it by that number.
 - `Priority` is the highest priority among the criteria it covers. `Covers` lists criterion IDs (`1.1`, `Q1`).
 - `Reads` names the file sections the task needs. `Verify` is one command that proves the task works, using the project's test tools.
-- `Changes` lists the folders the task changes, as paths from the project root.
+- `Changes` lists the folders and files the task changes, as paths from the project root; a run may change nothing else. The task that creates a package or app lists its whole folder (`apps/server`, not `apps/server/src`) and the root files it touches. A task that adds a dependency also lists the manifest and the lockfile (`package.json`, `pnpm-lock.yaml`, `Package.swift`).
 - `Parallel with` lists tasks that need nothing from each other and change different folders, so they can run at the same time. Leave it out otherwise.
 - Every P1 criterion and every quality requirement is covered by at least one task.
 - A task builds a piece of the product together with its tests; never a task that only tests another task's work. Fewer, larger tasks beat many small ones: each task is a separate run.

@@ -482,6 +482,14 @@ enum PreviewData {
         spec.runs?[2] = TaskRun(state: .stopped)
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    /// Task 2's run in Mel ended with its report but no commit: the plan didn't fit.
+    static let buildNoCommitSession: SpecSession = {
+        var spec = buildReportSession.spec
+        spec.runs?[2] = TaskRun(state: .running)
+        spec.runs?[2]?.report = BuildReport(works: [], notDone: ["The booking screen wasn’t started: the shared/booking module doesn’t exist yet and the task may only change androidApp."],
+                                             refused: ["Creating shared/booking/build.gradle.kts, outside the task’s folders."])
+        return SpecSession.preview(spec, documents: boardDocuments)
+    }()
     /// V2-18: task 2 stopped on a question.
     static let buildQuestionSession: SpecSession = {
         var spec = buildReportSession.spec

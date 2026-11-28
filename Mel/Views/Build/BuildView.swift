@@ -553,6 +553,8 @@ struct BuildView: View {
                 .padding(.vertical, Theme.Space.x8)
                 .padding(.horizontal, Theme.Space.x10)
                 .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+            case .running where session.spec.runs?[task.number]?.report != nil:
+                if let report = session.spec.runs?[task.number]?.report { endedWithoutCommit(task, report: report) }
             case .running:
                 VStack(alignment: .leading, spacing: Theme.Space.x6) {
                     Text(task.verify.isEmpty ? "Running in Claude Code. When it’s finished, mark it done." : "Running in Claude Code. When it says it’s finished, press Check it.")
@@ -764,6 +766,33 @@ struct BuildView: View {
             .padding(.horizontal, Theme.Space.x4)
             .frame(height: Theme.Size.button)
             .help("Tell Mel what this task turned up; the request says it came from task \(task.number)")
+    }
+
+    /// A run in Mel that ended with its report but no commit: usually the plan didn't fit (a folder it
+    /// needed isn't in `Changes`). The report's reason, not "No commit", is what the user needs.
+    private func endedWithoutCommit(_ task: SpecTask, report: BuildReport) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            Text("The run ended without a commit").textStyle(Theme.Text.calloutBold).foregroundStyle(Theme.Colors.bannerTitle)
+            ForEach(report.notDone, id: \.self) { Text($0).textStyle(Theme.Text.calloutLoose).foregroundStyle(Theme.Colors.bodyLabel).fixedSize(horizontal: false, vertical: true) }
+            ForEach(report.refused, id: \.self) { Text("Not allowed: " + $0).textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.secondaryLabel).fixedSize(horizontal: false, vertical: true) }
+            Text("If the plan didn’t fit, tell Mel what to change, then run it again.")
+                .textStyle(Theme.Text.captionLoose)
+                .foregroundStyle(Theme.Colors.bodyLabel)
+                .fixedSize(horizontal: false, vertical: true)
+            FlowLayout(spacing: Theme.Space.x8) {
+                Button("Run again") { Task { await session.run(task) } }
+                    .buttonStyle(BoardPillStyle(kind: .accent))
+                    .disabled(session.isRunning || session.tellingTask == task.number)
+                if !task.verify.isEmpty {
+                    Button("Check it") { check(task) }.buttonStyle(BoardPillStyle())
+                }
+                tellLink(task)
+            }
+            if session.uncommitted.contains(task.number) { uncommittedNote(task) }
+        }
+        .padding(.vertical, Theme.Space.x8)
+        .padding(.horizontal, Theme.Space.x10)
+        .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
     }
 
     private func uncommittedNote(_ task: SpecTask) -> some View {
@@ -1174,6 +1203,11 @@ extension BuildStep {
 
 #Preview("Task stopped") {
     NavigationStack { BuildView(session: PreviewData.buildStoppedSession) }
+        .frame(width: 1036, height: 800)
+}
+
+#Preview("Run ended without a commit") {
+    NavigationStack { BuildView(session: PreviewData.buildNoCommitSession) }
         .frame(width: 1036, height: 800)
 }
 

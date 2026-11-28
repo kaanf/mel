@@ -228,6 +228,8 @@ Later (OQ #43): tasks of one step at the same time, each in its own worktree.
 
 - 2026-11-28, from the user ("No commit for task 1 yet" on Kingdom and Dynasty): task 1 ran in Mel, the check's `pnpm` made `packages/shared/node_modules`, `git add` staged it, and with no `.gitignore` (outside `Changes`) and unstaging refused, the run stopped short of the commit. A build run may now write the root `.gitignore` and run `git restore --staged` / `git rm --cached`; `runPrompt` says to keep tool output out of git. The user's task 1 committed by hand (`.gitignore` with `node_modules/`). Not re-recorded for real. On `main`, not released.
 
+- 2026-11-28, from the user ("No commit" again, on task 2): the run stopped because the plan didn't fit; task 2's `Changes` named `apps/server/src/…` but not `apps/server/package.json`, its tsconfig or `pnpm-lock.yaml`, and the card said only "No commit" (the report of a run that didn't commit was never shown). tasks.md now asks for a new package's whole folder and, for a new dependency, its manifest and lockfile (not re-recorded for real); a run that ends with a report but no commit shows "The run ended without a commit" with its Not done and Not allowed lines, Run again, Check it and Tell Mel (`-screen buildNoCommit`, looked at in the Debug build). The user's own spec still needs a Tell Mel for tasks 2 and 3.
+
 ## Risks
 
 | Risk | Mitigation |
