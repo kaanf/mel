@@ -219,6 +219,8 @@ enum Theme {
         static let codeCaptionLoose = TextStyle(size: 11, weight: .regular, lineHeight: 15, design: .monospaced)
         /// 11/15 semibold mono · B7 task number.
         static let codeCaptionBold = TextStyle(size: 11, weight: .semibold, lineHeight: 15, design: .monospaced)
+        /// 11/16 mono · V2-23 conflicted files.
+        static let codeCaptionList = TextStyle(size: 11, weight: .regular, lineHeight: 16, design: .monospaced)
         /// 11/14 mono · paths and ids in captions (A1, A3, B1–B3).
         static let codeCaption = TextStyle(size: 11, weight: .regular, lineHeight: 14, design: .monospaced)
         /// 10/13 mono · B1 and B5 small ids.

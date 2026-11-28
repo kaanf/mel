@@ -223,6 +223,26 @@ extension SpecTask {
     }
 }
 
+/// V2-23 "Let Claude Code resolve it": Mel has started merging the base branch into the spec branch, and
+/// the conflicted files hold git's markers. The run resolves only those, commits the merge and reports.
+public enum ConflictRun {
+    public static func prompt(base: String, branch: String, files: [String]) -> String {
+        """
+        \(base) changed while this spec's tasks were built on \(branch). Mel started merging \(base) into \(branch), and these files have conflicts:
+        \(files.map { "- \($0)" }.joined(separator: "\n"))
+
+        Rules for this run:
+        - Resolve every conflict so both sides keep working: what \(base) changed and what the tasks built. Leave no conflict markers.
+        - You may change only these files, then `git add` them and `git commit --no-edit`. Don't run other commands.
+        - End your reply with one JSON object and nothing after it, written for someone who doesn't code:
+        {"works":["what works now that both are in, one plain sentence each"],"decisions":[{"title":"","why":"","instead":"the alternative and what it would mean"}],"notDone":[""],"refused":[""]}
+        """
+    }
+
+    /// "about 6k tokens" on the button: the files read and written once, plus the prompt.
+    public static func tokens(fileBytes: Int) -> Int { 2_000 + fileBytes / 2 }
+}
+
 /// What a task run in Mel says it did (V2-19), from the JSON object at the end of its reply.
 public struct BuildReport: Codable, Hashable, Sendable {
     public struct Decision: Codable, Hashable, Sendable {

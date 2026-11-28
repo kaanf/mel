@@ -92,6 +92,8 @@ struct BuildView: View {
         .animation(.board, value: spec.pullRequest)
         .animation(.board, value: session.pullStatus)
         .animation(.board, value: session.pushError)
+        .animation(.board, value: session.mergeConflict)
+        .animation(.board, value: spec.mergedInto)
         .navigationTitle("Build: \(spec.name)")
         // GH-4: GitHub's checks while they run, and a Merge when checks pass until GitHub merges.
         .task(id: spec.pullRequest) {
@@ -131,6 +133,12 @@ struct BuildView: View {
             .frame(height: Theme.Size.button)
             .background(Theme.Colors.statusPillFill, in: Capsule())
             .accessibilityElement(children: .combine)
+            if !allDone, spec.runs?.values.contains(where: \.byHand) != true {
+                Button("Run the rest") { Task { await session.runRest() } }
+                    .buttonStyle(BoardPillStyle(kind: .accent))
+                    .disabled(session.isRunning || session.runsRest || asking != nil || session.nextTask == nil)
+                    .help("Runs the open tasks one after another and stops when Mel needs you")
+            }
         }
         .padding(.horizontal, Theme.Space.x20)
         .frame(height: Theme.Size.columnHeader)
@@ -170,6 +178,7 @@ struct BuildView: View {
     private var dotStyle: StatusDot.Style {
         if session.isRunning || (spec.pullRequest?.merged == false && session.pullStatus?.pending.isEmpty == false) { return .ring(Theme.Colors.accent) }
         if spec.pullRequest?.merged == false, session.pullStatus?.failed.isEmpty == false { return .filled(Theme.Colors.failure) }
+        if session.mergeConflict != nil { return .filled(Theme.Colors.accent) }
         return .filled(allDone ? Theme.Colors.success : failedCount > 0 ? Theme.Colors.failure : Theme.Colors.accent)
     }
 
@@ -183,6 +192,8 @@ struct BuildView: View {
             if session.pullStatus?.pending.isEmpty == false { return "Built · checks running" }
             return "Built · ready to merge"
         }
+        if let conflict = session.mergeConflict { return "Merge stopped: \(conflict.files.count) \(conflict.files.count == 1 ? "file conflicts" : "files conflict")" }
+        if let base = spec.mergedInto { return "Merged into \(base)" }
         if allDone { return "First version built" }
         if failedCount > 0 { return "A check failed" }
         if runningCount > 0 { return "\(runningCount) \(runningCount == 1 ? "task" : "tasks") running" }
@@ -259,7 +270,7 @@ struct BuildView: View {
 
     @ViewBuilder
     private var builtBanner: some View {
-        if let pull = spec.pullRequest { pullBanner(pull) } else { localBanner }
+        if let pull = spec.pullRequest { pullBanner(pull) } else if let conflict = session.mergeConflict { conflictBanner(conflict) } else { localBanner }
     }
 
     private var laterStories: [Story] { session.stories.filter { !$0.isFirst } }
@@ -345,32 +356,116 @@ struct BuildView: View {
         .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
-    /// V2-22 without GitHub.
+    /// V2-22 without GitHub: Merge into main once the tasks ran in Mel on the spec branch.
     private var localBanner: some View {
         let later = laterStories
         let byHand = spec.runs?.values.contains { $0.byHand } == true
+        let inMel = spec.base != nil
+        let merged = spec.mergedInto
+        let decisions = tasks.reduce(0) { $0 + (spec.runs?[$1.number]?.report?.decisions.count ?? 0) }
         return VStack(alignment: .leading, spacing: Theme.Space.x8) {
-            Text("The first version is built").textStyle(Theme.Text.boardTitle)
-            Text((byHand ? "All \(tasks.count) tasks are done." : "All \(tasks.count) tasks passed their checks.") + " The spec moved to Done."
-                 + (later.isEmpty ? "" : " \(later.count) \(later.count == 1 ? "story is" : "stories are") still in Later: \(later.map(\.title).joined(separator: ", ")).")
-            )
-            .textStyle(Theme.Text.calloutLoose)
-            .foregroundStyle(Theme.Colors.bodyLabel)
             HStack(spacing: Theme.Space.x8) {
+                if merged != nil { DesignIcon(glyph: .check, size: Theme.Size.doneCheck, weight: 2.2).foregroundStyle(Theme.Colors.success) }
+                Text(merged.map { "Merged into \($0)" } ?? "The first version is built").textStyle(Theme.Text.boardTitle)
+            }
+            Text(builtText(byHand: byHand, inMel: inMel, merged: merged, decisions: decisions, later: later))
+                .textStyle(Theme.Text.calloutLoose)
+                .foregroundStyle(Theme.Colors.bodyLabel)
+                .fixedSize(horizontal: false, vertical: true)
+            if let report = session.resolveReport, merged == nil {
+                VStack(alignment: .leading, spacing: Theme.Space.x4) {
+                    Text("Claude Code merged \(session.baseBranch) into \(session.branch)").textStyle(Theme.Text.calloutBold)
+                    ForEach(report.works + report.notDone, id: \.self) { line in
+                        Text(line).textStyle(Theme.Text.captionLoose).foregroundStyle(Theme.Colors.bodyLabel).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            HStack(spacing: Theme.Space.x8) {
+                if inMel, merged == nil {
+                    Button("Merge into \(session.baseBranch)") { Task { await session.mergeIntoMain() } }
+                        .buttonStyle(BoardPillStyle(kind: .accent))
+                        .disabled(session.isMerging || session.isRunning)
+                }
                 if !later.isEmpty {
                     Button("Plan the \(later.count) later \(later.count == 1 ? "story" : "stories")") { session.reopenPlan() }
-                        .buttonStyle(BoardPillStyle(kind: .accent))
+                        .buttonStyle(BoardPillStyle(kind: inMel && merged == nil ? .white : .accent))
                 }
-                Button("Start over", action: session.startOver)
-                    .buttonStyle(DesignLinkStyle())
-                    .padding(.horizontal, Theme.Space.x4)
-                    .frame(height: Theme.Size.button)
+                if !inMel {
+                    Button("Start over", action: session.startOver)
+                        .buttonStyle(DesignLinkStyle())
+                        .padding(.horizontal, Theme.Space.x4)
+                        .frame(height: Theme.Size.button)
+                }
+                if session.isMerging { ProgressView().controlSize(.small) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, Theme.Space.x14)
         .padding(.horizontal, Theme.Space.x16)
         .surface(Theme.Colors.resultFill, .result, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .accessibilityElement(children: .contain)
+    }
+
+    private func builtText(byHand: Bool, inMel: Bool, merged: String?, decisions: Int, later: [Story]) -> String {
+        if let merged {
+            return "The \(tasks.count) tasks’ commits are on \(merged). Mel deleted \(session.branch)."
+        }
+        let laterText = later.isEmpty ? "" : " \(later.count) \(later.count == 1 ? "story is" : "stories are") still in Later: \(later.map(\.title).joined(separator: ", "))."
+        guard inMel else {
+            return (byHand ? "All \(tasks.count) tasks are done." : "All \(tasks.count) tasks passed their checks.") + " The spec moved to Done." + laterText
+        }
+        let decided = decisions == 0 ? "" : " \(decisions) \(decisions == 1 ? "decision was" : "decisions were") made while building; they’re in each task’s report and in DECISIONS.md."
+        return (byHand ? "All \(tasks.count) tasks are done" : "All \(tasks.count) tasks passed their checks") + " and are committed on \(session.branch)." + decided + laterText
+    }
+
+    /// V2-23: merging would conflict. Nothing was merged; Claude Code resolves it on the spec branch,
+    /// with a report, or the user does in Terminal.
+    private func conflictBanner(_ conflict: SpecSession.MergeConflict) -> some View {
+        let count = conflict.files.count
+        return VStack(alignment: .leading, spacing: Theme.Space.x8) {
+            Text("\(session.baseBranch) changed while you built: \(count) \(count == 1 ? "file conflicts" : "files conflict")")
+                .textStyle(Theme.Text.calloutBold)
+                .foregroundStyle(Theme.Colors.bannerTitle)
+            VStack(alignment: .leading, spacing: Theme.Space.x2) {
+                ForEach(conflict.files, id: \.self) { file in
+                    Text(file).textStyle(Theme.Text.codeCaptionList).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1).truncationMode(.middle)
+                }
+            }
+            Text("Nothing was merged. \(session.baseBranch) and the spec branch are as they were.")
+                .textStyle(Theme.Text.calloutLoose)
+                .foregroundStyle(Theme.Colors.bodyLabel)
+            if session.isResolving {
+                HStack(spacing: Theme.Space.x8) {
+                    ProgressView().controlSize(.small)
+                    Text(session.activity.last?.text ?? "Claude Code is resolving it…").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.bodyLabel).lineLimit(1)
+                    Spacer(minLength: 0)
+                    Button("Stop") { Task { await session.stop() } }.buttonStyle(BoardPillStyle())
+                }
+            } else {
+                FlowLayout(spacing: Theme.Space.x8) {
+                    Button { Task { await session.resolveConflict() } } label: {
+                        HStack(spacing: Theme.Space.x6) {
+                            Text("Let Claude Code resolve it")
+                            Text("about \(TokenStep.text(conflict.tokens)) tokens").fontWeight(.regular).opacity(0.85)
+                        }
+                    }
+                    .buttonStyle(BoardPillStyle(kind: .accent))
+                    .disabled(session.isRunning)
+                    Button("Open in Terminal", action: session.openMergeInTerminal).buttonStyle(BoardPillStyle())
+                    Button("Cancel", action: session.cancelMerge)
+                        .buttonStyle(DesignLinkStyle())
+                        .padding(.horizontal, Theme.Space.x4)
+                        .frame(height: Theme.Size.button)
+                }
+            }
+            Text("Claude Code’s fix comes with a report like a task’s, and you merge after it.")
+                .textStyle(Theme.Text.caption)
+                .foregroundStyle(Theme.Colors.secondaryLabel)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, Theme.Space.x12)
+        .padding(.horizontal, Theme.Space.x14)
+        .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
         .accessibilityElement(children: .contain)
     }
 
@@ -1157,6 +1252,26 @@ extension BuildStep {
 
 #Preview("Done") {
     NavigationStack { BuildView(session: PreviewData.builtSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("V2-22 Built in Mel, merge into main") {
+    NavigationStack { BuildView(session: PreviewData.builtInMelSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("V2-23 Merge conflicts") {
+    NavigationStack { BuildView(session: PreviewData.mergeConflictSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("V2-23 Conflict resolved") {
+    NavigationStack { BuildView(session: PreviewData.conflictResolvedSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("V2-22 Merged into main") {
+    NavigationStack { BuildView(session: PreviewData.mergedLocallySession) }
         .frame(width: 1100, height: 900)
 }
 

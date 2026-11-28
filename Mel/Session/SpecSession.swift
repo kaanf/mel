@@ -46,6 +46,15 @@ import MelSystem
     /// GH-4: the pull request on GitHub now (checks, merged), read when Build shows it.
     private(set) var pullStatus: PullRequestStatus?
     private(set) var isMerging = false
+    /// Run the rest is going: the open tasks one after another (V2-17).
+    private(set) var runsRest = false
+    /// V2-23: merging the spec branch into its base would conflict on these files; nothing was merged.
+    private(set) var mergeConflict: MergeConflict?
+    struct MergeConflict: Hashable { var files: [String]; var tokens: Int }
+    /// Claude Code is resolving the merge conflict.
+    private(set) var isResolving = false
+    /// V2-23: what Claude Code did resolving the conflict; Merge into main follows.
+    private(set) var resolveReport: BuildReport?
 
     @ObservationIgnored private weak var app: AppState?
     @ObservationIgnored private var store: SpecStore?
@@ -1166,7 +1175,12 @@ import MelSystem
         }
         blockedRun = nil
         do {
-            try await Task.detached { try Git.switchTo(branch: branch, in: folder) }.value
+            let current = try await Task.detached { () throws -> String? in
+                let current = Git.branch(at: folder)
+                try Git.switchTo(branch: branch, in: folder)
+                return current
+            }.value
+            if spec.base == nil, let current, current != branch { spec.base = current }
         } catch {
             lastError = "Couldn’t switch to \(branch): \(error.localizedDescription)"
             return
@@ -1224,6 +1238,104 @@ import MelSystem
             spec.runs?[task.number] = nil
             persist()
         }
+    }
+
+    /// The first task that can run now, in the order of the steps.
+    var nextTask: SpecTask? { steps.flatMap(\.tasks).first { status(of: $0) == .ready } }
+
+    /// Run the rest: the open tasks one after another, each once the one before passed its check and is
+    /// committed. It stops at a question, a failed check, changes that block Run, or Stop.
+    func runRest() async {
+        guard !runsRest else { return }
+        runsRest = true
+        defer { runsRest = false }
+        while let task = nextTask {
+            await run(task)
+            guard case .done = status(of: task) else { return }
+        }
+    }
+
+    // MARK: - Merge into main (V2-22, V2-23)
+
+    /// Where the spec branch goes back into; "main" for a spec whose first run was before 0.11.
+    var baseBranch: String { spec.base ?? "main" }
+
+    /// Merge into main: refused over changes that aren't committed; a conflict changes nothing and
+    /// shows its files (V2-23); otherwise `base` gets the tasks' commits and the spec branch goes.
+    func mergeIntoMain() async {
+        guard spec.build == .done, spec.mergedInto == nil, !isMerging, !isRunning else { return }
+        let (folder, branch, base, excluded) = (projectFolder, branch, baseBranch, melPaths)
+        isMerging = true
+        defer { isMerging = false }
+        lastError = nil
+        do {
+            let result = try await Task.detached { () throws -> (dirty: [String], conflict: MergeConflict?) in
+                let dirty = Git.uncommitted(in: folder, excluding: excluded) ?? []
+                guard dirty.isEmpty else { return (dirty, nil) }
+                let files = try Git.conflicts(merging: branch, into: base, in: folder)
+                guard files.isEmpty else {
+                    let bytes = files.reduce(0) { $0 + ((try? FileManager.default.attributesOfItem(atPath: folder.appending(path: $1).path(percentEncoded: false))[.size] as? Int) ?? 0) }
+                    return ([], MergeConflict(files: files, tokens: ConflictRun.tokens(fileBytes: bytes)))
+                }
+                try Git.merge(branch, into: base, in: folder)
+                return ([], nil)
+            }.value
+            if !result.dirty.isEmpty {
+                lastError = "Commit or put aside your changes first: \(result.dirty.prefix(3).joined(separator: ", "))\(result.dirty.count > 3 ? "…" : ""). Nothing was merged."
+                return
+            }
+            mergeConflict = result.conflict
+            guard result.conflict == nil else { return }
+        } catch {
+            lastError = "Couldn’t merge into \(base): \(error.localizedDescription)"
+            return
+        }
+        spec.mergedInto = base
+        resolveReport = nil
+        persist()
+    }
+
+    func cancelMerge() { mergeConflict = nil }
+
+    /// "Let Claude Code resolve it": one more run on the spec branch that resolves only the conflicted
+    /// files and commits the merge, with a report. A run that doesn't finish puts both branches back.
+    func resolveConflict() async {
+        guard let conflict = mergeConflict, runningTask == nil, !isRunning else { return }
+        let (folder, branch, base) = (projectFolder, branch, baseBranch)
+        do {
+            try await Task.detached { try Git.startMerge(of: base, on: branch, in: folder) }.value
+        } catch {
+            lastError = "Couldn’t start the merge: \(error.localizedDescription)"
+            return
+        }
+        let folders = Set(conflict.files.map { ($0 as NSString).deletingLastPathComponent })
+        // A conflict at the top of the project can't be narrowed to a folder.
+        let access = BuildAccess(folders: folders.contains("") ? [] : folders.sorted(), commands: [])
+        activity = []
+        denied = []
+        isResolving = true
+        // Task 0: the merge belongs to no task; its tokens count toward building.
+        let end = await run(ConflictRun.prompt(base: base, branch: branch, files: conflict.files), step: .build, resume: nil, persist: true, build: (0, access))
+        isResolving = false
+        let unfinished = await Task.detached { Git.isMerging(in: folder) }.value
+        if case .done(let reply) = end, !unfinished {
+            let report = BuildReport.parse(reply) ?? BuildReport()
+            for decision in report.decisions {
+                _ = addDecision(title: decision.title, reason: decision.why + (decision.instead.isEmpty ? "" : " Instead: \(decision.instead)"), source: "Merging \(base), while building")
+            }
+            resolveReport = report
+            mergeConflict = nil
+            return
+        }
+        try? await Task.detached { try Git.abortMerge(in: folder) }.value
+        if case .stopped(let reason) = end, reason != .user { lastError = Self.message(reason) }
+        else if case .done = end { lastError = "Claude Code didn’t finish the merge. Nothing was merged; \(base) and \(branch) are as they were." }
+    }
+
+    /// "Open in Terminal": the merge started on the spec branch, for the user to resolve and commit;
+    /// Merge into main afterwards finds no conflict.
+    func openMergeInTerminal() {
+        do { try SystemActions.openInTerminal(command: "git checkout \(branch) && git merge \(baseBranch)", in: projectFolder) } catch { lastError = error.localizedDescription }
     }
 
     /// V2-18: the user's answer goes into DECISIONS.md, then the task goes on where it stopped.
@@ -1461,7 +1573,7 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil, pullStatus: PullRequestStatus? = nil, pushError: String? = nil) -> SpecSession {
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil, pullStatus: PullRequestStatus? = nil, pushError: String? = nil, mergeConflict: MergeConflict? = nil, resolveReport: BuildReport? = nil) -> SpecSession {
         let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, snapshots: snapshots, decisions: decisions)
         session.lastChange = lastChange
         session.tellingTask = tellingTask
@@ -1469,6 +1581,8 @@ import MelSystem
         session.blockedRun = blockedRun
         session.pullStatus = pullStatus
         session.pushError = pushError
+        session.mergeConflict = mergeConflict
+        session.resolveReport = resolveReport
         return session
     }
 }

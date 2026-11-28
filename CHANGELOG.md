@@ -6,6 +6,11 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+### Added
+- **Run the rest.** On Build, Run the rest runs the open tasks one after another with your Claude Code and stops when Mel needs you: a question, a failed check, changes to commit first, or Stop.
+- **Merge into main without GitHub.** When every task ran in Mel, Merge into main brings the spec's branch into the branch you started from and deletes it. If main changed meanwhile and files conflict, nothing is merged: Claude Code can resolve it in one more run (with its cost shown and a report afterwards), or you resolve it in Terminal.
+- **Refresh the GitHub repo list** on Start and in the repo choice.
+
 ## [0.10.1] · 2026-11-28
 
 ### Fixed

@@ -13,6 +13,8 @@ private final class ScriptedRunner: AgentRunning {
         var replies: [[AgentEvent]]
         var requests: [AgentRequest] = []
         var open: AsyncThrowingStream<AgentEvent, Error>.Continuation?
+        /// What the agent does on disk before it replies (a build run's commit).
+        var onRun: (@Sendable (AgentRequest) -> Void)?
     }
     private let state: Mutex<State>
 
@@ -22,13 +24,15 @@ private final class ScriptedRunner: AgentRunning {
     var hasOpenRun: Bool { state.withLock { $0.open != nil } }
 
     func add(_ replies: [[AgentEvent]]) { state.withLock { $0.replies += replies } }
+    func onRun(_ action: (@Sendable (AgentRequest) -> Void)?) { state.withLock { $0.onRun = action } }
 
     func run(_ request: AgentRequest) -> AsyncThrowingStream<AgentEvent, Error> {
         AsyncThrowingStream { continuation in
-            let events = state.withLock { s in
+            let (events, onRun) = state.withLock { s in
                 s.requests.append(request)
-                return s.replies.isEmpty ? [] : s.replies.removeFirst()
+                return (s.replies.isEmpty ? [] : s.replies.removeFirst(), s.onRun)
             }
+            onRun?(request)
             for event in events { continuation.yield(event) }
             switch events.last {
             case .done, .failed: continuation.finish()
@@ -533,6 +537,106 @@ final class BoardSessionTests {
         await session.undoStopped(store)
         #expect(session.status(of: store) == .ready)
         #expect(!FileManager.default.fileExists(atPath: repo.appending(path: "Store.swift").path(percentEncoded: false)))
+    }
+
+    /// What a build run's agent leaves behind: `text` in `file`, committed as task `number`.
+    nonisolated private static func commit(_ repo: URL, _ file: String, _ text: String, _ message: String) {
+        try? text.write(to: repo.appending(path: file), atomically: true, encoding: .utf8)
+        for arguments in [["add", file], ["commit", "--quiet", "--no-edit", "-m", message]] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            process.arguments = ["-c", "user.name=Mel Tests", "-c", "user.email=tests@example.com"] + arguments
+            process.currentDirectoryURL = repo
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try? process.run()
+            process.waitUntilExit()
+        }
+    }
+
+    /// A ready feature on `main`, building, with every check passing; its tasks commit `shared.txt`.
+    private func buildingInMel() async throws -> (SpecSession, ScriptedRunner, URL) {
+        let (session, runner) = try await readyFeature()
+        let repo = session.spec.project
+        try git(repo, "init", "--quiet", "-b", "main")
+        try git(repo, "commit", "--quiet", "--allow-empty", "-m", "Start")
+        try await session.startBuilding(commitToGit: false, writeAgentsFile: false)
+        app?.runCheck = { _, _ in Check.Result(passed: true, output: "") }
+        let slug = session.spec.folder.lastPathComponent
+        runner.onRun { request in
+            guard let number = ["1", "2"].first(where: { request.prompt.contains("Mel-Task: \(slug)/\($0)") }) else { return }
+            Self.commit(repo, "shared.txt", "task \(number)\n", "feat: task \(number)\n\nMel-Task: \(slug)/\(number)")
+        }
+        return (session, runner, repo)
+    }
+
+    private let works = #"{"works":["It works."],"decisions":[],"notDone":[],"refused":[]}"#
+
+    /// V2-17 Run the rest: stops at a question, goes on after the answer; V2-22: Merge into main
+    /// fast-forwards main, deletes the spec branch and costs no run.
+    @Test func theRestRunsInOrderThenMergesIntoMain() async throws {
+        let (session, runner, repo) = try await buildingInMel()
+        let question = #"{"question":{"title":"Hold a spot how long?","why":"Members see it.","options":[{"label":"2 hours","suggested":true}]}}"#
+        runner.add([[.done(result: question)]])
+        await session.runRest()
+        #expect(session.status(of: session.tasks[1]) != .running)
+        guard case .asking = session.status(of: session.tasks[0]) else { Issue.record("task 1 should ask"); return }
+        #expect(!session.runsRest)
+        #expect(session.spec.base == "main")
+
+        runner.add([[.done(result: works)]])
+        await session.answer(session.tasks[0], with: "2 hours")
+        runner.add([[.done(result: works)]])
+        let before = runner.requests.count
+        await session.runRest()
+        #expect(runner.requests.count == before + 1)
+        #expect(session.spec.build == .done)
+        #expect(session.nextTask == nil)
+
+        await session.mergeIntoMain()
+        #expect(runner.requests.count == before + 1)
+        #expect(session.spec.mergedInto == "main")
+        #expect(Git.branch(at: repo) == "main")
+        #expect(!Git.hasBranch(session.branch, in: repo))
+        #expect(try String(contentsOf: repo.appending(path: "shared.txt"), encoding: .utf8) == "task 2\n")
+    }
+
+    /// V2-23: main moved and conflicts. Nothing is merged; a resolve run that doesn't commit puts both
+    /// branches back; one that commits ends with its report, and Merge into main then goes through.
+    @Test func aMergeConflictIsResolvedByClaudeCode() async throws {
+        let (session, runner, repo) = try await buildingInMel()
+        runner.add([[.done(result: works)], [.done(result: works)]])
+        await session.runRest()
+        #expect(session.spec.build == .done)
+        try git(repo, "checkout", "--quiet", "main")
+        Self.commit(repo, "shared.txt", "main\n", "feat: main moved")
+        try git(repo, "checkout", "--quiet", session.branch)
+
+        await session.mergeIntoMain()
+        #expect(session.mergeConflict?.files == ["shared.txt"])
+        #expect(session.spec.mergedInto == nil)
+        #expect(Git.branch(at: repo) == session.branch)
+
+        runner.onRun(nil)
+        runner.add([[.done(result: works)]])
+        await session.resolveConflict()
+        #expect(!Git.isMerging(in: repo))
+        #expect(session.lastError?.contains("didn’t finish") == true)
+        #expect(session.mergeConflict != nil)
+
+        runner.onRun { _ in Self.commit(repo, "shared.txt", "main and task 2\n", "Merge main") }
+        runner.add([[.done(result: #"{"works":["Both changes are in."],"decisions":[{"title":"Kept both lines","why":"Both matter.","instead":""}],"notDone":[],"refused":[]}"#)]])
+        await session.resolveConflict()
+        let request = try #require(runner.requests.last)
+        #expect(request.build == BuildAccess(folders: [], commands: []))
+        #expect(request.prompt.contains("- shared.txt"))
+        #expect(session.mergeConflict == nil)
+        #expect(session.resolveReport?.works == ["Both changes are in."])
+        #expect(session.decisions.first?.source == "Merging main, while building")
+
+        await session.mergeIntoMain()
+        #expect(session.spec.mergedInto == "main")
+        #expect(try String(contentsOf: repo.appending(path: "shared.txt"), encoding: .utf8) == "main and task 2\n")
     }
 
     @Test func aTaskIsDoneOnlyOnceGitHasItsCommit() async throws {

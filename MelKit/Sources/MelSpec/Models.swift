@@ -34,6 +34,10 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var taskCount: Int?
     /// GH-4: the pull request Mel opened when the last task was done. Nil without GitHub or before that.
     public var pullRequest: PullRequest?
+    /// The branch the spec branch was made from at its first run in Mel; Merge into main goes back into it (V2-22).
+    public var base: String?
+    /// V2-22 without GitHub: the branch the spec branch was merged into. Nil until Merge into main.
+    public var mergedInto: String?
     /// The main model's conversation for this spec; nil until its first draft starts one.
     public var conversation: Conversation?
 

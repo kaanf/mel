@@ -156,6 +156,50 @@ public enum Git {
         try run(["stash", "push", "--include-untracked", "--quiet", "-m", message] + pathspec(excluding: excluded), in: repo)
     }
 
+    // MARK: Merge into main (V2-22, V2-23)
+
+    /// The files merging `branch` into `base` would conflict on, worked out without touching the
+    /// working tree (`git merge-tree`). Empty when it merges cleanly.
+    public static func conflicts(merging branch: String, into base: String, in repo: URL) throws -> [String] {
+        do {
+            _ = try run(["merge-tree", "--write-tree", "--name-only", "--no-messages", base, branch], in: repo)
+            return []
+        } catch let failure as Failure {
+            // Exit 1: the tree's id, then one conflicted file per line. Anything else is a real error.
+            let lines = failure.output.split(whereSeparator: \.isNewline).map(String.init)
+            guard let tree = lines.first, tree.count >= 40, tree.allSatisfy(\.isHexDigit) else { throw failure }
+            return Array(lines.dropFirst())
+        }
+    }
+
+    /// Merge into main: `base` checked out, `branch` merged in (a fast-forward when `base` hasn't
+    /// moved), and the merged branch deleted.
+    public static func merge(_ branch: String, into base: String, in repo: URL) throws {
+        try run(["checkout", "--quiet", base], in: repo)
+        try run(["merge", "--quiet", "--no-edit", branch], in: repo)
+        try run(["branch", "--quiet", "-d", branch], in: repo)
+    }
+
+    /// "Let Claude Code resolve it": on `branch`, `base` merged in with its conflicts left in the files.
+    public static func startMerge(of base: String, on branch: String, in repo: URL) throws {
+        try switchTo(branch: branch, in: repo)
+        do {
+            try run(["merge", "--no-edit", base], in: repo)
+        } catch where isMerging(in: repo) {
+            // Stopped on its conflicts, as meant.
+        }
+    }
+
+    /// A merge is under way (conflicts not committed yet).
+    public static func isMerging(in repo: URL) -> Bool {
+        FileManager.default.fileExists(atPath: gitDirectory(repo).appending(path: "MERGE_HEAD").path(percentEncoded: false))
+    }
+
+    /// A merge the resolve run didn't finish goes back: both branches as they were.
+    public static func abortMerge(in repo: URL) throws {
+        try run(["merge", "--abort"], in: repo)
+    }
+
     @discardableResult
     static func run(_ arguments: [String], in directory: URL) throws -> String {
         let process = Process()

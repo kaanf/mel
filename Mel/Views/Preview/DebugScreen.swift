@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged
+    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
@@ -48,6 +48,10 @@ enum DebugScreen: String, CaseIterable {
         case .buildPRReady: Self.pullRequest(PreviewData.pullRequestReady)
         case .buildPRFailed: Self.pullRequest(PreviewData.pullRequestFailed)
         case .buildMerged: Self.pullRequest(PreviewData.pullRequestMerged)
+        case .builtInMel: PreviewData.appState([PreviewData.builtInMelSession.spec], sessions: [PreviewData.builtInMelSession])
+        case .mergeConflict: PreviewData.appState([PreviewData.mergeConflictSession.spec], sessions: [PreviewData.mergeConflictSession])
+        case .conflictResolved: PreviewData.appState([PreviewData.conflictResolvedSession.spec], sessions: [PreviewData.conflictResolvedSession])
+        case .mergedLocally: PreviewData.appState([PreviewData.mergedLocallySession.spec], sessions: [PreviewData.mergedLocallySession])
         case .boardEdited: PreviewData.appState([PreviewData.boardEditedSession.spec], sessions: [PreviewData.boardEditedSession])
         }
     }

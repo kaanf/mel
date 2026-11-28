@@ -510,6 +510,20 @@ enum PreviewData {
         spec.runs = Dictionary(uniqueKeysWithValues: (1...5).map { ($0, TaskRun(state: .done, at: .now)) })
         return SpecSession.preview(spec, documents: boardDocuments)
     }()
+    /// V2-22: every task run in Mel on the spec branch, ready to merge into main.
+    static func builtInMel(_ change: (inout Spec) -> Void = { _ in }) -> Spec {
+        var spec = builtSession.spec
+        spec.base = "main"
+        spec.runs?[2]?.report = BuildReport(works: ["Members can book a class."], decisions: [.init(title: "Bookings close 1 hour before class", why: "Teachers asked for time to prepare.", instead: "Until class starts: last-minute bookings.")])
+        change(&spec)
+        return spec
+    }
+    static let builtInMelSession = SpecSession.preview(builtInMel(), documents: boardDocuments)
+    /// V2-23: main changed meanwhile; 2 files conflict.
+    static let mergeConflictSession = SpecSession.preview(builtInMel(), documents: boardDocuments, mergeConflict: .init(files: ["androidApp/AppNavigation.kt", "shared/booking/BookingStore.kt"], tokens: 6_200))
+    /// V2-23 after Let Claude Code resolve it: the report, then Merge into main.
+    static let conflictResolvedSession = SpecSession.preview(builtInMel(), documents: boardDocuments, resolveReport: BuildReport(works: ["The schedule keeps main’s new teacher filter and the booking button from task 2."]))
+    static let mergedLocallySession = SpecSession.preview(builtInMel { $0.mergedInto = "main" }, documents: boardDocuments)
     /// GH-4: every task checked and pushed, the pull request open; `checks` is GitHub's now.
     static func pullRequestSession(_ checks: [PullRequestStatus.Check.Outcome], merged: Bool = false, pushError: String? = nil) -> SpecSession {
         var spec = builtSession.spec
