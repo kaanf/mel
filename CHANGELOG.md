@@ -6,6 +6,13 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.10.1] · 2026-11-28
+
+### Fixed
+- **A task run in Mel can commit when its check installs packages.** A check like `pnpm test` fills `node_modules`; with no `.gitignore` the run couldn't leave it out and stopped before committing. A run may now write `.gitignore` and unstage files, and keeps what tools make out of git.
+- **A run that ends without a commit says why.** Instead of "No commit for task N yet", the card shows what the run couldn't do (for example, a file it needed outside the task's folders), with Run again, Check it and Tell Mel about this.
+- **Plans give each task the files it needs.** A task that creates a package now changes its whole folder, and a task that adds a dependency may change the manifest and lockfile. This applies to plans written from now on; for an existing plan, tell Mel which files a task needs.
+
 ## [0.10] · 2026-11-28
 
 ### Added
@@ -176,7 +183,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.10...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/kaanf/mel/compare/v0.10...v0.10.1
 [0.10]: https://github.com/kaanf/mel/compare/v0.9.1...v0.10
 [0.9.1]: https://github.com/kaanf/mel/compare/v0.9...v0.9.1
 [0.9]: https://github.com/kaanf/mel/compare/v0.8.1...v0.9
