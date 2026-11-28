@@ -326,6 +326,26 @@ enum PreviewData {
                                    lastChange: SpecSession.ChangeResult(line: "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md", tokens: 1_800, passages: [.requirements: [passage]]))
     }()
 
+    /// V2-24: the panel with a request written.
+    static let tellComposeSession = SpecSession.preview(boardChangedSession.spec, documents: boardDocuments, decisions: boardDecisions,
+                                                        tellDraft: "Let teachers cancel a class from the app. Members get a push notification and their credit back.")
+    /// V2-25: Mel placing it; the reply has named two files so far.
+    static let tellWorkingSession = SpecSession.preview(boardChangedSession.spec, documents: boardDocuments, isRunning: true, decisions: boardDecisions,
+                                                        telling: "Let teachers cancel a class from the app. Members get a push notification and their credit back.", tellFound: [.requirements, .architecture])
+    /// V2-26: three changes in two files, already applied; the second undone.
+    static let tellReviewSession: SpecSession = {
+        var change = SpecSession.ChangeResult(line: "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md", tokens: 1_800, passages: [:])
+        change.request = "Let teachers cancel a class from the app. Members get a push notification and their credit back."
+        change.edits = [
+            Change.Edit(file: .requirements, old: "- 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist.", new: "- 1.2 WHEN a class is full, THE APP SHALL offer to join the waitlist instead."),
+            Change.Edit(file: .requirements, old: "", new: "- 1.4 WHEN a teacher cancels a class, THE APP SHALL return every booked member's credit and send a push notification."),
+            Change.Edit(file: .architecture, old: "Push is used for class reminders only.", new: "Push is used for class reminders and for class cancellations."),
+        ]
+        change.sections = ["1. Book a class", "1. Book a class", "Notifications"]
+        change.reverted = [1]
+        return SpecSession.preview(boardChangedSession.spec, documents: boardDocuments, decisions: boardDecisions, lastChange: change)
+    }()
+
     /// The edit banner: REQUIREMENTS.md was changed by hand.
     static let boardEditedSession = SpecSession.preview(spec(.board, docs(.approved, .edited, .stale, .stale, .stale), analyze: .passed), documents: boardDocuments, decisions: boardDecisions)
 

@@ -29,7 +29,7 @@ struct BoardInbox: View {
                 if isAsking { asking } else { planning }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Theme.Space.x16)
+            .padding(Theme.Space.x20)
             // The next question, a card answered or reopened, a new file's cards.
             .animation(.board, value: spec.intakeCard?.id)
             .animation(.board, value: spec.cards.map { $0.id + ($0.answer == nil ? "?" : "") })

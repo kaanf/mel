@@ -51,4 +51,10 @@ public enum SystemActions {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
     }
+
+    /// macOS dictation (Edit › Start Dictation) into the focused text field.
+    @MainActor
+    public static func startDictation() {
+        NSApp.sendAction(Selector(("startDictation:")), to: nil, from: nil)
+    }
 }

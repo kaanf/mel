@@ -5,7 +5,16 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally
+    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally, tellCompose, tellWorking, tellReview, tellUnplaced
+
+    /// The Tell Mel panel opens by itself on these (V2-24 to V2-27); `review` shows the last change.
+    var opensTell: (open: Bool, review: Bool) {
+        switch self {
+        case .tellCompose, .tellWorking, .tellUnplaced: (true, false)
+        case .tellReview: (true, true)
+        default: (false, false)
+        }
+    }
 
     static var current: DebugScreen? {
         UserDefaults.standard.string(forKey: "screen").flatMap(DebugScreen.init(rawValue:))
@@ -52,6 +61,10 @@ enum DebugScreen: String, CaseIterable {
         case .mergeConflict: PreviewData.appState([PreviewData.mergeConflictSession.spec], sessions: [PreviewData.mergeConflictSession])
         case .conflictResolved: PreviewData.appState([PreviewData.conflictResolvedSession.spec], sessions: [PreviewData.conflictResolvedSession])
         case .mergedLocally: PreviewData.appState([PreviewData.mergedLocallySession.spec], sessions: [PreviewData.mergedLocallySession])
+        case .tellCompose: PreviewData.appState([PreviewData.tellComposeSession.spec], sessions: [PreviewData.tellComposeSession])
+        case .tellWorking: PreviewData.appState([PreviewData.tellWorkingSession.spec], sessions: [PreviewData.tellWorkingSession])
+        case .tellReview: PreviewData.appState([PreviewData.tellReviewSession.spec], sessions: [PreviewData.tellReviewSession])
+        case .tellUnplaced: PreviewData.appState([PreviewData.boardUnplaced], sessions: [PreviewData.boardUnplacedSession])
         case .boardEdited: PreviewData.appState([PreviewData.boardEditedSession.spec], sessions: [PreviewData.boardEditedSession])
         }
     }

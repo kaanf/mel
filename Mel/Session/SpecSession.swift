@@ -70,6 +70,15 @@ import MelSystem
     @ObservationIgnored private var running: Task<RunEnd, Never>?
     @ObservationIgnored private var draftKind: DocKind?
     @ObservationIgnored private var reply = ""
+    /// Tell Mel (V2-24 to V2-27): the words in the box and its attachments, kept while the panel is closed.
+    var tellDraft = ""
+    var tellFiles: [URL] = []
+    /// The request Mel is placing, and the files its reply has named so far (V2-25's live steps).
+    private(set) var telling: String?
+    private(set) var tellFound: [DocKind] = []
+    @ObservationIgnored private var tellReply = ""
+    /// "Rewrite FILE" is running (V2-27 → working).
+    private(set) var rewriting: DocKind?
     @ObservationIgnored private var wroteAt = ContinuousClock.now
     @ObservationIgnored private var shownAt = ContinuousClock.now
     /// The files the prompt being built sends; the conversation has seen them once its run is done.
@@ -222,7 +231,14 @@ import MelSystem
     /// A text delta while drafting: the preview updates at most 5 times a second (each update parses and
     /// lays out the open file again), the file every 500 ms.
     private func received(_ text: String) {
-        guard let kind = draftKind else { return }
+        guard let kind = draftKind else {
+            // A change's reply is JSON edits: the files it names, as it names them.
+            guard telling != nil else { return }
+            tellReply += text
+            let named = DocKind.allCases.filter { tellReply.contains("\"\($0.rawValue)\"") || tellReply.contains($0.fileName) }
+            if named != tellFound { tellFound = named }
+            return
+        }
         reply += text
         let now = ContinuousClock.now
         if now - shownAt >= .milliseconds(200) {
@@ -550,6 +566,11 @@ import MelSystem
         /// Build (V2-13): tasks the change added, and tasks whose text it changed.
         var newTasks: Set<Int> = []
         var updatedTasks: Set<Int> = []
+        /// V2-26: what the user asked, each edit with the section it landed in, and the ones undone.
+        var request = ""
+        var edits: [Change.Edit] = []
+        var sections: [String?] = []
+        var reverted: Set<Int> = []
         fileprivate var before: [DocKind: String] = [:]
         fileprivate var decision: String?
 
@@ -567,8 +588,9 @@ import MelSystem
     }
 
     /// One change run over the written files: applies its edits, or records the files where they don't fit.
-    private func change(_ requests: [String], attachments: [Attachment] = [], answers: Bool) async -> ChangeEnd {
-        let written = spec.written
+    private func change(_ requests: [String], attachments: [Attachment] = [], answers: Bool, only: DocKind? = nil) async -> ChangeEnd {
+        // Where (V2-24): one file sends only that file and asks for edits only there.
+        let written = only.map { [$0] }.flatMap { $0.allSatisfy(spec.written.contains) ? $0 : nil } ?? spec.written
         guard !written.isEmpty else { return .refused }
         trimConversation()
         var values = promptValues(drafting: written[0])
@@ -596,10 +618,10 @@ import MelSystem
                 spec.unplacedChange = UnplacedChange(request: requests.joined(separator: "\n"), change: change, files: change.unplaced(in: current), answers: answers)
                 return .unplaced
             }
-            install(texts, line: change.summary(order: written), passages: Dictionary(grouping: change.edits, by: \.file).mapValues { $0.map(\.new) }, spent: spent)
+            install(texts, line: change.summary(order: written), passages: Dictionary(grouping: change.edits, by: \.file).mapValues { $0.map(\.new) }, spent: spent, edits: change.edits)
             return .applied
         case .stopped(.sessionNotFound):
-            return await change(requests, attachments: attachments, answers: answers)
+            return await change(requests, attachments: attachments, answers: answers, only: only)
         case .stopped(let reason):
             return .stopped(reason)
         case .refused:
@@ -608,7 +630,7 @@ import MelSystem
     }
 
     /// Puts changed files in place (text, disk, snapshot), reruns Mel's own checks and sets the result line.
-    private func install(_ texts: [DocKind: String], line: String, passages: [DocKind: [String]] = [:], spent: Int) {
+    private func install(_ texts: [DocKind: String], line: String, passages: [DocKind: [String]] = [:], spent: Int, edits: [Change.Edit] = []) {
         let oldTasks = Dictionary(tasks.map { ($0.number, $0) }) { first, _ in first }
         var before: [DocKind: String] = [:]
         for (kind, text) in texts {
@@ -623,6 +645,9 @@ import MelSystem
         if spec.stage == .done { spec.retasked(tasks) }
         var result = ChangeResult(line: line, tokens: (spec.tokens?[.changes] ?? 0) - spent, passages: passages)
         result.before = before
+        result.request = telling ?? ""
+        result.edits = edits
+        result.sections = edits.map { Change.section(of: $0, in: documents[$0.file] ?? "") }
         result.newTasks = Set(tasks.filter { oldTasks[$0.number] == nil }.map(\.number))
         result.updatedTasks = Set(tasks.filter { task in oldTasks[task.number].map { $0 != task } ?? false }.map(\.number))
         lastChange = result
@@ -658,19 +683,22 @@ import MelSystem
     /// reason. On Build, `task` is where the request came from. False when the run didn't finish:
     /// the request stays in the box.
     @discardableResult
-    func tell(_ text: String, files: [URL] = [], task: SpecTask? = nil) async -> Bool {
+    func tell(_ text: String, files: [URL] = [], task: SpecTask? = nil, only: DocKind? = nil) async -> Bool {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard spec.stage != .discovery, !isRunning, !text.isEmpty, !spec.written.isEmpty, spec.halted == nil, spec.unplacedChange == nil else { return false }
         let request = task.map { "Found while building task \($0.number) (\($0.title)): " + text } ?? text
         lastError = nil
         tellingTask = task?.number
-        defer { tellingTask = nil }
+        telling = text
+        tellFound = []
+        tellReply = ""
+        defer { tellingTask = nil; telling = nil }
         var attachments: [Attachment] = []
         if let store {
             for file in files { if let attachment = try? await store.attach(copying: file) { attachments.append(attachment) } }
             spec.attachments += attachments
         }
-        let end = await change([request], attachments: attachments, answers: false)
+        let end = await change([request], attachments: attachments, answers: false, only: only)
         defer { persist() }
         switch end {
         case .applied:
@@ -710,6 +738,28 @@ import MelSystem
         lastChange = nil
     }
 
+    /// V2-26 Undo this / Redo: the edit's file again from before the change, with every edit not undone.
+    func toggleEdit(_ index: Int) {
+        guard var change = lastChange, change.edits.indices.contains(index), !isRunning else { return }
+        if change.reverted.contains(index) { change.reverted.remove(index) } else { change.reverted.insert(index) }
+        let kind = change.edits[index].file
+        let kept = Change(edits: change.edits.enumerated().filter { $0.element.file == kind && !change.reverted.contains($0.offset) }.map(\.element))
+        guard let before = change.before[kind], let text = kept.apply(to: [kind: before])?[kind] ?? (kept.edits.isEmpty ? before : nil) else { return }
+        let final = text.trimmingCharacters(in: .whitespacesAndNewlines) + "\n"
+        documents[kind] = final
+        write(final, for: kind)
+        saveSnapshot(kind)
+        spec.conversation?.forget([kind])
+        change.passages[kind] = kept.edits.map(\.new)
+        lastChange = change
+        refreshChecks()
+        if spec.stage == .done { spec.retasked(tasks) }
+        persist()
+    }
+
+    /// Dictate (V2-24): macOS speech-to-text into the focused box.
+    func dictate() { SystemActions.startDictation() }
+
     /// "Rewrite FILE" (V2-7): the agent writes the first unplaced file whole. It is the only whole
     /// rewrite, and always the user's choice. The edits that did fit go in once no file is left.
     func rewriteUnplaced() async {
@@ -722,6 +772,9 @@ import MelSystem
         values["current"] = filesText([kind])
         values["approved"] = filesText(spec.written.filter { $0 != kind })
         let spent = spec.tokens?[.changes] ?? 0
+        rewriting = kind
+        telling = unplaced.request
+        defer { rewriting = nil; telling = nil }
         let end = await stream(kind, prompt: Prompt.rewrite.build(values, fillGaps: spec.fillGaps, language: spec.language), step: .changes)
         if case .stopped(.sessionNotFound) = end {
             write(before, for: kind)
@@ -1573,7 +1626,7 @@ import MelSystem
         try? await store?.flushState()
     }
 
-    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil, pullStatus: PullRequestStatus? = nil, pushError: String? = nil, mergeConflict: MergeConflict? = nil, resolveReport: BuildReport? = nil) -> SpecSession {
+    static func preview(_ spec: Spec, documents: [DocKind: String] = [:], liveText: String = "", activity: [ActivityLine] = [], isRunning: Bool = false, lastError: String? = nil, conflict: DocKind? = nil, snapshots: [DocKind: String] = [:], decisions: [Decision] = [], lastChange: ChangeResult? = nil, tellingTask: Int? = nil, runningTask: Int? = nil, blockedRun: BlockedRun? = nil, pullStatus: PullRequestStatus? = nil, pushError: String? = nil, mergeConflict: MergeConflict? = nil, resolveReport: BuildReport? = nil, telling: String? = nil, tellFound: [DocKind] = [], tellDraft: String = "") -> SpecSession {
         let session = SpecSession(spec: spec, documents: documents, liveText: liveText, activity: activity, isRunning: isRunning, lastError: lastError, conflict: conflict, snapshots: snapshots, decisions: decisions)
         session.lastChange = lastChange
         session.tellingTask = tellingTask
@@ -1583,6 +1636,9 @@ import MelSystem
         session.pushError = pushError
         session.mergeConflict = mergeConflict
         session.resolveReport = resolveReport
+        session.telling = telling
+        session.tellFound = tellFound
+        session.tellDraft = tellDraft
         return session
     }
 }

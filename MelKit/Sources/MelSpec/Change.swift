@@ -70,6 +70,22 @@ public struct Change: Codable, Hashable, Sendable {
         return (["Changed \(first.1) \(first.1 == 1 ? "place" : "places") in \(first.0.fileName)"] + rest).joined(separator: ", ")
     }
 
+    /// V2-26: the heading of the section an edit lands in ("3. Cancelling"), read from the file after
+    /// the change; "new" when the edit adds a section of its own. Nil when the file has no heading above it.
+    public static func section(of edit: Edit, in text: String) -> String? {
+        let anchor = edit.new.isEmpty ? edit.old : edit.new
+        guard !anchor.isEmpty, let range = text.range(of: anchor) else { return nil }
+        let before = text[..<range.lowerBound]
+        let ownHeading = anchor.split(separator: "\n").first.map { $0.hasPrefix("#") } ?? false
+        if ownHeading, let line = anchor.split(separator: "\n").first { return heading(line) + " · new" }
+        guard let line = before.split(separator: "\n").last(where: { $0.hasPrefix("#") }) else { return nil }
+        return heading(line)
+    }
+
+    private static func heading(_ line: Substring) -> String {
+        String(line.drop { $0 == "#" }).trimmingCharacters(in: .whitespaces)
+    }
+
     /// Decodes the JSON object in `reply`; text around it is ignored.
     public static func decode(_ reply: String) throws -> Change {
         try JSONDecoder().decode(Change.self, from: jsonObject(in: reply))

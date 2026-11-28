@@ -12,6 +12,9 @@ struct BoardView: View {
     @State private var showsFiles = false
     @State private var isEditing = false
     @State private var why = ""
+    /// The Tell Mel panel (V2-24 to V2-27), and whether it shows the last change's review.
+    @State private var showsTell = false
+    @State private var reviewsTell = false
     @AppStorage("showTokens") private var showsTokens = true
     @AppStorage("commitSpec") private var commitsSpec = true
     @AppStorage("writeAgentsFile") private var writesAgentsFile = true
@@ -34,12 +37,32 @@ struct BoardView: View {
             VStack(spacing: 0) {
                 inboxHeader
                 BoardInbox(session: session) { open(.decisions) }
+                // Hidden before there are files, while editing by hand and while the agent is stopped.
+                if !isAsking, !isEditing, spec.halted == nil, !spec.written.isEmpty {
+                    TellBar(session: session, open: { showsTell = true }, review: {
+                        reviewsTell = true
+                        showsTell = true
+                    })
+                    .padding(EdgeInsets(top: Theme.Space.x14, leading: Theme.Space.x20, bottom: Theme.Space.x20, trailing: Theme.Space.x20))
+                    .overlay(alignment: .top) { Rectangle().fill(Theme.Colors.separatorLight).frame(height: 0.5) }
+                    .transition(.opacity)
+                }
             }
             .ignoresSafeArea(.container, edges: .top)
             .background(Theme.Colors.fillSubtle)
             .inspectorColumnWidth(Theme.Size.inboxWidth)
         }
         .background { shortcuts }
+        .sheet(isPresented: $showsTell) {
+            TellPanel(session: session, task: .constant(nil), openFile: openFile?.doc, show: { open(.doc($0)) }, reviewing: $reviewsTell) { showsTell = false }
+        }
+        // An answer that couldn't be placed asks how to go on in the panel (V2-27).
+        .onChange(of: spec.unplacedChange != nil) { _, unplaced in if unplaced { showsTell = true } }
+        #if DEBUG
+        .onAppear {
+            if let tell = DebugScreen.current?.opensTell, tell.open { (showsTell, reviewsTell) = (true, tell.review) }
+        }
+        #endif
         .task(id: spec.id) { if isAsking { await session.start() } }
     }
 
@@ -70,13 +93,6 @@ struct BoardView: View {
                     .transition(.opacity)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(EdgeInsets(top: Theme.Space.x4, leading: Theme.Space.x20, bottom: Theme.Space.x16, trailing: Theme.Space.x20))
-            }
-            // Hidden before there are files, while editing by hand and while the agent is stopped.
-            if !isAsking, !isEditing, spec.halted == nil, !spec.written.isEmpty {
-                BoardTell(session: session)
-                    .frame(maxWidth: Theme.Size.fileMaxWidth)
-                    .padding(EdgeInsets(top: 0, leading: Theme.Space.x20, bottom: Theme.Space.x20, trailing: Theme.Space.x20))
-                    .transition(.opacity.combined(with: .offset(y: 8)))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -209,7 +225,7 @@ struct BoardView: View {
             .buttonStyle(DesignButtonStyle(height: Theme.Size.button, leading: Theme.Space.x14, trailing: Theme.Space.x14))
             .disabled(!spec.isReady || session.isRunning)
         }
-        .padding(.horizontal, Theme.Space.x16)
+        .padding(.horizontal, Theme.Space.x20)
         .frame(height: Theme.Size.columnHeader)
         // Where the title bar was: the whole row moves the window.
         .contentShape(Rectangle())
@@ -326,6 +342,8 @@ enum BoardFile: Hashable {
         case .decisions: "DECISIONS.md"
         }
     }
+
+    var doc: DocKind? { if case .doc(let kind) = self { kind } else { nil } }
 }
 
 /// The toolbar pill: one line on what the board is doing or waiting for.
@@ -567,6 +585,22 @@ struct BoardSkeleton: View {
 #Preview("Board, cards") {
     NavigationStack { BoardView(session: PreviewData.boardSession, openFile: .constant(nil)) }
         .frame(width: 1036, height: 800)
+}
+
+#Preview("V2-24 Tell Mel panel") {
+    TellPanel(session: PreviewData.tellComposeSession, task: .constant(nil), reviewing: .constant(false)) {}
+}
+
+#Preview("V2-25 Tell Mel working") {
+    TellPanel(session: PreviewData.tellWorkingSession, task: .constant(nil), reviewing: .constant(false)) {}
+}
+
+#Preview("V2-26 Tell Mel review") {
+    TellPanel(session: PreviewData.tellReviewSession, task: .constant(nil), reviewing: .constant(true)) {}
+}
+
+#Preview("V2-27 Tell Mel couldn't place it") {
+    TellPanel(session: PreviewData.boardUnplacedSession, task: .constant(nil), reviewing: .constant(false)) {}
 }
 
 #Preview("Asking") {

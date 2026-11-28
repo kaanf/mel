@@ -655,8 +655,8 @@ extension Theme.Text {
 }
 
 extension Theme.Size {
-    /// 340 · "Mel needs you" column (drawn 300; widened so answers fit on a line or two).
-    static let inboxWidth: CGFloat = 340
+    /// 380 · Mel's column (V2-24: drawn 380, was 300 and then 340).
+    static let inboxWidth: CGFloat = 380
     /// 760 / 780 / 680 / 860 · widest Plan, open file and Tell Mel, intake summary, Flow and Roadmap.
     static let planMaxWidth: CGFloat = 760
     static let fileMaxWidth: CGFloat = 780
@@ -939,6 +939,61 @@ extension Theme.Elevation {
     static let freeAnswer = Theme.Elevation(ring: Theme.Colors.focusRing, ringWidth: 1, insetRing: true)
     /// The radio of an answer on a card: 1.5 pt #C7C7CC.
     static let cardRadio = Theme.Elevation(ring: Theme.Colors.radioRing, ringWidth: 1.5, insetRing: true)
+}
+
+// MARK: - Tell Mel panel (design/v2/V2-2-Board.dc.html, states V2-24 to V2-27)
+
+extension Theme.Colors {
+    /// #1D1D1F on white · the chosen Where chip.
+    static let chipSelected = Color(hex: 0x1D1D1F, dark: 0xF5F5F7)
+    static let chipSelectedText = Color(hex: 0xFFFFFF, dark: 0x1D1D1F)
+    /// #FFE8E5 / #B8000F · an attachment's file-type tile.
+    static let attachTile = Color(hex: 0xFFE8E5, dark: 0x3A1E1C)
+    static let attachTileText = Color(hex: 0xB8000F, dark: 0xFF7B72)
+    /// #FFF7EB, ring rgba(178,80,0,0.25) · "Nothing was changed".
+    static let unplacedFill = Color(hex: 0xFFF7EB, dark: 0x33281A)
+    static let unplacedRing = Color(hex: 0xB25000, opacity: 0.25, dark: 0xFF9F0A, darkOpacity: 0.4)
+    /// #6B2A2A struck through, signs #C4000F / #1F7A36 · a change's removed and added lines.
+    static let removedLine = Color(hex: 0x6B2A2A, dark: 0xFF9C94)
+    static let removedSign = Color(hex: 0xC4000F, dark: 0xFF6961)
+    static let addedSign = Color(hex: 0x1F7A36, dark: 0x4CD964)
+    /// #D97F00 / #2A2A2E · the honeycomb mark on the Tell Mel bar and panel.
+    static let markHex = Color(hex: 0xD97F00, dark: 0xF0A030)
+    static let markCore = Color(hex: 0x2A2A2E, dark: 0x2A2A2E)
+}
+
+extension Theme.Text {
+    /// 15/22 · what the user writes in the panel.
+    static let tellComposer = Theme.TextStyle(size: 15, weight: .regular, lineHeight: 22)
+}
+
+extension Theme.Size {
+    /// The panel: 680 wide, at most 680 tall; Mel's column 380 with 20 pt padding.
+    static let tellPanelWidth: CGFloat = 680
+    static let tellPanelHeight: CGFloat = 680
+    /// 44 · the Tell Mel bar and an attachment card; 32 the panel's buttons; 26 a Where chip; 20 a keycap hint.
+    static let tellBar: CGFloat = 44
+    static let panelButton: CGFloat = 32
+    static let scopeChip: CGFloat = 26
+    static let keyHintChip: CGFloat = 20
+    /// 20 · the mark on the bar; 32 in the panel's header; 28 an example's or attachment's tile.
+    static let markSmall: CGFloat = 20
+    static let markPanel: CGFloat = 32
+    static let panelTile: CGFloat = 28
+}
+
+extension Theme.Elevation {
+    /// The bar: ring 0.14 + 0 6 16 0.05.
+    static let tellBar = Theme.Elevation(ring: .ink(0.14), drop: Theme.Drop(y: 6, blur: 16, color: .black.opacity(0.05)))
+    /// The panel's white buttons and choice cards: ring 0.14 + 0 1 2 0.04.
+    static let panelButton = Theme.Elevation(ring: .ink(0.14), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.04)))
+    /// A changed file's box in Review: ring 0.12.
+    static let reviewFile = Theme.Elevation(ring: .ink(0.12), drop: Theme.Drop(y: 1, blur: 2, color: .black.opacity(0.03)))
+    /// The composer: inset ring 0.08; "Nothing was changed": inset ring.
+    static let composer = Theme.Elevation(ring: .ink(0.08), insetRing: true)
+    static let unplaced = Theme.Elevation(ring: Theme.Colors.unplacedRing, insetRing: true)
+    /// The result card in Mel's column: ring 0.1 + 0 1 3 0.05.
+    static let tellResult = Theme.Elevation(ring: .ink(0.1), drop: Theme.Drop(y: 1, blur: 3, color: .black.opacity(0.05)))
 }
 
 // MARK: - Motion

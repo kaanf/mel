@@ -233,6 +233,26 @@ final class BoardSessionTests {
 
     // MARK: - Tell Mel
 
+    /// V2-24 Where: one file sends only that file. V2-26: Undo this takes one edit out and Redo puts it
+    /// back; the rest stays; the result line counts what is still in.
+    @Test func tellMelInOneFileAndUndoThis() async throws {
+        let (session, runner) = try await readyFeature()
+        runner.add([change((.requirements, "reserve a spot.", "reserve a spot and send a push."), (.requirements, "# Requirements", "# Requirements\n\nPush is on."))])
+        #expect(await session.tell("Send a push.", only: .requirements))
+        let prompt = try #require(runner.requests.last?.prompt)
+        #expect(prompt.contains("`requirements`") && !prompt.contains("`tasks`"))
+        #expect(session.lastChange?.request == "Send a push.")
+        #expect(session.lastChange?.edits.count == 2)
+
+        session.toggleEdit(0)
+        #expect(session.documents[.requirements]?.contains("reserve a spot.") == true)
+        #expect(session.documents[.requirements]?.contains("Push is on.") == true)
+        #expect(session.lastChange?.reverted == [0])
+        session.toggleEdit(0)
+        #expect(session.documents[.requirements]?.contains("reserve a spot and send a push.") == true)
+        #expect(session.lastChange?.reverted == [])
+    }
+
     @Test func tellMelPatchesFilesLogsTheWordsAndUndoes() async throws {
         let (session, runner) = try await readyFeature()
         runner.add([change((.requirements, "reserve a spot.", "reserve a spot and send a push."), (.tasks, "1. Booking store", "1. Booking store and push"), tokens: 1_800)])

@@ -24,12 +24,11 @@ struct BuildView: View {
     @State private var answersOther = false
     /// "Tell Mel about this": the task the next request comes from.
     @State private var telling: SpecTask?
-    /// The right panel shows Tell Mel instead of How building works.
+    /// The Tell Mel panel (V2-24 to V2-27) and whether it shows the last change's review.
     @State private var isTelling: Bool
+    @State private var reviewsTell = false
     /// Width inside an "At the same time" step, for how many cards go side by side.
     @State private var stepWidth = Theme.Size.buildWidth
-
-    private var showsTell: Bool { isTelling || (session.isRunning && session.runningTask == nil) || session.lastChange != nil || spec.unplacedChange != nil }
 
     init(session: SpecSession, telling: SpecTask? = nil, report: Int? = nil) {
         self.session = session
@@ -70,9 +69,13 @@ struct BuildView: View {
         .inspector(isPresented: .constant(true)) {
             VStack(spacing: 0) {
                 asideHeader
-                Group {
-                    if showsTell { tellPanel.transition(.opacity) } else { aside.transition(.opacity) }
-                }
+                aside
+                TellBar(session: session, building: true, open: { isTelling = true }, review: {
+                    reviewsTell = true
+                    isTelling = true
+                })
+                .padding(EdgeInsets(top: Theme.Space.x14, leading: Theme.Space.x16, bottom: Theme.Space.x16, trailing: Theme.Space.x16))
+                .overlay(alignment: .top) { Rectangle().fill(Theme.Colors.separatorLight).frame(height: 0.5) }
             }
             .ignoresSafeArea(.container, edges: .top)
             .foregroundStyle(Theme.Colors.label)
@@ -84,7 +87,10 @@ struct BuildView: View {
         .animation(.board, value: spec.runs)
         .animation(.board, value: session.checking)
         .animation(.board, value: session.lastChange)
-        .animation(.board, value: showsTell)
+        .sheet(isPresented: $isTelling) {
+            TellPanel(session: session, building: true, task: $telling, reviewing: $reviewsTell) { isTelling = false }
+        }
+        .onChange(of: spec.unplacedChange != nil) { _, unplaced in if unplaced { isTelling = true } }
         .animation(.board, value: session.isRunning)
         .animation(.board, value: spec.unplacedChange)
         .animation(.board, value: session.blockedRun)
@@ -988,41 +994,6 @@ struct BuildView: View {
 
     // MARK: Tell Mel
 
-    private var tellPanel: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.x14) {
-            HStack(spacing: Theme.Space.x8) {
-                Text("Tell Mel").textStyle(Theme.Text.boardTitle).accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 0)
-                Button {
-                    isTelling = false
-                    telling = nil
-                    session.dismissChange()
-                } label: {
-                    DesignIcon(glyph: .close, size: Theme.Size.readyCheck, weight: 2)
-                        .foregroundStyle(Theme.Colors.secondaryLabel)
-                        .frame(width: Theme.Size.buttonMini, height: Theme.Size.buttonMini)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(session.isRunning || spec.unplacedChange != nil)
-                .accessibilityLabel("Close")
-                .help("Back to How building works")
-            }
-            Text("What did a task turn up? A missing state, a task to split, a wrong assumption. Mel patches the spec.")
-                .textStyle(Theme.Text.calloutLoose)
-                .foregroundStyle(Theme.Colors.bodyLabel)
-                .fixedSize(horizontal: false, vertical: true)
-            BoardTell(session: session, building: true, task: $telling)
-                .padding(Theme.Space.x2)
-        }
-        .padding(Theme.Space.x16)
-        .frame(maxHeight: .infinity, alignment: .top)
-        
-    }
-
-    // MARK: How building works
-
-    /// The task whose run stopped on a question, if any (one runs at a time, so one asks at most).
     private var asking: (SpecTask, BuildQuestion)? {
         for task in tasks { if case .asking(let question) = session.status(of: task) { return (task, question) } }
         return nil
@@ -1147,8 +1118,6 @@ struct BuildView: View {
                     openSettings()
                 }
                 .buttonStyle(DesignLinkStyle(text: Theme.Text.captionTall))
-                Button("Tell Mel something the plan missed") { isTelling = true }
-                    .buttonStyle(BoardPillStyle())
             }
             .padding(Theme.Space.x16)
         }
