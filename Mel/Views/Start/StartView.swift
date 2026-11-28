@@ -341,9 +341,12 @@ struct StartView: View {
                 }
                 row(name: "No code yet, start from an idea", meta: state.github.login == nil ? "Mel makes a new folder for it" : "Mel makes a new folder and, if you want, a GitHub repo for it", isOn: isIdea || (showsGitHub ? repos.isEmpty : folders.isEmpty)) { isIdea = true }
             }
-            Text(showsGitHub ? "Your repos, newest first." : "Or drop a project folder anywhere on this window.")
-                .textStyle(Theme.Text.callout)
-                .foregroundStyle(Theme.Colors.secondaryLabel)
+            HStack(spacing: Theme.Space.x8) {
+                Text(showsGitHub ? "Your repos, newest first." : "Or drop a project folder anywhere on this window.")
+                    .textStyle(Theme.Text.callout)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                if showsGitHub { RefreshReposButton() }
+            }
         }
     }
 

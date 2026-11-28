@@ -122,6 +122,7 @@ struct RepoChoiceView: View {
             }
             .frame(maxHeight: Theme.Size.repoListRow * 4)
             .surface(Theme.Colors.background, .outlineCard, in: RoundedRectangle(cornerRadius: Theme.Radius.row))
+            RefreshReposButton(text: Theme.Text.caption)
             if let repo = choice.repo, !repo.isEmpty {
                 Text(connecting ? "This repo has its own history. Mel won’t mix two histories: pick an empty repo or make a new one."
                                 : "This repo has code already. Mel clones it and reads it like any project.")
@@ -147,6 +148,22 @@ struct RepoChoiceView: View {
             default:
                 ProgressView().controlSize(.mini)
             }
+        }
+    }
+}
+
+/// Lists the GitHub repos again, for one made on GitHub while Mel was open.
+struct RefreshReposButton: View {
+    @Environment(AppState.self) private var state
+    var text = Theme.Text.callout
+
+    var body: some View {
+        if state.loadingGitHubRepos {
+            ProgressView().controlSize(.mini).accessibilityLabel("Refreshing repos")
+        } else {
+            Button("Refresh") { Task { await state.loadGitHubRepos() } }
+                .buttonStyle(DesignLinkStyle(text: text))
+                .accessibilityLabel("Refresh GitHub repos")
         }
     }
 }

@@ -48,6 +48,8 @@ import MelSystem
     var github: GitHubAccount = .checking
     /// GH-1 On GitHub, newest first; loaded once signed in.
     private(set) var githubRepos: [GitHubRepo] = []
+    /// While `gh repo list` runs: Refresh shows a spinner.
+    private(set) var loadingGitHubRepos = false
     /// Each project's GitHub repo, `owner/name` from its `origin`; nil when it has none.
     private(set) var remotes: [Project.ID: String] = [:]
     /// Settings › Specs › Open files in: the app for Open in Editor; nil is the Mac's default for Markdown.
@@ -336,8 +338,12 @@ import MelSystem
         }
     }
 
+    /// Also Refresh on Start and in the repo choice: the list again, newest first.
     func loadGitHubRepos() async {
-        guard let cli = gitHubCLI, let json = try? await Task.detached(operation: { try cli.repos() }).value else { return }
+        guard let cli = gitHubCLI, !loadingGitHubRepos else { return }
+        loadingGitHubRepos = true
+        defer { loadingGitHubRepos = false }
+        guard let json = try? await Task.detached(operation: { try cli.repos() }).value else { return }
         githubRepos = (try? GitHubRepo.list(json: json)) ?? []
     }
 

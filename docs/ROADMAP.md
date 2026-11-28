@@ -230,6 +230,7 @@ Later (OQ #43): tasks of one step at the same time, each in its own worktree.
 
 - 2026-11-28, from the user ("No commit" again, on task 2): the run stopped because the plan didn't fit; task 2's `Changes` named `apps/server/src/…` but not `apps/server/package.json`, its tsconfig or `pnpm-lock.yaml`, and the card said only "No commit" (the report of a run that didn't commit was never shown). tasks.md now asks for a new package's whole folder and, for a new dependency, its manifest and lockfile (not re-recorded for real); a run that ends with a report but no commit shows "The run ended without a commit" with its Not done and Not allowed lines, Run again, Check it and Tell Mel (`-screen buildNoCommit`, looked at in the Debug build). The user's own spec still needs a Tell Mel for tasks 2 and 3.
 - v0.10.1 published 2026-11-28 (build 489, notarized DMG; appcast.xml updated): build runs may write `.gitignore` and unstage, a run without a commit shows why, plans give a new package its whole folder.
+- 2026-11-28, from the user: Refresh next to the GitHub repo list (Start › On GitHub and the repo choice in GH-2 / GH-3) runs `gh repo list` again (`AppState.loadGitHubRepos`, a spinner while it runs). Not yet looked at in the Debug build on the On GitHub tab. On `main`, not released.
 
 ## Risks
 
