@@ -24,6 +24,10 @@ Name: {{name}}
 
 {{decide}}
 
+## How the app works today
+
+{{today}}
+
 ## Approved files
 
 {{approved}}
@@ -44,8 +48,8 @@ Source: your idea, Question 4 (cancellations)
 
 As a member, I want to book a class from the weekly schedule, so that my spot is guaranteed.
 
-- 1.1 WHEN a member books a class with free spots, THEN one spot is reserved and one credit is deducted.
-- 1.2 WHEN a class is full, THEN the app offers to join the waitlist instead.
+- 1.1 WHEN a member books a class with free spots, THEN one spot is reserved and one credit is deducted. `Adds booking.md`
+- 1.2 WHEN a class is full, THEN the app offers to join the waitlist instead. `Changes B-1.3`
 
 <!-- MVP line -->
 
@@ -56,14 +60,14 @@ Source: Question 2 (payments)
 
 As a member, I want to buy a gift card, so that I can give classes to a friend.
 
-- 2.1 WHEN a member completes payment, THEN the gift card is emailed to them.
+- 2.1 WHEN a member completes payment, THEN the gift card is emailed to them. `Adds gift-cards.md`
 
 ## Quality requirements
 
 Source: Intake (privacy, speed, offline) and project principles
 
-- Q1 WHEN a member opens the weekly schedule on a mid-range phone, THEN it appears in under 1 second.
-- Q2 WHEN the phone is offline, THEN the schedule shows the last loaded classes.
+- Q1 WHEN a member opens the weekly schedule on a mid-range phone, THEN it appears in under 1 second. `Keeps B-2.4`
+- Q2 WHEN the phone is offline, THEN the schedule shows the last loaded classes. `Adds schedule.md`
 
 ## Edge cases
 
@@ -74,6 +78,7 @@ Source: Intake (privacy, speed, offline) and project principles
 - Under each heading: a tag line `P1 · MVP`, `P1`, `P2` or `P3`, then `Source:` naming where the story comes from (the idea, an intake question, the project context).
 - Then one paragraph: "As a <role>, I want <goal>, so that <benefit>."
 - Then its criteria as a list. IDs are `<story>.<criterion>`. Each is one sentence: `WHEN <the situation>, THEN <what must be true>.` The situation is something a user or a test can set up; the outcome is something a test can check. Task checks and tests are written from them. A criterion may wrap onto indented lines.
+- End every criterion with its tag against how the app works today, in backticks: `Adds <area>.md` for new behavior (an area file listed above, or a short new name), `Changes B-2.1` when it changes that rule, `Removes B-2.1` when it ends it, `Keeps B-2.1` when it restates it. With no rules above, every criterion is `Adds <area>.md`. Example: `- 1.1 WHEN a member picks a teacher, THEN the schedule shows only that teacher’s classes. \`Adds schedule.md\``
 - Write `<!-- MVP line -->` on its own line once, after the last story tagged MVP.
 - `## Quality requirements` lists `Q<n>` criteria, also WHEN … THEN …, for privacy, speed, offline and other qualities, with a `Source:` line.
 - `## Edge cases` lists what happens in unusual situations, at least one for every P1 story.

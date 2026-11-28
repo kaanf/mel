@@ -38,6 +38,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var base: String?
     /// V2-22 without GitHub: the branch the spec branch was merged into. Nil until Merge into main.
     public var mergedInto: String?
+    /// V2-34: the project spec took this spec's changes (`updated`), or the user said Not now (`later`).
+    public var projectSpec: ProjectSpecStep?
     /// The main model's conversation for this spec; nil until its first draft starts one.
     public var conversation: Conversation?
 
@@ -65,6 +67,9 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     /// A new spec's name until the intake names it.
     public static let untitledName = "Untitled Spec"
 }
+
+/// V2-34: what the user did with "Update how the app works today".
+public enum ProjectSpecStep: String, Codable, Hashable, Sendable { case updated, later }
 
 /// Where a spec is once its plan is handed to the coding agent. Mel can't see the agent work:
 /// the user marks it done.
@@ -321,6 +326,9 @@ public struct Question: Codable, Identifiable, Hashable, Sendable {
     public var about: String?
     /// Board: answered after its file was written; the next change run applies it.
     public var pending: Bool?
+    /// V2-31 "Changes how it works today": the project spec rule (`B-2.1`) a criterion changes. Option 0
+    /// keeps this spec's rule (nothing to change), option 1 today's.
+    public var today: String?
 
     public init(id: String, title: String, why: String, shapes: DocKind, round: QuestionRound = .intake, options: [Option], answer: Answer? = nil, about: String? = nil) {
         self.id = id

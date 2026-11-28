@@ -957,6 +957,9 @@ extension Theme.Colors {
     /// #FFF7EB, ring rgba(178,80,0,0.25) · "Nothing was changed".
     static let unplacedFill = Color(hex: 0xFFF7EB, dark: 0x33281A)
     static let unplacedRing = Color(hex: 0xB25000, opacity: 0.25, dark: 0xFF9F0A, darkOpacity: 0.4)
+    /// rgba(201,52,0,0.09) / #A33000 · a criterion's "Changes B-2.1" tag (V2-31).
+    static let changeTagFill = Color(hex: 0xC93400, opacity: 0.09, dark: 0xFF6B3D, darkOpacity: 0.16)
+    static let changeTagText = Color(hex: 0xA33000, dark: 0xFF9272)
     /// rgba(36,138,61,0.06) · a rule under Must not change (V2-32).
     static let keepFill = Color(hex: 0x248A3D, opacity: 0.06, dark: 0x30D158, darkOpacity: 0.1)
     /// #6B2A2A struck through, signs #C4000F / #1F7A36 · a change's removed and added lines.

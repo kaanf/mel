@@ -51,6 +51,8 @@ struct BuildView: View {
                     progress
                     if let blocked = session.blockedRun { blockedBanner(blocked).transition(.drop) }
                     if let error = session.pushError { pushBanner(error).transition(.drop) }
+                    if allDone, spec.projectSpec == nil, !session.projectSpecChanges.isEmpty { projectSpecCard.transition(.drop) }
+                    if allDone, spec.projectSpec == .updated, session.projectSpecBefore != nil { projectSpecResult.transition(.drop) }
                     if allDone { builtBanner.transition(.drop) }
                     ForEach(Array(session.steps.enumerated()), id: \.offset) { index, step in
                         stepSection(step, index: index)
@@ -100,6 +102,8 @@ struct BuildView: View {
         .animation(.board, value: session.pushError)
         .animation(.board, value: session.mergeConflict)
         .animation(.board, value: spec.mergedInto)
+        .animation(.board, value: spec.projectSpec)
+        .task(id: allDone) { if allDone { await session.refreshProjectSpecChanges() } }
         .navigationTitle("Build: \(spec.name)")
         // GH-4: GitHub's checks while they run, and a Merge when checks pass until GitHub merges.
         .task(id: spec.pullRequest) {
@@ -333,6 +337,9 @@ struct BuildView: View {
                     }
                     planLater
                     Button("View on GitHub", action: session.openPullRequest).buttonStyle(BoardPillStyle())
+                    if spec.projectSpec == .later {
+                        Button("Update how the app works today…") { session.projectSpecLater(false) }.buttonStyle(DesignLinkStyle())
+                    }
                     if session.isMerging { ProgressView().controlSize(.small) }
                 }
                 if !pull.merged, let status {
@@ -360,6 +367,108 @@ struct BuildView: View {
         .padding(.vertical, Theme.Space.x12)
         .padding(.horizontal, Theme.Space.x14)
         .surface(Theme.Colors.bannerFill, .banner, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    // MARK: Project spec (V2-34)
+
+    /// "Update how the app works today": this spec's deltas by project spec file, merged by id in Swift.
+    private var projectSpecCard: some View {
+        let changes = session.projectSpecChanges
+        let files = changes.map(\.file).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
+        return VStack(alignment: .leading, spacing: Theme.Space.x16) {
+            VStack(alignment: .leading, spacing: Theme.Space.x4) {
+                Text("Update how the app works today").textStyle(Theme.Text.headline).accessibilityAddTraits(.isHeader)
+                Text("specs/current/ describes the app as it is. Every new spec is checked against it, so it should know what this spec changed.")
+                    .textStyle(Theme.Text.bodyLoose)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(files, id: \.self) { file in projectSpecFile(file, rows: changes.filter { $0.file == file }) }
+            FlowLayout(spacing: Theme.Space.x10) {
+                Button("Update the project spec") { Task { await session.updateProjectSpec() } }
+                    .buttonStyle(BoardPillStyle(kind: .accent, height: Theme.Size.panelButton, padding: Theme.Space.x16, text: Theme.Text.bodyBold))
+                    .disabled(session.isRunning)
+                Button("Not now") { session.projectSpecLater() }
+                    .buttonStyle(BoardPillStyle(height: Theme.Size.panelButton, padding: Theme.Space.x14, text: Theme.Text.body))
+                Text("Merged by requirement id on this Mac: no agent run, no tokens.")
+                    .textStyle(Theme.Text.captionLoose)
+                    .foregroundStyle(Theme.Colors.secondaryLabel)
+                    .frame(height: Theme.Size.panelButton)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func projectSpecFile(_ file: String, rows: [ProjectSpec.Change]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: Theme.Space.x8) {
+                Text(file).textStyle(Theme.Text.codeBold)
+                if rows.contains(where: \.newFile) {
+                    Text("New file").textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.addedSign)
+                        .padding(.horizontal, Theme.Space.x6).frame(height: 18)
+                        .background(Theme.Colors.openChipFill, in: Capsule())
+                }
+                Spacer(minLength: 0)
+                Text("\(rows.count) \(rows.count == 1 ? "change" : "changes")").textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel)
+            }
+            .padding(.horizontal, Theme.Space.x12)
+            .frame(height: 40)
+            .background(Theme.Colors.freeAnswerFill)
+            .overlay(alignment: .bottom) { Rectangle().fill(Theme.Colors.separatorLight).frame(height: 0.5) }
+            ForEach(Array(rows.enumerated()), id: \.offset) { i, row in
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x10) {
+                    deltaTag(row.kind).frame(width: 64)
+                    Text(row.id).textStyle(Theme.Text.codeCaption).foregroundStyle(Theme.Colors.secondaryLabel).frame(width: 44, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 3) {
+                        if let before = row.before {
+                            Text(before).textStyle(Theme.Text.bodyLoose).foregroundStyle(Theme.Colors.removedLine)
+                                .strikethrough(true, color: Theme.Colors.removedLine.opacity(0.4)).fixedSize(horizontal: false, vertical: true)
+                        }
+                        Text(row.text).textStyle(Theme.Text.bodyLoose)
+                            .strikethrough(row.kind == .removed, color: Theme.Colors.removedLine.opacity(0.4))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.vertical, Theme.Space.x10)
+                .padding(.horizontal, Theme.Space.x12)
+                .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Theme.Colors.separatorTable).frame(height: 0.5) } }
+            }
+        }
+        .surface(Theme.Colors.background, .reviewFile, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(file)
+    }
+
+    private func deltaTag(_ kind: ProjectSpec.Change.Kind) -> some View {
+        let (word, fill, ink): (String, Color, Color) = switch kind {
+        case .added: ("Adds", Theme.Colors.successBadgeFill, Theme.Colors.addedSign)
+        case .changed: ("Changes", Theme.Colors.changeTagFill, Theme.Colors.changeTagText)
+        case .removed: ("Removes", Theme.Colors.disagreePill, Theme.Colors.disagreeText)
+        }
+        return Text(word).textStyle(Theme.Text.captionBold).foregroundStyle(ink)
+            .padding(.horizontal, 7).frame(height: Theme.Size.questionPill)
+            .background(fill, in: Capsule())
+    }
+
+    /// After the update: what changed, with Undo.
+    private var projectSpecResult: some View {
+        let changes = session.projectSpecChanges
+        let added = changes.count { $0.kind == .added }, changed = changes.count { $0.kind != .added }
+        let files = Set(changes.map(\.file)).count
+        return HStack(spacing: Theme.Space.x10) {
+            DoneMark(size: 18)
+            Text("Updated how the app works today: \(added) added, \(changed) changed in \(files) \(files == 1 ? "file" : "files").")
+                .textStyle(Theme.Text.callout)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Undo") { Task { await session.undoProjectSpecUpdate() } }
+                .buttonStyle(DesignLinkStyle())
+                .padding(.horizontal, Theme.Space.x4)
+        }
+        .padding(.vertical, Theme.Space.x10)
+        .padding(.horizontal, Theme.Space.x12)
+        .surface(Theme.Colors.background, .tellResult, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
     /// V2-22 without GitHub: Merge into main once the tasks ran in Mel on the spec branch.
@@ -395,6 +504,12 @@ struct BuildView: View {
                 if !later.isEmpty {
                     Button("Plan the \(later.count) later \(later.count == 1 ? "story" : "stories")") { session.reopenPlan() }
                         .buttonStyle(BoardPillStyle(kind: inMel && merged == nil ? .white : .accent))
+                }
+                if spec.projectSpec == .later {
+                    Button("Update how the app works today…") { session.projectSpecLater(false) }
+                        .buttonStyle(DesignLinkStyle())
+                        .padding(.horizontal, Theme.Space.x4)
+                        .frame(height: Theme.Size.button)
                 }
                 if !inMel {
                     Button("Start over", action: session.startOver)
@@ -1238,6 +1353,11 @@ extension BuildStep {
 
 #Preview("V2-22 Built in Mel, merge into main") {
     NavigationStack { BuildView(session: PreviewData.builtInMelSession) }
+        .frame(width: 1100, height: 900)
+}
+
+#Preview("V2-34 Update how the app works today") {
+    NavigationStack { BuildView(session: PreviewData.projectSpecSession) }
         .frame(width: 1100, height: 900)
 }
 

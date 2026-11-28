@@ -189,8 +189,11 @@ import MelSystem
         readingContext.insert(project.id)
         defer { readingContext.remove(project.id) }
         let mode = "Read the code in this folder first: the README, the build files and the main source folders."
+        // The first project spec comes from the same reading (OQ #45); once it exists Mel keeps it.
+        let needsAreas = ProjectStore.readProjectSpec(project: folder) == nil
+        let areas = needsAreas ? Self.areasRequest : ""
         // Reading and summing up the project: Haiku's job, at low effort (research 2026-11-27).
-        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode]), workingDirectory: folder, persistSession: false, model: .haiku, effort: .low)
+        let request = AgentRequest(prompt: Prompt.project.build(["mode": mode, "areas": areas]), workingDirectory: folder, persistSession: false, model: .haiku, effort: .low)
         var result: String?
         do {
             loop: for try await event in runner.run(request) {
@@ -206,7 +209,12 @@ import MelSystem
             return
         }
         do {
-            try await Task.detached { try ProjectStore.writeContext(context, project: folder) }.value
+            try await Task.detached {
+                try ProjectStore.writeContext(context, project: folder)
+                if needsAreas, !context.areas.isEmpty {
+                    try ProjectStore.writeProjectSpec(ProjectSpec.numbered(context.areas.map { ($0.file, $0.title, $0.rules) }), project: folder)
+                }
+            }.value
         } catch {
             contextErrors[project.id] = error.localizedDescription
             return
@@ -214,6 +222,11 @@ import MelSystem
         contexts[project.id] = context
         if let i = projects.firstIndex(where: { $0.id == project.id }) { projects[i].hasContext = true }
     }
+
+    /// The project scan's extra ask when `specs/current/` doesn't exist yet (OQ #45).
+    private static let areasRequest = """
+        Also add `"areas"`: how the app works today for the people who use it, read from the code. One entry per area they see (3 to 10), each with at most 8 rules: `"areas":[{"file":"schedule.md","title":"Schedule","rules":["WHEN a member opens the schedule, THEN it shows classes for the next 7 days."]}]`. Each rule is one `WHEN …, THEN ….` sentence about behavior a user can see, only what the code does now. A library or tool without users: its public behavior. Nothing found: `"areas":[]`.
+        """
 
     /// Settings › Specs "Add Rule" and a rule's remove button.
     func addRule(_ rule: String, to project: Project) throws {
@@ -225,6 +238,13 @@ import MelSystem
     func removeRule(_ rule: String, from project: Project) throws {
         try ProjectStore.removeRule(rule, project: project.folder)
         contexts[project.id] = ProjectStore.readContext(project: project.folder)
+    }
+
+    /// Settings › Specs "How the app works today": the number of areas in `specs/current/`; nil without it.
+    func projectSpecAreas(of project: Project) -> Int? { ProjectStore.readProjectSpec(project: project.folder)?.areas.count }
+
+    func showProjectSpec(of project: Project) {
+        SystemActions.showInFinder(ProjectStore.projectSpecFolder(project: project.folder))
     }
 
     /// Settings › Specs "Show Files": opens `.mel/project/` in Finder.

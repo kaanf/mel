@@ -5,7 +5,7 @@ import MelSpec
 /// Debug builds only: `-screen <name>` opens one fixture state in the main window (design size
 /// 1280 × 800), so it can be captured and compared with its `.dc.html`.
 enum DebugScreen: String, CaseIterable {
-    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally, tellCompose, tellWorking, tellReview, tellUnplaced
+    case start, noAgent, new, newEmpty, ready, building, buildWorking, buildChanged, buildUnplaced, buildRun, buildQuestion, buildReport, buildStopped, buildNoCommit, buildBlocked, built, settings, specsSettings, board, boardAsking, boardWaiting, boardWriting, boardStopped, boardUnplaced, boardChanged, boardEdited, startGitHub, startSignIn, startNoGitHub, buildPR, buildPRReady, buildPRFailed, buildMerged, builtInMel, mergeConflict, conflictResolved, mergedLocally, tellCompose, tellWorking, tellReview, tellUnplaced, projectSpec
 
     /// The Tell Mel panel opens by itself on these (V2-24 to V2-27); `review` shows the last change.
     var opensTell: (open: Bool, review: Bool) {
@@ -65,6 +65,7 @@ enum DebugScreen: String, CaseIterable {
         case .tellWorking: PreviewData.appState([PreviewData.tellWorkingSession.spec], sessions: [PreviewData.tellWorkingSession])
         case .tellReview: PreviewData.appState([PreviewData.tellReviewSession.spec], sessions: [PreviewData.tellReviewSession])
         case .tellUnplaced: PreviewData.appState([PreviewData.boardUnplaced], sessions: [PreviewData.boardUnplacedSession])
+        case .projectSpec: PreviewData.appState([PreviewData.projectSpecSession.spec], sessions: [PreviewData.projectSpecSession])
         case .boardEdited: PreviewData.appState([PreviewData.boardEditedSession.spec], sessions: [PreviewData.boardEditedSession])
         }
     }

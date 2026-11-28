@@ -17,3 +17,5 @@ Reply with one JSON object and nothing else, each value a Markdown file:
 - `read`: the files and folders you read that shaped the context, each with what you took from it, at most 8.
 - `sources`: for each of the four files, a few words on where its content came from ("From README", "Written from the name").
 - Short and factual. Write only what you found or were told.
+
+{{areas}}

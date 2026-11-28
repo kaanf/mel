@@ -55,6 +55,40 @@ public enum ProjectStore {
         try Data(lines.joined(separator: "\n").utf8).write(to: url, options: .atomic)
     }
 
+    // MARK: The project spec (`specs/current/`, OQ #45)
+
+    public static func projectSpecFolder(project: URL) -> URL {
+        project.appending(path: "specs/current", directoryHint: .isDirectory)
+    }
+
+    /// Every area file in `specs/current/`, or nil when the folder isn't there.
+    public static func readProjectSpec(project: URL) -> ProjectSpec? {
+        let folder = projectSpecFolder(project: project)
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false)) else { return nil }
+        let areas = names.filter { $0.hasSuffix(".md") }.compactMap { name in
+            (try? String(contentsOf: folder.appending(path: name), encoding: .utf8)).flatMap { ProjectSpec.area(file: name, text: $0) }
+        }
+        return ProjectSpec(areas: areas)
+    }
+
+    /// Writes the areas of `files` (all when nil); an area with no rules left is removed.
+    public static func writeProjectSpec(_ spec: ProjectSpec, files: Set<String>? = nil, project: URL) throws {
+        let folder = projectSpecFolder(project: project)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        for area in spec.areas where files?.contains(area.file) ?? true {
+            try Data(area.markdown.utf8).write(to: folder.appending(path: area.file), options: .atomic)
+        }
+    }
+
+    /// Undo: each file back as it was (nil: it didn't exist).
+    public static func restoreProjectSpec(_ texts: [String: String?], project: URL) throws {
+        let folder = projectSpecFolder(project: project)
+        for (name, text) in texts {
+            let url = folder.appending(path: name)
+            if let text { try Data(text.utf8).write(to: url, options: .atomic) } else { try? FileManager.default.removeItem(at: url) }
+        }
+    }
+
     /// True for a folder with nothing but dotfiles: there is no code to read yet.
     public static func isEmpty(project: URL) -> Bool {
         let items = (try? FileManager.default.contentsOfDirectory(atPath: project.path)) ?? []

@@ -546,6 +546,11 @@ enum PreviewData {
         return spec
     }
     static let builtInMelSession = SpecSession.preview(builtInMel(), documents: boardDocuments)
+    /// V2-34: every task done; REQUIREMENTS.md's criteria carry their tags against the project spec.
+    static let projectSpecSession = SpecSession.preview(builtInMel(), documents: boardDocuments.merging([.requirements: reviewMarkdown
+        .replacingOccurrences(of: "shows under Upcoming.", with: "shows under Upcoming. `Adds booking.md`")
+        .replacingOccurrences(of: "offers to join the waitlist instead.", with: "offers to join the waitlist instead. `Adds booking.md`")
+        .replacingOccurrences(of: "a receipt is emailed.", with: "a receipt is emailed. `Adds class-packs.md`")]) { $1 })
     /// V2-23: main changed meanwhile; 2 files conflict.
     static let mergeConflictSession = SpecSession.preview(builtInMel(), documents: boardDocuments, mergeConflict: .init(files: ["androidApp/AppNavigation.kt", "shared/booking/BookingStore.kt"], tokens: 6_200))
     /// V2-23 after Let Claude Code resolve it: the report, then Merge into main.

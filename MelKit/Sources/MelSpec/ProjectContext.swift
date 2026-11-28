@@ -10,6 +10,15 @@ public struct ProjectContext: Codable, Hashable, Sendable {
     public var read: [ReadItem]
     /// A3 card state words per file ("product.md": "From README"), kept in `.mel/project/context.json`.
     public var sources: [String: String]
+    /// The first project spec, when the scan was asked for it (OQ #45): areas of user-visible behavior.
+    /// Written to `specs/current/`, not kept here.
+    public var areas: [ScannedArea] = []
+
+    public struct ScannedArea: Codable, Hashable, Sendable {
+        public var file: String
+        public var title: String
+        public var rules: [String]
+    }
 
     public init(product: String, tech: String, structure: String, principles: String, read: [ReadItem] = [], sources: [String: String] = [:]) {
         self.product = product
@@ -29,6 +38,7 @@ public struct ProjectContext: Codable, Hashable, Sendable {
         principles = try c.decode(String.self, forKey: .principles)
         read = try c.decodeIfPresent([ReadItem].self, forKey: .read) ?? []
         sources = try c.decodeIfPresent([String: String].self, forKey: .sources) ?? [:]
+        areas = try c.decodeIfPresent([ScannedArea].self, forKey: .areas) ?? []
     }
 
     public static let fileNames = ["product.md", "tech.md", "structure.md", "principles.md"]

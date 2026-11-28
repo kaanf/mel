@@ -253,6 +253,31 @@ final class BoardSessionTests {
         #expect(session.lastChange?.reverted == [])
     }
 
+    /// V2-34: the spec's tagged criteria go into specs/current/ by id, committed, with no run; Undo puts it back.
+    @Test func theProjectSpecTakesTheChangesAndUndoes() async throws {
+        let (session, runner) = try await readyFeature()
+        let repo = session.spec.project
+        try git(repo, "init", "--quiet", "-b", "main")
+        try git(repo, "commit", "--quiet", "--allow-empty", "-m", "Start")
+        runner.add([change((.requirements, "THE APP SHALL reserve a spot.", "THE APP SHALL reserve a spot. `Adds booking.md`"))])
+        #expect(await session.tell("Tag it."))
+        let runs = runner.requests.count
+        await session.refreshProjectSpecChanges()
+        #expect(session.projectSpecChanges.map(\.id) == ["B-1.1"])
+        #expect(session.projectSpecChanges.first?.newFile == true)
+
+        await session.updateProjectSpec()
+        let file = repo.appending(path: "specs/current/booking.md")
+        #expect(try String(contentsOf: file, encoding: .utf8).contains("- B-1.1 WHEN a member taps Book, THE APP SHALL reserve a spot."))
+        #expect(session.spec.projectSpec == .updated)
+        #expect(Git.uncommitted(in: repo, excluding: [".mel", "specs/" + session.spec.folder.lastPathComponent])?.isEmpty == true)
+        #expect(runner.requests.count == runs)
+
+        await session.undoProjectSpecUpdate()
+        #expect(!FileManager.default.fileExists(atPath: file.path(percentEncoded: false)))
+        #expect(session.spec.projectSpec == nil)
+    }
+
     @Test func tellMelPatchesFilesLogsTheWordsAndUndoes() async throws {
         let (session, runner) = try await readyFeature()
         runner.add([change((.requirements, "reserve a spot.", "reserve a spot and send a push."), (.tasks, "1. Booking store", "1. Booking store and push"), tokens: 1_800)])

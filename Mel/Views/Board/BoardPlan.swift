@@ -173,7 +173,7 @@ struct BoardPlan: View {
     @ViewBuilder
     private var mustAlso: some View {
         let quality = (session.blocks[.requirements] ?? []).compactMap { block -> String? in
-            if case .criterion(let id, let text) = block, id.hasPrefix("Q") { (MarkdownBlocksView.whenThen(text)?.1 ?? text.replacingOccurrences(of: "THE APP SHALL ", with: "")).capitalizedFirst } else { nil }
+            if case .criterion(let id, let tagged) = block, id.hasPrefix("Q"), case let text = ProjectSpec.tag(of: tagged)?.text ?? tagged { (MarkdownBlocksView.whenThen(text)?.1 ?? text.replacingOccurrences(of: "THE APP SHALL ", with: "")).capitalizedFirst } else { nil }
         }
         if !quality.isEmpty {
             VStack(alignment: .leading, spacing: Theme.Space.x8) {
@@ -284,7 +284,7 @@ struct BoardPlan: View {
             Text("The roadmap appears here once TASKS.md is written.").textStyle(Theme.Text.callout).foregroundStyle(Theme.Colors.secondaryLabel)
         } else {
             let criteria = Dictionary((session.blocks[.requirements] ?? []).compactMap { block -> (String, String)? in
-                if case .criterion(let id, let text) = block { (id, text) } else { nil }
+                if case .criterion(let id, let text) = block { (id, ProjectSpec.tag(of: text)?.text ?? text) } else { nil }
             }, uniquingKeysWith: { first, _ in first })
             let tasks = phases.flatMap(\.tasks)
             let covered = Set(tasks.flatMap(\.covers))

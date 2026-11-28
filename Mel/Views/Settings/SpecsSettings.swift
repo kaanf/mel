@@ -118,6 +118,12 @@ struct SpecsSettings: View {
                 .opacity(isReading || !state.agent.isReady ? 0.5 : 1)
         }
         separator
+        // OQ #45: the project spec, written by the first reading and updated when a spec is built.
+        let areas = state.projectSpecAreas(of: project)
+        settingsRow("How the app works today", areas.map { "specs/current/ · \($0) \($0 == 1 ? "area" : "areas") · updated each time a spec is built" } ?? "specs/current/ · written the next time Mel reads the project") {
+            if areas != nil { smallButton("Show Files") { state.showProjectSpec(of: project) } }
+        }
+        separator
         VStack(alignment: .leading, spacing: Theme.Space.x8) {
             Text("Rules every agent follows").textStyle(Theme.Text.body)
             Text("Saved in principles.md. Every spec and every task reads them first.")

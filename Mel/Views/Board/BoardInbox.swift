@@ -333,14 +333,15 @@ struct BoardInbox: View {
                 }
             } else {
                 Group {
-                    if card.disagrees {
+                    if card.disagrees || card.today != nil {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Space.x8), GridItem(.flexible())], spacing: Theme.Space.x8) {
                             ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
                                 Button { Task { await session.answerCard(card.id, .option(index, note: nil)) } } label: {
                                     VStack(alignment: .leading, spacing: Theme.Space.x6) {
-                                        Text(option.label).textStyle(Theme.Text.headline).fixedSize(horizontal: false, vertical: true)
+                                        // A value ("12 hours") large; a whole rule (V2-31) at reading size.
+                                        Text(option.label).textStyle(option.label.count > 24 ? Theme.Text.bodyMedium : Theme.Text.headline).fixedSize(horizontal: false, vertical: true)
                                         if !option.note.isEmpty {
-                                            Text(option.note).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(1)
+                                            Text(option.note).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(card.today != nil ? 2 : 1)
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)

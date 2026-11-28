@@ -540,6 +540,7 @@ import MelSystem
             saveSnapshot(kind)
             spec.conversation?.saw([kind: final])
             let asked = DraftText.questions(in: full, kind: kind).map { $0.with(id: "\(kind.rawValue)-\($0.id)") } + OpenQuestion.parse(final, kind: kind).map(Question.init)
+                + todayQuestions(final, kind: kind)
             spec.drafted(kind, asked: Self.unique(asked, after: spec.questions.filter { $0.answer != nil || $0.shapes != kind }))
             return true
         case .stopped(let reason):
@@ -1311,6 +1312,79 @@ import MelSystem
         }
     }
 
+    // MARK: - The project spec (V2-34, OQ #45)
+
+    /// The project spec files as they were before "Update the project spec", for its Undo.
+    private(set) var projectSpecBefore: [String: String?]?
+
+    /// What this spec's criteria do to `specs/current/` (V2-34), merged by id on a copy: nothing is written.
+    private(set) var projectSpecChanges: [ProjectSpec.Change] = []
+
+    private var specCriteria: [(id: String, text: String)] {
+        (blocks[spec.size == .quickFix ? .spec : .requirements] ?? []).compactMap { block -> (id: String, text: String)? in
+            if case .criterion(let id, let text) = block { (id, text) } else { nil }
+        }
+    }
+
+    /// Reads `specs/current/` off the main actor and works out the changes again.
+    func refreshProjectSpecChanges() async {
+        let (folder, criteria) = (projectFolder, specCriteria)
+        projectSpecChanges = await Task.detached {
+            (ProjectStore.readProjectSpec(project: folder) ?? ProjectSpec(areas: [])).merging(ProjectSpec.deltas(in: criteria)).changes
+        }.value
+    }
+
+    /// "Update the project spec": the deltas go into `specs/current/` by id (Swift, no tokens) and are
+    /// committed on the branch the tasks are on, so they merge with them; with GitHub they are pushed.
+    func updateProjectSpec() async {
+        let (folder, slug, criteria) = (projectFolder, slug, specCriteria)
+        let current = projectSpec ?? ProjectSpec(areas: [])
+        let (merged, changes) = current.merging(ProjectSpec.deltas(in: criteria))
+        guard !changes.isEmpty else { return }
+        let files = Set(changes.map(\.file))
+        let currentFolder = ProjectStore.projectSpecFolder(project: folder)
+        let before = Dictionary(uniqueKeysWithValues: files.map { ($0, try? String(contentsOf: currentFolder.appending(path: $0), encoding: .utf8)) })
+        do {
+            try await Task.detached {
+                try ProjectStore.writeProjectSpec(merged, files: files, project: folder)
+                if Git.isRepository(folder) { try Git.commit(paths: ["specs/current"], message: "docs: update how the app works today (\(slug))", in: folder) }
+            }.value
+        } catch {
+            lastError = "Couldn’t update the project spec: \(error.localizedDescription)"
+            return
+        }
+        projectSpecBefore = before
+        spec.projectSpec = .updated
+        projectSpecChanges = changes
+        persist()
+        await publish()
+    }
+
+    /// Undo on the result line: the files back as they were, as one more commit.
+    func undoProjectSpecUpdate() async {
+        guard let before = projectSpecBefore else { return }
+        let (folder, slug) = (projectFolder, slug)
+        do {
+            try await Task.detached {
+                try ProjectStore.restoreProjectSpec(before, project: folder)
+                if Git.isRepository(folder) { try Git.commit(paths: ["specs/current"], message: "docs: undo the project spec update (\(slug))", in: folder) }
+            }.value
+        } catch {
+            lastError = error.localizedDescription
+            return
+        }
+        projectSpecBefore = nil
+        spec.projectSpec = nil
+        persist()
+        await publish()
+    }
+
+    /// "Not now": the card folds into a link on the built banner.
+    func projectSpecLater(_ later: Bool = true) {
+        spec.projectSpec = later ? .later : nil
+        persist()
+    }
+
     // MARK: - Merge into main (V2-22, V2-23)
 
     /// Where the spec branch goes back into; "main" for a spec whose first run was before 0.11.
@@ -1519,6 +1593,18 @@ import MelSystem
 
     /// The values every prompt shares. In a running conversation the project context and the idea
     /// are already in it.
+    /// The project spec (`specs/current/`), read when a prompt or the merge needs it. Small files.
+    var projectSpec: ProjectSpec? { ProjectStore.readProjectSpec(project: spec.project) }
+
+    /// V2-31: the cards for criteria that change a project spec rule.
+    private func todayQuestions(_ text: String, kind: DocKind) -> [Question] {
+        guard kind == .requirements || kind == .spec, let today = projectSpec else { return [] }
+        let criteria = MarkdownParser.blocks(text).compactMap { block -> (id: String, text: String)? in
+            if case .criterion(let id, let text) = block { (id, text) } else { nil }
+        }
+        return Spec.todayQuestions(criteria: criteria, file: kind, today: today)
+    }
+
     private func promptValues(drafting kind: DocKind) -> [String: String] {
         let project = app?.contexts[Project(folder: spec.project).id]?.promptText
         let attachments = spec.attachments.map { "- specs/\(slug)/.mel/attachments/\($0.fileName)" }
@@ -1526,7 +1612,9 @@ import MelSystem
         return ["name": spec.name, "idea": held ?? spec.idea, "files": spec.size.filesText,
                 "project": held ?? project ?? "(no project context yet)",
                 "attachments": attachments.isEmpty ? "(none)" : attachments.joined(separator: "\n"),
-                "answers": spec.answersText, "decide": spec.decideText, "steps": kind.stepsText]
+                "answers": spec.answersText, "decide": spec.decideText, "steps": kind.stepsText,
+                "today": projectSpec.flatMap { $0.areas.isEmpty ? nil : $0.promptText(about: spec.idea + "\n" + spec.answersText) }
+                    ?? "(No rules yet: specs/current/ is empty or missing.)"]
     }
 
     /// The files of `kinds` for a conversation prompt: the text of those it hasn't seen as they are

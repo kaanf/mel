@@ -417,8 +417,33 @@ struct MarkdownBlocksView: View {
     }
 
     /// V2-31: "WHEN a, THEN b" as two lines with small WHEN / THEN labels; EARS from before 0.12 as one.
-    @ViewBuilder
     private func criterionText(_ text: String) -> some View {
+        let tagged = ProjectSpec.tag(of: text)
+        return HStack(alignment: .firstTextBaseline, spacing: Theme.Space.x8) {
+            criterionBody(tagged?.text ?? text).frame(maxWidth: .infinity, alignment: .leading)
+            if let tag = tagged?.delta { deltaTag(tag) }
+        }
+    }
+
+    /// V2-31: the criterion's delta against how the app works today; `Adds schedule.md` shows as Adds.
+    private func deltaTag(_ tag: String) -> some View {
+        let (fill, ink): (Color, Color) = switch tag.prefix(while: { $0 != " " }) {
+        case "Adds": (Theme.Colors.successBadgeFill, Theme.Colors.addedSign)
+        case "Changes": (Theme.Colors.changeTagFill, Theme.Colors.changeTagText)
+        case "Removes": (Theme.Colors.disagreePill, Theme.Colors.disagreeText)
+        default: (Theme.Colors.chipFill, Theme.Colors.bodyLabel)
+        }
+        return Text(tag.hasPrefix("Adds") ? "Adds" : tag)
+            .textStyle(Theme.Text.captionBold)
+            .foregroundStyle(ink)
+            .padding(.horizontal, 7)
+            .frame(height: Theme.Size.questionPill)
+            .background(fill, in: Capsule())
+            .fixedSize()
+    }
+
+    @ViewBuilder
+    private func criterionBody(_ text: String) -> some View {
         if let (when, then) = Self.whenThen(text) {
             VStack(alignment: .leading, spacing: Theme.Space.x2) {
                 (Text("WHEN ").font(Theme.Text.criterionLabel.font).foregroundStyle(Theme.Colors.secondaryLabel).tracking(0.4) + Text(inline(when)))

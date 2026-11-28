@@ -19,6 +19,8 @@ public struct Card: Identifiable, Hashable, Sendable {
     public var guess: String
     /// "Cancelling": what the question is about, shown over it (V2-29). Empty when the agent named none.
     public var topic: String
+    /// V2-31: the project spec rule this card is about; its answers are two tiles.
+    public var today: String?
 
     public init(_ question: Question) {
         id = question.id
@@ -30,7 +32,8 @@ public struct Card: Identifiable, Hashable, Sendable {
         disagrees = false
         answer = question.answer
         guess = (question.options.first(where: \.suggested) ?? question.options.first)?.label ?? ""
-        topic = question.about.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? ""
+        topic = question.today != nil ? "Changes how it works today" : question.about.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? ""
+        today = question.today
     }
 
     public init(_ issue: AnalyzeResult.Issue) {
@@ -98,6 +101,7 @@ extension Spec {
             guard let answer = q.answerText else { return nil }
             switch q.round {
             case .intake: return "The answer to “\(q.title)” is now: \(answer) Change every file it affects."
+            case .draft where q.today != nil: return "\(q.shapes.fileName): the criterion that changes \(q.today!) keeps today’s rule instead: \(answer) Tag it `Keeps \(q.today!)`."
             case .draft: return "\(q.shapes.fileName) asked “\(q.title)”. The answer: \(answer)"
             case .open: return "\(q.shapes.fileName) has the open question “\(q.title)”. The answer: \(answer) Remove its callout."
             }
@@ -161,7 +165,9 @@ extension Spec {
         if let i = questions.firstIndex(where: { $0.id == id }) {
             let reaches = questions[i].round == .intake ? !written.isEmpty : written.contains(questions[i].shapes)
             questions[i].answer = answer
-            questions[i].pending = stage == .board && reaches && answer != .agentDecides ? true : nil
+            // Keeping this spec's rule over today's changes nothing in the files.
+            let keepsSpec = questions[i].today != nil && answer == .option(0, note: nil)
+            questions[i].pending = stage == .board && reaches && answer != .agentDecides && !keepsSpec ? true : nil
         } else if let i = analysis?.issues.firstIndex(where: { "issue-\($0.id)" == id }) {
             analysis?.issues[i].answer = answer
             analysis?.issues[i].pending = true
@@ -198,6 +204,19 @@ extension Spec {
 
     /// `kind` is written (first draft or whole rewrite). `asked` replaces its unanswered questions:
     /// the trailer's and one per `[!OPEN QUESTION]` callout.
+    /// V2-31: a card for each criterion tagged `Changes B-x.y`, with this spec's rule and today's as the answers.
+    public static func todayQuestions(criteria: [(id: String, text: String)], file: DocKind, today: ProjectSpec?) -> [Question] {
+        criteria.compactMap { criterion in
+            guard let (text, tag) = ProjectSpec.tag(of: criterion.text), tag.hasPrefix("Changes "),
+                  let (area, rule) = today?.rule(String(tag.dropFirst("Changes ".count))) else { return nil }
+            var question = Question(id: "today-\(file.rawValue)-\(criterion.id)", title: "\(criterion.id) changes how the app works today. Which rule should hold?", why: "", shapes: file, round: .draft,
+                                    options: [Option(label: text, note: "This spec · \(file.fileName) · \(criterion.id)", suggested: true),
+                                              Option(label: rule.text, note: "Today · specs/current/\(area.file) · \(rule.id)")])
+            question.today = rule.id
+            return question
+        }
+    }
+
     public mutating func drafted(_ kind: DocKind, asked: [Question]) {
         docs[kind] = .approved
         questions.removeAll { $0.round != .intake && $0.shapes == kind && $0.answer == nil }

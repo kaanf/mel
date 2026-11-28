@@ -24,6 +24,10 @@ Name: {{name}}
 
 {{decide}}
 
+## How the app works today
+
+{{today}}
+
 ## Approved files
 
 {{approved}}
@@ -45,8 +49,8 @@ Name: {{name}}
 ```
 
 - `## What happens now`: what happens today, as numbered steps to reproduce it and what goes wrong. For a small change that isn't a bug, how it works today.
-- `## What should happen`: numbered criteria `- 1 WHEN …, THEN ….`, one sentence each, that a test can check.
-- `## Must not change`: the behavior next to the fix that has to stay as it is, one bullet each, as `- WHEN …, THEN ….` Read the code around the fix to find it. Answers to questions can add to it.
+- `## What should happen`: numbered criteria `- 1 WHEN …, THEN ….`, one sentence each, that a test can check, each ending with its tag against how the app works today: `Changes B-2.1` when it fixes that rule's behavior, else `Adds <area>.md`.
+- `## Must not change`: the behavior next to the fix that has to stay as it is, one bullet each, as `- B-2.1 WHEN …, THEN ….` with the rule's id when it is one of the rules above, else `- WHEN …, THEN ….` Read the code around the fix to find it. Answers to questions can add to it.
 - `## Check`: the one command that fails before the fix and passes after, in backticks, and what it shows.
 - `## Code it touches`: files and functions, found by reading the code.
 
