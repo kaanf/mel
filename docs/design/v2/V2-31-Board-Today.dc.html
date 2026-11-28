@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-31 to V2-35 · Spec upgrades from the competitor review (proposal, 2026-11-28)
+One component, prop scene. Same window, sidebar and toolbar as V2-2; Mel's column is 380 px as on V2-24. The sample spec is a
+  Feature in an existing repo ("Filter schedule by teacher" in yoga-studio-booking), because these upgrades matter most there.
+Scenes:
+  today (V2-31): REQUIREMENTS.md open. Criteria are written as WHEN … THEN … with ids. Each criterion carries its delta tag against
+    the project spec: Adds, or Changes B-2.1. Mel's column shows the new card kind "Changes how it works today": today's rule
+    (specs/current/schedule.md · B-2.1) next to this spec's rule, as two tiles; Change it / Keep today's rule / Something else.
+  bugfix (V2-32): a Quick fix that is a bug. SPEC.md has four parts: What happens now (steps to reproduce), What should happen
+    (WHEN/THEN), Must not change (rules from the project spec that the fix must keep, each with its id) and Check (the command).
+  diagram (V2-33): ARCHITECTURE.md open. A ```mermaid block renders as a diagram in Formatted and stays code in Markdown.
+  merge (V2-34): Build, every task done. "Update how the app works today": the deltas of this spec by project spec file
+    (added, changed with before and after, new file), then Update the project spec / Not now. Mel merges by requirement id in
+    Swift: no agent run, no tokens. The spec folder moves to specs/done/<date>-<slug>/.
+  export (V2-35): plan ready, the Send tasks sheet: GitHub Issues (gh on this Mac) or Linear, one issue per task with its criteria
+    as a checklist, phases as milestones, a label; tasks already sent are skipped. No tokens.
+Comes from: V2-2 / V2-24 Board (today, bugfix, diagram), V2-22 Build built (merge), V2-10 plan ready › Send tasks… (export).
+-->
+<title>Board, spec upgrades (V2-31)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+@keyframes melspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
+<div style="max-width: 1280px; margin: 0 auto; height: 800px; position: relative; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+
+<nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
+<div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></span>
+<span style="display: block; width: 12px; height: 12px; border-radius: 50%; background: #28c840"></span>
+</div>
+<div style="padding: 0 8px 8px">
+<button aria-haspopup="menu" style="width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; background: #fbe1ae; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 16px; font-weight: 700; color: #8a4b00">Y</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 13px; line-height: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">yoga-studio-booking</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">Mel knows this project</span>
+</span>
+<svg width="9" height="11" viewBox="0 0 10 14" fill="none" stroke="#6e6e73" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"></path></svg>
+</button>
+</div>
+<div style="flex: 1; padding: 6px 8px 0; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{sideGroups}}" as="sg" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<span style="padding: 0 8px 2px; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">{{sg.title}}</span>
+<sc-for list="{{sg.items}}" as="it" hint-placeholder-count="1">
+<a href="#" aria-current="{{it.current}}" style="{{it.style}}">
+<span style="{{it.dot}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{it.name}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{it.meta}}</span></span>
+</a>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 0.5px solid rgba(0,0,0,0.08)">
+<a href="V2-1-New.dc.html" style="height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06); font-size: 13px; line-height: 18px; font-weight: 500; color: #1d1d1f; text-decoration: none">New<span style="font-size: 11px; line-height: 14px; color: #6e6e73">⌘N</span></a>
+<a href="V2-6-Settings-Specs.dc.html" style="height: 22px; display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 11px; line-height: 14px; color: #6e6e73; text-decoration: none"><span style="width: 6px; height: 6px; border-radius: 50%; background: #248a3d"></span>Claude Code · Ready</a>
+</div>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; min-height: 0; max-height: 100%; display: flex; flex-direction: column">
+<div style="min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 20px; flex-wrap: wrap">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 150px">
+<span style="font-size: 15px; line-height: 19px; font-weight: 600">{{title}}</span>
+<span style="height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; background: rgba(0,0,0,0.05); font-size: 11px; line-height: 14px; color: #3a3a3c">{{sizeLabel}}</span>
+</div>
+<div style="flex: 1; min-width: 180px; display: flex; justify-content: center">
+<nav aria-label="Steps" style="height: 30px; display: flex; align-items: center; gap: 2px; padding: 2px; box-sizing: border-box; border-radius: 15px; background: rgba(0,0,0,0.05)">
+<sc-for list="{{journey}}" as="j" hint-placeholder-count="3">
+<a href="#" aria-current="{{j.current}}" style="{{j.style}}"><span aria-hidden="true" style="{{j.badge}}">{{j.mark}}</span>{{j.label}}</a>
+</sc-for>
+</nav>
+</div>
+<button style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5l3.25 3.25v9.25H4z"></path><path d="M9 1.75V5h3.25"></path></svg>Files</button>
+<sc-if value="{{showSend}}" hint-placeholder-val="{{false}}">
+<button onClick="{{openSend}}" aria-haspopup="dialog" style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5V2M4.5 5.5L8 2l3.5 3.5M2.5 10v3.5h11V10"></path></svg>Send tasks…</button>
+</sc-if>
+<a href="#" aria-disabled="{{ctaDisabled}}" style="{{ctaStyle}}">{{ctaLabel}}</a>
+</div>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 20px">
+
+<sc-if value="{{hasDoc}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 780px">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<button style="height: 28px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px 0 6px; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"></path></svg>Plan</button>
+<span style="font-size: 12px; line-height: 16px; color: #aeaeb2">›</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600">{{docName}}</span>
+<span style="{{docDot}}"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{docWord}}</span>
+<span style="flex: 1"></span>
+<div role="tablist" aria-label="View" style="height: 28px; display: flex; padding: 2px; gap: 2px; box-sizing: border-box; border-radius: 14px; background: rgba(0,0,0,0.06)">
+<sc-for list="{{viewTabs}}" as="v" hint-placeholder-count="2">
+<button role="tab" aria-selected="{{v.selected}}" onClick="{{v.pick}}" style="{{v.style}}">{{v.label}}</button>
+</sc-for>
+</div>
+<button style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; font-weight: 500; color: #1d1d1f">Edit</button>
+</div>
+
+<sc-if value="{{formatted}}" hint-placeholder-val="{{true}}">
+<article style="display: flex; flex-direction: column; gap: 10px; padding: 22px 26px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12)">
+<sc-for list="{{blocks}}" as="b" hint-placeholder-count="6">
+<div style="{{b.wrap}}">
+<sc-if value="{{b.isH1}}" hint-placeholder-val="{{false}}"><h2 style="margin: 0 0 2px; font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -0.01em">{{b.text}}</h2></sc-if>
+<sc-if value="{{b.isH2}}" hint-placeholder-val="{{false}}"><h3 style="margin: 10px 0 0; font-size: 15px; line-height: 20px; font-weight: 700">{{b.text}}</h3></sc-if>
+<sc-if value="{{b.isP}}" hint-placeholder-val="{{true}}"><p style="margin: 0; font-size: 13px; line-height: 20px; color: #3a3a3c">{{b.text}}</p></sc-if>
+<sc-if value="{{b.isLi}}" hint-placeholder-val="{{false}}"><div style="display: flex; gap: 8px; padding-left: 4px"><span aria-hidden="true" style="color: #aeaeb2">{{b.bullet}}</span><span style="font-size: 13px; line-height: 20px">{{b.text}}</span></div></sc-if>
+<sc-if value="{{b.isKeep}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 8px; background: rgba(36,138,61,0.06)">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1f7a36" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: 0 0 14px; margin-top: 3px"><rect x="3" y="7" width="10" height="7.5" rx="1.5"></rect><path d="M5.2 7V5a2.8 2.8 0 0 1 5.6 0v2"></path></svg>
+<span style="flex: 1; font-size: 13px; line-height: 20px">{{b.text}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 20px; color: #1f7a36">{{b.id}}</span></div></sc-if>
+<sc-if value="{{b.isCode}}" hint-placeholder-val="{{false}}"><pre style="margin: 0; padding: 10px 12px; border-radius: 8px; background: #f5f5f7; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 18px; color: #1d1d1f; white-space: pre-wrap">{{b.text}}</pre></sc-if>
+<sc-if value="{{b.isCrit}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<span style="flex: 0 0 30px; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 20px; color: #6e6e73">{{b.id}}</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 20px">
+<span><span style="font-size: 10px; line-height: 20px; font-weight: 700; letter-spacing: 0.04em; color: #6e6e73">WHEN </span>{{b.when}}</span>
+<span><span style="font-size: 10px; line-height: 20px; font-weight: 700; letter-spacing: 0.04em; color: #0058b9">THEN </span>{{b.then}}</span>
+</span>
+<span style="{{b.tagStyle}}">{{b.tag}}</span>
+</div>
+</sc-if>
+<sc-if value="{{b.isDiagram}}" hint-placeholder-val="{{false}}">
+<figure style="margin: 4px 0; padding: 16px; border-radius: 10px; background: #fbfbfd; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px">
+<svg viewBox="0 0 680 220" width="100%" role="img" aria-label="Diagram: the schedule screen asks its view model, which reads classes from the repository; the repository uses the local cache and the classes API with a teacher filter, and the profile screen reads the teachers API." style="max-width: 680px">
+<g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="12">
+<rect x="10" y="20" width="140" height="44" rx="10" fill="#ffffff" stroke="#c7c7cc"></rect><text x="80" y="47" text-anchor="middle" fill="#1d1d1f">Schedule screen</text>
+<rect x="10" y="150" width="140" height="44" rx="10" fill="#ffffff" stroke="#c7c7cc"></rect><text x="80" y="177" text-anchor="middle" fill="#1d1d1f">Teacher profile</text>
+<rect x="200" y="20" width="150" height="44" rx="10" fill="rgba(0,122,255,0.06)" stroke="#007aff"></rect><text x="275" y="40" text-anchor="middle" fill="#0058b9" font-weight="600">ScheduleViewModel</text><text x="275" y="55" text-anchor="middle" fill="#0058b9" font-size="10">changed: teacher filter</text>
+<rect x="400" y="20" width="130" height="44" rx="10" fill="#ffffff" stroke="#c7c7cc"></rect><text x="465" y="47" text-anchor="middle" fill="#1d1d1f">ClassRepository</text>
+<rect x="570" y="20" width="100" height="44" rx="10" fill="#ffffff" stroke="#c7c7cc"></rect><text x="620" y="40" text-anchor="middle" fill="#1d1d1f">GET /classes</text><text x="620" y="55" text-anchor="middle" fill="#6e6e73" font-size="10">?teacher=</text>
+<rect x="400" y="100" width="130" height="44" rx="10" fill="#ffffff" stroke="#c7c7cc"></rect><text x="465" y="127" text-anchor="middle" fill="#1d1d1f">Local cache</text>
+<rect x="400" y="150" width="130" height="44" rx="10" fill="rgba(36,138,61,0.06)" stroke="#248a3d"></rect><text x="465" y="170" text-anchor="middle" fill="#1f7a36" font-weight="600">TeacherRepository</text><text x="465" y="185" text-anchor="middle" fill="#1f7a36" font-size="10">new</text>
+<rect x="570" y="150" width="100" height="44" rx="10" fill="#ffffff" stroke="#c7c7cc"></rect><text x="620" y="177" text-anchor="middle" fill="#1d1d1f">GET /teachers</text>
+<g stroke="#8e8e93" stroke-width="1.3" fill="none"><path d="M150 42h46"></path><path d="M350 42h46"></path><path d="M530 42h36"></path><path d="M465 64v32"></path><path d="M150 172h246"></path><path d="M530 172h36"></path></g>
+<g fill="#8e8e93"><path d="M196 38l6 4-6 4z"></path><path d="M396 38l6 4-6 4z"></path><path d="M566 38l6 4-6 4z"></path><path d="M461 96l4 6 4-6z"></path><path d="M396 168l6 4-6 4z"></path><path d="M566 168l6 4-6 4z"></path></g>
+</g>
+</svg>
+<figcaption style="display: flex; align-items: center; gap: 12px; font-size: 11px; line-height: 14px; color: #6e6e73"><span style="display: inline-flex; align-items: center; gap: 5px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 1px solid #007aff; background: rgba(0,122,255,0.06)"></span>Changed by this spec</span><span style="display: inline-flex; align-items: center; gap: 5px"><span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 3px; border: 1px solid #248a3d; background: rgba(36,138,61,0.06)"></span>New</span><span style="flex: 1"></span>Drawn from the mermaid block. Edit it in Markdown.</figcaption>
+</figure>
+</sc-if>
+</div>
+</sc-for>
+</article>
+</sc-if>
+<sc-if value="{{raw}}" hint-placeholder-val="{{false}}">
+<pre style="margin: 0; padding: 20px 24px; border-radius: 12px; background: #fbfbfd; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12); font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 19px; color: #1d1d1f; white-space: pre-wrap">{{rawText}}</pre>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isMerge}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 780px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: rgba(36,138,61,0.07); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
+<svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 20px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; line-height: 19px; font-weight: 600">All 4 tasks are done on mel/filter-by-teacher</span><span style="font-size: 12px; line-height: 16px; color: #3a3a3c">Every check passed. One step before merging: tell the project spec what changed.</span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em">Update how the app works today</h2>
+<p style="margin: 0; font-size: 13px; line-height: 19px; color: #6e6e73">specs/current/ describes the app as it is. Every new spec is checked against it, so it should know what this spec changed.</p>
+</div>
+<sc-for list="{{mergeFiles}}" as="mf" hint-placeholder-count="2">
+<section aria-label="{{mf.name}}" style="border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.03)">
+<div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f7f7f9; border-bottom: 0.5px solid rgba(0,0,0,0.08)">
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600">{{mf.name}}</span>
+<sc-if value="{{mf.isNew}}" hint-placeholder-val="{{false}}"><span style="height: 18px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 9px; background: rgba(36,138,61,0.12); font-size: 11px; line-height: 14px; font-weight: 600; color: #1f7a36">New file</span></sc-if>
+<span style="flex: 1"></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{mf.count}}</span>
+</div>
+<sc-for list="{{mf.rows}}" as="mr" hint-placeholder-count="2">
+<div style="{{mr.wrap}}">
+<span style="{{mr.tagStyle}}">{{mr.tag}}</span>
+<span style="flex: 0 0 44px; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 19px; color: #6e6e73">{{mr.id}}</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<sc-if value="{{mr.hasBefore}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; line-height: 19px; color: #6b2a2a; text-decoration: line-through; text-decoration-color: rgba(107,42,42,0.4)">{{mr.before}}</span></sc-if>
+<span style="font-size: 13px; line-height: 19px">{{mr.text}}</span>
+</span>
+</div>
+</sc-for>
+</section>
+</sc-for>
+<sc-if value="{{mergeOpen}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<button onClick="{{doMerge}}" style="height: 32px; padding: 0 16px; border: 0; border-radius: 16px; background: #007aff; font: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff">Update the project spec</button>
+<button onClick="{{skipMerge}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 16px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Not now</button>
+<span style="flex: 1; min-width: 200px; font-size: 11px; line-height: 15px; color: #6e6e73">Merged by requirement id on this Mac: no agent run, no tokens. The spec moves to specs/done/2026-11-28-filter-by-teacher/.</span>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isExport}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px">
+<div style="display: flex; align-items: baseline; gap: 8px"><h3 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">Roadmap</h3><span style="font-size: 12px; line-height: 16px; color: #6e6e73">2 phases · 4 tasks · every criterion covered</span></div>
+<sc-for list="{{tasks}}" as="t" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.05)">
+<span style="flex: 0 0 22px; height: 22px; border-radius: 11px; background: #f2f2f5; display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; font-weight: 700; color: #3a3a3c">{{t.num}}</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 13px; line-height: 18px; font-weight: 600">{{t.title}}</span><span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{t.meta}}</span></span>
+<span style="font-size: 11px; line-height: 14px; color: {{t.issueColor}}">{{t.issue}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+</div>
+</main>
+
+<aside aria-label="Mel" style="max-height: 100%; flex: 0 1 380px; max-width: 100%; min-width: 0; box-sizing: border-box; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column">
+<div style="flex: 0 0 auto; padding: 20px 20px 12px; display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">{{inboxTitle}}</h2>
+<div role="status" style="min-height: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+<span style="{{statusDot}}"></span>
+<span style="flex: 1; min-width: 0; font-size: 12px; line-height: 16px; color: #3a3a3c">{{status}}</span>
+<sc-if value="{{gated}}" hint-placeholder-val="{{false}}"><button style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Write it now</button></sc-if>
+</div>
+</div>
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px">
+
+<sc-if value="{{hasCards}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 6px; padding: 4px 4px 0">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5H4A1.5 1.5 0 0 0 2.5 3v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V6.5z"></path><path d="M8.5 1.5v5h5"></path></svg>
+<span style="flex: 1; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">{{cardFile}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{cardMeta}}</span>
+</div>
+<div style="display: flex; flex-direction: column; border-radius: 14px; background: #ffffff; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04), 0 6px 18px rgba(0,0,0,0.05)">
+
+<sc-if value="{{todayOpen}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Changes how it works today" style="display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #fffcf6">
+<span style="align-self: flex-start; height: 20px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; border-radius: 10px; background: rgba(201,52,0,0.09); font-size: 11px; line-height: 14px; font-weight: 600; color: #a33000">
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h9l-2.5-2.5M14 11H5l2.5 2.5"></path></svg>Changes how it works today</span>
+<span style="font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.005em">How far ahead should the schedule show classes?</span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<button onClick="{{keepToday}}" aria-label="Keep 7 days, today's rule B-2.1" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font: inherit; text-align: left; color: #1d1d1f">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Today</span>
+<span style="font-size: 17px; line-height: 22px; font-weight: 600">7 days</span>
+<span style="max-width: 100%; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 10px; line-height: 14px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">schedule.md · B-2.1</span>
+</button>
+<button onClick="{{changeToday}}" aria-label="Change it to 4 weeks, as this spec says" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font: inherit; text-align: left; color: #1d1d1f">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #0058b9">This spec</span>
+<span style="font-size: 17px; line-height: 22px; font-weight: 600">4 weeks</span>
+<span style="font-size: 10px; line-height: 14px; color: #6e6e73">Your words, question 2</span>
+</button>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Picking 4 weeks marks 2.1 as “Changes B-2.1”. specs/current/ is only updated when the spec is built.</span>
+<button style="align-self: flex-start; height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg>Something else…</button>
+</div>
+</sc-if>
+<sc-if value="{{todayDone}}" hint-placeholder-val="{{false}}">
+<div style="min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 8px 14px">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 11px; line-height: 14px; color: #6e6e73">How far ahead</span><span style="font-size: 13px; line-height: 18px; font-weight: 500">{{todayAnswer}}</span></span>
+<button onClick="{{undoToday}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change</button>
+</div>
+</sc-if>
+<sc-for list="{{doneCards}}" as="dc" hint-placeholder-count="1">
+<div style="min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 0.5px solid rgba(0,0,0,0.07)">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{dc.topic}}</span><span style="font-size: 13px; line-height: 18px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{dc.answer}}</span></span>
+<button style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change</button>
+</div>
+</sc-for>
+<sc-if value="{{bugOpen}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Late cancel and the waitlist" style="display: flex; flex-direction: column; gap: 12px; padding: 14px">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #0058b9">Waitlist</span>
+<span style="font-size: 14px; line-height: 20px; font-weight: 600">A late cancel keeps no credit. Should the spot still go to the waitlist?</span>
+<div role="radiogroup" aria-label="Should the spot still go to the waitlist?" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{bugOptions}}" as="o" hint-placeholder-count="2">
+<button role="radio" aria-checked="false" onClick="{{o.pick}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 16px; width: 16px; height: 16px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid #c7c7cc"></span>
+<span style="flex: 1; font-size: 13px; line-height: 18px">{{o.label}}</span>
+</button>
+</sc-for>
+</div>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">The answer goes under Must not change if it keeps today's rule B-3.2.</span>
+</div>
+</sc-if>
+<sc-if value="{{bugDone}}" hint-placeholder-val="{{false}}">
+<div style="min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 8px 14px">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 11px; line-height: 14px; color: #6e6e73">Waitlist</span><span style="font-size: 13px; line-height: 18px; font-weight: 500">{{bugAnswer}}</span></span>
+<button onClick="{{undoBug}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change</button>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{hasSteps}}" hint-placeholder-val="{{false}}">
+<ol style="list-style: none; margin: 0; padding: 4px 14px; display: flex; flex-direction: column; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04), 0 6px 18px rgba(0,0,0,0.05)">
+<sc-for list="{{finishSteps}}" as="fs" hint-placeholder-count="4">
+<li style="{{fs.wrap}}">
+<sc-if value="{{fs.done}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+<sc-if value="{{fs.todo}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="6.3" stroke="{{fs.ring}}" stroke-width="1.5"></circle></svg></sc-if>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; {{fs.weight}}">{{fs.label}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{fs.note}}</span></span>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+
+<sc-if value="{{hasNotes}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12)">
+<sc-for list="{{notes}}" as="n" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 8px; padding: 4px 0">
+<span style="flex: 1; font-size: 12px; line-height: 16px">{{n.text}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #0066d6">{{n.link}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div style="flex: 0 0 auto; padding: 14px 20px 20px; border-top: 0.5px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 10px">
+<sc-if value="{{hasResult}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05)">
+<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 18px; margin-top: 1px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; line-height: 18px; font-weight: 600">{{resultLine}}</span><span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{resultSub}}</span></span>
+<button onClick="{{undoResult}}" style="height: 26px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Undo</button>
+</div>
+</sc-if>
+<button aria-haspopup="dialog" style="height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px 0 12px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.05), 0 6px 16px rgba(0,0,0,0.05); font: inherit; text-align: left">
+<svg width="20" height="20" viewBox="0 0 100 100" aria-hidden="true" style="flex: 0 0 20px"><rect width="100" height="100" rx="22.4" fill="#FBE1AE"></rect><polygon points="78,50 64,74.25 36,74.25 22,50 36,25.75 64,25.75" fill="#D97F00" stroke="#D97F00" stroke-width="5" stroke-linejoin="round"></polygon><polygon points="61,50 55.5,59.53 44.5,59.53 39,50 44.5,40.47 55.5,40.47" fill="#2A2A2E"></polygon><rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#000000" stroke-opacity="0.1"></rect></svg>
+<span style="flex: 1; min-width: 0; font-size: 13px; line-height: 18px; color: #6e6e73">Tell Mel what to change, add or remove…</span>
+<span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 5px; background: #f2f2f5; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), inset 0 -1px 0 rgba(0,0,0,0.08); font-size: 11px; line-height: 14px; color: #6e6e73">⌘K</span>
+</button>
+</div>
+</aside>
+
+<sc-if value="{{sendOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 30; background: rgba(24,24,30,0.24); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: flex-start; padding-top: 60px">
+<div role="dialog" aria-modal="true" aria-labelledby="send-title" style="width: 620px; max-width: calc(100% - 48px); max-height: 680px; display: flex; flex-direction: column; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08), 0 28px 72px rgba(0,0,0,0.26)">
+<div style="display: flex; align-items: center; gap: 12px; padding: 18px 16px 14px 20px">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<h2 id="send-title" style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em">Send tasks</h2>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">One issue per task, so the team can follow the plan where they already work.</span>
+</div>
+<button onClick="{{closeSend}}" aria-label="Close" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); color: #3a3a3c; padding: 0">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button>
+</div>
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 14px">
+<div role="tablist" aria-label="Where to" style="align-self: flex-start; height: 30px; display: flex; padding: 2px; gap: 2px; box-sizing: border-box; border-radius: 15px; background: rgba(0,0,0,0.06)">
+<sc-for list="{{dests}}" as="d" hint-placeholder-count="2">
+<button role="tab" aria-selected="{{d.selected}}" onClick="{{d.pick}}" style="{{d.style}}">{{d.label}}</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; border-radius: 12px; background: #f7f7f9">
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 6px 12px">
+<span style="flex: 1; font-size: 13px; line-height: 18px">{{destWhereLabel}}</span>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; color: #3a3a3c">{{destWhere}}</span>
+</div>
+<div style="margin-left: 12px; height: 0.5px; background: rgba(0,0,0,0.1)"></div>
+<sc-for list="{{sendOpts}}" as="so" hint-placeholder-count="2">
+<div style="{{so.wrap}}">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px">{{so.label}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{so.note}}</span></span>
+<button role="switch" aria-checked="{{so.on}}" aria-label="{{so.label}}" onClick="{{so.toggle}}" style="{{so.track}}"><span style="{{so.knob}}"></span></button>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #6e6e73">{{previewTitle}}</span>
+<sc-for list="{{issues}}" as="is" hint-placeholder-count="4">
+<div style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 10px; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.12); {{is.dim}}">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="{{is.iconColor}}" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.3"></circle><circle cx="8" cy="8" r="1.4" fill="{{is.iconColor}}"></circle></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 13px; line-height: 18px; font-weight: 500">{{is.title}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{is.meta}}</span></span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{is.note}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px 12px 20px; border-top: 0.5px solid rgba(0,0,0,0.08); background: #fbfbfc">
+<span style="flex: 1; min-width: 0; font-size: 11px; line-height: 15px; color: #6e6e73">{{sendNote}}</span>
+<button onClick="{{closeSend}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Cancel</button>
+<button onClick="{{doSend}}" style="height: 32px; padding: 0 16px; border: 0; border-radius: 10px; background: #007aff; box-shadow: 0 1px 2px rgba(0,80,200,0.3); font: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff">{{sendLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"scene":{"editor":"enum","options":["today","bugfix","diagram","merge","export"],"default":"today"},"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { view: 'formatted', today: '', bug: '', merged: '', send: (props.scene || 'today') === 'export', sent: false, dest: 'github', opt: { checklist: true, milestones: true } };
+}
+journey(cur, allDone) {
+return ['Idea', 'Plan', 'Build'].map((label, i) => {
+const on = i === cur && !allDone, done = i < cur || allDone;
+return {
+label: label, mark: done ? '✓' : String(i + 1), current: on ? 'step' : 'false',
+style: 'height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 5px; border-radius: 13px; font-size: 12px; line-height: 16px; text-decoration: none; ' + (on ? 'background: #ffffff; font-weight: 600; color: #1d1d1f; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'color: ' + (done ? '#3a3a3c' : '#8e8e93')),
+badge: 'width: 16px; height: 16px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 12px; font-weight: 700; ' + (on ? 'background: #007aff; color: #ffffff' : (done ? 'background: #248a3d; color: #ffffff' : 'background: rgba(0,0,0,0.08); color: #6e6e73'))
+};
+});
+}
+dot(kind) {
+const b = 'flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; ';
+if (kind === 'ready') return b + 'background: #248a3d';
+if (kind === 'needs') return b + 'background: #007aff';
+if (kind === 'writing') return b + 'border: 1.5px solid #007aff';
+return b + 'border: 1.5px solid #8e8e93';
+}
+sw(on) {
+return {
+track: 'flex: 0 0 32px; width: 32px; height: 18px; border: 0; padding: 0; border-radius: 9px; position: relative; background: ' + (on ? '#007aff' : 'rgba(0,0,0,0.14)'),
+knob: 'position: absolute; top: 2px; left: ' + (on ? '16px' : '2px') + '; width: 14px; height: 14px; border-radius: 7px; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: left 150ms ease'
+};
+}
+tag(kind) {
+const base = 'flex: 0 0 auto; height: 20px; display: inline-flex; align-items: center; padding: 0 7px; border-radius: 10px; font-size: 11px; line-height: 14px; font-weight: 600; white-space: nowrap; ';
+if (kind === 'add') return base + 'background: rgba(36,138,61,0.1); color: #1f7a36';
+if (kind === 'change') return base + 'background: rgba(201,52,0,0.09); color: #a33000';
+if (kind === 'remove') return base + 'background: rgba(215,0,21,0.08); color: #b8000f';
+return base + 'background: rgba(0,0,0,0.05); color: #3a3a3c';
+}
+renderVals() {
+const s = this.state;
+const set = (o) => this.setState(o);
+const scene = this.props.scene || 'today';
+const B = (type, text, extra) => Object.assign({ isH1: type === 'h1', isH2: type === 'h2', isP: type === 'p', isLi: type === 'li', isKeep: type === 'keep', isCode: type === 'code', isCrit: type === 'crit', isDiagram: type === 'diagram', text: text || '', bullet: '•', when: '', then: '', id: '', tag: '', tagStyle: '', wrap: '' }, extra || {});
+const crit = (id, when, then, kind, tag, hl) => B('crit', '', { id: id, when: when, then: then, tag: tag, tagStyle: this.tag(kind), wrap: hl ? 'margin: 0 -10px; padding: 6px 10px; border-radius: 8px; background: rgba(255,214,10,0.18)' : '' });
+const changed = s.today === 'change';
+const kept = s.today === 'keep';
+
+let title = 'Filter schedule by teacher', sizeLabel = 'Feature', cur = 1, allDone = false;
+let docName = '', docDot = '', docWord = '', blocks = [], rawText = '';
+let inboxTitle = 'Nothing needs you', status = '', statusDot = this.dot('ready'), gated = false;
+let ctaLabel = 'Start Building', ctaOn = false;
+
+if (scene === 'today') {
+docName = 'REQUIREMENTS.md'; docDot = this.dot(s.today ? 'ready' : 'needs'); docWord = s.today ? 'Ready' : 'Needs you';
+blocks = [
+B('h1', 'Filter schedule by teacher'),
+B('p', 'Each criterion says when something happens and what must then be true. The tag says what it does to the app as it is today (specs/current/).'),
+B('h2', '1. Filter by teacher'),
+crit('1.1', 'a member picks a teacher in the schedule filter,', 'the schedule shows only that teacher’s classes.', 'add', 'Adds'),
+crit('1.2', 'the filter is on,', 'a chip shows the teacher’s name with an × that clears it.', 'add', 'Adds'),
+crit('1.3', 'the picked teacher has no classes in the range,', 'the schedule says so and offers to clear the filter.', 'add', 'Adds'),
+B('h2', '2. How far ahead'),
+kept ? crit('2.1', 'a member opens the schedule,', 'it shows classes for the next 7 days.', 'same', 'Keeps B-2.1') : crit('2.1', 'a member opens the schedule,', 'it shows classes for the next 4 weeks.', 'change', 'Changes B-2.1', !s.today),
+B('h2', '3. Teacher profile'),
+crit('3.1', 'a member taps a teacher’s name on a class,', 'a short profile opens with photo, styles and next classes.', 'add', 'Adds'),
+B('h2', 'It must also'),
+crit('Q1', 'the filter changes,', 'the schedule updates in under 300 ms.', 'add', 'Adds')
+];
+rawText = '# Filter schedule by teacher\n\n## 1. Filter by teacher\n\n- **1.1** WHEN a member picks a teacher in the schedule filter, THEN the schedule shows only that teacher’s classes. `Adds`\n- **1.2** WHEN the filter is on, THEN a chip shows the teacher’s name with an × that clears it. `Adds`\n- **1.3** WHEN the picked teacher has no classes in the range, THEN the schedule says so and offers to clear the filter. `Adds`\n\n## 2. How far ahead\n\n- **2.1** WHEN a member opens the schedule, THEN it shows classes for the next ' + (kept ? '7 days. `Keeps B-2.1`' : '4 weeks. `Changes B-2.1`') + '\n\n## 3. Teacher profile\n\n- **3.1** WHEN a member taps a teacher’s name on a class, THEN a short profile opens with photo, styles and next classes. `Adds`\n\n## It must also\n\n- **Q1** WHEN the filter changes, THEN the schedule updates in under 300 ms. `Adds`';
+inboxTitle = s.today ? 'All answered so far' : 'Mel needs you · 1';
+status = s.today ? 'Writing ARCHITECTURE.md' : 'ARCHITECTURE.md starts after 1 answer';
+statusDot = s.today ? this.dot('writing') : this.dot('waiting');
+gated = !s.today;
+} else if (scene === 'bugfix') {
+title = 'Late cancel keeps the credit'; sizeLabel = 'Quick fix';
+docName = 'SPEC.md'; docDot = this.dot(s.bug ? 'ready' : 'needs'); docWord = s.bug ? 'Ready' : 'Needs you';
+blocks = [
+B('h1', 'Late cancel keeps the credit'),
+B('h2', 'What happens now'),
+B('li', 'Book a class that starts in 3 hours.', { bullet: '1.' }),
+B('li', 'Open My bookings and cancel it.', { bullet: '2.' }),
+B('li', 'The credit comes back, although the rule says no credit within 12 hours.', { bullet: '3.' }),
+B('h2', 'What should happen'),
+crit('1', 'a member cancels less than 12 hours before class,', 'the booking is cancelled and the credit is not given back.', 'change', 'Fixes B-1.3'),
+crit('2', 'a member cancels less than 12 hours before class,', 'the cancel sheet says first that the credit will be lost.', 'add', 'Adds'),
+B('h2', 'Must not change'),
+B('keep', 'Cancelling 12 hours or more before class gives the credit back.', { id: 'B-1.3' }),
+B('keep', 'When a teacher cancels a class, every booked member gets their credit back.', { id: 'B-1.4' }),
+B('keep', s.bug === 'yes' ? 'A freed spot goes to the first member on the waitlist, also after a late cancel.' : 'A freed spot goes to the first member on the waitlist.', { id: 'B-3.2' }),
+B('h2', 'Check'),
+B('code', './gradlew test --tests CancelBookingTest')
+];
+rawText = '# Late cancel keeps the credit\n\n## What happens now\n\n1. Book a class that starts in 3 hours.\n2. Open My bookings and cancel it.\n3. The credit comes back, although the rule says no credit within 12 hours.\n\n## What should happen\n\n- **1** WHEN a member cancels less than 12 hours before class, THEN the booking is cancelled and the credit is not given back. `Fixes B-1.3`\n- **2** WHEN a member cancels less than 12 hours before class, THEN the cancel sheet says first that the credit will be lost. `Adds`\n\n## Must not change\n\n- Cancelling 12 hours or more before class gives the credit back. (B-1.3)\n- When a teacher cancels a class, every booked member gets their credit back. (B-1.4)\n- A freed spot goes to the first member on the waitlist. (B-3.2)\n\n## Check\n\n```\n./gradlew test --tests CancelBookingTest\n```';
+inboxTitle = s.bug ? 'All answered' : 'Mel needs you · 1';
+status = s.bug ? 'SPEC.md is ready' : 'Waiting for your answer';
+statusDot = s.bug ? this.dot('ready') : this.dot('needs');
+ctaOn = !!s.bug;
+} else if (scene === 'diagram') {
+docName = 'ARCHITECTURE.md'; docDot = this.dot('ready'); docWord = 'Ready';
+blocks = [
+B('h1', 'Architecture'),
+B('p', 'The filter lives in ScheduleViewModel. Classes still come through ClassRepository, which passes the teacher to the API. Profiles get their own small repository.'),
+B('h2', 'How the parts talk'),
+B('diagram', ''),
+B('h2', 'Modules it changes'),
+B('li', 'schedule: ScheduleViewModel gets a teacher filter (1.1 to 1.3, Q1).'),
+B('li', 'data: ClassRepository passes ?teacher= to GET /classes and keeps the local cache per filter.'),
+B('li', 'teachers (new): TeacherRepository and the profile screen (3.1).')
+];
+rawText = '# Architecture\n\nThe filter lives in ScheduleViewModel. Classes still come through ClassRepository, which passes the teacher to the API. Profiles get their own small repository.\n\n## How the parts talk\n\n```mermaid\nflowchart LR\n  S[Schedule screen] --> VM[ScheduleViewModel]:::changed\n  VM --> R[ClassRepository]\n  R --> API[GET /classes?teacher=]\n  R --> C[(Local cache)]\n  P[Teacher profile] --> TR[TeacherRepository]:::new\n  TR --> TAPI[GET /teachers]\n```\n\n## Modules it changes\n\n- schedule: ScheduleViewModel gets a teacher filter (1.1 to 1.3, Q1).\n- data: ClassRepository passes ?teacher= to GET /classes and keeps the local cache per filter.\n- teachers (new): TeacherRepository and the profile screen (3.1).';
+inboxTitle = 'All answered';
+status = 'Writing TASKS.md';
+statusDot = this.dot('writing');
+} else if (scene === 'merge') {
+cur = 2; allDone = !!s.merged;
+inboxTitle = s.merged === 'done' ? 'Ready to merge' : 'One step left';
+status = s.merged === 'done' ? 'Project spec updated · merge into main next' : 'Update the project spec, then merge';
+statusDot = this.dot(s.merged === 'done' ? 'ready' : 'needs');
+ctaLabel = 'Merge into main'; ctaOn = !!s.merged;
+} else {
+cur = 1;
+inboxTitle = 'Nothing needs you';
+status = 'Plan is ready';
+statusDot = this.dot('ready');
+ctaOn = true;
+}
+
+const hasDoc = scene === 'today' || scene === 'bugfix' || scene === 'diagram';
+const viewTabs = [{ id: 'formatted', label: 'Formatted' }, { id: 'raw', label: 'Markdown' }].map((v) => ({
+label: v.label, selected: s.view === v.id ? 'true' : 'false', pick: () => set({ view: v.id }),
+style: 'height: 24px; padding: 0 12px; border: 0; border-radius: 12px; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f; ' + (s.view === v.id ? 'background: #ffffff; font-weight: 600; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'background: transparent')
+}));
+
+const side = [
+{ title: 'Needs you', items: scene === 'bugfix' ? [{ name: 'Late cancel keeps the credit', meta: s.bug ? 'Quick fix · ready' : 'Quick fix · 1 question', kind: s.bug ? 'ready' : 'needs', cur: true }] : (scene === 'merge' ? [{ name: 'Filter schedule by teacher', meta: s.merged ? 'Ready to merge' : 'Update project spec', kind: 'needs', cur: true }] : [{ name: 'Filter schedule by teacher', meta: scene === 'today' ? (s.today ? 'Feature · writing' : 'Feature · 1 decision') : (scene === 'export' ? 'Ready to build' : 'Feature · writing'), kind: scene === 'today' && !s.today ? 'needs' : (scene === 'export' ? 'ready' : 'writing'), cur: true }]) },
+{ title: 'Building', items: [{ name: 'Teacher profile page', meta: 'Task 2 of 4', kind: 'writing', cur: false }] },
+{ title: 'Done', items: [{ name: 'Double booking on fast taps', meta: 'Merged yesterday', kind: 'ready', cur: false }] }
+].map((g) => ({ title: g.title, items: g.items.map((it) => ({ name: it.name, meta: it.meta, dot: this.dot(it.kind), current: it.cur ? 'page' : 'false', style: 'min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; color: #1d1d1f; text-decoration: none; ' + (it.cur ? 'background: rgba(0,0,0,0.08)' : '') })) }));
+
+const mergeFiles = [
+{ name: 'specs/current/schedule.md', isNew: false, rows: [
+{ kind: 'change', tag: 'Changed', id: 'B-2.1', before: 'WHEN a member opens the schedule, THEN it shows classes for the next 7 days.', text: 'WHEN a member opens the schedule, THEN it shows classes for the next 4 weeks.' },
+{ kind: 'add', tag: 'Added', id: 'B-2.4', text: 'WHEN a member picks a teacher in the schedule filter, THEN the schedule shows only that teacher’s classes.' },
+{ kind: 'add', tag: 'Added', id: 'B-2.5', text: 'WHEN the filter is on, THEN a chip shows the teacher’s name with an × that clears it.' },
+{ kind: 'add', tag: 'Added', id: 'B-2.6', text: 'WHEN the picked teacher has no classes in the range, THEN the schedule says so and offers to clear the filter.' }] },
+{ name: 'specs/current/teachers.md', isNew: true, rows: [
+{ kind: 'add', tag: 'Added', id: 'B-5.1', text: 'WHEN a member taps a teacher’s name on a class, THEN a short profile opens with photo, styles and next classes.' }] }
+].map((f) => ({ name: f.name, isNew: f.isNew, count: f.rows.length + (f.rows.length === 1 ? ' change' : ' changes'), rows: f.rows.map((r, i) => ({ tag: r.tag, tagStyle: this.tag(r.kind) + '; flex: 0 0 64px; justify-content: center', id: r.id, text: r.text, before: r.before || '', hasBefore: !!r.before, wrap: 'display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;' + (i > 0 ? ' border-top: 0.5px solid rgba(0,0,0,0.07);' : '') })) }));
+
+const sentNums = { 1: '#41', 2: '#42', 3: '#43', 4: '#44' };
+const taskDefs = [
+{ num: 1, title: 'Teacher filter in ScheduleViewModel', meta: 'Phase 1 · covers 1.1, 1.2, Q1', already: true },
+{ num: 2, title: 'Classes API with ?teacher= and cache per filter', meta: 'Phase 1 · covers 1.1, 1.3, 2.1' },
+{ num: 3, title: 'Filter chip and empty state', meta: 'Phase 2 · covers 1.2, 1.3' },
+{ num: 4, title: 'Teacher profile screen', meta: 'Phase 2 · covers 3.1' }
+];
+const gh = s.dest === 'github';
+const tasks = taskDefs.map((t) => ({ num: String(t.num), title: t.title, meta: t.meta, issue: (t.already || s.sent) ? (gh ? 'Issue ' + sentNums[t.num] : 'YOG-' + (100 + t.num)) : '', issueColor: '#6e6e73' }));
+const toSend = taskDefs.filter((t) => !t.already).length;
+const issues = taskDefs.map((t) => ({ title: t.title, meta: (s.opt.milestones ? (gh ? 'Milestone: ' : 'Cycle: ') + t.meta.split(' · ')[0] + ' · ' : '') + 'label mel · filter-by-teacher' + (s.opt.checklist ? ' · criteria as a checklist' : ''), note: t.already ? 'Already sent · ' + (gh ? sentNums[t.num] : 'YOG-101') : 'New', dim: t.already ? 'opacity: 0.55' : '', iconColor: t.already ? '#8e8e93' : '#248a3d' }));
+const dests = [{ id: 'github', label: 'GitHub Issues' }, { id: 'linear', label: 'Linear' }].map((d) => ({
+label: d.label, selected: s.dest === d.id ? 'true' : 'false', pick: () => set({ dest: d.id }),
+style: 'height: 26px; padding: 0 14px; border: 0; border-radius: 13px; font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f; ' + (s.dest === d.id ? 'background: #ffffff; font-weight: 600; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'background: transparent')
+}));
+const sendOpts = [
+{ id: 'checklist', label: 'Criteria as a checklist', note: 'Each issue lists the WHEN/THEN criteria its task covers.' },
+{ id: 'milestones', label: gh ? 'Phases as milestones' : 'Phases as cycles', note: 'Phase 1 and Phase 2 from TASKS.md.' }
+].map((o, i) => { const on = !!s.opt[o.id]; const k = this.sw(on); return { label: o.label, note: o.note, on: on ? 'true' : 'false', track: k.track, knob: k.knob, toggle: () => set({ opt: Object.assign({}, s.opt, { [o.id]: !on }) }), wrap: 'min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 6px 12px;' + (i > 0 ? ' border-top: 0.5px solid rgba(0,0,0,0.08);' : '') }; });
+
+const finishSteps = [
+{ label: 'Tasks done', note: '4 of 4 on mel/filter-by-teacher', done: true },
+{ label: 'Checks passed', note: '4 of 4 · last run 2 minutes ago', done: true },
+{ label: 'Update the project spec', note: s.merged === 'done' ? '4 added, 1 changed in 2 files' : (s.merged === 'skip' ? 'Skipped · you can do it from Done' : 'specs/current/ · no tokens'), done: s.merged === 'done', now: !s.merged },
+{ label: 'Merge into main', note: 'Or open a pull request', done: false, now: !!s.merged }
+].map((f, i) => ({ label: f.label, note: f.note, done: f.done, todo: !f.done, ring: f.now ? '#007aff' : '#c7c7cc', weight: f.now ? 'font-weight: 600' : '', wrap: 'min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 0;' + (i > 0 ? ' border-top: 0.5px solid rgba(0,0,0,0.07);' : '') }));
+
+const notes = scene === 'diagram' ? [{ text: '3 answers you gave', link: 'Edit' }, { text: '2 small things Mel guessed', link: 'Show' }, { text: '5 decisions with reasons', link: 'Open' }] : [{ text: '3 answers you gave', link: 'Edit' }, { text: '1 thing Mel guessed', link: 'Show' }, { text: '4 decisions with reasons', link: 'Open' }];
+const resultMap = {
+merge: s.merged === 'done' ? ['Project spec updated: 4 added, 1 changed', 'specs/current/schedule.md and teachers.md. The spec moved to specs/done/.'] : null,
+export: s.sent ? [(gh ? 'Created 3 GitHub issues (#42 to #44)' : 'Created 3 Linear issues (YOG-102 to YOG-104)'), 'Task 1 was already sent. The issue numbers are saved in TASKS.md.'] : null
+};
+const res = resultMap[scene] || null;
+
+return {
+title: title, sizeLabel: sizeLabel, journey: this.journey(cur, allDone),
+ctaLabel: ctaLabel, ctaDisabled: ctaOn ? 'false' : 'true',
+ctaStyle: 'height: 32px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 16px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (ctaOn ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (ctaOn ? 'auto' : 'none'),
+showSend: scene === 'export', openSend: () => set({ send: true }),
+sideGroups: side,
+hasDoc: hasDoc, docName: docName, docDot: docDot, docWord: docWord, viewTabs: viewTabs,
+formatted: s.view === 'formatted', raw: s.view === 'raw', blocks: blocks, rawText: rawText,
+isMerge: scene === 'merge', mergeFiles: mergeFiles, mergeOpen: !s.merged,
+doMerge: () => set({ merged: 'done' }), skipMerge: () => set({ merged: 'skip' }),
+isExport: scene === 'export', tasks: tasks,
+inboxTitle: inboxTitle, status: status, statusDot: statusDot, gated: gated,
+hasCards: scene === 'today' || scene === 'bugfix',
+cardFile: scene === 'bugfix' ? 'SPEC.md' : 'REQUIREMENTS.md',
+cardMeta: scene === 'bugfix' ? (s.bug ? 'All answered' : '1 open') : (s.today ? 'All answered' : '1 open'),
+todayOpen: scene === 'today' && !s.today, todayDone: scene === 'today' && !!s.today,
+todayAnswer: changed ? 'Change it: 4 weeks ahead' : 'Keep today’s rule: 7 days ahead',
+keepToday: () => set({ today: 'keep' }), changeToday: () => set({ today: 'change' }), undoToday: () => set({ today: '' }),
+doneCards: scene === 'today' ? [{ topic: 'Who can filter', answer: 'Every member, also without a class pack' }, { topic: 'Teacher list', answer: 'Only teachers with classes in the range' }] : [],
+bugOpen: scene === 'bugfix' && !s.bug, bugDone: scene === 'bugfix' && !!s.bug,
+bugOptions: [{ label: 'Yes, the next member gets it', pick: () => set({ bug: 'yes' }) }, { label: 'No, the spot stays empty', pick: () => set({ bug: 'no' }) }],
+bugAnswer: s.bug === 'yes' ? 'Yes, the next member gets it' : 'No, the spot stays empty',
+undoBug: () => set({ bug: '' }),
+hasSteps: scene === 'merge', finishSteps: finishSteps,
+hasNotes: scene === 'diagram' || scene === 'export', notes: notes,
+hasResult: !!res, resultLine: res ? res[0] : '', resultSub: res ? res[1] : '',
+undoResult: () => set(scene === 'merge' ? { merged: '' } : { sent: false }),
+sendOpen: scene === 'export' && s.send, closeSend: () => set({ send: false }),
+dests: dests, destWhereLabel: gh ? 'Repository' : 'Team', destWhere: gh ? 'kaanf/yoga-studio-booking' : 'Yoga (YOG)',
+sendOpts: sendOpts, issues: issues,
+previewTitle: toSend + ' new issues · 1 already sent',
+sendNote: gh ? 'Uses the gh command on this Mac, signed in as kaanf. No tokens.' : 'Uses your Linear key from Settings › Specs. No tokens.',
+sendLabel: 'Create ' + toSend + ' issues',
+doSend: () => set({ sent: true, send: false })
+};
+}
+}
+</script>
+</body>
+</html>

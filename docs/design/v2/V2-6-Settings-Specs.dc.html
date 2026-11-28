@@ -10,6 +10,11 @@ Purpose: where the defaults v2 stopped asking about live. Everything here was a 
   Let Mel guess small details (was the B1 toggle) · Save specs to (was B1 Save to) · Default agent (was B1 Agent)
   Write AGENTS.md, Commit the spec, Ask before an agent changes the plan (were B7 toggles)
   Project context and rules every agent follows (were A3 Project setup and principles.md)
+One whole (2026-11-27): only what the app has. Default agent, Save specs to, "Ask before an agent changes the plan" and the
+  Advanced tab are deferred and not drawn.
+Spec upgrades (2026-11-28): Writing a spec gains "Write criteria as When / Then" (on) and "Suggest splitting big requests"
+  (on). The project section gains "How the app works today" (specs/current/, updated when a spec is built; Show Files).
+  Models for each step live in Settings › Agents. The Linear key for Send tasks is asked the first time Linear is picked.
 Comes from: app menu › Settings (⌘,), sidebar agent status, V2-0 Change, V2-3 Change in Settings, V2-2 token popover (Hide token use in Settings).
 -->
 <title>Settings: Specs (v2)</title>
@@ -38,8 +43,6 @@ body{margin:0}
 <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="9" rx="1.5"></rect><path d="M5 7l1.5 1.5L5 10M8.5 10H11"></path></svg>Agents</a>
 <a href="#" aria-current="page" style="width: 72px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; background: rgba(0,0,0,0.07); font-size: 11px; line-height: 14px; color: #0058b9; text-decoration: none">
 <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5l3.25 3.25v9.25H4z"></path><path d="M9 1.75V5h3.25M6 8.5h4M6 11h4"></path></svg>Specs</a>
-<a href="#" style="width: 72px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 8px; font-size: 11px; line-height: 14px; color: #3a3a3c; text-decoration: none">
-<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10"></path><circle cx="6" cy="4" r="1.3" fill="#ececec"></circle><circle cx="10" cy="8" r="1.3" fill="#ececec"></circle><circle cx="5" cy="12" r="1.3" fill="#ececec"></circle></svg>Advanced</a>
 </nav>
 </div>
 
@@ -79,6 +82,13 @@ body{margin:0}
 <button style="height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Show Files</button>
 <button style="height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Read Again</button>
 </div>
+<div style="min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 0.5px solid rgba(0,0,0,0.08)">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px">How the app works today</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">specs/current/ · 6 areas · updated each time a spec is built</span>
+</span>
+<button style="height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.18); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Show Files</button>
+</div>
 <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px">
 <span style="font-size: 13px; line-height: 18px">Rules every agent follows</span>
 <span style="font-size: 11px; line-height: 15px; color: #6e6e73">Saved in principles.md. Every spec and every task reads them first.</span>
@@ -104,7 +114,7 @@ class Component extends DCLogic {
 constructor(props) {
 super(props);
 this.state = {
-on: { sidebar: false, guess: true, tokens: true, agents: true, commit: true, ask: true },
+on: { sidebar: false, guess: true, tokens: true, when: true, split: true, agents: true, commit: true, ask: true },
 rules: ['Reuse existing modules before adding new ones. Name the module you extend.', 'No new dependency without a short reason in ARCHITECTURE.md.', 'Every check in the plan gets a test before a task counts as done.']
 };
 }
@@ -128,13 +138,13 @@ value('Open files in', 'Used by Open in Editor on the board.', 'VS Code')
 { title: 'Writing a spec', rows: [
 toggle('guess', 'Let Mel guess small details', 'Each guess is listed on the board so you can check it.'),
 toggle('tokens', 'Show token use on the board', 'A small total in the board toolbar. Click it to see each step.'),
-value('Default agent', 'Who writes the spec. Set up agents in Agents.', 'Claude Code'),
-value('Save specs to', 'Inside the project folder.', 'specs/')
+toggle('when', 'Write criteria as When / Then', 'WHEN something happens, THEN what must be true. Checks and tests are written from them.'),
+toggle('split', 'Suggest splitting big requests', 'When an idea reads like two features, New offers 2 specs.')
+
 ] },
 { title: 'When you start building', rows: [
 toggle('agents', 'Write AGENTS.md', 'Points every agent at the project, this spec and the task prompts.'),
-toggle('commit', 'Commit the spec to Git', 'One commit with all spec files before the first task.'),
-toggle('ask', 'Ask me before an agent changes the plan', 'If an agent hits a blocker, it proposes a change here first.')
+toggle('commit', 'Commit the spec to Git', 'One commit with all spec files before the first task.')
 ] }
 ].map((g) => ({ title: g.title, rows: g.rows.map((r, i) => Object.assign(r, { rowStyle: 'min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; ' + (i < g.rows.length - 1 ? 'border-bottom: 0.5px solid rgba(0,0,0,0.08)' : '') })) }));
 const rules = s.rules.map((t, i) => ({ text: t, remove: () => this.setState({ rules: s.rules.filter((x, j) => j !== i) }) }));

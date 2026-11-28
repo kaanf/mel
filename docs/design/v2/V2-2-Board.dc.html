@@ -3,7 +3,30 @@
 <head>
 <meta charset="utf-8">
 <!--
-MEL SCREEN V2-2 · Board (v2: replaces B2 Intake, D1 Spec board, C1 Refine and C2 Agent stopped)
+MEL SCREEN V2-2 · Board (v2). Updated 2026-11-28, chosen: Tell Mel panel, redesigned questions, 380 px Mel column, WHEN/THEN criteria.
+The sections below describe those updates; the original board description follows under "Board (v2: …)".
+Why: the 300 px Mel column is too small to write a long request, attach files or check what Mel changed. A permanently wider column
+  would take space from the plan all the time, but the space is only needed while telling and reviewing. So the column keeps a
+  one-line Tell Mel bar (⌘K) and the last result line; the work happens in a large panel over the board (680 px) that closes again.
+Panel states (prop tellPanel; V2-25 to V2-27 show them):
+  compose: Where chips (Let Mel decide or one file; an open file is preselected), a large text field, attachments as file cards,
+    three "Try something like" starters when empty, Attach, Dictate, cost hint, Send to Mel (⌘↩).
+  working (V2-25): the request quoted, then 4 steps with live state: read the files, find where it goes (names the passages),
+    edit only those passages, log the reason in DECISIONS.md. Stop puts the words back in the box; nothing is changed before the end.
+  review (V2-26): what changed, grouped by file, as before/after lines (removed struck through, added green), each with Undo this;
+    Undo all; Done. The changes are already applied (same rule as V2-2), so closing keeps them. The column then shows the result
+    line with Review changes and Undo.
+  unplaced (V2-27): Nothing was changed, and two choice cards: Rewrite ARCHITECTURE.md (about 8k tokens, the only full rewrite,
+    always the user's choice) or Say it differently (words go back in the box). Cancel.
+Questions (2026-11-28, V2-28 and V2-29): the intake question is one card with a 3-step bar, a 17 px question, numbered answer rows
+  (keycaps 1 to 3, the likely one tinted with Likely ↩) and Something else…; answered questions stack above it with Change.
+  Decision cards are grouped by file with a progress bar on top. Only the next open card is expanded; the others are one-line rows
+  (tap to open), answered ones show topic, answer and Change. Answering opens the next. A contradiction shows its two sources as
+  tiles (12 hours · your answer, 24 hours · old-schedule.jpg), so the choice is the source.
+Criteria (2026-11-28): REQUIREMENTS.md criteria are WHEN … THEN … sentences; Formatted shows the id and WHEN / THEN labels.
+Width (2026-11-28): Mel's column is 380 px (was 300), 20 px padding; prop melWidth tries 340 / 380 / 420. The center keeps
+  at least 480 px; below that the column wraps under it, as before.
+Board (v2: replaces B2 Intake, D1 Spec board, C1 Refine and C2 Agent stopped)
 Purpose: one screen for the whole spec loop. Two rules hold everywhere: the user can say anything in their own words and
   change or remove anything at any time, and Mel never spends more tokens than doing it by hand (every change is a small
   patch to the passages it touches; a file is only rewritten from scratch when the user explicitly chooses it).
@@ -58,10 +81,11 @@ States on the canvas (same component, props only): V2-4 (a file open, Tell Mel r
 <helmet>
 <style>
 body{margin:0}
+@keyframes melspin{to{transform:rotate(360deg)}}
 </style>
 </helmet>
 <div style="box-sizing: border-box; width: 100%; min-height: 880px; padding: 40px; background: #dfe0e5; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased">
-<div style="max-width: 1280px; margin: 0 auto; height: 800px; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
+<div style="max-width: 1280px; margin: 0 auto; height: 800px; position: relative; display: flex; flex-wrap: wrap; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.15), 0 40px 80px rgba(0,0,0,0.1)">
 
 <nav aria-label="Project" style="flex: 0 0 244px; margin: 8px 0 8px 8px; border-radius: 12px; background: rgba(245,245,247,0.86); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column">
 <div style="height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px">
@@ -248,6 +272,7 @@ Files
 <sc-if value="{{b.isH2}}" hint-placeholder-val="{{false}}"><h3 style="margin: 10px 0 0; font-size: 15px; line-height: 20px; font-weight: 700">{{b.text}}</h3></sc-if>
 <sc-if value="{{b.isP}}" hint-placeholder-val="{{true}}"><p style="margin: 0; font-size: 13px; line-height: 20px; color: #3a3a3c">{{b.text}}</p></sc-if>
 <sc-if value="{{b.isLi}}" hint-placeholder-val="{{false}}"><div style="display: flex; gap: 8px; padding-left: 4px"><span aria-hidden="true" style="color: #aeaeb2">•</span><span style="font-size: 13px; line-height: 20px">{{b.text}}</span></div></sc-if>
+<sc-if value="{{b.isCrit}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: flex-start; gap: 12px; padding-left: 4px"><span style="flex: 0 0 28px; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 20px; color: #6e6e73">{{b.cid}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; line-height: 20px"><span><span style="font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: #6e6e73">WHEN </span>{{b.when}}</span><span><span style="font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: #0058b9">THEN </span>{{b.then}}</span></span></div></sc-if>
 <sc-if value="{{b.isRm}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: center; gap: 8px; padding-left: 4px"><span aria-hidden="true" style="color: #aeaeb2">•</span><span style="flex: 1; font-size: 13px; line-height: 20px; color: #6e6e73">{{b.text}}</span><button onClick="{{b.restore}}" style="height: 24px; padding: 0 10px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Restore</button></div></sc-if>
 </div>
 </sc-for>
@@ -485,8 +510,8 @@ Files
 
 </main>
 
-<aside aria-label="Mel" style="max-height: 100%; flex: 1 1 300px; max-width: 100%; min-width: 0; box-sizing: border-box; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column">
-<div style="flex: 0 0 auto; padding: 16px 16px 10px; display: flex; flex-direction: column; gap: 6px">
+<aside aria-label="Mel" style="max-height: 100%; flex: {{melFlex}}; max-width: 100%; min-width: 0; box-sizing: border-box; border-left: 0.5px solid rgba(0,0,0,0.1); background: #fbfbfd; display: flex; flex-direction: column">
+<div style="flex: 0 0 auto; padding: 20px 20px 12px; display: flex; flex-direction: column; gap: 6px">
 <h2 style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 700">{{inboxTitle}}</h2>
 <div role="status" style="min-height: 20px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
 <span style="{{pillDot}}"></span>
@@ -496,77 +521,158 @@ Files
 </sc-if>
 </div>
 </div>
-<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px">
 
 <sc-if value="{{asking}}" hint-placeholder-val="{{false}}">
-<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06)">
-<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">Question {{qNum}} of 3</span>
-<span style="font-size: 15px; line-height: 20px; font-weight: 600">{{q.text}}</span>
-<span style="font-size: 12px; line-height: 17px; color: #6e6e73">{{q.why}}</span>
-<div role="radiogroup" aria-label="{{q.text}}" style="display: flex; flex-direction: column; gap: 6px">
-<sc-for list="{{q.options}}" as="o" hint-placeholder-count="3">
-<button role="radio" aria-checked="false" onClick="{{o.pick}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); font: inherit; text-align: left; color: #1d1d1f">
-<span style="flex: 0 0 20px; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; color: #6e6e73">{{o.key}}</span>
-<span style="flex: 1; font-size: 13px; line-height: 18px">{{o.label}}</span>
-<sc-if value="{{o.suggested}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; line-height: 14px; color: #0058b9">Likely · ↩</span></sc-if>
-</button>
+<sc-if value="{{hasPastQ}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; border-radius: 12px; background: rgba(0,0,0,0.03); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06)">
+<sc-for list="{{pastQ}}" as="p" hint-placeholder-count="1">
+<div style="{{p.row}}">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{p.q}}</span>
+<span style="font-size: 13px; line-height: 18px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.a}}</span>
+</span>
+<button onClick="{{p.back}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change</button>
+</div>
 </sc-for>
 </div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)">
+<div style="display: flex; align-items: center; gap: 10px">
+<div aria-hidden="true" style="flex: 1; display: flex; gap: 4px">
+<sc-for list="{{qBars}}" as="b" hint-placeholder-count="3"><span style="{{b.style}}"></span></sc-for>
+</div>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73; font-variant-numeric: tabular-nums">Question {{qNum}} of 3</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h3 style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em">{{q.text}}</h3>
+<p style="margin: 0; font-size: 12px; line-height: 17px; color: #6e6e73">{{q.why}}</p>
+</div>
+<div role="radiogroup" aria-label="{{q.text}}" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{q.options}}" as="o" hint-placeholder-count="3">
+<button role="radio" aria-checked="false" onClick="{{o.pick}}" style="{{o.style}}">
+<span aria-hidden="true" style="{{o.keyStyle}}">{{o.key}}</span>
+<span style="flex: 1; min-width: 0; font-size: 13px; line-height: 18px">{{o.label}}</span>
+<sc-if value="{{o.suggested}}" hint-placeholder-val="{{false}}"><span style="height: 20px; display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border-radius: 10px; background: rgba(0,122,255,0.1); font-size: 11px; line-height: 14px; font-weight: 500; color: #0058b9">Likely<span aria-hidden="true">↩</span></span></sc-if>
+</button>
+</sc-for>
 <sc-if value="{{freeQClosed}}" hint-placeholder-val="{{true}}">
-<button onClick="{{openFreeQ}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.16); font: inherit; text-align: left; color: #1d1d1f">
-<span style="flex: 0 0 20px; height: 20px; border-radius: 5px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; color: #6e6e73">{{freeKey}}</span>
-<span style="flex: 1; font-size: 13px; line-height: 18px; color: #3a3a3c">Something else…</span>
+<button onClick="{{openFreeQ}}" style="min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); font: inherit; text-align: left; color: #3a3a3c">
+<span aria-hidden="true" style="{{freeKeyStyle}}">{{freeKey}}</span>
+<span style="flex: 1; font-size: 13px; line-height: 18px">Something else…</span>
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg>
 </button>
 </sc-if>
 <sc-if value="{{freeQOpen}}" hint-placeholder-val="{{false}}">
-<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #f7f7f9; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.45)">
 <label for="v2-freeq" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Your answer, in your own words</label>
-<textarea id="v2-freeq" rows="3" value="{{freeQText}}" onChange="{{onFreeQ}}" placeholder="For example: at the desk for now, in the app from spring" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 8px 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.5); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f"></textarea>
-<div style="display: flex; gap: 8px">
-<button onClick="{{useFreeQ}}" aria-disabled="{{freeQDisabled}}" style="{{freeQStyle}}">Use this answer</button>
-<button onClick="{{closeFreeQ}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Cancel</button>
+<textarea id="v2-freeq" rows="3" value="{{freeQText}}" onChange="{{onFreeQ}}" placeholder="For example: at the desk for now, in the app from spring" style="box-sizing: border-box; width: 100%; resize: none; padding: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 13px; line-height: 19px; color: #1d1d1f"></textarea>
+<div style="display: flex; gap: 6px; justify-content: flex-end">
+<button onClick="{{closeFreeQ}}" style="height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #3a3a3c">Cancel</button>
+<button onClick="{{useFreeQ}}" aria-disabled="{{freeQDisabled}}" style="{{freeQStyle2}}">Use this answer</button>
 </div>
 </div>
 </sc-if>
 </div>
-<button onClick="{{skip}}" style="align-self: flex-start; padding: 4px 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Skip, write the plan now</button>
-<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Mel takes the Likely answer, or guesses, and lists each one under “small things Mel guessed” so you can change it.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 3px; padding: 0 4px">
+<button onClick="{{skip}}" style="align-self: flex-start; padding: 2px 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; font-weight: 500; color: #0066d6">Skip, write the plan now</button>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">Mel takes the likely answer or guesses, and lists each guess so you can change it.</span>
+</div>
 </sc-if>
 
 <sc-if value="{{planning}}" hint-placeholder-val="{{true}}">
-<sc-for list="{{cards}}" as="c" hint-placeholder-count="3">
-<div style="{{c.box}}">
-<sc-if value="{{c.conflict}}" hint-placeholder-val="{{false}}">
-<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 14px; font-weight: 600; color: #b8000f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #d70015"></span>These disagree</span>
-</sc-if>
-<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{c.where}}</span>
-<span style="font-size: 13px; line-height: 18px">{{c.q}}</span>
-<sc-if value="{{c.open}}" hint-placeholder-val="{{true}}">
-<div style="display: flex; flex-wrap: wrap; gap: 6px">
-<sc-for list="{{c.options}}" as="o" hint-placeholder-count="2">
-<button onClick="{{o.pick}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.06); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">{{o.label}}</button>
-</sc-for>
-<button onClick="{{c.openFree}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #3a3a3c">Something else…</button>
+<sc-if value="{{hasCards}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 10px; padding: 2px 2px 0">
+<div aria-hidden="true" style="flex: 1; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.07); overflow: hidden"><span style="{{decBar}}"></span></div>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73; font-variant-numeric: tabular-nums">{{decCount}}</span>
 </div>
+</sc-if>
+<sc-for list="{{cardGroups}}" as="g" hint-placeholder-count="2">
+<section aria-label="{{g.name}}" style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 6px; padding: 4px 4px 0">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5H4A1.5 1.5 0 0 0 2.5 3v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V6.5z"></path><path d="M8.5 1.5v5h5"></path></svg>
+<span style="flex: 1; font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">{{g.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{g.meta}}</span>
+</div>
+<div style="display: flex; flex-direction: column; border-radius: 14px; background: #ffffff; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04), 0 6px 18px rgba(0,0,0,0.05)">
+<sc-for list="{{g.cards}}" as="c" hint-placeholder-count="2">
+<div style="{{c.wrap}}">
+
+<sc-if value="{{c.active}}" hint-placeholder-val="{{true}}">
+<div role="group" aria-label="{{c.topic}}" style="display: flex; flex-direction: column; gap: 12px; padding: 14px">
+<sc-if value="{{c.conflict}}" hint-placeholder-val="{{false}}">
+<span style="align-self: flex-start; height: 20px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; border-radius: 10px; background: rgba(215,0,21,0.08); font-size: 11px; line-height: 14px; font-weight: 600; color: #b8000f">
+<svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l7 12.5H1z" fill="#d70015"></path><path d="M8 6v3.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"></path><circle cx="8" cy="11.6" r="1" fill="#ffffff"></circle></svg>These disagree</span>
+</sc-if>
+<sc-if value="{{c.plainTopic}}" hint-placeholder-val="{{true}}">
+<span style="font-size: 11px; line-height: 14px; font-weight: 600; color: #0058b9">{{c.topic}}</span>
+</sc-if>
+<span style="font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.005em">{{c.q}}</span>
+<sc-if value="{{c.conflict}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<sc-for list="{{c.sources}}" as="o" hint-placeholder-count="2">
+<button onClick="{{o.pick}}" aria-label="{{o.aria}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 12px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font: inherit; text-align: left; color: #1d1d1f">
+<span style="font-size: 17px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums">{{o.label}}</span>
+<span style="max-width: 100%; font-size: 11px; line-height: 14px; color: #6e6e73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{o.source}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{c.plain}}" hint-placeholder-val="{{true}}">
+<div role="radiogroup" aria-label="{{c.q}}" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{c.options}}" as="o" hint-placeholder-count="2">
+<button role="radio" aria-checked="false" onClick="{{o.pick}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 16px; width: 16px; height: 16px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid #c7c7cc"></span>
+<span style="flex: 1; font-size: 13px; line-height: 18px">{{o.label}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{c.openRow}}" hint-placeholder-val="{{true}}">
+<button onClick="{{c.openFree}}" style="align-self: flex-start; height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">
+<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg>Something else…</button>
 </sc-if>
 <sc-if value="{{c.freeOpen}}" hint-placeholder-val="{{false}}">
-<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #f7f7f9; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.45)">
 <label for="v2-free-card" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Your answer, in your own words</label>
-<textarea id="v2-free-card" rows="2" value="{{c.freeText}}" onChange="{{c.onFreeText}}" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 8px 10px; border: 0; border-radius: 8px; background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,122,255,0.5); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f"></textarea>
-<div style="display: flex; gap: 8px">
+<textarea id="v2-free-card" rows="2" value="{{c.freeText}}" onChange="{{c.onFreeText}}" style="box-sizing: border-box; width: 100%; resize: none; padding: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 13px; line-height: 19px; color: #1d1d1f"></textarea>
+<div style="display: flex; gap: 6px; justify-content: flex-end">
+<button onClick="{{c.closeFree}}" style="height: 28px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #3a3a3c">Cancel</button>
 <button onClick="{{c.saveFree}}" aria-disabled="{{c.freeDisabled}}" style="{{c.freeStyle}}">Save answer</button>
-<button onClick="{{c.closeFree}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Cancel</button>
 </div>
 </div>
 </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{c.collapsed}}" hint-placeholder-val="{{false}}">
+<button onClick="{{c.focus}}" aria-expanded="false" style="width: 100%; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border: 0; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="{{c.dot}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{c.topic}}</span>
+<span style="font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.q}}</span>
+</span>
+<svg width="7" height="11" viewBox="0 0 8 12" fill="none" stroke="#aeaeb2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 1.5L6 6l-4 4.5"></path></svg>
+</button>
+</sc-if>
+
 <sc-if value="{{c.done}}" hint-placeholder-val="{{false}}">
-<div style="display: flex; align-items: center; gap: 6px">
-<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
-<span style="font-size: 12px; line-height: 16px; font-weight: 500; flex: 1">{{c.answer}}</span>
+<div style="min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 8px 14px">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 16px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{c.topic}}</span>
+<span style="font-size: 13px; line-height: 18px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.answer}}</span>
+</span>
 <button onClick="{{c.undo}}" style="padding: 0; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Change</button>
 </div>
 </sc-if>
+
 </div>
+</sc-for>
+</div>
+</section>
 </sc-for>
 <sc-if value="{{waitNote}}" hint-placeholder-val="{{false}}">
 <span style="font-size: 12px; line-height: 17px; color: #6e6e73">{{waitText}}</span>
@@ -588,7 +694,7 @@ Files
 </sc-if>
 </div>
 <sc-if value="{{showTell}}" hint-placeholder-val="{{true}}">
-<div style="flex: 0 0 auto; padding: 10px 16px 16px; border-top: 0.5px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 8px">
+<div style="flex: 0 0 auto; padding: 14px 20px 20px; border-top: 0.5px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 10px">
 <sc-if value="{{removedLine}}" hint-placeholder-val="{{false}}">
 <div role="status" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,0.04); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.1)">
 <span style="flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 2px">
@@ -602,92 +708,237 @@ Files
 </div>
 </sc-if>
 <sc-if value="{{tellResult}}" hint-placeholder-val="{{false}}">
-<div role="status" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; background: rgba(36,138,61,0.08); box-shadow: inset 0 0 0 0.5px rgba(36,138,61,0.3)">
-<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#248a3d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7"></path></svg>
-<span style="flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 2px">
+<div role="status" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.05)">
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 18px; margin-top: 1px"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
 <span style="font-size: 13px; line-height: 18px; font-weight: 600">{{tellLine}}</span>
-<span style="font-size: 11px; line-height: 15px; color: #3a3a3c">{{tellSub}}</span>
+<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{tellSub}}</span>
 </span>
-<button onClick="{{undoTell}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Undo</button>
-<button onClick="{{dismissTell}}" aria-label="Dismiss" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: transparent; color: #6e6e73">
-<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+<button onClick="{{dismissTell}}" aria-label="Dismiss" style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 11px; background: transparent; color: #6e6e73; padding: 0">
+<svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
 </button>
 </div>
-</sc-if>
-<sc-if value="{{tellUnplaced}}" hint-placeholder-val="{{false}}">
-<div role="alert" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #fff4e5; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.35)">
-<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">Mel couldn’t find where this goes in ARCHITECTURE.md.</span>
-<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">“{{tellAsked}}” changes how every booking is confirmed (D-05), and no single passage covers that. Nothing was changed.</span>
-<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
-<button onClick="{{rewrite}}" style="height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Rewrite ARCHITECTURE.md<span style="font-size: 11px; line-height: 14px; color: #6e6e73">about 8k tokens</span></button>
-<button onClick="{{cancelTell}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Cancel</button>
+<div style="display: flex; gap: 6px; padding-left: 28px">
+<button onClick="{{openReview}}" style="height: 26px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; font-weight: 500; color: #1d1d1f">Review changes</button>
+<button onClick="{{undoTell}}" style="height: 26px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Undo</button>
 </div>
 </div>
 </sc-if>
-<sc-if value="{{tellWorking}}" hint-placeholder-val="{{false}}">
-<div role="status" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-radius: 12px; background: rgba(0,122,255,0.06); box-shadow: inset 0 0 0 0.5px rgba(0,122,255,0.35)">
-<span style="flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid #007aff"></span>
-<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600">{{workFile}}</span>
-<span style="flex: 1; min-width: 160px; font-size: 12px; line-height: 16px; color: #3a3a3c">{{workWhere}}</span>
-<button onClick="{{stopTell}}" style="height: 28px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Stop</button>
-</div>
-</sc-if>
-<div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.06)">
-<label for="v2-tell" style="font-size: 11px; line-height: 14px; font-weight: 600; color: #3a3a3c">Tell Mel</label>
-<textarea id="v2-tell" rows="3" value="{{tellText}}" onChange="{{onTell}}" placeholder="Tell Mel what to change, add or remove…" style="box-sizing: border-box; width: 100%; resize: vertical; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; line-height: 19px; color: #1d1d1f"></textarea>
-<sc-if value="{{hasAttach}}" hint-placeholder-val="{{false}}">
-<div style="display: flex; flex-wrap: wrap; gap: 6px">
-<sc-for list="{{attach}}" as="a" hint-placeholder-count="1">
-<span style="height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 6px; background: #f5f5f7; font-size: 11px; line-height: 14px; color: #1d1d1f">{{a.name}}
-<button onClick="{{a.remove}}" aria-label="Remove {{a.name}}" style="width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 9px; background: transparent; color: #6e6e73">
-<svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-</button></span>
-</sc-for>
-</div>
-</sc-if>
-<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
-<button onClick="{{addAttach}}" style="height: 26px; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; border: 0; border-radius: 13px; background: rgba(0,0,0,0.05); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">
-<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 7.5l-5.2 5.2a3 3 0 0 1-4.3-4.3L9 3a2 2 0 0 1 2.9 2.9l-5.4 5.4a1 1 0 0 1-1.4-1.4L10 5"></path></svg>Attach</button>
-<button onClick="{{toggleMic}}" aria-label="{{micLabel}}" aria-pressed="{{micOn}}" style="{{micStyle}}">
-<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="1.75" width="5" height="8" rx="2.5"></rect><path d="M3.25 7.5a4.75 4.75 0 0 0 9.5 0M8 12.25v2"></path></svg>
+<button onClick="{{openTell}}" aria-haspopup="dialog" style="height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px 0 12px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.05), 0 6px 16px rgba(0,0,0,0.05); font: inherit; text-align: left">
+<svg width="20" height="20" viewBox="0 0 100 100" aria-hidden="true" style="flex: 0 0 20px"><rect width="100" height="100" rx="22.4" fill="#FBE1AE"></rect><polygon points="78,50 64,74.25 36,74.25 22,50 36,25.75 64,25.75" fill="#D97F00" stroke="#D97F00" stroke-width="5" stroke-linejoin="round"></polygon><polygon points="61,50 55.5,59.53 44.5,59.53 39,50 44.5,40.47 55.5,40.47" fill="#2A2A2E"></polygon><rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#000000" stroke-opacity="0.1"></rect></svg>
+<span style="{{tellBarStyle}}">{{tellBarText}}</span>
+<span style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 5px; background: #f2f2f5; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), inset 0 -1px 0 rgba(0,0,0,0.08); font-size: 11px; line-height: 14px; color: #6e6e73">⌘K</span>
 </button>
-<span style="flex: 1"></span>
-<button onClick="{{sendTell}}" aria-disabled="{{sendDisabled}}" style="{{sendStyle}}">{{sendLabel}}</button>
-</div>
-<span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{tellHint}}</span>
-</div>
 </div>
 </sc-if>
 </aside>
 
+<sc-if value="{{panelOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 30; background: rgba(24,24,30,0.24); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: flex-start; padding-top: 60px">
+<div role="dialog" aria-modal="true" aria-labelledby="tm-title" style="width: 680px; max-width: calc(100% - 48px); max-height: 680px; display: flex; flex-direction: column; border-radius: 18px; background: #ffffff; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08), 0 28px 72px rgba(0,0,0,0.26)">
+
+<div style="flex: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 18px 16px 14px 20px">
+<svg width="32" height="32" viewBox="0 0 100 100" aria-hidden="true" style="flex: 0 0 32px"><rect width="100" height="100" rx="22.4" fill="#FBE1AE"></rect><polygon points="78,50 64,74.25 36,74.25 22,50 36,25.75 64,25.75" fill="#D97F00" stroke="#D97F00" stroke-width="5" stroke-linejoin="round"></polygon><polygon points="61,50 55.5,59.53 44.5,59.53 39,50 44.5,40.47 55.5,40.47" fill="#2A2A2E"></polygon><rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#000000" stroke-opacity="0.1"></rect></svg>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<h2 id="tm-title" style="margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em">{{panelTitle}}</h2>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{panelSub}}</span>
+</div>
+<sc-if value="{{panelClosable}}" hint-placeholder-val="{{true}}">
+<span aria-hidden="true" style="height: 20px; display: inline-flex; align-items: center; padding: 0 6px; border-radius: 5px; background: #f2f2f5; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), inset 0 -1px 0 rgba(0,0,0,0.08); font-size: 11px; line-height: 14px; color: #6e6e73">esc</span>
+<button onClick="{{closeTell}}" aria-label="Close" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 14px; background: rgba(0,0,0,0.05); color: #3a3a3c; padding: 0">
+<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button>
+</sc-if>
+</div>
+
+<sc-if value="{{pCompose}}" hint-placeholder-val="{{true}}">
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 12px">
+<div role="radiogroup" aria-label="Where it applies" style="padding: 0 20px 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73; margin-right: 4px">Where</span>
+<sc-for list="{{scopes}}" as="sc" hint-placeholder-count="6">
+<button role="radio" aria-checked="{{sc.on}}" onClick="{{sc.pick}}" style="{{sc.style}}">{{sc.label}}</button>
+</sc-for>
+</div>
+<div style="margin: 0 20px; padding: 14px 16px; border-radius: 14px; background: #f7f7f9; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 12px">
+<label for="tm-text" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Your change, in your own words</label>
+<textarea id="tm-text" rows="5" value="{{tellText}}" onChange="{{onTell}}" placeholder="Say what to change, add or remove, in your own words." style="box-sizing: border-box; width: 100%; resize: none; padding: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; line-height: 22px; color: #1d1d1f"></textarea>
+<sc-if value="{{hasAttach}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{attach}}" as="a" hint-placeholder-count="1">
+<div style="height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 8px; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.04)">
+<span aria-hidden="true" style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 6px; background: #ffe8e5; display: flex; align-items: center; justify-content: center; font-size: 9px; line-height: 12px; font-weight: 700; color: #b8000f">PDF</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 12px; line-height: 16px; font-weight: 500">{{a.name}}</span><span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{a.meta}}</span></span>
+<button onClick="{{a.remove}}" aria-label="Remove {{a.name}}" style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 11px; background: transparent; color: #6e6e73; padding: 0">
+<svg width="8" height="8" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+</button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{showExamples}}" hint-placeholder-val="{{true}}">
+<div style="padding: 16px 20px 0; display: flex; flex-direction: column; gap: 2px">
+<span style="padding: 0 10px 6px; font-size: 12px; line-height: 16px; font-weight: 600; color: #6e6e73">Try something like</span>
+<sc-for list="{{examples}}" as="e" hint-placeholder-count="3">
+<button onClick="{{e.use}}" style="min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 28px; width: 28px; height: 28px; border-radius: 8px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: #3a3a3c">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h11v7H8l-3 2.5v-2.5H2.5z"></path></svg>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 500">{{e.label}}</span>
+<span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{e.text}}</span>
+</span>
+<svg width="7" height="11" viewBox="0 0 8 12" fill="none" stroke="#aeaeb2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 1.5L6 6l-4 4.5"></path></svg>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<div style="flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 0.5px solid rgba(0,0,0,0.08); background: #fbfbfc">
+<button onClick="{{addAttach}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 7.5l-5.2 5.2a3 3 0 0 1-4.3-4.3L9 3a2 2 0 0 1 2.9 2.9l-5.4 5.4a1 1 0 0 1-1.4-1.4L10 5"></path></svg>Attach</button>
+<button onClick="{{toggleMic}}" aria-label="{{micLabel}}" aria-pressed="{{micOn}}" style="{{micStyle2}}">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="1.75" width="5" height="8" rx="2.5"></rect><path d="M3.25 7.5a4.75 4.75 0 0 0 9.5 0M8 12.25v2"></path></svg>
+</button>
+<span style="flex: 1; min-width: 0; padding: 0 6px; font-size: 11px; line-height: 15px; color: #6e6e73; text-align: right">{{composeHint}}</span>
+<button onClick="{{sendTell}}" aria-disabled="{{sendDisabled}}" style="{{sendStyle2}}">Send to Mel<span aria-hidden="true" style="height: 18px; display: inline-flex; align-items: center; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,0.2); font-size: 11px; line-height: 14px; font-weight: 500">⌘↩</span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{pWorking}}" hint-placeholder-val="{{false}}">
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #f7f7f9">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="#aeaeb2" aria-hidden="true" style="flex: 0 0 14px; margin-top: 3px"><path d="M2 9.5C2 6 3.8 3.8 6.5 3l.5 1.2C5.3 5 4.6 6.2 4.5 7.5H7V13H2zM9 9.5C9 6 10.8 3.8 13.5 3l.5 1.2c-1.7.8-2.4 2-2.5 3.3H14V13H9z"></path></svg>
+<span style="flex: 1; font-size: 13px; line-height: 20px; color: #3a3a3c">{{tellAsked}}</span>
+</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="4">
+<li style="display: flex; gap: 12px; padding: 11px 2px; {{st.border}}">
+<span style="flex: 0 0 20px; height: 20px; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{st.done}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+<sc-if value="{{st.now}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke-width="1.8" aria-hidden="true" style="animation: melspin 0.9s linear infinite"><circle cx="8" cy="8" r="6.2" stroke="rgba(0,122,255,0.18)"></circle><path d="M8 1.8a6.2 6.2 0 0 1 6.2 6.2" stroke="#007aff" stroke-linecap="round"></path></svg></sc-if>
+<sc-if value="{{st.todo}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.2" stroke="#c7c7cc" stroke-width="1.4"></circle></svg></sc-if>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 20px; {{st.weight}}">{{st.label}}</span>
+<sc-if value="{{st.hasDetail}}" hint-placeholder-val="{{true}}"><span style="font-size: 12px; line-height: 16px; color: #6e6e73">{{st.detail}}</span></sc-if>
+</span>
+</li>
+</sc-for>
+</ol>
+</div>
+<div style="flex: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 12px 16px 12px 20px; border-top: 0.5px solid rgba(0,0,0,0.08); background: #fbfbfc">
+<span style="flex: 1; min-width: 0; font-size: 11px; line-height: 15px; color: #6e6e73">Nothing changes in your files until Mel finishes. Stop puts your words back in the box.</span>
+<button onClick="{{stopTell}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Stop</button>
+</div>
+</sc-if>
+
+<sc-if value="{{pReview}}" hint-placeholder-val="{{false}}">
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 10px; padding: 10px 14px; border-radius: 12px; background: #f7f7f9">
+<svg width="14" height="14" viewBox="0 0 16 16" fill="#aeaeb2" aria-hidden="true" style="flex: 0 0 14px; margin-top: 2px"><path d="M2 9.5C2 6 3.8 3.8 6.5 3l.5 1.2C5.3 5 4.6 6.2 4.5 7.5H7V13H2zM9 9.5C9 6 10.8 3.8 13.5 3l.5 1.2c-1.7.8-2.4 2-2.5 3.3H14V13H9z"></path></svg>
+<span style="flex: 1; font-size: 12px; line-height: 18px; color: #3a3a3c">{{tellAsked}}</span>
+</div>
+<sc-for list="{{reviewFiles}}" as="rf" hint-placeholder-count="3">
+<section aria-label="{{rf.name}}" style="border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.03)">
+<div style="height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; background: #f7f7f9; border-bottom: 0.5px solid rgba(0,0,0,0.08)">
+<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 1.5H4A1.5 1.5 0 0 0 2.5 3v10A1.5 1.5 0 0 0 4 14.5h8a1.5 1.5 0 0 0 1.5-1.5V6.5z"></path><path d="M8.5 1.5v5h5"></path></svg>
+<span style="font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 12px; line-height: 16px; font-weight: 600">{{rf.name}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{rf.count}}</span>
+<span style="flex: 1"></span>
+<button onClick="{{rf.open}}" style="height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 12px; line-height: 16px; color: #0066d6">Open</button>
+</div>
+<sc-for list="{{rf.changes}}" as="ch" hint-placeholder-count="2">
+<div style="{{ch.wrap}}">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px">
+<span style="flex: 1; min-width: 0; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73">{{ch.where}}</span>
+<button onClick="{{ch.toggle}}" style="height: 22px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 11px; line-height: 14px; color: #0066d6">{{ch.toggleLabel}}</button>
+</div>
+<sc-for list="{{ch.lines}}" as="ln" hint-placeholder-count="2">
+<div style="{{ln.style}}"><span aria-hidden="true" style="{{ln.signStyle}}">{{ln.sign}}</span><span style="{{ln.textStyle}}">{{ln.text}}</span></div>
+</sc-for>
+</div>
+</sc-for>
+</section>
+</sc-for>
+</div>
+<div style="flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 12px 16px 12px 20px; border-top: 0.5px solid rgba(0,0,0,0.08); background: #fbfbfc">
+<span style="flex: 1; min-width: 0; font-size: 11px; line-height: 15px; color: #6e6e73">{{reviewNote}}</span>
+<button onClick="{{undoAll}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Undo all</button>
+<button onClick="{{closeTell}}" style="height: 32px; padding: 0 18px; border: 0; border-radius: 10px; background: #007aff; box-shadow: 0 1px 2px rgba(0,80,200,0.3); font: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff">Done</button>
+</div>
+</sc-if>
+
+<sc-if value="{{pUnplaced}}" hint-placeholder-val="{{false}}">
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 12px; padding: 14px; border-radius: 12px; background: #fff7eb; box-shadow: inset 0 0 0 0.5px rgba(178,80,0,0.25)">
+<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" style="flex: 0 0 18px; margin-top: 1px"><path d="M8 1.5l7 12.5H1z" fill="#c93400"></path><path d="M8 6v3.5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round"></path><circle cx="8" cy="11.6" r="0.9" fill="#ffffff"></circle></svg>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600; color: #6b2f00">Nothing was changed</span>
+<span style="font-size: 12px; line-height: 17px; color: #3a3a3c">“{{tellAsked}}” changes how every booking is confirmed (D-05). No single passage in ARCHITECTURE.md covers that.</span>
+</span>
+</div>
+<span style="padding: 4px 2px 0; font-size: 12px; line-height: 16px; font-weight: 600; color: #6e6e73">How do you want to go on?</span>
+<button onClick="{{rewrite}}" style="display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.05); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 9px; background: rgba(0,122,255,0.1); display: flex; align-items: center; justify-content: center; color: #0066d6">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path><path d="M13.5 2v3h-3"></path></svg>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Rewrite ARCHITECTURE.md</span>
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73">Mel writes the whole file again with your change, then checks it against the other files. Logged in DECISIONS.md.</span>
+</span>
+<span style="flex: 0 0 auto; height: 22px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 11px; background: rgba(0,0,0,0.05); font-size: 11px; line-height: 14px; color: #3a3a3c">About 8k tokens</span>
+</button>
+<button onClick="{{rephrase}}" style="display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 0; border-radius: 12px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.05); font: inherit; text-align: left; color: #1d1d1f">
+<span aria-hidden="true" style="flex: 0 0 32px; width: 32px; height: 32px; border-radius: 9px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: #3a3a3c">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5l3 3L6 13H3v-3z"></path></svg>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">Say it differently</span>
+<span style="font-size: 12px; line-height: 17px; color: #6e6e73">Your words go back in the box. Name the part that should change, for example how a booking is confirmed.</span>
+</span>
+</button>
+</div>
+<div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 0.5px solid rgba(0,0,0,0.08); background: #fbfbfc">
+<button onClick="{{cancelTell}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 10px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04); font: inherit; font-size: 13px; line-height: 18px; color: #1d1d1f">Cancel</button>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"scenario":{"editor":"enum","options":["normal","stopped"],"default":"normal"},"sidebarFiles":{"editor":"boolean","default":false},"openFile":{"editor":"enum","options":["","PRODUCT.md","REQUIREMENTS.md","EXPERIENCE.md","ARCHITECTURE.md","TASKS.md","DECISIONS.md"],"default":""},"tell":{"editor":"enum","options":["","result","unplaced"],"default":""},"confirmRemove":{"editor":"enum","options":["","book","pack","cancel","attendance","reminders"],"default":""},"start":{"editor":"enum","options":["intake","plan","ready"],"default":"intake"},"filesOpen":{"editor":"boolean","default":false},"tokensOpen":{"editor":"boolean","default":false},"tab":{"editor":"enum","options":["plan","flow","roadmap"],"default":"plan"},"showTokens":{"editor":"boolean","default":true},"$preview":{"width":1360,"height":880}}'>
+<script type="text/x-dc" data-dc-script data-props='{"melWidth":{"editor":"enum","options":["340","380","420"],"default":"380"},"tellPanel":{"editor":"enum","options":["","compose","working","review","unplaced"],"default":""},"scenario":{"editor":"enum","options":["normal","stopped"],"default":"normal"},"sidebarFiles":{"editor":"boolean","default":false},"openFile":{"editor":"enum","options":["","PRODUCT.md","REQUIREMENTS.md","EXPERIENCE.md","ARCHITECTURE.md","TASKS.md","DECISIONS.md"],"default":""},"tell":{"editor":"enum","options":["","result","unplaced"],"default":""},"confirmRemove":{"editor":"enum","options":["","book","pack","cancel","attendance","reminders"],"default":""},"start":{"editor":"enum","options":["intake","intake2","plan","cards","ready"],"default":"intake"},"filesOpen":{"editor":"boolean","default":false},"tokensOpen":{"editor":"boolean","default":false},"tab":{"editor":"enum","options":["plan","flow","roadmap"],"default":"plan"},"showTokens":{"editor":"boolean","default":true},"$preview":{"width":1360,"height":880}}'>
 class Component extends DCLogic {
 constructor(props) {
 super(props);
 const stopped = props.scenario === 'stopped';
 const file = props.openFile || '';
 const tell = props.tell || '';
+const panel = props.tellPanel || '';
 const remove = props.confirmRemove || '';
-const full = !!file || !!tell || !!remove || props.start === 'ready';
+const full = !!file || !!tell || !!remove || !!panel || props.start === 'ready';
 const plan = props.start === 'plan';
-const jump = stopped || full || plan;
+const cardsDemo = props.start === 'cards';
+const jump = stopped || full || plan || cardsDemo;
 const all = { conflict: '12 hours', studio: 'Give back and notify', waitlist: 'First on the waitlist', errors: 'Add it' };
 this.state = {
-step: jump ? 3 : 0,
-answers: jump ? ['Class packs in the app', 'iOS and Android', 'Cancel up to 12 h before'] : [],
+step: jump ? 3 : (props.start === 'intake2' ? 1 : 0),
+answers: jump ? ['Class packs in the app', 'iOS and Android', 'Cancel up to 12 h before'] : (props.start === 'intake2' ? ['Class packs in the app'] : []),
 skipped: false,
-decisions: (stopped || full) ? all : (plan ? { conflict: '12 hours' } : {}),
+decisions: (stopped || full) ? all : (plan ? { conflict: '12 hours' } : (cardsDemo ? { studio: 'Give back and notify' } : {})),
 guesses: {}, forced: false,
-written: full ? 5 : (stopped ? 3 : (plan ? 2 : 0)),
+written: full ? 5 : (stopped ? 3 : (cardsDemo ? 3 : (plan ? 2 : 0))),
 tab: props.tab || 'plan', later: { reminders: true, attendance: true }, removed: {}, removedOrder: [], menu: '', confirm: remove,
 filesOpen: !!props.filesOpen, tokensOpen: !!props.tokensOpen,
 stopped: stopped, openFile: file, view: 'formatted', editing: false, draft: '', edit: null, why: '', applied: [],
 freeQ: false, freeQText: '', freeCard: '', freeText: '',
-tellText: '', tellAsked: tell === 'unplaced' ? this.offlineAsk() : (tell === 'result' ? this.teacherAsk() : ''),
-tellPhase: tell || 'idle', tellApplied: tell === 'result', tellKind: 'patch', tellCount: tell === 'result' ? 1 : 0, rewrites: 0,
+tellText: '', tellAsked: (panel === 'unplaced' || tell === 'unplaced') ? this.offlineAsk() : ((tell === 'result' || panel === 'review' || panel === 'working') ? this.teacherAsk() : ''),
+tellPhase: panel || tell || 'idle', tellApplied: tell === 'result' || panel === 'review', tellKind: 'patch', tellCount: (tell === 'result' || panel === 'review') ? 1 : 0, rewrites: 0, tellStep: panel === 'working' ? 1 : 0, tellScope: '', reverted: {}, focusCard: '',
 attach: [], lastRemoved: '', mic: false
 };
 }
@@ -717,10 +968,250 @@ this.timer = null;
 if (this.canAdvance(this.state)) this.setState({ written: this.state.written + 1 });
 }, 1400);
 }
+qVals(s) {
+const set = (o) => this.setState(o);
+const qs = this.qs || [];
+const asking = this.isAsking(s);
+const btn = (on) => 'height: 28px; padding: 0 12px; border: 0; border-radius: 8px; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff; background: ' + (on ? '#007aff' : '#b8b8bd');
+const keyStyle = 'flex: 0 0 22px; width: 22px; height: 22px; border-radius: 6px; background: #f2f2f5; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08), inset 0 -1px 0 rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 14px; font-weight: 600; color: #6e6e73; font-variant-numeric: tabular-nums';
+const q = (asking ? qs[s.step] : qs[0]) || { text: '', why: '', options: [], short: [], likely: -1 };
+const answer = (txt) => set({ step: s.step + 1, answers: s.answers.concat([txt]), freeQ: false, freeQText: '' });
+const qOut = {
+text: q.text, why: q.why,
+options: q.options.map((o, i) => {
+const sug = i === q.likely;
+return {
+label: o, key: String(i + 1), suggested: sug, keyStyle: keyStyle, pick: () => answer(q.short[i]),
+style: 'min-height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 10px; font: inherit; text-align: left; color: #1d1d1f; ' + (sug ? 'background: rgba(0,122,255,0.04); box-shadow: inset 0 0 0 1px rgba(0,122,255,0.4)' : 'background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1)')
+};
+})
+};
+const qBars = [0, 1, 2].map((i) => ({ style: 'flex: 1; height: 4px; border-radius: 2px; background: ' + (i < s.step ? '#007aff' : (i === s.step ? 'rgba(0,122,255,0.4)' : 'rgba(0,0,0,0.08)')) }));
+const pastQ = asking ? s.answers.map((a, i) => ({
+q: (qs[i] || {}).text || '', a: a,
+back: () => set({ step: i, answers: s.answers.slice(0, i), freeQ: false, freeQText: '' }),
+row: 'min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 12px;' + (i > 0 ? ' border-top: 0.5px solid rgba(0,0,0,0.06);' : '')
+})) : [];
+
+const topics = { conflict: 'Cancel window', studio: 'When the studio cancels', waitlist: 'Full classes', errors: 'Loading errors' };
+const vis = this.visibleDefs || [];
+const isDone = (d) => this.answered(s, d.id);
+const open = vis.filter((d) => !isDone(d));
+const focusId = (s.focusCard && open.some((d) => d.id === s.focusCard)) ? s.focusCard : (open[0] ? open[0].id : '');
+const freeOk = s.freeText.trim().length > 0;
+const pick = (id, o) => set({ decisions: Object.assign({}, s.decisions, { [id]: o }), freeCard: '', focusCard: '' });
+const names = this.names();
+const groups = [];
+vis.forEach((d) => {
+const name = names[d.file];
+let g = groups.filter((x) => x.name === name)[0];
+if (!g) { g = { name: name, defs: [] }; groups.push(g); }
+g.defs.push(d);
+});
+const cardGroups = groups.map((g) => {
+const openN = g.defs.filter((d) => !isDone(d)).length;
+return {
+name: g.name,
+meta: openN === 0 ? 'All answered' : openN + ' open',
+cards: g.defs.map((d, i) => {
+const a = s.decisions[d.id];
+const gs = s.guesses[d.id];
+const done = !!(a || gs);
+const active = !done && d.id === focusId;
+const isFree = s.freeCard === d.id;
+const conflict = !!d.conflict;
+return {
+topic: topics[d.id] || '',
+q: conflict ? 'How long before class can members cancel?' : d.q,
+active: active, collapsed: !done && !active, done: done,
+conflict: conflict && active, plain: !conflict && active && !isFree, plainTopic: !conflict,
+openRow: active && !isFree, freeOpen: active && isFree,
+sources: conflict ? (d.options || []).map((o, k) => ({ label: o, source: k === 0 ? 'Your answer, question 3' : 'old-schedule.jpg', aria: o + ', from ' + (k === 0 ? 'your answer to question 3' : 'old-schedule.jpg'), pick: () => pick(d.id, o) })) : [],
+options: (d.options || []).map((o) => ({ label: o, pick: () => pick(d.id, o) })),
+answer: a ? a : (gs ? 'Mel guessed: ' + gs : ''),
+focus: () => set({ focusCard: d.id, freeCard: '' }),
+openFree: () => set({ freeCard: d.id, freeText: '' }),
+freeText: s.freeText, onFreeText: (e) => set({ freeText: e.target.value }),
+closeFree: () => set({ freeCard: '', freeText: '' }),
+saveFree: () => { if (!freeOk) return; set({ decisions: Object.assign({}, s.decisions, { [d.id]: s.freeText.trim() }), freeCard: '', freeText: '', focusCard: '' }); },
+freeDisabled: freeOk ? 'false' : 'true', freeStyle: btn(freeOk),
+undo: () => { const n = Object.assign({}, s.decisions); const gg = Object.assign({}, s.guesses); delete n[d.id]; delete gg[d.id]; set({ decisions: n, guesses: gg, focusCard: d.id }); },
+dot: 'flex: 0 0 8px; width: 8px; height: 8px; border-radius: 4px; background: ' + (conflict ? '#d70015' : '#007aff'),
+wrap: (i > 0 ? 'border-top: 0.5px solid rgba(0,0,0,0.07); ' : '') + (active && conflict ? 'background: #fffbfb' : '')
+};
+})
+};
+});
+const total = vis.length;
+const doneN = vis.filter(isDone).length;
+return {
+q: qOut, qBars: qBars, pastQ: pastQ, hasPastQ: pastQ.length > 0,
+freeKeyStyle: keyStyle, freeQStyle2: btn(!!s.freeQText.trim()),
+cardGroups: cardGroups, hasCards: total > 0,
+decCount: doneN + ' of ' + total + ' answered',
+decBar: 'display: block; height: 100%; border-radius: 2px; background: #248a3d; transition: width 300ms ease; width: ' + (total ? Math.round(doneN / total * 100) : 0) + '%'
+};
+}
+tellExamples() {
+return [
+{ label: 'Add a rule', text: this.teacherAsk() },
+{ label: 'Change how something works', text: this.offlineAsk() },
+{ label: 'Add a policy', text: 'Add a no-show rule: a member who books and doesn’t come loses the credit.' }
+];
+}
+tellRun(kind, txt) {
+clearTimeout(this.tellTimer);
+const off = kind === 'patch' && /offline/i.test(txt);
+const last = off ? 1 : 3;
+const next = (n) => {
+this.tellTimer = setTimeout(() => {
+if (this.state.tellPhase !== 'working') return;
+if (n < last) { this.setState({ tellStep: n + 1 }); next(n + 1); return; }
+if (off) { this.setState({ tellPhase: 'unplaced', tellStep: 0 }); return; }
+if (kind === 'rewrite') this.setState({ tellPhase: 'review', tellKind: 'rewrite', rewritingNow: false, rewrites: this.state.rewrites + 1, reverted: {} });
+else this.setState({ tellPhase: 'review', tellKind: 'patch', tellApplied: true, tellCount: this.state.tellCount + 1, reverted: {} });
+}, n === 0 ? 550 : 750);
+};
+this.setState({ tellPhase: 'working', tellStep: 0, tellAsked: txt, tellText: '', attach: [], mic: false, rewritingNow: kind === 'rewrite', tellKind: kind === 'rewrite' ? 'rewrite' : this.state.tellKind });
+next(0);
+}
+tellVals(s) {
+const set = (o) => this.setState(o);
+const ph = s.tellPhase;
+const rw = s.tellKind === 'rewrite';
+const txt = s.tellText.trim();
+const ok = txt.length > 0;
+const mono = "font-family: 'SF Mono', Menlo, Monaco, monospace; ";
+const names = this.names();
+const scope = s.tellScope || (s.openFile && names.indexOf(s.openFile) >= 0 ? s.openFile : 'all');
+const scopes = [{ id: 'all', label: 'Let Mel decide' }].concat(names.map((f) => ({ id: f, label: f }))).map((o) => {
+const on = scope === o.id;
+return {
+label: o.label, on: on ? 'true' : 'false', pick: () => set({ tellScope: o.id }),
+style: 'height: 26px; padding: 0 10px; border: 0; border-radius: 13px; font: inherit; font-size: 12px; line-height: 16px; ' + (o.id === 'all' ? '' : mono + 'font-size: 11px; ') + (on ? 'background: #1d1d1f; color: #ffffff' : 'background: rgba(0,0,0,0.05); color: #1d1d1f')
+};
+});
+const offAsk = /offline/i.test(s.tellAsked);
+const stepDefs = (rw && ph === 'working') || s.rewritingNow ? [
+['Read ARCHITECTURE.md and what depends on it', '1 file, 4 linked files'],
+['Rewrite the whole file with your change', 'As you chose · about 8k tokens'],
+['Check it against the other files', 'REQUIREMENTS.md and TASKS.md still agree'],
+['Log your reason in DECISIONS.md', 'D-06, in your words']
+] : [
+['Read the current files', '5 files, from the last saved version'],
+['Find where it goes', offAsk ? 'Looking in ARCHITECTURE.md…' : 'REQUIREMENTS.md › 3. Cancelling · ARCHITECTURE.md › Notifications · TASKS.md › Task 4'],
+['Edit only those passages', '4 passages · about 1.8k tokens'],
+['Log your reason in DECISIONS.md', 'D-06, in your words']
+];
+const step = s.tellStep || 0;
+const steps = stepDefs.map((d, i) => {
+const done = i < step;
+const now = i === step;
+return {
+label: d[0], detail: d[1], hasDetail: done || now, done: done, now: now, todo: !done && !now,
+weight: now ? 'font-weight: 600; color: #1d1d1f' : (done ? 'color: #1d1d1f' : 'color: #6e6e73'),
+border: i > 0 ? 'border-top: 0.5px solid rgba(0,0,0,0.07)' : ''
+};
+});
+const patchFiles = [
+{ name: 'REQUIREMENTS.md', changes: [
+{ id: 'p1', where: '3. Cancelling', lines: [['-', 'Members can cancel a booking up to 12 hours before class.'], ['+', 'Members can cancel a booking up to 12 hours before class. Teachers can cancel a whole class from the app.']] },
+{ id: 'p2', where: '3.4 · new', lines: [['+', 'When a teacher cancels a class, every booked member gets their credit back and a push notification.']] }] },
+{ name: 'ARCHITECTURE.md', changes: [
+{ id: 'p3', where: 'Notifications', lines: [['-', 'Push is used for class reminders only.'], ['+', 'Push is used for class reminders and for class cancellations.']] }] },
+{ name: 'TASKS.md', changes: [
+{ id: 'p4', where: 'Task 4 · Cancel a booking', lines: [['+', 'Covers 3.4: a teacher cancels a class, credits go back, members get a push.']] }] }
+];
+const rwFiles = [
+{ name: 'ARCHITECTURE.md', changes: [
+{ id: 'r1', where: 'Data and sync', lines: [['+', 'Bookings are saved on the phone first and sync when the member is back online.']] },
+{ id: 'r2', where: 'Booking confirmation', lines: [['-', 'A booking is confirmed when the server accepts it.'], ['+', 'A booking is confirmed on the phone at once and checked by the server when it syncs. If the class filled up meanwhile, the member is told and keeps the credit.']] }] }
+];
+const rev = s.reverted || {};
+const src = rw ? rwFiles : patchFiles;
+let kept = 0;
+let keptFiles = 0;
+const reviewFiles = src.map((f) => {
+const n = f.changes.filter((c) => !rev[c.id]).length;
+kept += n;
+if (n > 0) keptFiles++;
+return {
+name: f.name, count: n === 0 ? 'Undone' : n + (n === 1 ? ' change' : ' changes'),
+open: () => set({ tellPhase: 'result', openFile: f.name }),
+changes: f.changes.map((c, i) => {
+const r = !!rev[c.id];
+return {
+where: c.where, toggleLabel: r ? 'Redo' : 'Undo this',
+toggle: () => set({ reverted: Object.assign({}, rev, { [c.id]: !r }) }),
+wrap: 'padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px;' + (i > 0 ? ' border-top: 0.5px solid rgba(0,0,0,0.07);' : '') + (r ? ' opacity: 0.45;' : ''),
+lines: c.lines.map((l) => {
+const del = l[0] === '-';
+return {
+sign: del ? '−' : '+', text: l[1],
+style: 'display: flex; gap: 8px; padding: 5px 8px; border-radius: 6px; font-size: 13px; line-height: 19px; background: ' + (del ? 'rgba(215,0,21,0.06)' : 'rgba(36,138,61,0.08)'),
+signStyle: 'flex: 0 0 10px; font-weight: 600; color: ' + (del ? '#c4000f' : '#1f7a36'),
+textStyle: 'flex: 1; min-width: 0; ' + (del ? 'color: #6b2a2a; text-decoration: line-through; text-decoration-color: rgba(107,42,42,0.4)' : 'color: #1d1d1f')
+};
+})
+};
+})
+};
+});
+const finish = () => {
+clearTimeout(this.tellTimer);
+if (ph === 'review') { set(kept > 0 ? { tellPhase: 'result' } : (rw ? { tellPhase: 'idle', rewrites: Math.max(0, s.rewrites - 1) } : { tellPhase: 'idle', tellApplied: false })); return; }
+if (ph === 'unplaced') { set({ tellPhase: 'idle', tellText: s.tellAsked }); return; }
+set({ tellPhase: 'idle' });
+};
+const undoAll = () => set(rw ? { tellPhase: 'idle', rewrites: Math.max(0, s.rewrites - 1) } : { tellPhase: 'idle', tellApplied: false });
+const titles = {
+compose: 'Tell Mel',
+working: s.rewritingNow ? 'Rewriting ARCHITECTURE.md…' : 'Placing your change…',
+review: rw ? 'Rewrote ARCHITECTURE.md' : (kept === 0 ? 'All changes undone' : kept + (kept === 1 ? ' change in ' : ' changes in ') + keptFiles + (keptFiles === 1 ? ' file' : ' files')),
+unplaced: 'Mel couldn’t find one place for this'
+};
+const subs = {
+compose: 'One change at a time, against the current files. Mel edits only the passages it touches.',
+working: s.rewritingNow ? 'You chose a full rewrite. The other files stay as they are.' : 'Mel reads the files once and edits only what it needs.',
+review: rw ? 'Already in the file. Undo any part of it here.' : 'Already in your files and highlighted. Undo any of them here.',
+unplaced: 'Your words are kept. Choose how to go on.'
+};
+const panel = ph === 'compose' || ph === 'working' || ph === 'review' || ph === 'unplaced';
+return {
+panelOpen: panel, panelClosable: ph !== 'working',
+pCompose: ph === 'compose', pWorking: ph === 'working', pReview: ph === 'review', pUnplaced: ph === 'unplaced',
+panelTitle: titles[ph] || '', panelSub: subs[ph] || '',
+closeTell: finish,
+openTell: () => set({ tellPhase: 'compose' }),
+tellBarText: ok ? s.tellText : 'Tell Mel what to change, add or remove…',
+tellBarStyle: 'flex: 1; min-width: 0; font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ' + (ok ? '#1d1d1f' : '#6e6e73'),
+scopes: scopes,
+attach: s.attach.map((n) => ({ name: n, meta: 'PDF · 84 KB', remove: () => set({ attach: s.attach.filter((x) => x !== n) }) })),
+showExamples: !ok && s.attach.length === 0,
+examples: this.tellExamples().map((e) => ({ label: e.label, text: e.text, use: () => set({ tellText: e.text }) })),
+micStyle2: 'width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; padding: 0; color: ' + (s.mic ? '#ffffff; background: #d70015' : '#3a3a3c; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.04)'),
+composeHint: ok ? (scope === 'all' ? 'Mel finds the passages · about 1 to 2k tokens' : 'Only in ' + scope + ' · about 1k tokens') : 'Long text and files are fine.',
+sendDisabled: ok ? 'false' : 'true',
+sendStyle2: 'height: 32px; display: inline-flex; align-items: center; gap: 8px; padding: 0 8px 0 14px; border: 0; border-radius: 10px; font: inherit; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; ' + (ok ? 'background: #007aff; box-shadow: 0 1px 2px rgba(0,80,200,0.3)' : 'background: #b8b8bd'),
+sendTell: () => { if (ok) this.tellRun('patch', txt); },
+stopTell: () => { clearTimeout(this.tellTimer); set({ tellPhase: 'compose', tellText: s.tellAsked, rewritingNow: false, tellStep: 0 }); },
+rewrite: () => this.tellRun('rewrite', s.tellAsked),
+rephrase: () => set({ tellPhase: 'compose', tellText: s.tellAsked }),
+cancelTell: () => set({ tellPhase: 'idle', tellText: s.tellAsked }),
+steps: steps,
+reviewFiles: reviewFiles,
+reviewNote: rw ? 'Logged in DECISIONS.md as D-06 · 8.4k tokens' : 'Logged in DECISIONS.md as D-06, your words as the reason · 1.8k tokens',
+undoAll: undoAll,
+undoTell: undoAll,
+openReview: () => set({ tellPhase: 'review' }),
+tellLine: rw ? 'Rewrote ARCHITECTURE.md' : 'Changed ' + kept + (kept === 1 ? ' passage in ' : ' passages in ') + keptFiles + (keptFiles === 1 ? ' file' : ' files'),
+tellSub: rw ? 'You chose a full rewrite. Logged in DECISIONS.md. 8.4k tokens.' : 'Highlighted in the files. Your words are the reason in DECISIONS.md. 1.8k tokens.'
+};
+}
 docs() {
 const s = this.state;
 const t = s.tellApplied && s.tellKind === 'patch';
-const hl = s.tellPhase === 'result' && s.tellKind === 'patch';
+const hl = (s.tellPhase === 'result' || s.tellPhase === 'review') && s.tellKind === 'patch';
 const B = (k, x, o) => Object.assign({ k: k, x: x }, o || {});
 const d = {
 'PRODUCT.md': [
@@ -736,15 +1227,15 @@ B('li', 'Fewer no-shows thanks to reminders', { story: 'reminders' })
 'REQUIREMENTS.md': [
 B('h1', 'Requirements'),
 B('h2', '1. Book a class'),
-B('li', '1.1 WHEN a member books a class with free spots, THE APP SHALL reserve one spot and deduct one credit.', { story: 'book' }),
-B('li', '1.2 WHEN a class is full, THE APP SHALL offer the waitlist instead.', { story: 'book' }),
-B('li', '1.3 WHEN a member cancels at least 12 hours before class, THE APP SHALL return the credit.', { story: 'cancel' }),
+B('li', '1.1 WHEN a member books a class with free spots, THEN one spot is reserved and one credit is taken.', { story: 'book' }),
+B('li', '1.2 WHEN a class is full, THEN the app offers the waitlist instead.', { story: 'book' }),
+B('li', '1.3 WHEN a member cancels at least 12 hours before class, THEN the credit comes back.', { story: 'cancel' }),
 B('h2', '2. Buy a class pack', { story: 'pack' }),
-B('li', '2.1 WHEN a member completes payment, THE APP SHALL add the credits and email a receipt.', { story: 'pack' })
+B('li', '2.1 WHEN a member completes payment, THEN the credits are added and a receipt is emailed.', { story: 'pack' })
 ].concat(t ? [
 B('h2', '3. The studio cancels a class', { chg: hl }),
-B('li', '3.1 WHEN a teacher cancels a class, THE APP SHALL return the credit to every booked member.', { chg: hl }),
-B('li', '3.2 WHEN a class is cancelled, THE APP SHALL send each booked member a push notification.', { chg: hl })
+B('li', '3.1 WHEN a teacher cancels a class, THEN every booked member gets the credit back.', { chg: hl }),
+B('li', '3.2 WHEN a class is cancelled, THEN each booked member gets a push notification.', { chg: hl })
 ] : []),
 'EXPERIENCE.md': [
 B('h1', 'Experience'),
@@ -832,7 +1323,7 @@ const s = this.state;
 const sidebarFiles = this.props.sidebarFiles ?? false;
 const showTokens = this.props.showTokens ?? true;
 const names = this.names();
-const qs = [
+const qs = this.qs = [
 { text: 'How do members pay?', why: 'Decides whether the plan covers checkout, refunds and receipts.', short: ['Class packs in the app', 'Paid at the desk', 'Monthly membership', 'Not sure yet'], options: ['Class packs bought in the app', 'Paid at the desk, the app only books', 'Monthly membership', 'Not sure yet'], likely: 0 },
 { text: 'Which phones first?', why: 'Decides which screens and tests the agents build first.', short: ['iOS and Android', 'iOS only', 'Android only'], options: ['iOS and Android', 'iOS only', 'Android only'], likely: 0 },
 { text: 'Can members cancel a booking?', why: 'Decides when a credit comes back.', short: ['Cancel up to 12 h before', 'Cancel up to 24 h before', 'No cancelling'], options: ['Yes, up to 12 hours before', 'Yes, up to 24 hours before', 'No cancelling'], likely: -1 }
@@ -847,7 +1338,7 @@ const hours = said.indexOf('24') >= 0 ? '24' : '12';
 const other = hours === '12' ? '24' : '12';
 const texts = { conflict: { q: 'You said members can cancel up to ' + hours + ' hours before class. The schedule photo you added says ' + other + ' hours. Which one?', options: [hours + ' hours', other + ' hours'] } };
 const defs = this.defs().map((d) => Object.assign({}, d, texts[d.id] || {}));
-const visible = defs.filter((d) => d.file < s.written);
+const visible = this.visibleDefs = defs.filter((d) => d.file < s.written);
 const left = visible.filter((d) => !this.answered(s, d.id)).length;
 const pending = this.openCount(s, s.written);
 const gateOpen = this.gateOpen(s);
@@ -982,7 +1473,7 @@ const doc = {
 name: fname, word: fname ? wordOf(fname, kind) : '',
 dot: 'width: 7px; height: 7px; border-radius: 50%; box-sizing: border-box; ' + st[kind][1],
 raw: raw,
-blocks: blocks.map((b) => ({ text: b.x, isH1: b.k === 'h1', isH2: b.k === 'h2', isP: b.k === 'p', isLi: b.k === 'li', isRm: b.k === 'rm', restore: b.restore || null, wrap: b.chg ? 'margin: 0 -8px; padding: 2px 8px; border-radius: 6px; background: rgba(0,122,255,0.1)' : '' }))
+blocks: blocks.map((b) => { const m = b.k === 'li' ? /^(\S+) WHEN (.+?), THEN (.+)$/.exec(b.x) : null; return { isCrit: !!m, cid: m ? m[1] : '', when: m ? m[2] + ',' : '', then: m ? m[3] : '', text: b.x, isH1: b.k === 'h1', isH2: b.k === 'h2', isP: b.k === 'p', isLi: b.k === 'li' && !m, isRm: b.k === 'rm', restore: b.restore || null, wrap: b.chg ? 'margin: 0 -8px; padding: 2px 8px; border-radius: 6px; background: rgba(0,122,255,0.1)' : '' }; })
 };
 const writingNow = !asking && kind === 'writing';
 const viewTabs = [{ id: 'formatted', label: 'Formatted' }, { id: 'raw', label: 'Markdown' }].map((v) => ({ label: v.label, selected: s.view === v.id ? 'true' : 'false', style: pill2(s.view === v.id), pick: () => this.setState({ view: v.id, editing: false }) }));
@@ -1009,7 +1500,7 @@ const tellOk = s.tellText.trim().length > 0 && s.tellPhase !== 'working';
 const pill = s.stopped ? 'Stopped · usage limit' : (asking ? 'Waiting for your answer' : (s.tellPhase === 'working' ? 'Placing your change…' : (s.edit ? 'Waiting: update or keep?' : (ready ? 'Plan is ready' : (gated ? nextName + ' starts after ' + answersWord(pending) : (s.written < 5 ? 'Writing ' + nextName : 'Waiting for ' + answersWord(left)))))));
 const pillColor = s.stopped ? 'background: #c93400' : (ready ? 'background: #248a3d' : (gated ? 'box-sizing: border-box; border: 1.5px solid #aeaeb2' : 'background: #007aff'));
 const sideMeta = s.stopped ? 'Agent stopped' : (asking ? 'Question ' + (s.step + 1) + ' of 3' : (s.edit ? downCount + ' files to update' : (ready ? 'Ready to build' : (left > 0 ? left + (left === 1 ? ' question' : ' questions') : 'Writing ' + nextName))));
-return {
+return Object.assign({
 asking: asking && !reading, planning: !asking && !reading, reading: reading,
 q: qView, qNum: String(s.step + 1), known: known,
 freeKey: String(q.options.length + 1),
@@ -1130,7 +1621,7 @@ micLabel: s.mic ? 'Stop dictation' : 'Dictate',
 micStyle: 'width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; color: ' + (s.mic ? '#ffffff; background: #d70015' : '#3a3a3c; background: rgba(0,0,0,0.05)'),
 ctaDisabled: ready ? 'false' : 'true',
 ctaStyle: 'height: 32px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 16px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (ready ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (ready ? 'auto' : 'none')
-};
+}, this.tellVals(s), this.qVals(s), { melFlex: '0 1 ' + (this.props.melWidth || '380') + 'px' });
 }
 }
 </script>

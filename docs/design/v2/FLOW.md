@@ -81,7 +81,7 @@ Users could write these files by hand in Claude, ChatGPT or Claude Code, so V2 h
 
 Rules that follow from them (all on V2-2 Board):
 
-- **Tell Mel.** One free-text field at the bottom of Mel's column (the right column), also when a file is open: "Tell Mel what to change, add or remove…". Long text and attachments are fine. One request at a time against the current files; there is no chat and no history. Mel finds the passages the request touches and patches only those.
+- **Tell Mel.** (Now a bar plus the Tell Mel panel: see "V2 · Tell Mel panel and questions".) One free-text field at the bottom of Mel's column (the right column), also when a file is open: "Tell Mel what to change, add or remove…". Long text and attachments are fine. One request at a time against the current files; there is no chat and no history. Mel finds the passages the request touches and patches only those.
   - Result: one line, for example "Changed 2 places in REQUIREMENTS.md, 1 in ARCHITECTURE.md, 1 task in TASKS.md", with Undo. Changed passages are highlighted in the open file until the line is dismissed. (V2-4)
   - The change and its reason (the user's own words) are added to DECISIONS.md automatically.
   - Can't be placed: "Mel couldn't find where this goes in ARCHITECTURE.md." with Rewrite ARCHITECTURE.md (shows its cost) and Cancel. A whole-file rewrite only ever happens from this button, so it is always the user's explicit choice. Cancel puts the request back in the box. (V2-7)
@@ -122,6 +122,88 @@ journey, so the same few pieces repeat everywhere and nothing new costs tokens:
 Sources for this review: setproduct.com "16 AI agent UI design patterns", beyondchat.design and agentic-ux.com
 "Clarifying questions", Jakob Nielsen "Slow AI" and "Think-time UX", Smashing Magazine "Practical interface patterns for
 AI transparency" (2026), Apple HIG Sidebars and Toolbars, WWDC25 "Get to know the new design system".
+
+## V2 · Tell Mel panel and questions (chosen, in V2-2)
+
+Added 2026-11-28 and moved into V2-2-Board.dc.html the same day, so every board state (V2-4, V2-5, V2-7 to V2-10, V2-15,
+V2-16) has them. V2-24 to V2-29 are states of V2-2. Where this section differs from "V2 · Expressiveness" (the Tell Mel box
+at the bottom of the column, the one-line result), this section wins. REQUIREMENTS.md in V2-2 also shows WHEN/THEN criteria.
+
+- **Mel's column is 380 px** (was 300), 20 px padding. Prop melWidth on V2-24 tries 340 / 380 / 420.
+- **Tell Mel panel.** The column keeps a one-line "Tell Mel…" bar (⌘K) and the last result line. Writing happens in a 680 px
+  panel over the board: Where chips (Let Mel decide or one file), a large field, attachments as file cards, three starters,
+  Attach, Dictate, the cost hint, Send to Mel (⌘↩). Working shows the request and 4 live steps with Stop. Review shows every
+  change by file as before/after lines with Undo this, Undo all and Done; the changes are already applied, so closing keeps
+  them. Couldn't be placed shows two choice cards: Rewrite the file (its cost) or Say it differently.
+- **Questions.** The intake question is one card: a 3-step bar, the question, numbered answer rows (1 to 3, the likely one
+  marked Likely ↩), Something else…; answered questions stack above it with Change. Decision cards are grouped by file under
+  a progress bar. Only the next open card is expanded, the others are one-line rows; answering opens the next. A
+  contradiction shows its two sources as tiles (the value and where it comes from).
+
+| Id | File | Screen |
+|---|---|---|
+| V2-24 | V2-24-Tell-Compose.dc.html | Board with the Tell Mel panel open, writing (state of V2-2, tellPanel = "compose") |
+| V2-25 | V2-25-Tell-Working.dc.html | Tell Mel panel, working: live steps, Stop (tellPanel = "working") |
+| V2-26 | V2-26-Tell-Review.dc.html | Tell Mel panel, review what changed (tellPanel = "review") |
+| V2-27 | V2-27-Tell-Unplaced.dc.html | Tell Mel panel, couldn't be placed (tellPanel = "unplaced") |
+| V2-28 | V2-28-Questions-Intake.dc.html | Intake question, redesigned (start = "intake2") |
+| V2-29 | V2-29-Questions-Cards.dc.html | Decision cards, redesigned (start = "cards") |
+
+## V2 · Spec upgrades from the competitor review
+
+Added 2026-11-28 after comparing Mel with Kiro, GitHub Spec Kit, OpenSpec, Traycer, Devin, Factory and BMAD. All eight are
+chosen. Drawn in the row "V2 · Spec upgrades".
+
+| Id | File | Screen |
+|---|---|---|
+| V2-30 | V2-30-New-Split.dc.html | New, an idea with two goals: the split suggestion (state of V2-1, prop idea) |
+| V2-31 | V2-31-Board-Today.dc.html | Board, REQUIREMENTS.md in WHEN/THEN with delta tags, the "Changes how it works today" card (component of V2-31 to V2-35, scene = "today") |
+| V2-32 | V2-32-Board-BugFix.dc.html | Board, a bug fix SPEC.md: now, should, must not change, check (scene = "bugfix") |
+| V2-33 | V2-33-Board-Diagram.dc.html | Board, ARCHITECTURE.md with its mermaid diagram drawn (scene = "diagram") |
+| V2-34 | V2-34-Build-ProjectSpec.dc.html | Build, every task done: update the project spec, then merge (scene = "merge") |
+| V2-35 | V2-35-Plan-Export.dc.html | Plan ready, Send tasks to GitHub Issues or Linear (scene = "export") |
+
+1. **The project spec: how the app works today.** `specs/current/` holds one Markdown file per area of the app (schedule.md,
+   payments.md, teachers.md…). Every requirement in it has a stable id (B-2.1). It is the truth about the app as it is; the
+   spec folders describe changes.
+   - The project context scan writes the first version from the code (one file per area, only behavior a user can see).
+   - While a spec is written, Mel reads the areas it touches. Each criterion in REQUIREMENTS.md (or SPEC.md) gets a delta tag:
+     Adds, Changes B-x.y, Removes B-x.y, Keeps B-x.y. A criterion that contradicts today's rule raises the card
+     **"Changes how it works today"**: today's value and id next to this spec's value, as two tiles, plus Something else…
+     (V2-31). It is not the red "These disagree" card: nothing is wrong, the user decides whether the app changes.
+   - When every task is done, Build shows **"Update how the app works today"** before Merge into main: the deltas by file
+     (Changed with before and after, Added, a New file badge), then Update the project spec / Not now (V2-34). Mel merges by
+     id in Swift: no agent run, no tokens. The spec folder moves to `specs/done/<date>-<slug>/`. "Not now" leaves it under
+     Done with the same button. The result line has Undo.
+   - Settings › Specs shows "How the app works today" with Show Files.
+2. **Criteria as WHEN … THEN ….** Every acceptance criterion and quality rule is written as WHEN (the situation) THEN (what
+   must be true), with its id. The Formatted view shows WHEN and THEN as small labels; Markdown keeps the plain sentence.
+   Task checks and, later, generated tests are written from these. Settings › Specs › "Write criteria as When / Then" (on).
+3. **Bug fixes.** When a Quick fix is a bug, SPEC.md has four parts: What happens now (steps to reproduce), What should happen
+   (WHEN/THEN, tagged Fixes B-x.y), **Must not change** (the project spec rules the fix must keep, each with its id, shown
+   with a lock) and Check (the command that proves it) (V2-32). Questions can add rules to Must not change.
+4. **Split suggestion.** On New, when the text reads like two separate features (two actors or two goals joined by "and"), a
+   card under the box proposes 2 specs with names and sizes: Split into 2 specs / Keep as one (V2-30). Split plans the first
+   now; the second waits under Needs you with the user's words. Settings › Specs › "Suggest splitting big requests" (on).
+5. **Technical change (design first).** A fourth size for refactors, migrations, upgrades and performance work. Files, in
+   order: ARCHITECTURE.md, REQUIREMENTS.md (derived from it), TASKS.md, then Analyze. The size chip on New cycles Quick fix,
+   Feature, Technical change, New product.
+6. **Diagrams.** A ```mermaid block in any spec file (mostly ARCHITECTURE.md) is drawn in the Formatted view, with what this
+   spec changes in blue and what it adds in green; Markdown shows the code (V2-33). Drawn in Swift, no agent run.
+7. **Send tasks.** Plan ready and Build have "Send tasks…" in the toolbar: GitHub Issues (uses `gh` on this Mac, signed in) or
+   Linear (key asked the first time). One issue per task; options: criteria as a checklist, phases as milestones (cycles in
+   Linear); label `mel · <slug>`. Tasks already sent are skipped; issue numbers are saved in TASKS.md (V2-35). No tokens.
+8. **Models for each step.** Settings › Agents › "Models for each step": Questions and decision cards, PRODUCT / REQUIREMENTS /
+   EXPERIENCE, ARCHITECTURE.md, TASKS.md, Analyze and checks, Tell Mel changes. Defaults: Opus for the product files and
+   ARCHITECTURE, Sonnet for the rest. Claude Code runs each step with `--model`.
+
+Not taken, on purpose: separate planning personas (BMAD; multiplies tokens, breaks the token budget rule), a chat about the
+code (Ask Devin; Mel has no chat by design), comparing code against the spec after building (Spec Kit converge, Traycer
+verify; belongs to the Build stage, revisit with V2-17).
+
+Sources: kiro.dev docs (Specs, Bugfix Specs, Analyze Requirements, Correctness), github.github.com/spec-kit (Agentic SDD
+reference), OpenSpec concepts (Fission-AI/OpenSpec), docs.traycer.ai (Phases), docs.factory.ai (Specification Mode), Devin
+docs (Interactive Planning, Ask Devin), BMAD Method user guide.
 
 ## Lanes (reference, replaced by V2)
 
@@ -175,12 +257,13 @@ Decision cards replace file-by-file review (old B4, B5). The verdict and conflic
 
 ## Spec files and their order
 
-Feature and Quick fix specs live in the chosen repo under `specs/<spec-name>/`. Product specs get a new folder.
+Feature, Technical change and Quick fix specs live in the chosen repo under `specs/<spec-name>/`. Product specs get a new folder. `specs/current/` is the project spec (how the app works today, one file per area, ids like B-2.1); a built spec moves to `specs/done/<date>-<slug>/` after its deltas are merged.
 
 | Size | Files, in order |
 |---|---|
-| Quick fix | SPEC.md |
+| Quick fix | SPEC.md (a bug: What happens now, What should happen, Must not change, Check) |
 | Feature | REQUIREMENTS.md, ARCHITECTURE.md, TASKS.md, then Analyze |
+| Technical change | ARCHITECTURE.md, REQUIREMENTS.md, TASKS.md, then Analyze (design first) |
 | Product | PRODUCT.md, REQUIREMENTS.md, EXPERIENCE.md, ARCHITECTURE.md, TASKS.md, then Analyze |
 
 In V2 the files are written one at a time, gated by open cards (see V2 · Expressiveness and token budget). On D1 (reference) the agent drafted them in this order in the background. The user never approves files one by one: they answer decision cards and adjust scope, flow and plan. A later file is drafted from the earlier ones. DECISIONS.md collects every answer and change with its reason.

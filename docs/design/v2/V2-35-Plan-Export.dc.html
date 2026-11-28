@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-35 · Plan ready, Send tasks sheet: GitHub Issues or Linear, one issue per task, skips tasks already sent.
+Same component as V2-31-Board-Today.dc.html; only the props below differ.
+-->
+<title>Plan ready, send tasks (V2-35)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+@keyframes melspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-31-Board-Today" scene="export" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

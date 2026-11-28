@@ -150,6 +150,22 @@ Gate G9: a task run in Mel uses no more than 10% more tokens than the same promp
 
 Later (OQ #43): tasks of one step at the same time, each in its own worktree.
 
+## Wave 10 · Spec upgrades, Tell Mel panel, questions (target: V2-24 to V2-35, OQ #45–48)
+
+Drawn 2026-11-28 (FLOW.md › "V2 · Tell Mel panel and questions", "V2 · Spec upgrades"). Starts after 9.3 and 9.4.
+
+| Step | Work |
+|---|---|
+| **10.1 Questions** | Intake card (3-step bar, numbered answers with keycaps, Likely, answered ones stacked with Change) and decision cards grouped by file under a progress bar, one open at a time, contradictions as source tiles (V2-28, V2-29). UI only. |
+| **10.2 Tell Mel panel** | Mel's column 380 px with the Tell Mel bar (⌘K) and result line; the 680 px panel: compose (Where chips, attachments as cards, starters), working (4 steps from stream events), review (before / after per patch, Undo this, Undo all), unplaced (V2-24 to V2-27). Board and Build. |
+| **10.3 Spec format** | Criteria as WHEN … THEN … (prompts, Formatted labels, coverage parser); Technical change as a 4th size (ARCHITECTURE → REQUIREMENTS → TASKS → Analyze); bug fix SPEC.md (now, should, must not change, check) (V2-1, V2-31, V2-32). |
+| **10.4 Models for each step** | Settings › Agents › Models: Questions and cards, PRODUCT / REQUIREMENTS / EXPERIENCE, ARCHITECTURE, TASKS, Analyze and checks, Tell Mel changes, plus Building (kept). |
+| **10.5 Project spec** | `specs/current/` from the context scan; delta tags; "Changes how it works today" card; Update the project spec after the last task, merged by id in Swift; `specs/done/<date>-<slug>/`; Settings › Specs row (V2-31, V2-34, V2-6). |
+| **10.6 Split suggestion** | Folded into the first intake run (no extra run): Split into 2 specs / Keep as one; the second waits under Needs you (V2-30). |
+| **10.7 Diagrams** | Mermaid flowchart subset drawn in Swift (OQ #46) (V2-33). |
+| **10.8 Send tasks** | GitHub Issues through `gh` and Linear (Keychain key): one issue per task, criteria as a checklist, phases as milestones, label, already-sent tasks skipped, numbers saved in TASKS.md (V2-35). |
+| **10.9 Ship** | Tests, real runs, release. |
+
 ## Status (2026-11-27)
 
 - Waves 0–3 merged to `main`. G0–G2 passed (G2's fake-script part covered by core's 5.1 EndToEndTests).
@@ -231,6 +247,8 @@ Later (OQ #43): tasks of one step at the same time, each in its own worktree.
 - 2026-11-28, from the user ("No commit" again, on task 2): the run stopped because the plan didn't fit; task 2's `Changes` named `apps/server/src/…` but not `apps/server/package.json`, its tsconfig or `pnpm-lock.yaml`, and the card said only "No commit" (the report of a run that didn't commit was never shown). tasks.md now asks for a new package's whole folder and, for a new dependency, its manifest and lockfile (not re-recorded for real); a run that ends with a report but no commit shows "The run ended without a commit" with its Not done and Not allowed lines, Run again, Check it and Tell Mel (`-screen buildNoCommit`, looked at in the Debug build). The user's own spec still needs a Tell Mel for tasks 2 and 3.
 - v0.10.1 published 2026-11-28 (build 489, notarized DMG; appcast.xml updated): build runs may write `.gitignore` and unstage, a run without a commit shows why, plans give a new package its whole folder.
 - 2026-11-28, from the user: Refresh next to the GitHub repo list (Start › On GitHub and the repo choice in GH-2 / GH-3) runs `gh repo list` again (`AppState.loadGitHubRepos`, a spinner while it runs). Not yet looked at in the Debug build on the On GitHub tab. On `main`, not released.
+
+- 2026-11-28: canvas and repo synced. The canvas had lost GH-1 to GH-5 (edited from an older copy); they are back on it in a row "5 · GitHub". The repo took the canvas's newer V2-0, V2-1, V2-2, V2-3, V2-6, Settings › Agents and FLOW.md, and the new V2-24 to V2-35. Decisions OQ #45–48; Wave 10 planned. Next: 9.3, 9.4.
 
 ## Risks
 

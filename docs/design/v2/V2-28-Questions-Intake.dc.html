@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+MEL SCREEN V2-28 · Intake question, redesigned (proposal)
+Question 2 of 3, with question 1 answered above it (Change). 3-step bar, numbered answer rows, Likely tag, Something else…
+Same component as V2-2-Board.dc.html; only the props below differ. Build it as a state of that screen, not a separate screen.
+-->
+<title>Board, intake question (V2-28)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+@keyframes melspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 880px">
+<dc-import name="V2-2-Board" tell-panel="" start="intake2" hint-size="100%,880px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

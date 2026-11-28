@@ -5,7 +5,19 @@
 <!--
 MEL SCREEN V2-1 · New (simplified, replaces B1 in the v2 proposal)
 Purpose: one box. The user describes the work and presses Start. Mel infers the size (Quick fix, Feature, Product) and shows it as one chip the user can change. Project defaults to the last one. Agent, save path, "Builds on" and "fill small gaps" are defaults, not questions.
-Goes to: V2-2 Board (Start).
+One whole (2026-11-27): the toolbar shows the Idea › Plan › Build steps (Idea current), the same control as the board and
+  Build. The box is the one composer used everywhere (text, Attach, Dictate, the primary button). Dictate uses macOS
+  speech-to-text, so the user can say the idea instead of typing it; the words land in the box to read before sending.
+  Under the box, three short lines say what happens next (up to 3 questions, Mel writes the plan and you can leave, you
+  build it task by task), so the first press needs no tutorial. The button reads "Plan it" because it starts the Plan step.
+Spec upgrades (2026-11-28, from the competitor review; V2-30 shows the split):
+  Size has a 4th value, Technical change (refactor, migration, upgrade, performance): it starts from ARCHITECTURE.md and
+  derives REQUIREMENTS.md from it, then TASKS.md (design first). The chip cycles Quick fix, Feature, Technical change, New product.
+  Split suggestion: when the text reads like two separate features (two actors or two goals joined by "and"), a card under the
+  box proposes 2 specs with their names and sizes: Split into 2 specs / Keep as one. Split plans the first now; the second waits
+  under Needs you with the user's words. Smaller specs mean fewer questions, cheaper changes, and they can be built at the same time.
+  Settings › Specs › "Suggest splitting big requests" (on) turns the card off.
+Goes to: V2-2 Board (Plan it).
 -->
 <title>New (v2)</title>
 <script src="./support.js"></script>
@@ -70,7 +82,15 @@ textarea:focus{outline:none}
 </div>
 </nav>
 
-<main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 32px">
+<main style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+<div style="min-height: 56px; display: flex; align-items: center; justify-content: center; padding: 8px 16px 8px 20px">
+<nav aria-label="Steps" style="height: 30px; display: flex; align-items: center; gap: 2px; padding: 2px; box-sizing: border-box; border-radius: 15px; background: rgba(0,0,0,0.05)">
+<sc-for list="{{journey}}" as="j" hint-placeholder-count="3">
+<a href="{{j.href}}" aria-current="{{j.current}}" aria-disabled="{{j.disabled}}" style="{{j.style}}"><span aria-hidden="true" style="{{j.badge}}">{{j.mark}}</span>{{j.label}}</a>
+</sc-for>
+</nav>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 32px 80px">
 <div style="width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 16px">
 <h1 style="margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em; text-align: center">What do you want to build?</h1>
 <p style="margin: 0 0 8px; font-size: 14px; line-height: 20px; color: #6e6e73; text-align: center">Plain words are fine. Mel asks a few questions, then writes the plan for your agent.</p>
@@ -82,6 +102,9 @@ textarea:focus{outline:none}
 <button aria-label="Add files" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; background: rgba(0,0,0,0.05); color: #3a3a3c">
 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 7.5l-5.6 5.6a3.2 3.2 0 0 1-4.5-4.5l5.9-5.9a2.1 2.1 0 0 1 3 3l-5.9 5.9a1 1 0 0 1-1.5-1.5l5.3-5.3"></path></svg>
 </button>
+<button onClick="{{toggleMic}}" aria-label="{{micLabel}}" aria-pressed="{{micOn}}" style="{{micStyle}}">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="1.75" width="5" height="8" rx="2.5"></rect><path d="M3.25 7.5a4.75 4.75 0 0 0 9.5 0M8 12.25v2"></path></svg>
+</button>
 <sc-if value="{{hasIdea}}" hint-placeholder-val="{{true}}">
 <button onClick="{{cycleSize}}" aria-label="{{sizeAria}}" style="height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 15px; background: rgba(0,122,255,0.08); box-shadow: inset 0 0 0 1px rgba(0,122,255,0.35); font: inherit; font-size: 12px; line-height: 16px; color: #0058b9">
 <span style="font-weight: 600">{{sizeLabel}}</span><span>· {{sizeNote}}</span>
@@ -89,13 +112,49 @@ textarea:focus{outline:none}
 </button>
 </sc-if>
 <span style="flex: 1"></span>
-<a href="V2-2-Board.dc.html" aria-disabled="{{startDisabled}}" style="{{startStyle}}">Start<span style="font-size: 11px; line-height: 14px; font-weight: 400; opacity: 0.85">⌘↩</span></a>
+<a href="V2-2-Board.dc.html" aria-disabled="{{startDisabled}}" style="{{startStyle}}">{{startLabel}}<span style="font-size: 11px; line-height: 14px; font-weight: 400; opacity: 0.85">⌘↩</span></a>
 </div>
 </div>
 
-<sc-if value="{{hasIdea}}" hint-placeholder-val="{{true}}">
+<sc-if value="{{showSplit}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Mel suggests two specs" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="22" height="22" viewBox="0 0 100 100" aria-hidden="true" style="flex: 0 0 22px"><rect width="100" height="100" rx="22.4" fill="#FBE1AE"></rect><polygon points="78,50 64,74.25 36,74.25 22,50 36,25.75 64,25.75" fill="#D97F00" stroke="#D97F00" stroke-width="5" stroke-linejoin="round"></polygon><polygon points="61,50 55.5,59.53 44.5,59.53 39,50 44.5,40.47 55.5,40.47" fill="#2A2A2E"></polygon><rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#000000" stroke-opacity="0.1"></rect></svg>
+<span style="flex: 1; font-size: 14px; line-height: 20px; font-weight: 600">This reads like 2 separate specs</span>
+</div>
+<p style="margin: 0; font-size: 12px; line-height: 17px; color: #6e6e73">Smaller specs get fewer questions and cheaper changes, and they can be built at the same time. Mel plans the first now; the second waits under Needs you.</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px">
+<sc-for list="{{splitParts}}" as="sp" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 10px; background: #f5f5f7">
+<span style="font-size: 11px; line-height: 14px; color: #6e6e73">{{sp.n}}</span>
+<span style="font-size: 13px; line-height: 18px; font-weight: 600">{{sp.title}}</span>
+<span style="font-size: 11px; line-height: 14px; color: #0058b9">{{sp.size}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button onClick="{{doSplit}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: #007aff; font: inherit; font-size: 12px; line-height: 16px; font-weight: 600; color: #ffffff">Split into 2 specs</button>
+<button onClick="{{keepOne}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 15px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); font: inherit; font-size: 12px; line-height: 16px; color: #1d1d1f">Keep as one</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{splitDone}}" hint-placeholder-val="{{false}}">
+<p role="status" style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; line-height: 17px; color: #3a3a3c"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="#248a3d"></circle><path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{splitDoneText}}</p>
+</sc-if>
+<sc-if value="{{micOnBool}}" hint-placeholder-val="{{false}}">
+<p role="status" style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; line-height: 17px; color: #3a3a3c"><span style="width: 8px; height: 8px; border-radius: 50%; background: #d70015"></span>Listening. Talk as long as you like, in your own words; press the mic again to stop.</p>
+</sc-if>
+<sc-if value="{{guessLine}}" hint-placeholder-val="{{true}}">
 <p style="margin: 0; font-size: 12px; line-height: 17px; color: #6e6e73; text-align: center">{{guessWhy}} Click the chip if it’s wrong.</p>
 </sc-if>
+<ol aria-label="What happens next" style="margin: 8px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px">
+<sc-for list="{{next}}" as="n" hint-placeholder-count="3">
+<li style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #f5f5f7">
+<span aria-hidden="true" style="flex: 0 0 18px; height: 18px; border-radius: 9px; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 12px; font-weight: 700; color: #3a3a3c">{{n.n}}</span>
+<span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 12px; line-height: 16px; font-weight: 600">{{n.title}}</span><span style="font-size: 11px; line-height: 15px; color: #6e6e73">{{n.text}}</span></span>
+</li>
+</sc-for>
+</ol>
 
 <sc-if value="{{noIdea}}" hint-placeholder-val="{{false}}">
 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 8px">
@@ -108,32 +167,55 @@ textarea:focus{outline:none}
 </div>
 </sc-if>
 </div>
+</div>
 </main>
 
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":880}}'>
+<script type="text/x-dc" data-dc-script data-props='{"idea":{"editor":"text","default":""},"$preview":{"width":1360,"height":880}}'>
 class Component extends DCLogic {
 constructor(props) {
 super(props);
-this.state = { idea: 'Members can filter the weekly schedule by teacher and see a short teacher profile on each class.', size: null };
+this.state = { idea: props.idea || 'Members can filter the weekly schedule by teacher and see a short teacher profile on each class.', size: null, mic: false, split: '' };
+}
+journey(cur, links) {
+return ['Idea', 'Plan', 'Build'].map((label, i) => {
+const on = i === cur, done = i < cur, link = links[i];
+return {
+label: label, mark: done ? '✓' : String(i + 1), href: link || '#',
+current: on ? 'step' : 'false', disabled: (!on && !link) ? 'true' : 'false',
+style: 'height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 5px; border-radius: 13px; font-size: 12px; line-height: 16px; text-decoration: none; ' + (on ? 'background: #ffffff; font-weight: 600; color: #1d1d1f; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.1)' : 'color: ' + (done || link ? '#3a3a3c' : '#8e8e93')) + '; pointer-events: ' + (link && !on ? 'auto' : 'none'),
+badge: 'width: 16px; height: 16px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; line-height: 12px; font-weight: 700; ' + (on ? 'background: #007aff; color: #ffffff' : (done ? 'background: #248a3d; color: #ffffff' : 'background: rgba(0,0,0,0.08); color: #6e6e73'))
+};
+});
 }
 guess(t) {
 const x = (t || '').toLowerCase();
 if (/(bug|crash|broken|wrong|double|fails|error|fix)/.test(x)) return 'quick';
 if (/(an app|new app|a platform|for my|from scratch|website for)/.test(x)) return 'product';
+if (/(refactor|migrate|migration|upgrade|replace .+ with|move .+ to|performance|speed up|database|rewrite|architecture)/.test(x)) return 'tech';
 return 'feature';
+}
+splitOf(t, size) {
+if (size === 'quick' || !t) return null;
+if (/dashboard/i.test(t) && /filter/i.test(t)) return ['Filter the schedule by teacher', 'Teacher earnings dashboard'];
+const bits = t.split(/,\s*and\s+|\.\s+(?=[A-Z])/).map((x) => x.trim().replace(/\.$/, '')).filter((x) => x.split(/\s+/).length >= 5);
+if (bits.length < 2) return null;
+const cap = (x) => { const w = x.split(/\s+/).slice(0, 7).join(' '); return w.charAt(0).toUpperCase() + w.slice(1); };
+return [cap(bits[0]), cap(bits[1])];
 }
 renderVals() {
 const s = this.state;
 const has = s.idea.trim().length > 0;
 const guessed = this.guess(s.idea);
 const size = s.size || guessed;
-const order = ['quick', 'feature', 'product'];
+const order = ['quick', 'feature', 'tech', 'product'];
+const parts = this.splitOf(s.idea, size);
 const info = {
 quick: { label: 'Quick fix', note: '1 question, 1 file', why: 'Sounds like a bug in yoga-studio-booking, so Mel keeps it to one short spec.' },
 feature: { label: 'Feature', note: 'in yoga-studio-booking', why: 'Sounds like a change to yoga-studio-booking, so Mel plans it on top of your code.' },
+tech: { label: 'Technical change', note: 'starts from ARCHITECTURE.md', why: 'Sounds like a change to how yoga-studio-booking is built, so Mel starts from the architecture and derives the requirements from it.' },
 product: { label: 'New product', note: 'new folder', why: 'Sounds like a new app, so Mel also plans the screens.' }
 }[size];
 const examples = [
@@ -143,17 +225,31 @@ const examples = [
 ].map((e) => ({ label: e.label, use: () => this.setState({ idea: e.text, size: null }) }));
 return {
 idea: s.idea,
-onIdea: (e) => this.setState({ idea: e.target.value, size: null }),
+onIdea: (e) => this.setState({ idea: e.target.value, size: null, split: '' }),
+showSplit: !!parts && !s.split && !s.mic, splitParts: (parts || []).map((t, i) => ({ n: 'Spec ' + (i + 1), title: t, size: 'Feature · in yoga-studio-booking' })),
+doSplit: () => this.setState({ split: 'done' }), keepOne: () => this.setState({ split: 'kept' }),
+splitDone: s.split === 'done', splitDoneText: parts ? 'Split. Mel plans “' + parts[0] + '” first; “' + parts[1] + '” waits under Needs you.' : '',
+startLabel: s.split === 'done' ? 'Plan the first' : 'Plan it',
 hasIdea: has,
 noIdea: !has,
 sizeLabel: info.label,
 sizeNote: info.note,
 sizeAria: 'Planned as ' + info.label + '. Click to change.',
 guessWhy: s.size ? 'You picked ' + info.label + '.' : info.why,
-cycleSize: () => this.setState({ size: order[(order.indexOf(size) + 1) % 3] }),
+cycleSize: () => this.setState({ size: order[(order.indexOf(size) + 1) % 4] }),
 examples: examples,
+journey: this.journey(0, [null, null, null]),
+micOnBool: !!s.mic, guessLine: has && !s.mic,
+toggleMic: () => this.setState({ mic: !s.mic }), micOn: s.mic ? 'true' : 'false',
+micLabel: s.mic ? 'Stop dictation' : 'Dictate',
+micStyle: 'width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 16px; color: ' + (s.mic ? '#ffffff; background: #d70015' : '#3a3a3c; background: rgba(0,0,0,0.05)'),
+next: [
+{ n: '1', title: 'Up to 3 questions', text: 'One at a time, with a likely answer. Skip any.' },
+{ n: '2', title: 'Mel writes the plan', text: 'In the background. Leave; you get a notification.' },
+{ n: '3', title: 'You build it', text: 'Task by task in Claude Code. Mel checks each one.' }
+],
 startDisabled: has ? 'false' : 'true',
-startStyle: 'height: 34px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 17px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (has ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (has ? 'auto' : 'none')
+startStyle: 'height: 32px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 16px; font-size: 13px; line-height: 18px; font-weight: 600; color: #ffffff; text-decoration: none; background: ' + (has ? '#007aff' : '#aeaeb2') + '; pointer-events: ' + (has ? 'auto' : 'none')
 };
 }
 }
