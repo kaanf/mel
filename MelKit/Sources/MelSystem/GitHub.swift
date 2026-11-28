@@ -104,6 +104,22 @@ public struct GitHubCLI: Sendable {
         try run(["pr", "merge", "\(number)", "--squash", "--delete-branch"] + (auto ? ["--auto"] : []), in: folder)
     }
 
+    // MARK: Send tasks (V2-35)
+
+    /// The label and milestones issues use; an existing one is fine.
+    public func prepareIssues(label: String, milestones: Set<String>, in folder: URL) {
+        _ = try? run(["label", "create", label, "--force", "--color", "F2C14E", "--description", "Planned with Mel"], in: folder)
+        for title in milestones { _ = try? run(["api", "repos/{owner}/{repo}/milestones", "-f", "title=\(title)"], in: folder) }
+    }
+
+    /// One issue; returns its number as "#42".
+    public func createIssue(title: String, body: String, label: String, milestone: String?, in folder: URL) throws -> String {
+        let output = try run(["issue", "create", "--title", title, "--body", body, "--label", label] + (milestone.map { ["--milestone", $0] } ?? []), in: folder)
+        // gh prints the issue's URL: …/issues/42.
+        let number = output.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: "/").last.map(String.init) ?? ""
+        return "#" + number
+    }
+
     // MARK: Process
 
     private func makeProcess(_ arguments: [String], in directory: URL?) -> Process {

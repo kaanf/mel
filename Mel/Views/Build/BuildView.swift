@@ -27,6 +27,8 @@ struct BuildView: View {
     /// The Tell Mel panel (V2-24 to V2-27) and whether it shows the last change's review.
     @State private var isTelling: Bool
     @State private var reviewsTell = false
+    /// Send tasks (V2-35).
+    @State private var showsSend = false
     /// Width inside an "At the same time" step, for how many cards go side by side.
     @State private var stepWidth = Theme.Size.buildWidth
 
@@ -89,6 +91,10 @@ struct BuildView: View {
         .animation(.board, value: spec.runs)
         .animation(.board, value: session.checking)
         .animation(.board, value: session.lastChange)
+        .sheet(isPresented: $showsSend) { SendTasksSheet(session: session) { showsSend = false } }
+        #if DEBUG
+        .onAppear { if DebugScreen.current == .sendTasks { showsSend = true } }
+        #endif
         .sheet(isPresented: $isTelling) {
             TellPanel(session: session, building: true, task: $telling, reviewing: $reviewsTell) { isTelling = false }
         }
@@ -143,6 +149,14 @@ struct BuildView: View {
             .frame(height: Theme.Size.button)
             .background(Theme.Colors.statusPillFill, in: Capsule())
             .accessibilityElement(children: .combine)
+            Button { showsSend = true } label: {
+                Image(systemName: "square.and.arrow.up").font(.system(size: 12, weight: .medium))
+                    .frame(width: Theme.Size.button, height: Theme.Size.button)
+                    .background(Theme.Colors.chipFill, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Send tasks")
+            .help("Send tasks… One issue per task in GitHub Issues or Linear")
             if !allDone, spec.runs?.values.contains(where: \.byHand) != true {
                 Button("Run the rest") { Task { await session.runRest() } }
                     .buttonStyle(BoardPillStyle(kind: .accent))

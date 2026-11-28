@@ -345,6 +345,50 @@ final class EndToEndTests {
         #expect(log.last == "pr merge 7 --squash --delete-branch")
     }
 
+    /// V2-35 with a fake `gh`: one issue per task with the spec's label; a task sent once isn't sent again.
+    @Test func tasksAreSentAsGitHubIssuesOnce() async throws {
+        let (app, _) = makeApp([
+            ("e2e/v2/ft-intake.jsonl", []),
+            ("e2e/v2/ft-requirements.jsonl", []),
+            ("e2e/v2/ft-architecture.jsonl", []),
+            ("e2e/v2/ft-tasks.jsonl", []),
+            ("e2e/v2/ft-analyze.jsonl", []),
+        ])
+        let repo = parent.appending(path: "waitlist-app", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: repo, withIntermediateDirectories: true)
+        try "# Waitlist\n".write(to: repo.appending(path: "README.md"), atomically: true, encoding: .utf8)
+        for arguments in [["init", "--quiet", "-b", "main"], ["add", "-A"], ["commit", "--quiet", "-m", "Start"], ["remote", "add", "origin", "https://github.com/kaanf/waitlist-app.git"]] {
+            try git(repo, arguments)
+        }
+        let gh = parent.appending(path: "gh")
+        try """
+            #!/bin/sh
+            echo "$@" >> "$(dirname "$0")/gh.log"
+            case "$1 $2" in
+            "issue create") echo "https://github.com/kaanf/waitlist-app/issues/12" ;;
+            esac
+
+            """.write(to: gh, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: gh.path)
+        app.gitHubCLI = GitHubCLI(executable: gh)
+        let project = try app.addProject(repo)
+        let session = try app.createSpec(name: "Waitlist", idea: "Members join a waitlist for full classes.", size: .feature, project: project)
+        await session.start()
+        await session.skipIntake()
+        for _ in 0..<3 where !session.spec.isReady { await session.writeNow() }
+
+        await session.sendTasks(to: .github, team: nil, checklist: true, milestones: true)
+        #expect(session.spec.issues == [1: "#12"])
+        #expect(session.sendResult == "Created 1 GitHub issue (#12)")
+        let log = try String(contentsOf: parent.appending(path: "gh.log"), encoding: .utf8)
+        #expect(log.contains("label create mel · waitlist --force"))
+        #expect(log.contains("issue create --title Waitlist store --body Task 1 of the spec `specs/waitlist`"))
+        #expect(log.contains("--label mel · waitlist"))
+
+        await session.sendTasks(to: .github, team: nil, checklist: true, milestones: true)
+        #expect(try String(contentsOf: parent.appending(path: "gh.log"), encoding: .utf8).components(separatedBy: "issue create").count == 2)
+    }
+
     private func git(_ repo: URL, _ arguments: [String]) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")

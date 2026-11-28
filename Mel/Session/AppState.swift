@@ -228,6 +228,29 @@ import MelSystem
         Also add `"areas"`: how the app works today for the people who use it, read from the code. One entry per area they see (3 to 10), each with at most 8 rules: `"areas":[{"file":"schedule.md","title":"Schedule","rules":["WHEN a member opens the schedule, THEN it shows classes for the next 7 days."]}]`. Each rule is one `WHEN …, THEN ….` sentence about behavior a user can see, only what the code does now. A library or tool without users: its public behavior. Nothing found: `"areas":[]`.
         """
 
+    // MARK: Linear (V2-35, OQ #47)
+
+    /// Whether a Linear key is in the Keychain; Send tasks asks for one the first time.
+    private(set) var hasLinearKey = LinearKey.read() != nil
+
+    var linearClient: LinearClient? { LinearKey.read().map(LinearClient.init) }
+
+    /// The teams the key can see; a working key is saved, a wrong one is not.
+    func linearTeams(key: String? = nil) async throws -> [LinearTeam] {
+        guard let key = key ?? LinearKey.read() else { return [] }
+        let teams = try await LinearClient(key: key).teams().map { LinearTeam(id: $0.id, name: $0.name, key: $0.key) }
+        if key != LinearKey.read() {
+            try LinearKey.save(key)
+            hasLinearKey = true
+        }
+        return teams
+    }
+
+    func forgetLinearKey() {
+        LinearKey.delete()
+        hasLinearKey = false
+    }
+
     /// Settings › Specs "Add Rule" and a rule's remove button.
     func addRule(_ rule: String, to project: Project) throws {
         try ProjectStore.addRule(rule, project: project.folder)

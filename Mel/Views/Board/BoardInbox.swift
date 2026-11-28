@@ -323,6 +323,16 @@ struct BoardInbox: View {
                 .padding(.trailing, Theme.Space.x8)
                 .frame(height: Theme.Size.questionPill)
                 .background(Theme.Colors.disagreePill, in: Capsule())
+            } else if card.today != nil {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.left.arrow.right").font(.system(size: 9, weight: .bold))
+                    Text("Changes how it works today").textStyle(Theme.Text.captionBold)
+                }
+                .foregroundStyle(Theme.Colors.changeTagText)
+                .padding(.leading, Theme.Space.x6)
+                .padding(.trailing, Theme.Space.x8)
+                .frame(height: Theme.Size.questionPill)
+                .background(Theme.Colors.changeTagFill, in: Capsule())
             } else if !topic(card).isEmpty {
                 Text(topic(card)).textStyle(Theme.Text.captionBold).foregroundStyle(Theme.Colors.likely)
             }
@@ -338,10 +348,15 @@ struct BoardInbox: View {
                             ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
                                 Button { Task { await session.answerCard(card.id, .option(index, note: nil)) } } label: {
                                     VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                                        // V2-31: "This spec" / "Today" over the rule, where it lives under it.
+                                        if card.today != nil, let side = option.note.components(separatedBy: " · ").first {
+                                            Text(side).textStyle(Theme.Text.captionBold).foregroundStyle(side == "Today" ? Theme.Colors.secondaryLabel : Theme.Colors.likely)
+                                        }
                                         // A value ("12 hours") large; a whole rule (V2-31) at reading size.
                                         Text(option.label).textStyle(option.label.count > 24 ? Theme.Text.bodyMedium : Theme.Text.headline).fixedSize(horizontal: false, vertical: true)
                                         if !option.note.isEmpty {
-                                            Text(option.note).textStyle(Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(card.today != nil ? 2 : 1)
+                                            let place = card.today != nil ? option.note.components(separatedBy: " · ").dropFirst().joined(separator: " · ") : option.note
+                                            Text(place).textStyle(card.today != nil ? Theme.Text.codeMicro : Theme.Text.caption).foregroundStyle(Theme.Colors.secondaryLabel).lineLimit(1)
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -390,7 +405,7 @@ struct BoardInbox: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Theme.Space.x14)
-        .background(card.disagrees ? Theme.Colors.disagreeFill : .clear)
+        .background(card.disagrees ? Theme.Colors.disagreeFill : card.today != nil ? Theme.Colors.todayFill : .clear)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(topic(card))
     }

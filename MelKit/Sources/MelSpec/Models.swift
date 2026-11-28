@@ -40,6 +40,8 @@ public struct Spec: Codable, Identifiable, Hashable, Sendable {
     public var mergedInto: String?
     /// V2-34: the project spec took this spec's changes (`updated`), or the user said Not now (`later`).
     public var projectSpec: ProjectSpecStep?
+    /// V2-35: the issue each task was sent as ("#42", "YOG-102"), by task number, so a task is sent once.
+    public var issues: [Int: String]?
     /// The main model's conversation for this spec; nil until its first draft starts one.
     public var conversation: Conversation?
 

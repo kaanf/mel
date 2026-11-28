@@ -1385,6 +1385,62 @@ import MelSystem
         persist()
     }
 
+    // MARK: - Send tasks (V2-35, OQ #47)
+
+    enum SendTarget: Hashable { case github, linear }
+    private(set) var isSending = false
+    /// "Created 3 GitHub issues (#42 to #44)"; nil before a send.
+    private(set) var sendResult: String?
+
+    /// One issue per task, built in Swift from TASKS.md and the criteria it covers.
+    func issueDrafts(checklist: Bool, milestones: Bool) -> [IssueDraft] {
+        IssueDraft.drafts(tasks: tasks, criteria: specCriteria, slug: slug, checklist: checklist, milestones: milestones)
+    }
+
+    /// Creates the issues of the tasks not sent yet; each number is saved as it comes, so a failure
+    /// halfway leaves the sent ones sent. No tokens.
+    func sendTasks(to target: SendTarget, team: LinearTeam?, checklist: Bool, milestones: Bool) async {
+        guard !isSending, let app else { return }
+        let drafts = issueDrafts(checklist: checklist, milestones: milestones && target == .github).filter { spec.issues?[$0.task] == nil }
+        guard !drafts.isEmpty else { return }
+        let (folder, label) = (projectFolder, IssueDraft.label(slug: slug))
+        isSending = true
+        defer { isSending = false }
+        lastError = nil
+        sendResult = nil
+        var created: [String] = []
+        do {
+            switch target {
+            case .github:
+                guard let cli = app.gitHubCLI else { return }
+                let milestones = Set(drafts.compactMap(\.milestone))
+                await Task.detached { cli.prepareIssues(label: label, milestones: milestones, in: folder) }.value
+                for draft in drafts {
+                    let issue = try await Task.detached { try cli.createIssue(title: draft.title, body: draft.body, label: label, milestone: draft.milestone, in: folder) }.value
+                    record(issue, for: draft.task, in: &created)
+                }
+            case .linear:
+                guard let team, let client = app.linearClient else { return }
+                let labelID = try? await client.label(label, team: team.id)
+                for draft in drafts {
+                    let issue = try await client.createIssue(title: draft.title, body: draft.body, team: team.id, label: labelID)
+                    record(issue, for: draft.task, in: &created)
+                }
+            }
+        } catch {
+            lastError = "Sent \(created.count) of \(drafts.count): \(error.localizedDescription)"
+        }
+        guard !created.isEmpty else { return }
+        let place = target == .github ? "GitHub" : "Linear"
+        sendResult = "Created \(created.count) \(place) \(created.count == 1 ? "issue" : "issues") (" + (created.count == 1 ? created[0] : "\(created[0]) to \(created[created.count - 1])") + ")"
+    }
+
+    private func record(_ issue: String, for task: Int, in created: inout [String]) {
+        spec.issues = (spec.issues ?? [:]).merging([task: issue]) { _, new in new }
+        created.append(issue)
+        persist()
+    }
+
     // MARK: - Merge into main (V2-22, V2-23)
 
     /// Where the spec branch goes back into; "main" for a spec whose first run was before 0.11.
@@ -1532,7 +1588,7 @@ import MelSystem
 
     // MARK: - Handoff and system actions
 
-    private var slug: String { spec.folder.lastPathComponent }
+    var slug: String { spec.folder.lastPathComponent }
 
     func showInFinder() { SystemActions.showInFinder(spec.folder) }
 

@@ -15,6 +15,8 @@ struct BoardView: View {
     /// The Tell Mel panel (V2-24 to V2-27), and whether it shows the last change's review.
     @State private var showsTell = false
     @State private var reviewsTell = false
+    /// Send tasks (V2-35).
+    @State private var showsSend = false
     @AppStorage("showTokens") private var showsTokens = true
     @AppStorage("commitSpec") private var commitsSpec = true
     @AppStorage("writeAgentsFile") private var writesAgentsFile = true
@@ -53,6 +55,7 @@ struct BoardView: View {
             .inspectorColumnWidth(Theme.Size.inboxWidth)
         }
         .background { shortcuts }
+        .sheet(isPresented: $showsSend) { SendTasksSheet(session: session) { showsSend = false } }
         .sheet(isPresented: $showsTell) {
             TellPanel(session: session, task: .constant(nil), openFile: openFile?.doc, show: { open(.doc($0)) }, reviewing: $reviewsTell) { showsTell = false }
         }
@@ -61,6 +64,7 @@ struct BoardView: View {
         #if DEBUG
         .onAppear {
             if let tell = DebugScreen.current?.opensTell, tell.open { (showsTell, reviewsTell) = (true, tell.review) }
+            if DebugScreen.current == .sendTasks { showsSend = true }
         }
         #endif
         .task(id: spec.id) { if isAsking { await session.start() } }
@@ -217,6 +221,17 @@ struct BoardView: View {
             .buttonStyle(BoardPillStyle())
             .accessibilityValue(showsFiles ? "Shown" : "Hidden")
             .help("The spec's Markdown files and their state")
+            // V2-35: once the plan is ready.
+            if spec.isReady {
+                Button { showsSend = true } label: {
+                    HStack(spacing: Theme.Space.x6) {
+                        Image(systemName: "square.and.arrow.up").font(.system(size: 12, weight: .medium))
+                        Text("Send tasks…")
+                    }
+                }
+                .buttonStyle(BoardPillStyle(kind: .quiet))
+                .help("One issue per task in GitHub Issues or Linear")
+            }
             Button("Start Building") {
                 Task {
                     do { try await session.startBuilding(commitToGit: commitsSpec && session.canCommit, writeAgentsFile: writesAgentsFile) } catch {}

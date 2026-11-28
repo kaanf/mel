@@ -957,6 +957,8 @@ extension Theme.Colors {
     /// #FFF7EB, ring rgba(178,80,0,0.25) · "Nothing was changed".
     static let unplacedFill = Color(hex: 0xFFF7EB, dark: 0x33281A)
     static let unplacedRing = Color(hex: 0xB25000, opacity: 0.25, dark: 0xFF9F0A, darkOpacity: 0.4)
+    /// #FFFCF6 · the open "Changes how it works today" card.
+    static let todayFill = Color(hex: 0xFFFCF6, dark: 0x2E2A22)
     /// rgba(201,52,0,0.09) / #A33000 · a criterion's "Changes B-2.1" tag (V2-31).
     static let changeTagFill = Color(hex: 0xC93400, opacity: 0.09, dark: 0xFF6B3D, darkOpacity: 0.16)
     static let changeTagText = Color(hex: 0xA33000, dark: 0xFF9272)
@@ -980,6 +982,8 @@ extension Theme.Size {
     /// The panel: 680 wide, at most 680 tall; Mel's column 380 with 20 pt padding.
     static let tellPanelWidth: CGFloat = 680
     static let tellPanelHeight: CGFloat = 680
+    /// 620 · the Send tasks sheet (V2-35).
+    static let sendSheetWidth: CGFloat = 620
     /// 44 · the Tell Mel bar and an attachment card; 32 the panel's buttons; 26 a Where chip; 20 a keycap hint.
     static let tellBar: CGFloat = 44
     static let panelButton: CGFloat = 32

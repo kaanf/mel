@@ -65,3 +65,17 @@ struct ProjectSpecTests {
         #expect(spec.changeRequests.first?.contains("keeps today’s rule instead") == true)
     }
 }
+
+struct IssueDraftTests {
+    /// V2-35: one issue per task, its criteria as a checklist (tags left out), the check, the phase as a milestone.
+    @Test func issuesComeFromTheTasksAndTheirCriteria() {
+        let task = SpecTask(number: 2, title: "Teacher filter", priority: "P1", covers: ["1.1", "Q1"], reads: "", verify: "swift test", changes: ["Sources/Schedule"], phase: "Filtering")
+        let drafts = IssueDraft.drafts(tasks: [task], criteria: [("1.1", "WHEN a member picks a teacher, THEN only their classes show. `Adds schedule.md`"), ("Q1", "WHEN it filters, THEN it takes under 300 ms.")],
+                                       slug: "filter", checklist: true, milestones: true)
+        #expect(drafts.first?.title == "Teacher filter")
+        #expect(drafts.first?.milestone == "Filtering")
+        #expect(drafts.first?.body == "Task 2 of the spec `specs/filter` (planned with Mel).\n\n## Done when\n\n- [ ] 1.1 WHEN a member picks a teacher, THEN only their classes show.\n- [ ] Q1 WHEN it filters, THEN it takes under 300 ms.\n\n## Check\n\n`swift test`\n\n## Changes\n\n- `Sources/Schedule`")
+        #expect(IssueDraft.drafts(tasks: [task], criteria: [], slug: "filter", checklist: false, milestones: false).first?.milestone == nil)
+        #expect(IssueDraft.label(slug: "filter") == "mel · filter")
+    }
+}
