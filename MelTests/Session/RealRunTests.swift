@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import MelAgent
 import MelSpec
+import MelStorage
 import MelSystem
 @testable import Mel
 
@@ -73,6 +74,15 @@ final class RealRunTests {
         for kind in session.spec.size.files {
             note("\(kind.fileName): \(session.documents[kind]?.count ?? 0) characters")
         }
+        // Wave 10: WHEN/THEN criteria with their tags, and the architecture's diagram.
+        let criteria = MarkdownParser.blocks(session.documents[.requirements] ?? "").compactMap { block -> String? in
+            if case .criterion(let id, let text) = block { "\(id) \(text)" } else { nil }
+        }
+        note("criteria: \(criteria.count), WHEN/THEN \(criteria.count { $0.contains(" THEN ") }), tagged \(criteria.count { ProjectSpec.tag(of: String($0.drop { $0 != " " }.dropFirst())) != nil })")
+        note("  e.g. \(criteria.prefix(2))")
+        let diagrams = MarkdownParser.blocks(session.documents[.architecture] ?? "").compactMap { block -> String? in if case .diagram(let text) = block { text } else { nil } }
+        note("diagrams: \(diagrams.count), drawn \(diagrams.count { Flowchart.parse($0) != nil })")
+        note("project spec: \(ProjectStore.readProjectSpec(project: folder).map { "\($0.areas.count) areas, \($0.areas.reduce(0) { $0 + $1.rules.count }) rules" } ?? "none")")
         note("plan ready: \(session.spec.isReady) · check \(session.spec.analyze)")
         note("spec tokens: " + session.spec.tokenSteps.map { "\($0.step.title) \(TokenStep.text($0.tokens))" }.joined(separator: ", ") + " · total \(TokenStep.text(session.spec.tokenTotal))")
         try #require(session.spec.isReady)
@@ -102,11 +112,18 @@ final class RealRunTests {
             }
         }
 
+        // V2-34 before merging: the spec's tagged criteria into specs/current/, committed on the spec branch.
+        await session.refreshProjectSpecChanges()
+        note("project spec changes: \(session.projectSpecChanges.map { "\($0.kind) \($0.id) \($0.file)" })")
+        await session.updateProjectSpec()
+        note("project spec updated: \(session.spec.projectSpec.map { "\($0)" } ?? "-") · \(session.lastError ?? "no error")")
         // Merge into main after main moved: the same script added there differently, so it conflicts.
         if session.spec.build == .done, let script = session.tasks.flatMap(\.changes).first(where: { $0.hasPrefix("bin") }) {
             try git(folder, ["checkout", "--quiet", "main"])
-            try FileManager.default.createDirectory(at: folder.appending(path: script), withIntermediateDirectories: true)
-            try "#!/bin/sh\n# Placeholder from main: prints usage.\necho 'usage: tip.sh AMOUNT PERCENT'\n".write(to: folder.appending(path: script).appending(path: "tip.sh"), atomically: true, encoding: .utf8)
+            // A task's Changes may name the file itself (bin/tip.sh) or its folder (bin).
+            let file = script.hasSuffix(".sh") ? folder.appending(path: script) : folder.appending(path: script).appending(path: "tip.sh")
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try "#!/bin/sh\n# Placeholder from main: prints usage.\necho 'usage: tip.sh AMOUNT PERCENT'\n".write(to: file, atomically: true, encoding: .utf8)
             try git(folder, ["add", "-A"])
             try git(folder, ["commit", "--quiet", "-m", "chore: usage placeholder on main"])
             try git(folder, ["checkout", "--quiet", session.branch])

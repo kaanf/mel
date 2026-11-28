@@ -16,8 +16,12 @@ struct PromptTests {
     private static let drafting: Set<String> = ["project", "name", "idea", "files", "attachments", "answers", "decide", "approved", "steps", "rules"]
 
     @Test func placeholdersPerPrompt() {
-        for kind in DocKind.allCases { #expect(placeholders(Prompt(drafting: kind)) == Self.drafting) }
-        #expect(placeholders(.project) == ["mode"])
+        for kind in DocKind.allCases {
+            // REQUIREMENTS.md and SPEC.md also get how the app works today (OQ #45).
+            let expected = [.requirements, .spec].contains(kind) ? Self.drafting.union(["today"]) : Self.drafting
+            #expect(placeholders(Prompt(drafting: kind)) == expected)
+        }
+        #expect(placeholders(.project) == ["mode", "areas"])
         #expect(placeholders(.intake) == ["size", "files", "project", "name", "idea", "attachments", "topics", "count", "kinds"])
         #expect(placeholders(.rewrite) == ["file", "files", "project", "name", "idea", "instruction", "approved", "current", "steps", "rules"])
         #expect(placeholders(.change) == ["files", "reading", "project", "name", "idea", "requests", "attachments", "current", "kinds", "rules"])

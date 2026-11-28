@@ -6,6 +6,22 @@ Downloads: [GitHub Releases](https://github.com/kaanf/mel/releases). From v0.2 o
 
 ## [Unreleased]
 
+## [0.12] · 2026-11-28
+
+### Added
+- **Tell Mel panel.** Mel's column has a Tell Mel bar (⌘K) that opens a large panel: choose where the change goes (Let Mel decide or one file), attach files, dictate, and send. While Mel works you see its steps; afterwards every change is listed by file with before and after, and you can undo any single change or all of them.
+- **How the app works today.** Mel keeps a project spec in `specs/current/`: one file per area of your app, each rule with an id like B-2.1. It is written the first time Mel reads a project, every new spec is checked against it, and a requirement that changes how the app works today asks you which rule should hold. When every task is built, Update the project spec merges the changes by id, with no agent run.
+- **Technical change.** A fourth size for refactors, migrations, upgrades and performance work: Mel designs the change first (ARCHITECTURE.md), then what must keep working.
+- **Send tasks.** Send the plan's tasks to GitHub Issues (through gh) or Linear, one issue per task with its criteria as a checklist. Tasks already sent are skipped.
+- **Diagrams.** A mermaid flowchart in a spec file is drawn in the Formatted view, with what the spec changes in blue and what it adds in green.
+- **Split suggestion.** An idea that describes two separate features is offered as two specs on New.
+- **A model for each step.** Settings › Agents lets you pick the model for questions, the product files, ARCHITECTURE.md, TASKS.md, checks, Tell Mel changes and building.
+
+### Changed
+- **Criteria read WHEN … THEN ….** New specs write every acceptance criterion as one WHEN … THEN … sentence, shown with small WHEN / THEN labels.
+- **Bug fixes have a clear shape.** A Quick fix's SPEC.md says what happens now, what should happen, what must not change and the one check that proves the fix.
+- **Questions are easier to answer.** The first questions show your answers so far, number keys and the likely answer; decision cards are grouped by file with one open at a time.
+
 ## [0.11] · 2026-11-28
 
 ### Added
@@ -194,7 +210,8 @@ The first build: turn an idea into a four-file Markdown spec (PRODUCT, REQUIREME
 - Library of specs in the sidebar; missing folders can be located again.
 - Signed with Developer ID and notarized by Apple.
 
-[Unreleased]: https://github.com/kaanf/mel/compare/v0.11...HEAD
+[Unreleased]: https://github.com/kaanf/mel/compare/v0.12...HEAD
+[0.12]: https://github.com/kaanf/mel/compare/v0.11...v0.12
 [0.11]: https://github.com/kaanf/mel/compare/v0.10.1...v0.11
 [0.10.1]: https://github.com/kaanf/mel/compare/v0.10...v0.10.1
 [0.10]: https://github.com/kaanf/mel/compare/v0.9.1...v0.10
