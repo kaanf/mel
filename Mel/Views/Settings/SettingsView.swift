@@ -107,7 +107,10 @@ struct AgentSettings: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.x20) {
             agentCard
-            group("Models") { models }
+            VStack(alignment: .leading, spacing: Theme.Space.x6) {
+                group("Models for each step") { models }
+                modelsNote
+            }
             group("Detection") { searchPaths }
             HStack {
                 Spacer()
@@ -209,32 +212,30 @@ struct AgentSettings: View {
     // MARK: Models
 
     private var models: some View {
-        @Bindable var state = state
-        return VStack(spacing: 0) {
-            settingsRow("Writing and changes", "Drafts each file, places Tell Mel changes and rewrites. The next run uses it.") {
-                settingsValue(state.writingModel.name) {
-                    Picker("Writing and changes", selection: $state.writingModel) {
-                        ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
+        VStack(spacing: 0) {
+            ForEach(Array(ModelStep.allCases.enumerated()), id: \.element) { index, step in
+                if index > 0 { separator.padding(.leading, Theme.Space.x12) }
+                HStack(spacing: Theme.Space.x8) {
+                    Text(step.title).textStyle(Theme.Text.body).frame(maxWidth: .infinity, alignment: .leading)
+                    settingsValue(state.model(for: step).name) {
+                        Picker(step.title, selection: Binding(get: { state.model(for: step) }, set: { state.models[step] = $0 })) {
+                            ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
+                        }
                     }
                 }
-            }
-            separator.padding(.leading, Theme.Space.x12)
-            settingsRow("Questions and checks", "The first questions and the check for contradictions. Short runs.") {
-                settingsValue(state.quickModel.name) {
-                    Picker("Questions and checks", selection: $state.quickModel) {
-                        ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
-                    }
-                }
-            }
-            separator.padding(.leading, Theme.Space.x12)
-            settingsRow("Building", "Runs each task when you press Run. A task has a clear scope, so Sonnet is close to Opus here at half the cost.") {
-                settingsValue(state.buildModel.name) {
-                    Picker("Building", selection: $state.buildModel) {
-                        ForEach(AgentModel.allCases, id: \.self) { Text($0.name).tag($0) }
-                    }
-                }
+                .padding(.horizontal, Theme.Space.x12)
+                .frame(height: Theme.Size.settingsRowCompact)
             }
         }
+    }
+
+    /// Under Models for each step: what a step's model changes, and why the files share one.
+    private var modelsNote: some View {
+        Text("Claude Code runs each step with this model. The files and Tell Mel changes share one conversation, so on one model they come from its cache; a different model there reads the files again.")
+            .textStyle(Theme.Text.caption)
+            .foregroundStyle(Theme.Colors.secondaryLabel)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, Theme.Space.x12)
     }
 
     // MARK: Detection

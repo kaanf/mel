@@ -266,7 +266,8 @@ import MelSystem
         }
         lastError = nil
         app.requestNotificationsOnce()
-        let (model, effort): (AgentModel, AgentEffort) = build != nil ? (app.buildModel, .medium) : quick.map { (app.quickModel, $0) } ?? (app.writingModel, .medium)
+        let model = app.model(for: build != nil ? .building : ModelStep(step))
+        let effort = quick ?? .medium
         let request = AgentRequest(prompt: prompt, workingDirectory: projectFolder, resumeSessionID: resume, persistSession: persistSession, allowsTools: tools,
                                    build: build?.access, model: model, effort: effort)
         app.runningSpecID = spec.id

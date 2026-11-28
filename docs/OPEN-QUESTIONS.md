@@ -40,6 +40,7 @@
 | 46 | Mermaid diagrams (V2-33)? | **Drawn in Swift, a subset:** `flowchart` / `graph` TD and LR, nodes, edges with labels, subgraphs as boxes; layered layout, no dependency. Anything else shows as code. Changed in blue / added in green against the project spec | 2026-11-28 |
 | 47 | Send tasks to Linear too (V2-35)? | **Yes, now**, next to GitHub Issues. Linear's API key is asked the first time and kept in the Keychain | 2026-11-28 |
 | 48 | Settings toggles for When / Then and Split suggestion? | **No toggles.** Criteria are always WHEN … THEN …; the split suggestion always shows when it applies (one format, one parser) | 2026-11-28 |
+| 49 | Default models for each step (10.4)? | **The files and Tell Mel changes share one default (Opus 5.5); questions, checks and building Sonnet 5.5.** The drawing has Sonnet for TASKS.md and Tell Mel changes, but they run in the spec's conversation (OQ #36): a model switch there loses the prompt cache and reads the files again, which costs more tokens than Sonnet saves. The rows stay, with a note | 2026-11-28 |
 | — | Guiding priority | **Performance, speed, least complexity.** One target, no dependencies, no merge engine, no auto-retries | 2026-11-23 |
 
 ## Open

@@ -61,6 +61,20 @@ struct AppStateTests {
         #expect(AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults).specLanguage == .turkish)
     }
 
+    /// 10.4: a model per step, saved; a choice from before 0.12 carries over to the steps it covered.
+    @Test func modelsForEachStepCarryOverAndPersist() {
+        let defaults = UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!
+        defaults.set(AgentModel.sonnet.rawValue, forKey: "writingModel")
+        let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults)
+        #expect(app.model(for: .tasks) == .sonnet)
+        #expect(app.model(for: .changes) == .sonnet)
+        #expect(app.model(for: .checks) == .sonnet)
+        #expect(app.model(for: .building) == .sonnet)
+        app.models[.architecture] = .haiku
+        #expect(AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: defaults).model(for: .architecture) == .haiku)
+        #expect(ModelStep(.requirements) == .productFiles)
+    }
+
     @Test func ideaSpecsGoUnderDeveloperAndTakeIntakesName() throws {
         let app = AppState(adapter: ClaudeCode(), makeRunner: { _ in fatalError() }, defaults: UserDefaults(suiteName: "mel-app-\(UUID().uuidString)")!)
         app.developerFolder = folder.appending(path: "Developer", directoryHint: .isDirectory)

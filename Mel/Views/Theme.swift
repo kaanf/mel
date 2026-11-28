@@ -363,6 +363,8 @@ enum Theme {
         static let bugRow: CGFloat = 38
         static let bugLabelWidth: CGFloat = 104
         static let settingsRow: CGFloat = 44
+        /// 36 · a row of Settings › Agents › Models for each step.
+        static let settingsRowCompact: CGFloat = 36
         static let buttonFolderIcon: CGFloat = 15
         static let readyCheck: CGFloat = 10
         static let popUpWidth: CGFloat = 9

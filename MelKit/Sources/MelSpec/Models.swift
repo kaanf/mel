@@ -86,6 +86,48 @@ public enum AgentModel: String, Codable, CaseIterable, Hashable, Sendable {
     }
 }
 
+/// Settings › Agents › Models for each step (V2 Settings › Agents, 10.4): the `--model` of each kind of run.
+public enum ModelStep: String, CaseIterable, Hashable, Sendable {
+    case questions, productFiles, architecture, tasks, checks, changes, building
+
+    public var title: String {
+        switch self {
+        case .questions: "Questions and decision cards"
+        case .productFiles: "PRODUCT, REQUIREMENTS, EXPERIENCE"
+        case .architecture: "ARCHITECTURE.md"
+        case .tasks: "TASKS.md"
+        case .checks: "Analyze and checks"
+        case .changes: "Tell Mel changes"
+        case .building: "Building"
+        }
+    }
+
+    /// The files and Tell Mel changes share the spec's conversation (OQ #36), so they start on one
+    /// model: a different one there loses the prompt cache and reads the files again.
+    public var defaultModel: AgentModel {
+        switch self {
+        case .questions, .checks, .building: .sonnet
+        case .productFiles, .architecture, .tasks, .changes: .opus
+        }
+    }
+
+    /// Runs in the spec's conversation (OQ #36).
+    public var isConversation: Bool { [.productFiles, .architecture, .tasks, .changes].contains(self) }
+
+    /// The step a run's tokens are counted under says whose model it uses.
+    public init(_ step: TokenStep) {
+        switch step {
+        case .questions: self = .questions
+        case .product, .requirements, .experience, .spec: self = .productFiles
+        case .architecture: self = .architecture
+        case .tasks: self = .tasks
+        case .checks: self = .checks
+        case .changes: self = .changes
+        case .build: self = .building
+        }
+    }
+}
+
 /// How much work a run does (Claude Code's `--effort`): Mel sets it per kind of run.
 public enum AgentEffort: String, Codable, Hashable, Sendable {
     case low, medium, high

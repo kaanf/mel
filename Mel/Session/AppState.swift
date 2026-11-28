@@ -15,18 +15,13 @@ import MelSystem
     var specLanguage: SpecLanguage {
         didSet { defaults.set(specLanguage.rawValue, forKey: Self.specLanguageKey) }
     }
-    /// Settings › Agents › Models: drafts, changes and rewrites; and the quick runs (questions, the check, project context).
-    var writingModel: AgentModel {
-        didSet { defaults.set(writingModel.rawValue, forKey: Self.writingModelKey) }
-    }
-    var quickModel: AgentModel {
-        didSet { defaults.set(quickModel.rawValue, forKey: Self.quickModelKey) }
-    }
-    /// Settings › Agents › Models › Building: tasks run in Mel. Sonnet by default: a task has a clear
+    /// Settings › Agents › Models for each step (10.4). Building is Sonnet by default: a task has a clear
     /// scope, where Sonnet comes close to Opus at half the price (research 2026-11-27).
-    var buildModel: AgentModel {
-        didSet { defaults.set(buildModel.rawValue, forKey: Self.buildModelKey) }
+    var models: [ModelStep: AgentModel] {
+        didSet { for (step, model) in models where oldValue[step] != model { defaults.set(model.rawValue, forKey: Self.modelKey(step)) } }
     }
+
+    func model(for step: ModelStep) -> AgentModel { models[step] ?? step.defaultModel }
     /// Every spec of every project, found by scanning `specs/*/.mel/state.json`.
     var specs: [Spec] = []
     /// Library projects whose folder is gone; row title = folder name.
@@ -82,9 +77,15 @@ import MelSystem
     @ObservationIgnored private var ideaProjects: Set<Project.ID> = []
     private static let searchPathsKey = "extraSearchPaths"
     private static let specLanguageKey = "specLanguage"
-    private static let writingModelKey = "writingModel"
-    private static let quickModelKey = "quickModel"
-    private static let buildModelKey = "buildModel"
+    private static func modelKey(_ step: ModelStep) -> String { "model." + step.rawValue }
+    /// Before 0.12: one model for the conversation's runs, one for questions and checks, one for building.
+    private static func oldModelKey(_ step: ModelStep) -> String {
+        switch step {
+        case .questions, .checks: "quickModel"
+        case .building: "buildModel"
+        case .productFiles, .architecture, .tasks, .changes: "writingModel"
+        }
+    }
     private static let currentProjectKey = "currentProject"
     private static let editorKey = "editorApp"
 
@@ -97,9 +98,9 @@ import MelSystem
         library = Library(defaults: defaults, key: "projects")
         extraSearchPaths = defaults.stringArray(forKey: Self.searchPathsKey) ?? []
         specLanguage = defaults.string(forKey: Self.specLanguageKey).flatMap(SpecLanguage.init) ?? .english
-        writingModel = defaults.string(forKey: Self.writingModelKey).flatMap(AgentModel.init) ?? .opus
-        quickModel = defaults.string(forKey: Self.quickModelKey).flatMap(AgentModel.init) ?? .sonnet
-        buildModel = defaults.string(forKey: Self.buildModelKey).flatMap(AgentModel.init) ?? .sonnet
+        models = Dictionary(uniqueKeysWithValues: ModelStep.allCases.map { step in
+            (step, (defaults.string(forKey: Self.modelKey(step)) ?? defaults.string(forKey: Self.oldModelKey(step))).flatMap(AgentModel.init) ?? step.defaultModel)
+        })
         projectID = defaults.string(forKey: Self.currentProjectKey).map { URL(filePath: $0).normalizedFolder }
         editor = defaults.string(forKey: Self.editorKey).map { URL(filePath: $0) }
         for item in library.load() {
