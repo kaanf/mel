@@ -886,6 +886,61 @@ extension Theme.Size {
     static let prChip: CGFloat = 20
 }
 
+// MARK: - V2 questions (design/v2/V2-2-Board.dc.html, states V2-28 and V2-29)
+
+extension Theme.Colors {
+    /// rgba(0,122,255,0.04) / ring 0.4 · the likely answer's row.
+    static let likelyFill = Color(hex: 0x007AFF, opacity: 0.04, dark: 0x0A84FF, darkOpacity: 0.07)
+    static let likelyRing = Color(hex: 0x007AFF, opacity: 0.4, dark: 0x0A84FF, darkOpacity: 0.6)
+    /// rgba(0,122,255,0.1) · the Likely ↩ pill.
+    static let likelyPill = Color(hex: 0x007AFF, opacity: 0.1, dark: 0x0A84FF, darkOpacity: 0.17)
+    /// #F2F2F5 · a number keycap.
+    static let keycap = Color(hex: 0xF2F2F5, dark: 0x3A3A3C)
+    /// The question bar: answered #007AFF, current rgba(0,122,255,0.4), to come rgba(0,0,0,0.08).
+    static let stepCurrent = Color(hex: 0x007AFF, opacity: 0.4, dark: 0x0A84FF, darkOpacity: 0.5)
+    /// rgba(0,0,0,0.03) · the stack of answered questions.
+    static let answeredStack = Color.ink(0.03)
+    /// #C7C7CC · an answer's empty radio.
+    static let radioRing = Color(hex: 0xC7C7CC, dark: 0x636366)
+    /// #FFFBFB · the open "These disagree" card.
+    static let disagreeFill = Color(hex: 0xFFFBFB, dark: 0x2E1F1F)
+    /// rgba(215,0,21,0.08) · the "These disagree" pill.
+    static let disagreePill = Color(hex: 0xD70015, opacity: 0.08, dark: 0xFF453A, darkOpacity: 0.14)
+    /// #F7F7F9 · "Your answer, in your own words".
+    static let freeAnswerFill = Color(hex: 0xF7F7F9, dark: 0x2C2C2E)
+}
+
+extension Theme.Text {
+    /// 14/20 semibold · a decision card's question.
+    static let cardQuestion = Theme.TextStyle(size: 14, weight: .semibold, lineHeight: 20)
+}
+
+extension Theme.Size {
+    /// 22 · a number keycap; 44 an intake answer's row; 48 an answered or folded row.
+    static let keycap: CGFloat = 22
+    static let intakeRow: CGFloat = 44
+    static let foldedRow: CGFloat = 48
+    /// 4 · the question bar and the cards' progress bar; 20 the Likely and These disagree pills.
+    static let questionBar: CGFloat = 4
+    static let questionPill: CGFloat = 20
+}
+
+extension Theme.Elevation {
+    /// The intake card and a file's card group: ring 0.08 + 0 8 24 0.06.
+    static let questionCard = Theme.Elevation(ring: .ink(0.08), drop: Theme.Drop(y: 8, blur: 24, color: .black.opacity(0.06)))
+    /// An answer row: 1 pt inset ring 0.1 (0.12 on a card); the likely one 1 pt accent 0.4.
+    static let answerRow = Theme.Elevation(ring: .ink(0.1), ringWidth: 1, insetRing: true)
+    static let cardAnswerRow = Theme.Elevation(ring: .ink(0.12), ringWidth: 1, insetRing: true)
+    static let likelyRow = Theme.Elevation(ring: Theme.Colors.likelyRing, ringWidth: 1, insetRing: true)
+    /// A keycap: ring 0.08.
+    static let keycap = Theme.Elevation(ring: .ink(0.08))
+    /// The answered stack: inset ring 0.06; "Your answer…": 1 pt focus ring.
+    static let answeredStack = Theme.Elevation(ring: .ink(0.06), insetRing: true)
+    static let freeAnswer = Theme.Elevation(ring: Theme.Colors.focusRing, ringWidth: 1, insetRing: true)
+    /// The radio of an answer on a card: 1.5 pt #C7C7CC.
+    static let cardRadio = Theme.Elevation(ring: Theme.Colors.radioRing, ringWidth: 1.5, insetRing: true)
+}
+
 // MARK: - Motion
 
 extension Animation {

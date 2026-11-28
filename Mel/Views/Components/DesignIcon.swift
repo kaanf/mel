@@ -5,7 +5,7 @@ struct DesignIcon: View {
     nonisolated enum Glyph {
         case house, chevronDown, chevronRight, arrowRight, plus, alert, terminal, check, folder, folderPlus, doc, gear, close, paperclip, popUp, draftNow, inspector, stop, lock, bell, star, question, docLines, code, share, flowArrow, branch, checkCircle, warning, minus
         /// V2 board: back to Plan, Tell Mel's Attach, Flow's arrow and branch, the Files button, Reveal in Finder.
-        case chevronLeft, attach, flowArrowLong, flowBranch, file, folderOpen
+        case chevronLeft, attach, flowArrowLong, flowBranch, file, folderOpen, pencil
 
         /// SVG `d` attribute, as written in the `.dc.html` (circles written as two arcs).
         var path: String {
@@ -33,6 +33,7 @@ struct DesignIcon: View {
             case .flowBranch: "M2 1v6a3 3 0 0 0 3 3h7M9 7l3 3-3 3"
             case .file: "M4 1.75h5l3.25 3.25v9.25H4zM9 1.75V5h3.25"
             case .folderOpen: "M1.75 4.25h4.5l1.5 1.5h6.5v7.5H1.75z"
+            case .pencil: "M10.5 2.5l3 3L6 13H3v-3z"
             case .draftNow: "M3 3.5l5 4.5-5 4.5M8.5 3.5l5 4.5-5 4.5"
             case .inspector: "M3.75 2.75H12.25A2 2 0 0 1 14.25 4.75V11.25A2 2 0 0 1 12.25 13.25H3.75A2 2 0 0 1 1.75 11.25V4.75A2 2 0 0 1 3.75 2.75ZM10 2.75V13.25"
             case .plus: "M8 3v10M3 8h10"
@@ -63,7 +64,7 @@ struct DesignIcon: View {
             case .checkCircle: 1.8
             case .folderPlus: 1
             case .close: 2.6
-            case .paperclip, .draftNow, .bell, .star, .warning, .attach, .flowArrowLong, .flowBranch, .file, .folderOpen: 1.5
+            case .paperclip, .draftNow, .bell, .star, .warning, .attach, .flowArrowLong, .flowBranch, .file, .folderOpen, .pencil: 1.5
             case .chevronLeft: 2.2
             }
         }

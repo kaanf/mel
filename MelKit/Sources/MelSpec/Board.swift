@@ -17,6 +17,8 @@ public struct Card: Identifiable, Hashable, Sendable {
     public var answer: Answer?
     /// What "Write it now" settles on: the suggested option, or an issue's primary action.
     public var guess: String
+    /// "Cancelling": what the question is about, shown over it (V2-29). Empty when the agent named none.
+    public var topic: String
 
     public init(_ question: Question) {
         id = question.id
@@ -28,6 +30,7 @@ public struct Card: Identifiable, Hashable, Sendable {
         disagrees = false
         answer = question.answer
         guess = (question.options.first(where: \.suggested) ?? question.options.first)?.label ?? ""
+        topic = question.about.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? ""
     }
 
     public init(_ issue: AnalyzeResult.Issue) {
@@ -36,10 +39,12 @@ public struct Card: Identifiable, Hashable, Sendable {
         location = issue.location
         text = issue.text
         why = ""
-        options = issue.actions.map { Option(label: $0.label, note: "") }
+        // The note says where the answer lands: the source tile of a contradiction (V2-29).
+        options = issue.actions.map { Option(label: $0.label, note: $0.files.isEmpty ? "" : "Changes " + $0.files.map(\.fileName).joined(separator: ", ")) }
         disagrees = issue.kind == .contradiction
         answer = issue.answer
         guess = issue.actions.last?.label ?? ""
+        topic = issue.kind == .contradiction ? "These disagree" : "Mel’s check"
     }
 
     /// What an answered card shows; nil while it is open.
